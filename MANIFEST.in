@@ -1,0 +1,8 @@
+include MANIFEST.in
+include setup.py
+include README.md
+include LICENSE
+prune roux/data* roux/deps* roux/plot* roux/fig*
+include roux/*.py
+include roux/*.md
+include roux/*/*.py
