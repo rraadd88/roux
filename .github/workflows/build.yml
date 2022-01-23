@@ -32,10 +32,10 @@ jobs:
         uses: actions/setup-python@v2
         with:
           python-version: ${{ matrix.pythonversion }}
-      - name: Install Dependencies
-        run: make install
-      - name: Run tests
-        run: make coverage
+      # - name: Install Dependencies
+      #   run: pip install 
+      # - name: Run tests
+      #   run: make coverage
 #       - name: Coveralls
 #         if: github.ref == 'refs/heads/master'
 #         env:
