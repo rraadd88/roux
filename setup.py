@@ -54,8 +54,12 @@ requirements = {
 ],
 }
 extras_require={k:l for k,l in requirements.items() if not k=='base'}
-## all extra except dev
-extras_require['all']=list(set([l for _,l in extras_require.items() if not k=='dev']))
+## all: extra except dev
+extras_require['all']=[l for k,l in extras_require.items() if not k=='dev']
+### flatten
+extras_require['all']=[s for l in extras_require['all'] for s in l]
+### unique
+extras_require['all']=list(set(extras_require['all']))
 
 setuptools.setup(
     name='roux',
