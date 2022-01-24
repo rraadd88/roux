@@ -70,7 +70,7 @@ setuptools.setup(
     url='http://github.com/rraadd88/roux',
     author='rraadd88',
     license='General Public License v. 3',
-    packages=setuptools.find_packages(),
+    packages=setuptools.find_packages(exclude=['test*', 'deps*', 'data*']),
     classifiers=[
         "Programming Language :: Python :: 3",
         "License :: OSI Approved :: MIT License",
@@ -79,7 +79,7 @@ setuptools.setup(
     install_requires=requirements['base'],
     extras_require=extras_require,
     entry_points={
-    'console_scripts': ['rohan = roux.run:parser.dispatch',],
+    'console_scripts': ['roux = roux.run:parser.dispatch',],
     },    
     python_requires='>=3.7, <4',
 )
