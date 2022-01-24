@@ -69,8 +69,9 @@ setuptools.setup(
     long_description_content_type="text/markdown",
     url='http://github.com/rraadd88/roux',
     author='rraadd88',
+    author_email='rohanadandage@gmail.com',
     license='General Public License v. 3',
-    packages=setuptools.find_packages(exclude=['test*', 'deps*', 'data*']),
+    packages=setuptools.find_packages('.',exclude=['test', 'unit','deps', 'data']),
     classifiers=[
         "Programming Language :: Python :: 3",
         "License :: OSI Approved :: MIT License",
