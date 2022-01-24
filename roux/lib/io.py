@@ -210,7 +210,6 @@ def download(url,path=None,outd='data/database',
     return path
 
 ## dfs
-from roux.lib import to_class,rd
 def post_read_table(df1,clean,tables,
                     verbose=True,
                     **kws_clean):

@@ -13,7 +13,7 @@ dtypes
 'V'       raw data (void)
 """
 from roux.lib.df import *
-from roux.lib import to_class,rd
+from roux.lib import to_rd
         
 def filter_dfs(dfs,cols,how='inner'):
     """
@@ -37,7 +37,7 @@ def filter_dfs(dfs,cols,how='inner'):
         dfs=apply_(dfs=dfs,col=c,how=how)
     return dfs
 
-@to_class(rd)
+@to_rd
 def merge_paired(df1,df2,
     left_ons, # suffixed
     right_on, # to be suffixed

@@ -7,9 +7,9 @@ import numpy as np
 import logging
 from icecream import ic
 
-from roux.lib import to_class,rd
+from roux.lib import to_rd
 
-@to_class(rd)
+@to_rd
 def get_name(df1,cols=None,coff=2,out=None):
     if hasattr(df1,'name'):
         name=df1.name
@@ -30,7 +30,7 @@ def get_name(df1,cols=None,coff=2,out=None):
             name=[name]
     return name
             
-@to_class(rd)            
+@to_rd            
 def get_groupby_columns(df_): 
     """
     ## TODOs
@@ -39,7 +39,7 @@ def get_groupby_columns(df_):
     return df_.apply(lambda x: all(x==df_.name)).loc[lambda x: x].index.tolist()
             
 ## delete unneeded columns
-@to_class(rd)
+@to_rd
 def drop_unnamedcol(df):
     """
     Deletes all the unnamed columns
@@ -51,7 +51,7 @@ def drop_unnamedcol(df):
 ### alias
 delunnamedcol=drop_unnamedcol
 
-@to_class(rd)
+@to_rd
 def drop_levelcol(df):
     """
     Deletes all the temporary columns names "level".
@@ -63,38 +63,38 @@ def drop_levelcol(df):
 ### alias
 dellevelcol=drop_levelcol
 
-@to_class(rd)
+@to_rd
 def flatten_columns(df,**kws):
     df.columns=coltuples2str(df.columns,**kws)
     return df
 
-@to_class(rd)
+@to_rd
 def lower_columns(df,**kws):
     df.columns=df.columns.str.lower()
     return df
 
-@to_class(rd)
+@to_rd
 def clean_columns(df,**kws):
     df.columns=df.columns.str.strip().str.rstrip().str.lower()
     return df
 
-@to_class(rd)
+@to_rd
 def renameby_replace(df,replaces,ignore=True,**kws):
     from roux.lib.str import replacemany
     df.columns=[replacemany(c,replaces,ignore=ignore,**kws) for c in df]
     return df
 
-@to_class(rd)
+@to_rd
 def get_constants(df1):
     return df1.nunique().loc[lambda x: x==1].index.tolist()
 
-@to_class(rd)
+@to_rd
 def drop_constants(df):
     cols_del=get_constants(df)
     logging.warning(f"dropped columns: {', '.join(cols_del)}")
     return df.drop(cols_del,axis=1)
 
-@to_class(rd)
+@to_rd
 def dropby_patterns(df1,l1,test=False):
     if isinstance(l1,str):
         l1=[l1]
@@ -106,7 +106,7 @@ def dropby_patterns(df1,l1,test=False):
     logging.info('columns dropped:'+','.join(cols))
     return df1.log.drop(labels=cols,axis=1)
 
-@to_class(rd)
+@to_rd
 def drop_inflates(df1,
                     col,
                     cols_index,
@@ -139,7 +139,7 @@ def drop_inflates(df1,
     assert(all(df1.rd.check_inflation([col])<1))
     return df1
 
-@to_class(rd)
+@to_rd
 def clean(df,cols=[],
           drop_constants=False,
           drop_unnamed=True,
@@ -165,7 +165,7 @@ def clean(df,cols=[],
         return df.drop(cols_del,axis=1)
     else:
         return df
-@to_class(rd)
+@to_rd
 def compress(df1,coff_categories=20,test=False):
     if test: ini=df1.memory_usage().sum()
     ds=df1.select_dtypes('object').nunique()
@@ -174,11 +174,11 @@ def compress(df1,coff_categories=20,test=False):
     if test: logging.info(f"compression={((ini-df1.memory_usage().sum())/ini)*100:.1f}%")
     return df1
 
-@to_class(rd)
+@to_rd
 def clean_compress(df,kws_compress={},**kws_clean): return df.rd.clean(**kws_clean).rd.compress(**kws_compress)
 
 ## nans:
-@to_class(rd)
+@to_rd
 def check_na_percentage(df,cols=None,how=None):
     """
     prefer check_na
@@ -191,21 +191,21 @@ def check_na_percentage(df,cols=None,how=None):
     else:
         return getattr(ds1==0,how)
     
-@to_class(rd)
+@to_rd
 def check_na(df,cols=None):
     if cols is None:
         cols=df.columns.tolist()
     return (df.loc[:,cols].isnull().sum()/df.loc[:,cols].agg(len))*100
 
 ## nunique:
-@to_class(rd)
+@to_rd
 def check_nunique(df,cols=None,):
     if cols is None:
         cols=df.select_dtypes((object,bool)).columns.tolist()
     return df.loc[:,cols].nunique()
 
 ## nunique:
-@to_class(rd)
+@to_rd
 def check_inflation(df1,cols=None,):
     if cols is None:
         cols=df1.columns.tolist()
@@ -213,7 +213,7 @@ def check_inflation(df1,cols=None,):
 #     df.loc[:,cols].nunique()
     
 ## duplicates:
-@to_class(rd)
+@to_rd
 def check_duplicated(df,cols=None,subset=None,out='bool'):
     if not cols is None and not subset is None: logging.error(f"cols and subset are alias, both cannot be used.")        
     if cols is None and not subset is None: cols=subset        
@@ -235,7 +235,7 @@ def check_duplicated(df,cols=None,subset=None,out='bool'):
         return False
 
 ## mappings    
-@to_class(rd)        
+@to_rd        
 def check_mappings(df,cols=None,out='df'):
     """
     identify duplicates within columns
@@ -252,7 +252,7 @@ def check_mappings(df,cols=None,out='df'):
     else:
         return df2.loc[tuple(cols),:]#'map to'].item()
     
-@to_class(rd)
+@to_rd
 def get_mappings(df1,cols=None,keep='1:1',clean=False):
     """
     validate by df1.rd.check_mappings(cols)
@@ -299,7 +299,7 @@ def get_mappings(df1,cols=None,keep='1:1',clean=False):
 
 ## asserts    
         
-@to_class(rd)
+@to_rd
 def assert_dense(df01,subset=None,duplicates=True,na=True,message=None):
     if subset is None:
         subset=df01.columns.tolist()
@@ -308,7 +308,7 @@ def assert_dense(df01,subset=None,duplicates=True,na=True,message=None):
     return df01
 
 ## filter
-@to_class(rd)
+@to_rd
 def filterby_mappings(df1,cols=None,maps=['1:1'],test=False):
     """
     :cols :
@@ -335,7 +335,7 @@ def filterby_mappings(df1,cols=None,maps=['1:1'],test=False):
             logging.info(f'shape changed {k} {d1[k]}')        
     return df1
 
-@to_class(rd)
+@to_rd
 def groupby_filter_fast(df1,col,fun,how,coff):
     """
     TODOs:
@@ -349,7 +349,7 @@ def groupby_filter_fast(df1,col,fun,how,coff):
     else:
         ValueError(how)
         
-@to_class(rd)
+@to_rd
 def to_map_binary(df,colgroupby=None,colvalue=None):
     """
     linear mappings to binary map
@@ -366,7 +366,7 @@ def to_map_binary(df,colgroupby=None,colvalue=None):
 
 ## intersections 
 
-@to_class(rd)        
+@to_rd        
 def check_intersections(df,
                         colindex=None, # 'samples'
                         colgroupby=None, # 'yticklabels'
@@ -416,7 +416,7 @@ def get_totals(ds1):
     return {c:df1.loc[df1[c],col].sum() for c in ds1.index.names}
     
 #filter df
-@to_class(rd)
+@to_rd
 def filter_rows(df,d,sign='==',logic='and',
                 drop_constants=False,
                 test=False,
@@ -438,7 +438,7 @@ def filter_rows(df,d,sign='==',logic='and',
 filter_rows_bydict=filter_rows
 
 ## conversion to type
-@to_class(rd)
+@to_rd
 def to_dict(df,cols,drop_duplicates=False):
     df=df.log.dropna(subset=cols)
     if drop_duplicates:
@@ -450,7 +450,7 @@ def to_dict(df,cols,drop_duplicates=False):
         return df.groupby(cols[0])[cols[1]].unique().to_dict()        
 
 ## conversion
-@to_class(rd)
+@to_rd
 def get_bools(df,cols,drop=False):
     """
     """
@@ -465,7 +465,7 @@ def get_bools(df,cols,drop=False):
             df=df.drop([c],axis=1)
     return df
 
-@to_class(rd)
+@to_rd
 def agg_bools(df1,cols):
     """
     reverse pd.get_dummies
@@ -480,7 +480,7 @@ def agg_bools(df1,cols):
     return df1[col]     
 
 ## paired dfs
-@to_class(rd)
+@to_rd
 def melt_paired(df,
                 cols_index=None, # paired
                 suffixes=None,
@@ -526,7 +526,7 @@ def melt_paired(df,
         assert len(df2)==len(df)*len(cols_value)
         return df2
 
-@to_class(rd)
+@to_rd
 def get_chunks(df1,colindex,colvalue,bins=None,value='right'):
     """
     based on other df
@@ -555,7 +555,7 @@ def get_chunks(df1,colindex,colvalue,bins=None,value='right'):
     return df1['chunk']
 
 ## symmetric dfs eg. submaps    
-@to_class(rd)
+@to_rd
 def dfmap2symmcolidx(df,test=False):
     geneids=set(df.index).union(set(df.columns))
     df_symm=pd.DataFrame(columns=geneids,index=geneids)
@@ -565,7 +565,7 @@ def dfmap2symmcolidx(df,test=False):
         logging.debug(df_symm.shape)
     return df_symm
 
-@to_class(rd)
+@to_rd
 def fill_diagonal(df,filler=None):
     if df.shape[0]!=df.shape[1]:
         logging.warning('df not symmetric')      
@@ -577,7 +577,7 @@ def fill_diagonal(df,filler=None):
     np.fill_diagonal(df.values, filler)        
     return df
 
-@to_class(rd)
+@to_rd
 def get_diagonalvals(df):
     if df.shape[0]!=df.shape[1]:
         logging.warning('df not symmetric')
@@ -588,7 +588,7 @@ def get_diagonalvals(df):
 #         id2val[i]=df.loc[i,c]
     return pd.DataFrame(ds,columns=['diagonal value']).reset_index()
 
-@to_class(rd)
+@to_rd
 def fill_symmetricdf_indices(dsubmap,vals=None):
     if vals is None:
         vals=np.unique(dsubmap.index.tolist()+dsubmap.columns.tolist())
@@ -599,7 +599,7 @@ def fill_symmetricdf_indices(dsubmap,vals=None):
             dsubmap.loc[v,:]=np.nan
     return dsubmap.loc[vals,vals]
 
-@to_class(rd)
+@to_rd
 def fill_symmetricdf_across_diagonal(df,fill=None):
     df=fill_symmetricdf_indices(dsubmap=df,vals=None)
     for c1i,c1 in enumerate(df.columns):
@@ -618,7 +618,7 @@ def fill_symmetricdf_across_diagonal(df,fill=None):
                     df.loc[c2,c1]=df.loc[c1,c2]                            
     return df
 
-@to_class(rd)
+@to_rd
 def get_offdiagonal_values(dcorr,side='lower',take_diag=False,replace=np.nan):
     for ii,i in enumerate(dcorr.index):
         for ci,c in enumerate(dcorr.columns):            
@@ -643,7 +643,7 @@ def get_group(groups,i=None,verbose=True):
     df.name=dn
     return df
         
-@to_class(rd)
+@to_rd
 def dropna_by_subset(df,colgroupby,colaggs,colval,colvar,test=False):
     df_agg=dfaggregate_unique(df,colgroupby,colaggs)
     df_agg['has values']=df_agg.apply(lambda x : len(x[f'{colval}: list'])!=0,axis=1)
@@ -662,7 +662,7 @@ def coltuples2str(cols,sep=' '):
         cols_str.append(tuple2str(col,sep=sep))
     return cols_str
 
-@to_class(rd)
+@to_rd
 def column_suffixes2multiindex(df,suffixes,test=False):
     cols=[c for c in df if c.endswith(f' {suffixes[0]}') or c.endswith(f' {suffixes[1]}')]
     if test:
@@ -674,7 +674,7 @@ def column_suffixes2multiindex(df,suffixes,test=False):
     return df
 
 ## dtype conversion
-@to_class(rd)
+@to_rd
 def colobj2str(df,test=False):
     cols_obj=df.dtypes[df.dtypes=='object'].index.tolist()
     if test:
@@ -683,7 +683,7 @@ def colobj2str(df,test=False):
         df[c]=df[c].astype('|S80')
     return df
 
-@to_class(rd)
+@to_rd
 def split_rows(df,collist,rowsep=None):
     """
     for merging dfs with names with df with synonymns
@@ -697,7 +697,7 @@ def split_rows(df,collist,rowsep=None):
 meltlistvalues=split_rows
 
 ## apply
-@to_class(rd)
+@to_rd
 def apply_as_map(df,index,columns,values,
                  fun,**kws):
     """
@@ -709,7 +709,7 @@ def apply_as_map(df,index,columns,values,
 
 ## ranges
 
-@to_class(rd)
+@to_rd
 def boolean_to_ranges(df1,colindex,colbool,sort=True):
     """
     TODOs:
@@ -721,7 +721,7 @@ def boolean_to_ranges(df1,colindex,colbool,sort=True):
     df1['group']=sc.ndimage.measurements.label(df1[colbool].astype(int))[0]
     return df1.loc[(df1['group']!=0),:].groupby('group')[colindex].agg([min,max]).reset_index()
 
-@to_class(rd)
+@to_rd
 def ranges_to_boolean(df2):
     low, high = np.array(df2).T[:,:, None]
     a = np.arange(high.max() + 1)
@@ -738,7 +738,7 @@ def to_cat(ds1,cats,ordered = True):
     assert(not ds1.isnull().any())
     return ds1
 
-@to_class(rd)
+@to_rd
 def sort_valuesby_list(df1,by,cats,**kws):
     df1[by]=to_cat(df1[by],cats,ordered = True)
     return df1.sort_values(by=by, **kws)
@@ -771,7 +771,7 @@ def agg_by_order_counts(x,order):
     ds[x.name]=agg_by_order(x,order)
     return ds.to_frame('').T
 
-@to_class(rd)
+@to_rd
 def groupby_sort_values(df,col_groupby,col_sortby,
                  subset=None,
                  col_subset=None,
@@ -793,12 +793,12 @@ def groupby_sort_values(df,col_groupby,col_sortby,
 #         return df2.sort_values(f'{col_sortby} per {col_groupby}',ascending=ascending)
 sort_values_groupby=groupby_sort_values
 
-@to_class(rd)
+@to_rd
 def swap_paired_cols(df_,suffixes=['gene1', 'gene2']):
     rename={c:c.replace(suffixes[0],suffixes[1]) if (suffixes[0] in c) else c.replace(suffixes[1],suffixes[0]) if (suffixes[1] in c) else c for c in df_}
     return df_.rename(columns=rename,errors='raise')
 
-@to_class(rd)
+@to_rd
 def sort_columns_by_values(df,cols_sortby=['mutation gene1','mutation gene2'],
                             suffixes=['gene1','gene2'], # no spaces
                             ):
@@ -826,7 +826,7 @@ def sort_columns_by_values(df,cols_sortby=['mutation gene1','mutation gene2'],
     return df1         
     
 # quantile bins
-@to_class(rd)
+@to_rd
 def aggcol_by_qbins(df,colx,coly,colgroupby=None,bins=10):
     """
     get_stats_by_bins(df,colx,coly,fun,bins=4)
@@ -851,7 +851,7 @@ def aggcol_by_qbins(df,colx,coly,colgroupby=None,bins=10):
 
 # subsets
 from roux.lib.set import dropna
-@to_class(rd)
+@to_rd
 def get_intersectionsbysubsets(df,cols_fracby2vals,
                                cols_subset,
                                col_ids,
@@ -881,7 +881,7 @@ def get_intersectionsbysubsets(df,cols_fracby2vals,
     return df
 
 
-@to_class(rd)
+@to_rd
 def get_colsubset2stats(dannot,colssubset=None):
     if colssubset is None:
         colssubset=dannot_stats.columns
@@ -892,7 +892,7 @@ def get_colsubset2stats(dannot,colssubset=None):
     colsubset2classns={k:[int(i) for i in colsubset2classns[k]] for k in colsubset2classns}
     return dannot_stats,colsubset2classes,colsubset2classns
 # 2d subsets
-@to_class(rd)
+@to_rd
 def subset_cols_by_cutoffs(df,col2cutoffs,quantile=False,outdf=False,
                            fast=False,
                            test=False):    
@@ -937,7 +937,7 @@ def subset_cols_by_cutoffs(df,col2cutoffs,quantile=False,outdf=False,
 ## make ids
 # from roux.lib.str import encode,decode
 
-@to_class(rd)
+@to_rd
 def make_ids(df,cols,ids_have_equal_length=True,sep='--',sort=False):
     get_ids=lambda x: '--'.join(x)
     get_ids_sorted=lambda x: '--'.join(sorted(x))
@@ -946,13 +946,13 @@ def make_ids(df,cols,ids_have_equal_length=True,sep='--',sort=False):
     else:
         return df.loc[:,cols].agg(lambda x: sep.join(x if not sort else sorted(x)),axis=1)
 
-@to_class(rd)
+@to_rd
 def make_ids_sorted(df,cols,ids_have_equal_length,sep='--',sort=True):
     return make_ids(df,cols,ids_have_equal_length,sep=sep,sort=sort)
     
 def get_alt_id(s1='A--B',s2='A'): return [s for s in s1.split('--') if s!=s2][0]
 
-@to_class(rd)    
+@to_rd    
 def split_ids(df1,col,sep='--'):
     df=df1[col].str.split(sep,expand=True)
     for i in range(len(df.columns)):
@@ -960,7 +960,7 @@ def split_ids(df1,col,sep='--'):
     return df1
 
 reverse_ids_=lambda x: '--'.join(x.split('--')[::-1])                                 
-@to_class(rd)
+@to_rd
 def reverse_ids(df,col,colonly=None,fast=False):
     """
     :param col: ids
@@ -972,7 +972,7 @@ def reverse_ids(df,col,colonly=None,fast=False):
         return getattr(df,f"{'progress' if not fast else 'parallel'}_apply")(lambda x: reverse_ids_(x[col]) if x[colonly] else x[col], axis=1)
                                  
 ## merge/map ids
-@to_class(rd)
+@to_rd
 def map_ids(df,df2,colgroupby,col_mergeon,order_subsets=None,**kws_merge):
     """
     :param df: target

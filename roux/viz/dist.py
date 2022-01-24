@@ -2,10 +2,8 @@ from roux.global_imports import *
 from roux.viz.colors import *
 from roux.viz.annot import *
 from roux.viz.ax_ import *
-from roux.lib import to_class
 
 ## single 
-@to_class(rd)
 def hist_annot(dplot,colx,
                colssubsets=[],
                bins=100,

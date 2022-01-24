@@ -3,8 +3,6 @@ import numpy as np
 import scipy as sc
 import logging
 
-from roux.lib import to_class,rd
-
 from scipy.stats import spearmanr,pearsonr
 def get_spearmanr(x,y):
     t=sc.stats.spearmanr(x,y,nan_policy='omit')
@@ -53,7 +51,7 @@ def get_corr(x,y,method='spearman',bootstrapped=False,ci_type='max',magnitide=Tr
 #     return get_corr(x,y,method='spearman',bootstrapped=False,ci_type='max',
 #             outstr=False):    
 
-@to_class(rd)
+
 def corr_within(df,
          method='spearman',
          ):
@@ -67,7 +65,7 @@ def corr_within(df,
     df2=df2.rename(columns={col:col+'2'}).reset_index().rename(columns={col:col+'1','value':f'$r_{method[0]}$'})
     return df2
 
-@to_class(rd)
+
 def corrdf(df1,
            colindex,
            colsample,
@@ -101,7 +99,7 @@ def corrdf(df1,
         df2=df2.drop_duplicates(subset=colgroupby)
     return df2
 
-@to_class(rd)
+
 def corr_between(df1,df2,method):
     """
     df1 in columns
@@ -133,7 +131,7 @@ def corr_between(df1,df2,method):
     df3.index.name='variable correlation'
     return df3.reset_index()
 
-@to_class(rd)
+
 def corrdfs(df1,df2,
            colindex,
            colsample,
@@ -231,7 +229,7 @@ def get_corr_between(p,
 
 ## partial 
 
-@to_class(rd)
+
 def get_partial_corrs(df,xs,ys,method='spearman',splits=5):
     """
     xs=['protein expression balance','coexpression']
