@@ -193,6 +193,11 @@ def read_url(url):
     myfile = f.read()
     return str(myfile)
 
+def get_download_date(path):
+    import datetime
+    t = os.path.getctime(path)
+    return str(datetime.datetime.fromtimestamp(t))
+
 def download(url,path=None,outd='data/database',
              force=False):
     if path is None:
