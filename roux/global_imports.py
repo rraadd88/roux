@@ -63,7 +63,7 @@ plt.rcParams['axes.edgecolor']='k'
 plt.rcParams['axes.formatter.use_mathtext'] = True
 plt.rcParams['axes.formatter.limits'] = -3, 3
 plt.rcParams['axes.formatter.min_exponent'] = 3
-plt.rcParams['legend.frameon']=False
+plt.rcParams['legend.frameon']=True
 from cycler import cycler
 plt.rcParams['axes.prop_cycle']= cycler('color',["#f55f5f", "#D3DDDC","#046C9A", "#00A08A", "#F2AD00", "#F98400", "#5BBCD6", "#ECCBAE", "#D69C4E", "#ABDDDE", "#000000"])
 from roux.viz.colors import get_colors_default
@@ -74,13 +74,16 @@ plt.rcParams['axes.labelcolor'] = 'k'
 sns.set_context('notebook') # paper < notebook < talk < poster
 from roux.viz.figure import *
 from roux.viz.io import *
-from IPython import get_ipython
-logging.info("log_notebookp=f'log_notebook.log';open(log_notebookp, 'w').close();get_ipython().run_line_magic('logstart','{log_notebookp} over')")
 from roux.viz.ax_ import *
 
 from tqdm import tqdm#,notebook
 # from roux.lib.sys import is_interactive_notebook
 if not is_interactive_notebook:
+    from IPython import get_ipython
+    ## display vector graphics in jupyter
+    if not get_ipython() is None:
+        get_ipython().run_line_magic('config', "InlineBackend.figure_formats = ['svg']")
+    logging.info("log_notebookp=f'log_notebook.log';open(log_notebookp, 'w').close();get_ipython().run_line_magic('logstart','{log_notebookp} over')")
     tqdm.pandas()
 else:
     from tqdm import notebook

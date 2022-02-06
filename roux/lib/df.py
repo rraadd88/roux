@@ -300,12 +300,17 @@ def get_mappings(df1,cols=None,keep='1:1',clean=False):
 ## asserts    
         
 @to_rd
-def assert_dense(df01,subset=None,duplicates=True,na=True,message=None):
+def validate_dense(df01,subset=None,duplicates=True,na=True,message=None):
     if subset is None:
         subset=df01.columns.tolist()
     if duplicates: assert not df01.rd.check_duplicated(cols=subset), 'duplicates found' if message is None else message
     if na: assert all(df01.rd.check_na(cols=subset)==0), 'na found' if message is None else message
     return df01
+
+# alias. to be deprecate in the future 
+@to_rd
+def assert_dense(df01,subset=None,duplicates=True,na=True,message=None):
+    return validate_dense(df01,subset=subset,duplicates=duplicates,na=na,message=message)
 
 ## filter
 @to_rd
@@ -448,6 +453,8 @@ def to_dict(df,cols,drop_duplicates=False):
     else:
         logging.warning('format: {key:list}')
         return df.groupby(cols[0])[cols[1]].unique().to_dict()        
+
+del to_dict
 
 ## conversion
 @to_rd

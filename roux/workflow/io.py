@@ -59,10 +59,26 @@ def read_metadata(ind='metadata'):
             logging.warning(f'not found: {ind}')
             return 
     d1=read_dict(p)
+    ## read jsons
+    for k in d1:
+        if isinstance(d1[k],list):
+            if len(d1[k])<10:
+                d_={}
+                for p in d1[k]:
+                    if isinstance(p,str):
+                        if p.endswith('.json'):
+                            d_[basenamenoext(p)]=read_dict(p)
+                if len(d_)!=0:
+                    d1[k]=d_
     for p_ in glob(f"{ind}/*"):
         if isdir(p_):
             if len(glob(f'{p_}/*.json'))!=0:
-                d1[basename(p_)]=read_dict(f'{p_}/*.json')
+                if not basename(p_) in d1: 
+                    d1[basename(p_)]=read_dict(f'{p_}/*.json')
+                elif isinstance(d1[basename(p_)],dict):
+                    d1[basename(p_)].update(read_dict(f'{p_}/*.json'))
+                else:
+                    logging.warning(f"entry collision, could not include '{p_}/*.json'")
         else:
             if p_.endswith('.json'):
                 d1[basenamenoext(p_)]=read_dict(p_)

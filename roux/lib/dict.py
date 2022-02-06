@@ -37,13 +37,14 @@ def read_yaml(p):
 def to_yaml(d,p,**kws): 
     with open(p,'w') as f:
         yaml.safe_dump(d,f,**kws)
-        
+    return p        
 def read_json(path_to_file,encoding=None):    
     with open(path_to_file,encoding=encoding) as p:
         return json.load(p)
 def to_json(data,p):
     with open(p, 'w') as outfile:
         json.dump(data, outfile)
+    return p
 def read_pickle(p):
     import pickle
     return pickle.load(open(p,
@@ -86,10 +87,10 @@ def to_dict(d,p,**kws):
         return to_json(d,p,**kws)
     elif p.endswith('.pickle'):
         import pickle
-        pickle.dump(d, open(p, 'wb'),**kws)
+        return pickle.dump(d, open(p, 'wb'),**kws)
     elif p.endswith('.joblib'):
         import joblib
-        joblib.dump(d, p,**kws)     
+        return joblib.dump(d, p,**kws)     
     else:
         ValueError(f'supported extensions: .yml .yaml .json .pickle .joblib')        
         
