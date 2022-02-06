@@ -3,6 +3,7 @@ io_df -> io_dfs -> io_files
 """
 # paths
 from roux.lib.dfs import *
+from roux.lib.dict import read_dict,to_dict # overwrite to_dict from df
 from roux.lib.sys import * #is_interactive_notebook,basenamenoext,makedirs,get_all_subpaths
 from roux.lib.str import replacemany
 from shutil import copyfile
