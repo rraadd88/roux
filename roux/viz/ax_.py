@@ -213,13 +213,21 @@ def sort_legends(ax,sort_order=None,**kws):
         handles,labels =[handles[idx] for idx in sort_order],[labels[idx] for idx in sort_order]
     return ax.legend(handles, labels,**kws)
 
-# legends
 def reset_legend_colors(ax):
     leg=plt.legend()
     for lh in leg.legendHandles: 
         lh.set_alpha(1)
 #         lh._legmarker.set_alpha(1)
     return ax
+
+def set_legends_merged(axs):
+    df_=pd.concat([pd.DataFrame(ax.get_legend_handles_labels()[::-1]).T for ax in axs],
+             axis=0)
+    df_['fc']=df_[1].apply(lambda x: x.get_fc())
+    df_=df_.log.drop_duplicates(subset=[0,'fc'])
+    if df_[0].duplicated().any(): logging.error("duplicate legend labels")
+    return axs[1].legend(handles=df_[1].tolist(), labels=df_[0].tolist(),
+                       bbox_to_anchor=[-0.2,0],loc=2,frameon=True).get_frame().set_edgecolor((0.95,0.95,0.95))
 
 ## line round
 def get_line_cap_length(ax,linewidth):

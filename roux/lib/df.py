@@ -1016,8 +1016,16 @@ def log_shape_change(d1,fun=''):
         else:
             logging.info(f"{prefix}shape changed: {d1['from']}->{d1['to']}")
 ## log
-def log_apply(df, fun, *args, **kwargs):
-    """
+def log_apply(df, fun, 
+              validate_equal_length=False,
+              validate_equal_width=False,
+              validate_equal_shape=False,
+              *args, **kwargs):
+    """Log the changes in the shapes of the dataframe before and after an operation/s.
+    
+    :param validate_equal_length: Validate that the number of rows i.e. length of the dataframe remains the same before and after the operation. 
+    :param validate_equal_width: Validate that the number of columns i.e. width of the dataframe remains the same before and after the operation. 
+    :param validate_equal_shape: Validate that the number of rows and columns i.e. shape of the dataframe remains the same before and after the operation. 
     """
     d1={}
     d1['from']=df.shape
@@ -1027,6 +1035,9 @@ def log_apply(df, fun, *args, **kwargs):
         df = fun(df,*args, **kwargs)
     d1['to']=df.shape
     log_shape_change(d1,fun=fun)
+    if validate_equal_length: assert d1['to'][0]==d1['from'][0]
+    if validate_equal_width: assert d1['to'][1]==d1['from'][1]
+    if validate_equal_shape: assert d1['to']==d1['from']
     return df
 
 @pd.api.extensions.register_dataframe_accessor("log")

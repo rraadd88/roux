@@ -3,7 +3,40 @@ import seaborn as sns
 import pandas as pd
 import numpy as np
 from os.path import exists, basename,dirname
-from icecream import ic
+from icecream import ic as info
+from roux.viz.ax_ import *
+
+def plot_range(df00,colvalue,
+               colindex,
+               k,
+               headsize=15,
+               headcolor='lightgray',
+               ax=None):
+    df00['rank']=df00[colvalue].rank()
+    x,y=df00.rd.filter_rows({colindex:k}).iloc[0,:]['rank'],df00.rd.filter_rows({colindex:k}).iloc[0,:][colvalue]
+    if ax is None:
+        fig,ax=plt.subplots(figsize=[1,1])
+    ax=df00.set_index('rank').sort_index(0)[colvalue].plot.area(ax=ax)
+    ax.annotate('', xy=(x, y),  xycoords='data',
+                xytext=(x, ax.get_ylim()[1]), textcoords='data',
+                arrowprops=dict(facecolor=headcolor, shrink=0,
+                               width=0,ec='none',
+                               headwidth=headsize,
+                               headlength=headsize,
+                               ),
+                horizontalalignment='right', verticalalignment='top',
+                )
+    d_=get_axlims(ax)
+    ax.text(x,y+(d_['y']['len'])*0.25,int(y),#f"{y:.1f}",
+                    # transform=ax.transAxes,
+                    va='bottom',ha='center',
+                   )
+    ax.text(0.5,0,colvalue,
+                    transform=ax.transAxes,
+                    va='top',ha='center',
+                   )
+    ax.axis(False)
+    return ax
 
 def plot_summarystats(df,cols=['mean','min','max','50%'],plotp=None,ax=None,value_name=None):
     if ax is None:ax=plt.subplot(111)
@@ -140,7 +173,7 @@ def plot_kinetics(df1, x, y, hue, cmap='Reds_r',
     from roux.viz.ax_ import rename_legends
     from roux.viz.colors import get_ncolors
     df1=df1.sort_values(hue,ascending=False)
-    ic(df1[hue].unique())
+    info(df1[hue].unique())
     if ax is None: fig,ax=plt.subplots(figsize=[2.5,2.5])
     label2color=dict(zip(df1[hue].unique(),get_ncolors(df1[hue].nunique(),
                                                             ceil=False,
@@ -149,7 +182,7 @@ def plot_kinetics(df1, x, y, hue, cmap='Reds_r',
     df2=df1.groupby([hue,x],sort=False).agg({c:[np.mean,np.std] for c in [y]}).rd.flatten_columns().reset_index()
     d1=df1.groupby([hue,x],sort=False,as_index=False).size().groupby(hue)['size'].agg([min,max]).T.to_dict()
     d2={str(k):str(k)+'\n'+(f"(n={d1[k]['min']})" if d1[k]['min']==d1[k]['max'] else f"(n={d1[k]['min']}-{d1[k]['max']})") for k in d1}
-    if test:ic(d2)
+    if test:info(d2)
     df2.groupby(hue,sort=False).apply(lambda df: df.sort_values(x).plot(x=x,
                                                             y=f"{y} mean",
                                                             yerr=f"{y} std",
