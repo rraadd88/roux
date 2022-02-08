@@ -120,6 +120,7 @@ def cluster_1d(ds,n_clusters,clf_type='gmm',
 #                 return_coff=False,
 #                   return_ax=False,
                ax=None,
+               bins=50,
               **kws_clf):
     x=ds.to_numpy()
     X=x.reshape(-1,1)
@@ -142,7 +143,7 @@ def cluster_1d(ds,n_clusters,clf_type='gmm',
         if ax is None:
             plt.figure(figsize=[2.5,2.5])
             ax=plt.subplot()
-        df['value'].hist(bins=50,density=True,
+        df['value'].hist(bins=bins,density=True,
                          histtype='step',
                          ax=ax)
         if clf_type=='gmm':
