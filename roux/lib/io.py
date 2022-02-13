@@ -292,7 +292,7 @@ def read_table(p,
             from roux.lib.google import download_file
             return read_table(download_file(p,**kws_cloud))
     else:
-        ValueError(p)
+        raise ValueError(p)
     assert exists(p), f"not found: {p}"
     if len(params.keys())!=0 and not 'columns' in params:
         return post_read_table(pd.read_csv(p,**params),clean=clean,tables=tables,verbose=verbose,**kws_clean)
@@ -596,7 +596,7 @@ def read_excel(p,sheet_name=None,to_dict=False,kws_cloud={},**params):
 #         logging.error('need xlrd to work with excel; pip install xlrd')
     if p.startswith("https://docs.google.com/spreadsheets/"):
         if not 'outd' in kws_cloud:
-            ValueError("outd not found in kws_cloud")
+            raise ValueError("outd not found in kws_cloud")
         from roux.lib.google import download_file
         return read_excel(download_file(p,**kws_cloud),**params)
     if not to_dict:

@@ -291,6 +291,6 @@ def plot_ranking(dplot,
 #                                       color=x['c'],
                                       va='center',),axis=1)
     else:
-        ValueError(estimator)
+        raise ValueError(estimator)
     set_(ax,**kws_ax,)
     return ax

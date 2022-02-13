@@ -18,9 +18,10 @@ def plog(x,p,base):
 def anti_plog(x,p,base): return (base**x)-p
     
 def log_pval(x): 
-    if any(x==0):
-        x=x.replace(0,x.replace(0,np.nan).min())
-        logging.warning('zeros found, replaced with min pval')
+    if not isinstance(x,(int,float)): 
+        if any(x==0):
+            x=x.replace(0,x.replace(0,np.nan).min())
+            logging.warning('zeros found, replaced with min pval')
     return -1*(np.log10(x))
 
 def glog(x,l = 2):

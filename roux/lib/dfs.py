@@ -26,7 +26,7 @@ def filter_dfs(dfs,cols,how='inner'):
         elif how=='outer':
             l=list(list2union([df[col].tolist() for df in dfs]))
         else:
-            raise ValueError("")
+            raise ValueError("how")
         logging.info(f"len({col})={len(l)}")
         return [df.loc[(df[col].isin(l)),:] for df in dfs]
     if isinstance(cols,str):

@@ -476,7 +476,9 @@ def get_stats_regression(df_,
 def filter_regressions(df1,variable,colindex='gene id',coff_q=0.1,
                       by_covariates=True,coff_p_covariates=0.05,
                       test=False):
-    pval='P>|t|' if 'P>|t|' in df1['stat'].tolist() else 'P>|z|' if 'P>|z|' in df1['stat'].tolist() else ValueError() 
+    pval='P>|t|' if 'P>|t|' in df1['stat'].tolist() else 'P>|z|' if 'P>|z|' in df1['stat'].tolist() else None
+    if pval is None:
+        raise ValueError(pval)
     df1['stat']=df1['stat'].apply(lambda x: 'P' if x==pval else x )
     df2=df1.loc[((df1['variable']==variable) & (df1['stat'].isin(['coef','P']))),:]
 #     print(df1['stat'].unique())

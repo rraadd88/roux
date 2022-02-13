@@ -352,7 +352,7 @@ def groupby_filter_fast(df1,col,fun,how,coff):
     elif how=='>':
         return df1.loc[(ds1>coff),:]
     else:
-        ValueError(how)
+        raise ValueError(how)
         
 @to_rd
 def to_map_binary(df,colgroupby=None,colvalue=None):
@@ -404,7 +404,7 @@ def check_intersections(df,
     elif isinstance(df,dict):
         ds=dict2df(d1).rd.check_intersections(colindex='value',colgroupby='key')
     else:
-        ValueError()
+        raise ValueError("data type of `df`")
     ds.name=colindex if isinstance(colindex, str) else ','.join(colindex) if isinstance(colindex, list) else None
     if plot:
         from roux.viz.bar import plot_intersections

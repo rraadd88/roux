@@ -127,7 +127,7 @@ def download_file(p=None,
         if file_id is None:
             file_id=get_file_id(p)
         else:
-            ValueError("define p or file_id")
+            raise ValueError("define p or file_id")
     if not outp is None:
         if exists(outp) and not force: return outp
     from googleapiclient.http import MediaIoBaseDownload

@@ -92,7 +92,7 @@ def to_dict(d,p,**kws):
         import joblib
         return joblib.dump(d, p,**kws)     
     else:
-        ValueError(f'supported extensions: .yml .yaml .json .pickle .joblib')        
+        raise ValueError(f'supported extensions: .yml .yaml .json .pickle .joblib')        
         
 def groupby_value(d):
     d_={k:[] for k in unique_dropna(d.values())}
@@ -117,7 +117,7 @@ def flip_dict(d):
             return {d[k]:k for k in d}
     else:
         if not get_offdiagonal_values(intersections(d)).sum().sum()==0:
-            ValueError('dict values should be mutually exclusive') 
+            raise ValueError('dict values should be mutually exclusive') 
         d_={}
         for k in d:
             for v in d[k]:

@@ -196,7 +196,7 @@ def pval2annot(pval,alternative=None,alpha=None,fmt='*',#swarm=False
     fmt: *|<|'num'    
     """
     if alternative is None and alpha is None:
-        ValueError('both alternative and alpha are None')
+        raise ValueError('both alternative and alpha are None')
     if alpha is None:
         alpha=0.025 if alternative=='two-sided' else 0.05
     if pd.isnull(pval):

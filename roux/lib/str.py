@@ -33,7 +33,7 @@ def replace_many(s,replaces,replacewith='',
         if inspect.isfunction(replaces):
             s=replaces(s_)
         else:
-            ValueError()
+            raise ValueError(replaces)
     if not ignore: assert(s!=s_)
     return s
 replacemany=replace_many

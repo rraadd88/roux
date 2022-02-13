@@ -21,7 +21,7 @@ def rename_ticklabels(ax,axis,rename=None,replace=None,ignore=False):
     elif not replace is None:
         _=getattr(ax,f"set_{k}")([replace_many(t.get_text(),replace,ignore=ignore) for t in getattr(ax,f"get_{k}")()])
     else:
-        ValueError()
+        raise ValueError()
     return ax
 
 def get_ticklabel2position(ax,axis='x'):

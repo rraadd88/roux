@@ -57,6 +57,7 @@ prjs=['00_metaanalysis']
 import matplotlib.pyplot as plt
 import seaborn as sns
 plt.style.use('ggplot')
+plt.rcParams['font.family'] = 'Myriad Pro'
 plt.rcParams['figure.figsize'] = (3, 3)
 plt.rcParams['axes.facecolor']='none'
 plt.rcParams['axes.edgecolor']='k'
@@ -65,7 +66,13 @@ plt.rcParams['axes.formatter.limits'] = -3, 3
 plt.rcParams['axes.formatter.min_exponent'] = 3
 plt.rcParams['legend.frameon']=True
 from cycler import cycler
-plt.rcParams['axes.prop_cycle']= cycler('color',["#f55f5f", "#D3DDDC","#046C9A", "#00A08A", "#F2AD00", "#F98400", "#5BBCD6", "#ECCBAE", "#D69C4E", "#ABDDDE", "#000000"])
+plt.rcParams['axes.prop_cycle']= cycler('color',[
+    '#50AADC',#blue
+    "#D3DDDC",#gray
+    '#F1D929',#yellow
+    "#f55f5f",#red
+    "#046C9A",#blue
+    "#00A08A", "#F2AD00", "#F98400", "#5BBCD6", "#ECCBAE", "#D69C4E", "#ABDDDE", "#000000"])
 from roux.viz.colors import get_colors_default
 # plt.rcParams['xtick.color']=[0.95,0.95,0.95]
 plt.rc('grid', lw=0.2,linestyle="-", color=[0.98,0.98,0.98])
