@@ -43,8 +43,12 @@ requirements = {
 'query':['pyensembl',
          'pybiomart'],
 'workflow':['snakemake',
-            'gitpython'],
+            'gitpython',
+           'networkx',
+            'pygraphviz'],
 'dev':[
+    'sphinx',
+    'recommonmark',
     'black',
     'coveralls == 3.*',
     'flake8',

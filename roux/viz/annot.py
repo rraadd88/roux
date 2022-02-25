@@ -429,6 +429,7 @@ def annot_side(ax,
     cols,#=params['text']['s'],
     loc='right',
     annot_count_max=5,
+    invert_xaxis=False, # xlim min or max
     offx3=0.15,
     offymin=0.1,
     offymax=0.9,
@@ -450,24 +451,28 @@ def annot_side(ax,
     df1['y']=np.linspace(d1['y']['min']+((d1['y']['len'])*offymin),
                         d1['y']['max']*offymax,
                         len(df1))
-    x2=d1['x']['min'] if loc=='left' else d1['x']['max']
-    x3=d1['x']['min'] if loc=='left' else d1['x']['max']+d1['x']['len']*offx3
+    x2=d1['x']['min' if not invert_xaxis else 'max'] if loc=='left' else d1['x']['max' if not invert_xaxis else 'min']
+    x3=d1['x']['min']-(d1['x']['len']*offx3) if (loc=='left' and not invert_xaxis) else d1['x']['max']+(d1['x']['len']*offx3)
     df1.apply(lambda x: ax.plot([x[colx],x2],
                                [x[coly],x['y']],
-                              color=color,lw=1,**kws_line,
+                               color=color,lw=1,**kws_line,
                                zorder=zorder,
                                ),axis=1)
-    df1.apply(lambda x: ax.text(x3,x['y'],linebreaker(x[cols],break_pt=break_pt,),
-                              ha='right' if loc=='left' else 'left',
-                               va='bottom',**kws_text,
+    df1.apply(lambda x: ax.text(x3,x['y'],
+                                linebreaker(x[cols],break_pt=break_pt,),
+                                ha='right' if loc=='left' else 'left',
+                                va='bottom',**kws_text,
     #                           color=element2color[x['comparison type']],
                               zorder=2),axis=1)
     df1.apply(lambda x:ax.axhline(y = x['y'], 
                                  xmin=0 if loc=='left' else 1,
-                                 xmax=0-offx3 if loc=='left' else length_axhline+offx3,
+                                 xmax=0-(length_axhline-1)-offx3 if loc=='left' else length_axhline+offx3,
                                          clip_on = False,color=color,lw=1,
                                 ),axis=1)
     ax.set_xlim([d1['x']['min'],d1['x']['max']])
+    if loc=='left':
+        ax.yaxis.tick_right()
+        ax.yaxis.set_label_position("right")
     return ax
 
 # unicode

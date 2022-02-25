@@ -224,11 +224,13 @@ def geneid2homology(x='ENSG00000148584',
 
 def proteinid2domains(x,
                     release,
+                      species='homo_sapiens',
                      outd='data/database',
                      force=False):
     """
     """
-    p=f'https://e{release}.rest.ensembl.org/overlap/translation/{x}?content-type=application/json;species=homo_sapiens;feature=protein_feature;type=pfam'
+    species=species.lower().replace(' ','_')
+    p=f'https://e{release}.rest.ensembl.org/overlap/translation/{x}?content-type=application/json;species={species};feature=protein_feature;type=pfam'
     outp=outp=f"{outd}/{p.replace('https://','')}.json"
     if exists(outp) and not force:
         d1=read_dict(outp)
@@ -376,7 +378,8 @@ def read_idmapper_output(outp):
     from pathlib import Path
     file = Path(outp)
     file.write_text(file.read_text().replace('.Old stable ID', 'Old stable ID'))
-    df01=pd.read_csv(outp+'_',sep=', ')
+    df01=pd.read_csv(outp,#+'_',
+                     sep=', ')
     df1=df01.log('Old stable ID').loc[(df01['Old stable ID']!='Old stable ID'),:].log('Old stable ID')
     assert(df1['Old stable ID'].str.startswith('ENSG').all())
     df1['Release']=df1['Release'].astype(float)

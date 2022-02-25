@@ -160,7 +160,7 @@ def plot_stats_diff(df2,
 ## volcano
 def plot_volcano(dplot,
                  colindex,#='gene name test',
-                 colgroup,#='condition',
+                 colgroup=None,#='condition',
                  x='difference between mean (subset1-subset2)',
                  y='P (MWU test, FDR corrected)',
                  coffs=[0.01,0.05,0.2],

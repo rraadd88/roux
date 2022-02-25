@@ -954,8 +954,8 @@ def make_ids(df,cols,ids_have_equal_length=True,sep='--',sort=False):
         return df.loc[:,cols].agg(lambda x: sep.join(x if not sort else sorted(x)),axis=1)
 
 @to_rd
-def make_ids_sorted(df,cols,ids_have_equal_length,sep='--',sort=True):
-    return make_ids(df,cols,ids_have_equal_length,sep=sep,sort=sort)
+def make_ids_sorted(df,cols,ids_have_equal_length,sep='--'):
+    return make_ids(df,cols,ids_have_equal_length,sep=sep,sort=True)
     
 def get_alt_id(s1='A--B',s2='A'): return [s for s in s1.split('--') if s!=s2][0]
 

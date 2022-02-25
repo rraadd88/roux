@@ -76,11 +76,33 @@ def get_step(l: list,name: str,
              test=False,s4='    ') -> dict:
     # to_fun():
     if test:info(name,l[-1])
-    docs=[s[2:] for s in l if s.startswith('## ')]
-    docs='\n'.join(docs)
-    code=[s for s in l if not s.startswith('#')]
+    docs=[]
+    code_with_comments=[]
+    get_docs=True
+    get_code=False
+    ## in markdown cell
+    for i,s in enumerate(l):
+        if (s.startswith('#') and not s.startswith('# In[')) and get_docs:
+            if i==0:
+                s='# '+s.split('step ')[1][0].upper()+s.split('step ')[1][1:]+'.'
+            docs.append(s)
+        else:
+            get_docs=False
+            get_code=True
+        if get_code:
+            code_with_comments.append(s)
+            
+    if test:info(docs)
+    ## [X: gets commented code] steps marked as '## #1', '## #2' ..
+    # docs+=[s for s in l if s.startswith('## #')]
+    ## remove leading #
+    docs='\n'.join([s[2:] for s in docs])
+    
+    code=[s for s in code_with_comments if not s.startswith('#')]
 #     info(code)
     inputs,outputs=get_ios(code,test=test)
+    if len(set(inputs) & set(outputs)) !=0:
+        inputs=[s for s in inputs if not s in outputs]
 #     if name.endswith('network_networkx'):
 #         info(inputs,outputs)
     if test:info(inputs,outputs)
@@ -106,25 +128,24 @@ def get_step(l: list,name: str,
     f"        run:",
     f"            from lib.{name.split('_step')[0]} import {name}",
     f"            {name}(metadata=metadata)",
-     "\n",
     ]
-    config='\n'.join(config)
+    config_str='\n'.join(config)+'\n'
     quotes='"""'
     function=[
     f"def {name}(metadata=None):",
-    f"    {quotes}",
-    f"    {docs}",
-    f"    :params:",
-    f"    :return:",
+    f"    {quotes}{docs}",
     f"",
-    f"    snakemake rule:",
-    config,
+    "    Parameters:",
+    "        metadata (dict): Dictionary containing information required for the analysis. Metadata files are located in `metadata` folder are read using `roux.workflow.io.read_metadata` function.",
+    f"",
+    f"    Snakemake rule:",
+    '\n'.join([s4+s+s4 for s in config]),
     f"    {quotes}",
-    "    "+'\n    '.join(l),
+    "    "+'\n    '.join(code_with_comments),
     ]
     if test:info(function[0])
     function='\n'.join(function)
-    return {'function':function,'config':config,'inputs':inputs,'outputs':outputs,}
+    return {'function':function,'config':config_str,'inputs':inputs,'outputs':outputs,}
 
 def to_task(notebookp,force=False,validate=False,
            path_prefix=None,

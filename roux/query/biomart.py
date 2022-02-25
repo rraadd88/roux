@@ -1,6 +1,6 @@
 from roux.lib.io import *
 
-release2preffix={100:'apr2020.archive',
+release2prefix={100:'apr2020.archive',
                 101:'aug2020.archive',
                 102:'nov2020.archive',
                 103:'feb2021.archive',
@@ -11,13 +11,20 @@ release2preffix={100:'apr2020.archive',
                 }
 ## Ref: https://m.ensembl.org/info/website/archives/index.html 
 
-def query(release,
+def get_ensembl_dataset_name(x):
+    l=x.lower().split(' ')
+    assert(len(l)==2)
+    return f"{l[0][0]}{l[1]}_gene_ensembl"
+
+def query(
+          species,
+          release,
           attributes=None,
           filters=None,
-            databasep='data/database',
-            dataset_name='hsapiens_gene_ensembl',
-            force=False,
-             **kws_query,):
+          databasep='data/database',
+          dataset_name=None,
+          force=False,
+          **kws_query,):
     """
     
         filters={
@@ -28,9 +35,11 @@ def query(release,
                  }
 
     TODO: restrict to a ensembl release version
-    """    
+    """
+    if dataset_name is None:
+        dataset_name=get_ensembl_dataset_name(species)
     from pybiomart import Server,Dataset
-    serverp=f"http://{release2preffix[release]}.ensembl.org"       
+    serverp=f"http://{release2prefix[release]}.ensembl.org"       
     server = Server(host=serverp)
     assert release==int(server['ENSEMBL_MART_ENSEMBL'].display_name.split(' ')[-1]), server['ENSEMBL_MART_ENSEMBL'].display_name
 #     release=server['ENSEMBL_MART_ENSEMBL'].display_name.split(' ')[-1]

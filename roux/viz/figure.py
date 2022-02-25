@@ -260,6 +260,8 @@ def to_plot(
              logp='log_notebook.log',
              sep='# plot',
              validate=False,
+             show_path=False,
+             show_path_offy=0,
              force=True,test=False,
              **kws):
     """
@@ -279,6 +281,10 @@ def to_plot(
     """
     #save plot
     plotp=savefig(plotp,force=force,**kws)
+    if show_path:
+        plt.figtext(x=0.5,y=0+show_path_offy,
+                    s=plotp.split('plot/')[1] if 'plot/' in plotp else plotp,
+                    ha='center')
     if df1 is None:
         logging.warning("no data provided to_plot")
         return plotp

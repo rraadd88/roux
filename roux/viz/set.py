@@ -8,15 +8,33 @@ def plot_enrichment(dplot,
                     annots_side=5,
                     coff_fdr=None,
                     xlim=None,
+                    ylim=None,
                     ax=None,
                     break_pt=25,
-                   **kws_set):
+                    annot_coff_fdr=False,
+                    kws_annot=dict(
+                            loc='right',
+                            annot_count_max=5,
+                            offx3=0.15,
+                    ),
+                   **kws_scatter): 
+    if coff_fdr is None: 
+        coff_fdr=1
     from roux.stat.transform import log_pval
     if y.startswith('P '):
         dplot['significance\n(-log10(Q))']=dplot[y].apply(log_pval)
         y='significance\n(-log10(Q))'
+        dplot['Q']=pd.cut(x=dplot['P (FE test, FDR corrected)'],
+                            bins=[
+                                # dplot['P (FE test, FDR corrected)'].min(),
+                                0,0.01,0.05,coff_fdr],
+                            right=False,
+                          )        
     if not size is None:
-        dplot[size]=pd.qcut(dplot[size],q=np.arange(0,1.25,0.25),duplicates='drop')
+        if not dplot[size].dtype == 'category':
+            dplot[size]=pd.qcut(dplot[size],
+                            q=3,
+                            duplicates='drop')
         dplot=dplot.sort_values(size,ascending=False)
         dplot[size]=dplot[size].apply(lambda x: f"({x.left:.0f}, {x.right:.0f}]")
     if ax is None:
@@ -26,13 +44,16 @@ def plot_enrichment(dplot,
                     x=x,y=y,
                     size=size if not size is None else None,
                     size_order=dplot[size].unique() if not size is None else None,
-                    color=color,
+                    hue='Q',
+                    # color=color,
                     zorder=2,
-                    ax=ax)
+                    ax=ax,
+                    **kws_scatter,
+    )
     if not size is None:
         ax.legend(loc='upper left',
                   bbox_to_anchor=(1.1, 0.1),
-                 title=size,
+                 # title=size,
                   frameon=True,
         #          nrow=3,
                   ncol=2,)
@@ -40,10 +61,13 @@ def plot_enrichment(dplot,
         ax=set_axlims(ax,0.2,['x'])
     else:
         ax.set(xlim=xlim)
-    if not coff_fdr is None:
+    if ylim is None:
         ax.set(ylim=(log_pval(coff_fdr),ax.get_ylim()[1]),
-#               xlim=(dplot[x].min(),dplot[x].max()),
+    #               xlim=(dplot[x].min(),dplot[x].max()),
               )
+    else:
+        ax.set(ylim=ylim)        
+    if annot_coff_fdr:
         ax.annotate(f"Q={coff_fdr}",
             xy=(ax.get_xlim()[0],log_pval(coff_fdr)), xycoords='data',
 #             xytext=(-10,log_pval(coff_fdr)), textcoords='data',
@@ -62,11 +86,10 @@ def plot_enrichment(dplot,
         colx=x,
         coly=y,
         cols=s,
-        loc='right',
-        annot_count_max=5,
-        offx3=0.15,
-        offymin=0.1 if not size is None else 0,
         break_pt=break_pt,
+        offymin=0.1 if not size is None else 0,
+        zorder=3,
+        **kws_annot,
         )
     return ax
 

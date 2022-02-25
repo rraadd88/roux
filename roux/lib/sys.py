@@ -44,7 +44,9 @@ def get_env(env_name):
     env_name_current=sys.executable.split('anaconda3/envs/')[1].split('/')[0]
     path=sys.executable.replace(env_name_current,env_name)
     env['CONDA_PYTHON_EXE']=path
-    if 'anaconda' in env["PATH"]:
+    if 'anaconda3/envs' in env["PATH"]:
+        env["PATH"]=env["PATH"].replace(env_name_current,env_name)
+    elif 'anaconda' in env["PATH"]:
         env["PATH"]=env["PATH"].replace(f"{sys.executable.split('/anaconda3')[0]}/anaconda3/bin",
                                         f"{sys.executable.split('/anaconda3')[0]}/anaconda3/envs/{env_name}/bin")
     else:

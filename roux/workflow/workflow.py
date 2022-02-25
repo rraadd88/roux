@@ -83,24 +83,10 @@ def to_scripts(packagen,packagep,
         df2.to_csv(df_outp,sep='\t')
     if snake or ps is None:
         ## workflow inferred
-        workflowp=f'{packagescriptsp}/workflow.py'
-        makedirs(workflowp)
-        ## add rule all
         if not 'df2' in globals():
             df2=pd.read_csv(df_outp,sep='\t')
-        from roux.lib.set import list2str
-        with open(workflowp,'w') as f:
-            f.write("from roux.lib.dict import read_dict\nfrom roux.workflow.io import read_metadata\nmetadata=read_metadata()\n"
-                    +'report: "workflow/report_template.rst"\n'
-                    +"\nrule all:\n"
-                     f"{s4}input:\n"
-                     f"{s4}{s4}"
-#                     +f",\n{s4}{s4}".join(flatten([flatten(l) for l in df2['output paths'].dropna().tolist()]))
-                    +f",\n{s4}{s4}".join(df2['output paths'].dropna().tolist())
-                    +"\n# rules below\n\n"
-                    +'\n'.join(df2['rule code'].dropna().tolist())\
-                   )
-            info(workflowp)
+        from roux.workflow.io import to_workflow
+        to_workflow(df2,workflowp=f'{packagescriptsp}/workflow.py')
     ## make readme
     if todos:
         from roux.workflow.io import to_info

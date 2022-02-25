@@ -194,13 +194,14 @@ def read_url(url):
     myfile = f.read()
     return str(myfile)
 
-def get_download_date(path):
-    import datetime
-    t = os.path.getctime(path)
-    return str(datetime.datetime.fromtimestamp(t))
-
 def download(url,path=None,outd='data/database',
-             force=False):
+             force=False,
+             verbose=True):
+    def get_download_date(path):
+        import os
+        import datetime
+        t = os.path.getctime(path)
+        return str(datetime.datetime.fromtimestamp(t))
     if path is None:
         path=replacemany(url,
                {'https://':'',
@@ -211,8 +212,8 @@ def download(url,path=None,outd='data/database',
         import urllib.request
         makedirs(path,exist_ok=True)
         urllib.request.urlretrieve(url, path)
-    else:
-        logging.info(f"exists: {path}")
+    elif verbose:
+        logging.info(f"downloaded on: {get_download_date(path)}")
     return path
 
 ## dfs

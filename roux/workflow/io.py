@@ -66,22 +66,27 @@ def read_metadata(ind='metadata'):
                 d_={}
                 for p in d1[k]:
                     if isinstance(p,str):
-                        if p.endswith('.json'):
+                        if p.endswith('.json') and exists(p):
                             d_[basenamenoext(p)]=read_dict(p)
+                        else:
+                            d_[basenamenoext(p)]=p
+                            logging.error(f"file not found: {p}")
                 if len(d_)!=0:
                     d1[k]=d_
     for p_ in glob(f"{ind}/*"):
         if isdir(p_):
             if len(glob(f'{p_}/*.json'))!=0:
-                if not basename(p_) in d1: 
+                if not basename(p_) in d1 and len(glob(f'{p_}/*.json'))!=0:
                     d1[basename(p_)]=read_dict(f'{p_}/*.json')
-                elif isinstance(d1[basename(p_)],dict):
+                elif isinstance(d1[basename(p_)],dict) and len(glob(f'{p_}/*.json'))!=0:
                     d1[basename(p_)].update(read_dict(f'{p_}/*.json'))
                 else:
                     logging.warning(f"entry collision, could not include '{p_}/*.json'")
         else:
-            if p_.endswith('.json'):
+            if p_.endswith('.json') and exists(p_):
                 d1[basenamenoext(p_)]=read_dict(p_)
+            else:
+                logging.error(f"file not found: {p_}")                
     logging.info(f"metadata read from {p} (+"+str(len(glob(f'{ind}/*.json')))+" jsons)")
     return d1
 
@@ -112,3 +117,20 @@ def make_symlinks(d1,d2,project_path,test=False):
         coms.append(create_symlink(p,outp))
         # break
     return coms
+
+def to_workflow(df2,workflowp,s4='    '):
+    makedirs(workflowp)
+    from roux.lib.set import list2str
+    with open(workflowp,'w') as f:
+        ## add rule all
+        f.write("from roux.lib.dict import read_dict\nfrom roux.workflow.io import read_metadata\nmetadata=read_metadata()\n"
+                +'report: "workflow/report_template.rst"\n'
+                +"\nrule all:\n"
+                 f"{s4}input:\n"
+                 f"{s4}{s4}"
+#                     +f",\n{s4}{s4}".join(flatten([flatten(l) for l in df2['output paths'].dropna().tolist()]))
+                +f",\n{s4}{s4}".join(df2['output paths'].dropna().tolist())
+                +"\n# rules below\n\n"
+                +'\n'.join(df2['rule code'].dropna().tolist())\
+               )
+    return workflowp

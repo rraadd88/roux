@@ -61,7 +61,7 @@ plt.rcParams['font.family'] = 'Myriad Pro'
 plt.rcParams['figure.figsize'] = (3, 3)
 plt.rcParams['axes.facecolor']='none'
 plt.rcParams['axes.edgecolor']='k'
-plt.rcParams['axes.formatter.use_mathtext'] = True
+# plt.rcParams['axes.formatter.use_mathtext'] = True
 plt.rcParams['axes.formatter.limits'] = -3, 3
 plt.rcParams['axes.formatter.min_exponent'] = 3
 plt.rcParams['legend.frameon']=True
@@ -77,6 +77,7 @@ from roux.viz.colors import get_colors_default
 # plt.rcParams['xtick.color']=[0.95,0.95,0.95]
 plt.rc('grid', lw=0.2,linestyle="-", color=[0.98,0.98,0.98])
 plt.rc('axes', axisbelow=True)
+plt.rc('axes', unicode_minus=False)
 plt.rcParams['axes.labelcolor'] = 'k'
 sns.set_context('notebook') # paper < notebook < talk < poster
 from roux.viz.figure import *
