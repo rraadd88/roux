@@ -380,8 +380,8 @@ def check_intersections(df,
     'variable',
     lin -> map -> groupby (ds)
     """
-    if isinstance(colindex,str):
-        colindex=[colindex]
+    # if isinstance(colindex,str):
+    #     colindex=[colindex]
     if isinstance(df,pd.DataFrame):
         if not (colgroupby is None or colindex is None) :
             if not all(df.dtypes==bool): 
@@ -389,11 +389,12 @@ def check_intersections(df,
                 # lin
                 df1=to_map_binary(df,colgroupby=colgroupby,colvalue=colindex)
                 ds=df1.groupby(df1.columns.to_list()).size()
-            elif isinstance(colgroupby,list):
-                assert(not df.rd.check_duplicated(colindex+colgroupby))
+            elif isinstance(colgroupby,(str,list)):
+                assert(not df.rd.check_duplicated([colindex]+colgroupby))
                 # map
-                df=df.set_index(colindex).loc[:,colgroupby] 
-                ds=df.groupby(df.columns.tolist()).size()
+                # df=df.set_index(colindex).loc[:,colgroupby] 
+                # ds=df.groupby(df.columns.tolist()).size()
+                ds=df.groupby(colgroupby).nunique(colindex)
             else:
                 logging.error('colgroupby should be a str or list')
         else:
@@ -401,8 +402,8 @@ def check_intersections(df,
             ds=map2groupby(df)
     elif isinstance(df,pd.Series):
         ds=df
-    elif isinstance(df,dict):
-        ds=dict2df(d1).rd.check_intersections(colindex='value',colgroupby='key')
+    # elif isinstance(df,dict):
+    #     ds=dict2df(d1).rd.check_intersections(colindex='value',colgroupby='key')
     else:
         raise ValueError("data type of `df`")
     ds.name=colindex if isinstance(colindex, str) else ','.join(colindex) if isinstance(colindex, list) else None
@@ -960,10 +961,12 @@ def make_ids_sorted(df,cols,ids_have_equal_length,sep='--'):
 def get_alt_id(s1='A--B',s2='A'): return [s for s in s1.split('--') if s!=s2][0]
 
 @to_rd    
-def split_ids(df1,col,sep='--'):
+def split_ids(df1,col,sep='--',prefix=None):
     df=df1[col].str.split(sep,expand=True)
     for i in range(len(df.columns)):
         df1[f"{col} {i+1}"]=df[i]
+    if not prefix is None:
+        df1=df1.rd.renameby_replace(replaces={f"{col} ":prefix})
     return df1
 
 reverse_ids_=lambda x: '--'.join(x.split('--')[::-1])                                 

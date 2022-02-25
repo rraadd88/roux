@@ -16,6 +16,18 @@ import pandas as pd
 import logging
 import requests, sys
 
+release2prefix={100:'apr2020.archive',
+                101:'aug2020.archive',
+                102:'nov2020.archive',
+                103:'feb2021.archive',
+                104:'may2021.archive',
+                 93:'jul2018.archive',
+                 75:'feb2014.archive',
+                 'grch37':'grch37',
+                }
+## Ref: https://m.ensembl.org/info/website/archives/index.html 
+
+
 #pyensembl faster
 def gid2gname(id,ensembl):
     """

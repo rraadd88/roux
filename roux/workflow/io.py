@@ -98,7 +98,9 @@ def to_info(p='*_*_v*.ipynb',
         f.writelines([f"{s}\n" for s in l1])    
     return outp
 
-def make_symlinks(d1,d2,project_path,test=False):
+def make_symlinks(d1,d2,project_path,
+                  data=True,
+                  test=False):
     """
     :params d1: `project name` to `repo name` 
     :params d2: `task name` to tuple containing `from project name` `to project name`
@@ -111,10 +113,11 @@ def make_symlinks(d1,d2,project_path,test=False):
         outp=f"{project_path}/{d2[k][1]}/code/{d1[d2[k][1]]}/{d1[d2[k][1]]}/{basename(p)}"
         if test: print(outp)
         coms.append(create_symlink(p,outp))
-        ## data_analysed
-        p=f"{project_path}/{d2[k][0]}/data/data_analysed/data{k}"
-        outp=f"{project_path}/{d2[k][1]}/data/data_analysed/data{k}"
-        coms.append(create_symlink(p,outp))
+        if data:
+            ## data_analysed
+            p=f"{project_path}/{d2[k][0]}/data/data_analysed/data{k}"
+            outp=f"{project_path}/{d2[k][1]}/data/data_analysed/data{k}"
+            coms.append(create_symlink(p,outp))
         # break
     return coms
 

@@ -112,6 +112,8 @@ def plot_dists(df1,x,y,
                offx_n=0,
                xlim=None,
                offx_pval=0.05,
+               offy_pval=None,
+               saturate_color_alpha=1.5,
                ax=None,
                **kws):
     """
@@ -120,6 +122,7 @@ def plot_dists(df1,x,y,
     2. show pval
     3. sort
     """
+    df1[y]=df1[y].astype(str)
     if order is None:
         order=df1[y].unique().tolist()
     if not hue is None and hue_order is None:
@@ -158,10 +161,14 @@ def plot_dists(df1,x,y,
         kind={k:{} for k in kind}
     for k in kind:
         # print(kws['palette'],kind)
+        # if 'palette' in kws and any([k_ in kind for k_ in ['swarm','strip']]):
+        #     from roux.viz.colors import saturate_color
+        #     kws['palette']=[saturate_color(color=c, alpha=saturate_color_alpha-1) for c in kws['palette']]            
         if 'palette' in kws and k in ['swarm','strip']:
             from roux.viz.colors import saturate_color
-            kws['palette']=[saturate_color(color=c, alpha=1.5) for c in kws['palette']]
+            kws['palette']=[saturate_color(color=c, alpha=saturate_color_alpha+0.5) for c in kws['palette']]
             # print(kws['palette'])
+        
         getattr(sns,k+"plot")(data=df1,
                     x=x,y=y,
                     hue=hue,
@@ -179,12 +186,14 @@ def plot_dists(df1,x,y,
     d3=get_axlims(ax)
     if isinstance(show_p,(bool,dict)):
         if isinstance(show_p,bool) and show_p:
-            d1={k:pval2annot(d1[k],fmt='<',linebreak=False) for k in d1}
+            d1={k:pval2annot(d1[k],alternative='two-sided',fmt='<',linebreak=False) for k in d1}
         else:
             d1=show_p
+        if offy_pval is None and hue is None:
+            offy_pval=-0.5
         if isinstance(d1,dict):
             for k,s in d1.items():
-                ax.text(d3['x']['max']+(d3['x']['len']*offx_pval),d2[k],s,va='center')
+                ax.text(d3['x']['max']+(d3['x']['len']*offx_pval),d2[k]+offy_pval,s,va='center')
     if show_n:
         df1_=df1.groupby(y).apply(lambda df: df.groupby(colindex).ngroups).to_frame('n').reset_index()
         df1_['y']=df1_[y].map(d2)

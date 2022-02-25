@@ -103,65 +103,70 @@ def merge_paired(df1,df2,
 ## merge dfs
 def merge_dfs(dfs,
              **params_merge):
+    """    
+    Notes:
+        Merge from left to right. For example, reduce(lambda x, y: x.merge(y), [1, 2, 3, 4, 5]) merges ((((1.merge(2)).merge(3)).merge(4)).merge(5)). 
+    """ 
+    if params_merge['on']!='outer': logging.warning("Drop-outs may occur if on!='outer'. Make sure that the dataframes are ordered properly from left to right.")
     from functools import reduce
     logging.info(f"merge_dfs: shape changed from : dfs shape={[df.shape for df in dfs]}")
     df3=reduce(lambda df1,df2: pd.merge(df1,df2,**params_merge), dfs)
     logging.info(f"merge_dfs: shape changed to   : {df3.shape}")
     return df3
 
-def merge_dfs_auto(dfs,how='left',suffixes=['','_'],
-              test=False,fast=False,drop_duplicates=True,
-              sort=True,
-              **params_merge):
-    """
+# def merge_dfs_auto(dfs,how='left',suffixes=['','_'],
+#               test=False,fast=False,drop_duplicates=True,
+#               sort=True,
+#               **params_merge):
+#     """
     
-    """
-    from roux.lib.set import list2intersection,flatten
-    if isinstance(dfs,dict):
-        dfs=list(dfs.values())
-    if all([isinstance(df,str) for df in dfs]):
-        dfs=[read_table(p) for p in dfs]
-    if not 'on' in params_merge:
-        params_merge['on']=list(list2intersection([df.columns for df in dfs]))
-        if len(params_merge['on'])==0:
-            logging.error('no common columns found for infer params_merge[on]')
-            return
-    else:
-        if isinstance(params_merge['on'],str):
-            params_merge['on']=[params_merge['on']]
-    params_merge['how']=how
-    params_merge['suffixes']=suffixes
-    # sort largest first
-    if test:
-        logging.info(params_merge)
-        d={dfi:[len(df)] for dfi,df in enumerate(dfs)}
-        logging.info(f'size: {d}')
-    dfi2cols_value={dfi:df.select_dtypes([int,float]).columns.tolist() for dfi,df in enumerate(dfs)}
-    cols_common=list(np.unique(params_merge['on']+list(list2intersection(dfi2cols_value.values()))))
-    dfi2cols_value={k:list(set(dfi2cols_value[k]).difference(cols_common)) for k in dfi2cols_value}
-    dfis_duplicates=[dfi for dfi in dfi2cols_value if len(dfs[dfi])!=len(dfs[dfi].loc[:,cols_common].drop_duplicates())]
-    if test:
-        logging.info(f'cols_common: {cols_common}',)
-        logging.info(f'dfi2cols_value: {dfi2cols_value}',)
-        logging.info(f'duplicates in dfs: {dfis_duplicates}',)
-    for dfi in dfi2cols_value:
-        if (dfi in dfis_duplicates) and drop_duplicates:
-            dfs[dfi]=drop_duplicates_by_agg(dfs[dfi],cols_common,dfi2cols_value[dfi],fast=fast)
-    if sort:
-        d={dfi:[len(df)] for dfi,df in enumerate(dfs)}
-        logging.info(f"size agg: {d}")
-        from roux.lib.dict import sort_dict
-        sorted_indices_by_size=sort_dict({dfi:[len(df.drop_duplicates(subset=params_merge['on']))] for dfi,df in enumerate(dfs)},0)
-        logging.info(f'size dedup: {sorted_indices_by_size}')
-        sorted_indices_by_size=list(sorted_indices_by_size.keys())#[::-1]
-        dfs=[dfs[i] for i in sorted_indices_by_size]
-#     from functools import reduce
-#     df1=reduce(lambda df1,df2: pd.merge(df1,df2,**params_merge), dfs)
-    df1=merge_dfs(dfs,**params_merge)
-    cols_std=[f"{c} var" for c in flatten(list(dfi2cols_value.values())) if f"{c} var" in df1]
-    cols_del=[c for c in cols_std if df1[c].isnull().all()]
-    df1=df1.drop(cols_del,axis=1)
-    return df1
+#     """
+#     from roux.lib.set import list2intersection,flatten
+#     if isinstance(dfs,dict):
+#         dfs=list(dfs.values())
+#     if all([isinstance(df,str) for df in dfs]):
+#         dfs=[read_table(p) for p in dfs]
+#     if not 'on' in params_merge:
+#         params_merge['on']=list(list2intersection([df.columns for df in dfs]))
+#         if len(params_merge['on'])==0:
+#             logging.error('no common columns found for infer params_merge[on]')
+#             return
+#     else:
+#         if isinstance(params_merge['on'],str):
+#             params_merge['on']=[params_merge['on']]
+#     params_merge['how']=how
+#     params_merge['suffixes']=suffixes
+#     # sort largest first
+#     if test:
+#         logging.info(params_merge)
+#         d={dfi:[len(df)] for dfi,df in enumerate(dfs)}
+#         logging.info(f'size: {d}')
+#     dfi2cols_value={dfi:df.select_dtypes([int,float]).columns.tolist() for dfi,df in enumerate(dfs)}
+#     cols_common=list(np.unique(params_merge['on']+list(list2intersection(dfi2cols_value.values()))))
+#     dfi2cols_value={k:list(set(dfi2cols_value[k]).difference(cols_common)) for k in dfi2cols_value}
+#     dfis_duplicates=[dfi for dfi in dfi2cols_value if len(dfs[dfi])!=len(dfs[dfi].loc[:,cols_common].drop_duplicates())]
+#     if test:
+#         logging.info(f'cols_common: {cols_common}',)
+#         logging.info(f'dfi2cols_value: {dfi2cols_value}',)
+#         logging.info(f'duplicates in dfs: {dfis_duplicates}',)
+#     for dfi in dfi2cols_value:
+#         if (dfi in dfis_duplicates) and drop_duplicates:
+#             dfs[dfi]=drop_duplicates_by_agg(dfs[dfi],cols_common,dfi2cols_value[dfi],fast=fast)
+#     if sort:
+#         d={dfi:[len(df)] for dfi,df in enumerate(dfs)}
+#         logging.info(f"size agg: {d}")
+#         from roux.lib.dict import sort_dict
+#         sorted_indices_by_size=sort_dict({dfi:[len(df.drop_duplicates(subset=params_merge['on']))] for dfi,df in enumerate(dfs)},0)
+#         logging.info(f'size dedup: {sorted_indices_by_size}')
+#         sorted_indices_by_size=list(sorted_indices_by_size.keys())#[::-1]
+#         dfs=[dfs[i] for i in sorted_indices_by_size]
+# #     from functools import reduce
+# #     df1=reduce(lambda df1,df2: pd.merge(df1,df2,**params_merge), dfs)
+#     df1=merge_dfs(dfs,**params_merge)
+#     cols_std=[f"{c} var" for c in flatten(list(dfi2cols_value.values())) if f"{c} var" in df1]
+#     cols_del=[c for c in cols_std if df1[c].isnull().all()]
+#     df1=df1.drop(cols_del,axis=1)
+#     return df1
 
 def merge_subset(df,colsubset,subset,cols_value,
                           on,how='left',suffixes=['','.1'],
