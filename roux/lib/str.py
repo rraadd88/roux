@@ -22,6 +22,17 @@ def replacebyposition(s,i,replaceby):
 
 def replace_many(s,replaces,replacewith='',
                ignore=False):
+    """Rename by replacing sub-strings.
+
+    Parameters:
+        s (str): input string.
+        replaces (dict|list): from->to format or list containing substrings to remove.
+        replacewith (str): replace to in case `replaces` is a list.
+        ignore (bool): if True, not validate the successful replacements.
+        
+    Returns:
+        s (DataFrame): output dataframe.
+    """
     s_=s
     if isinstance(replaces,list):
         replaces={k:replacewith for k in replaces}

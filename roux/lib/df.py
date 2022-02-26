@@ -1,16 +1,25 @@
-"""
-io_df -> io_dfs -> io_files
-io_sys -> io_files
-"""
+"""For processing DataFrames"""
 import pandas as pd
 import numpy as np
 import logging
 from icecream import ic
-
 from roux.lib import to_rd
 
 @to_rd
 def get_name(df1,cols=None,coff=2,out=None):
+    """Gets the name of the dataframe. 
+    
+    Especially useful within `groupby`+`pandarellel` context.
+
+    Parameters:
+        df1 (DataFrame): input dataframe.
+        cols (list): list groupby columns. 
+        coff (int): cutoff of unique values to infer the name.
+        out (str): format of the output (list|not).
+
+    Returns:
+        name (tuple|str|list): name of the dataframe. 
+    """    
     if hasattr(df1,'name'):
         name=df1.name
         name=name if isinstance(name,str) else list(name)
@@ -32,19 +41,38 @@ def get_name(df1,cols=None,coff=2,out=None):
             
 @to_rd            
 def get_groupby_columns(df_): 
-    """
-    ## TODOs
-    # get colgroupby:name dict    
+    """Get the columns supplied to `groupby`.
+
+    Parameters:
+        df_ (DataFrame): input dataframe.
+
+    Returns:
+        columns (list): list of columns.
     """
     return df_.apply(lambda x: all(x==df_.name)).loc[lambda x: x].index.tolist()
-            
+
+@to_rd
+def get_constants(df1):
+    """Get the columns with a single unique value.
+
+    Parameters:
+        df1 (DataFrame): input dataframe.
+
+    Returns:
+        columns (list): list of columns.
+    """
+    return df1.nunique().loc[lambda x: x==1].index.tolist()
+
 ## delete unneeded columns
 @to_rd
 def drop_unnamedcol(df):
-    """
-    Deletes all the unnamed columns
+    """Deletes the columns with "Unnamed" prefix.
 
-    :param df: pandas dataframe
+    Parameters:
+        df (DataFrame): input dataframe.
+        
+    Returns:
+        df (DataFrame): output dataframe.
     """
     cols_del=[c for c in df.columns if 'Unnamed' in c]
     return df.drop(cols_del,axis=1)
@@ -53,49 +81,43 @@ delunnamedcol=drop_unnamedcol
 
 @to_rd
 def drop_levelcol(df):
-    """
-    Deletes all the temporary columns names "level".
+    """Deletes the potentially temporary columns names with "level" prefix.
 
-    :param df: pandas dataframe
+    Parameters:
+        df (DataFrame): input dataframe.
+        
+    Returns:
+        df (DataFrame): output dataframe.
     """
     cols_del=[c for c in df.columns if 'level' in c]
     return df.drop(cols_del,axis=1)
-### alias
-dellevelcol=drop_levelcol
-
-@to_rd
-def flatten_columns(df,**kws):
-    df.columns=coltuples2str(df.columns,**kws)
-    return df
-
-@to_rd
-def lower_columns(df,**kws):
-    df.columns=df.columns.str.lower()
-    return df
-
-@to_rd
-def clean_columns(df,**kws):
-    df.columns=df.columns.str.strip().str.rstrip().str.lower()
-    return df
-
-@to_rd
-def renameby_replace(df,replaces,ignore=True,**kws):
-    from roux.lib.str import replacemany
-    df.columns=[replacemany(c,replaces,ignore=ignore,**kws) for c in df]
-    return df
-
-@to_rd
-def get_constants(df1):
-    return df1.nunique().loc[lambda x: x==1].index.tolist()
 
 @to_rd
 def drop_constants(df):
+    """Deletes columns with a single unique value.
+
+    Parameters:
+        df (DataFrame): input dataframe.
+        
+    Returns:
+        df (DataFrame): output dataframe.
+    """    
     cols_del=get_constants(df)
     logging.warning(f"dropped columns: {', '.join(cols_del)}")
     return df.drop(cols_del,axis=1)
 
 @to_rd
 def dropby_patterns(df1,l1,test=False):
+    """Deletes columns containing substrings i.e. patterns.
+
+    Parameters:
+        df1 (DataFrame): input dataframe.
+        l1 (list): list of substrings.
+        test (bool): verbose. 
+        
+    Returns:
+        df1 (DataFrame): output dataframe.
+    """    
     if isinstance(l1,str):
         l1=[l1]
     s0='|'.join(l1).replace('(','\(').replace(')','\)')
@@ -112,8 +134,19 @@ def drop_inflates(df1,
                     cols_index,
                   test=False,
                    ):
-    """
-    Drop abnormally high number of duplicates
+    """Deletes columns with high number of duplicates.
+    
+    Parameters:
+        df1 (DataFrame): input dataframe.
+        col (str): column with values.
+        cols_index (list): index columns.
+        test (bool): verbose. 
+        
+    Returns:
+        df1 (DataFrame): output dataframe.
+    
+    Notes:
+        Under development.
     """
     logging.warning("UNDER DEVELOPMENT")
     df_=df1.rd.check_duplicated(cols_index,out='df')
@@ -140,14 +173,91 @@ def drop_inflates(df1,
     return df1
 
 @to_rd
+def flatten_columns(df,**kws):
+    """Multi-index columns to single-level.
+
+    Parameters:
+        df (DataFrame): input dataframe.
+        
+    Returns:
+        df (DataFrame): output dataframe.
+
+    Keyword Arguments:
+        kws (dict): parameters provided to `coltuples2str` function.    
+    """    
+    df.columns=coltuples2str(df.columns,**kws)
+    return df
+
+@to_rd
+def lower_columns(df):
+    """Column names of the dataframe to lower-case letters.
+
+    Parameters:
+        df (DataFrame): input dataframe.
+        
+    Returns:
+        df (DataFrame): output dataframe.
+    """    
+    df.columns=df.columns.str.lower()
+    return df
+
+@to_rd
+def renameby_replace(df,replaces,ignore=True,**kws):
+    """Rename columns by replacing sub-strings.
+
+    Parameters:
+        df (DataFrame): input dataframe.
+        replaces (dict|list): from->to format or list containing substrings to remove.
+        ignore (bool): if True, not validate the successful replacements.
+        
+    Returns:
+        df (DataFrame): output dataframe.
+
+    Keyword Arguments:
+        kws (dict): parameters provided to `replacemany` function.    
+    """    
+    from roux.lib.str import replacemany
+    df.columns=[replacemany(c,replaces,ignore=ignore,**kws) for c in df]
+    return df
+
+
+@to_rd
+def clean_columns(df):
+    """Standardise columns.
+
+    Steps:
+        1. Strip flanking white-spaces.
+        2. Lower-case letters.
+    
+    Parameters:
+        df (DataFrame): input dataframe.
+        
+    Returns:
+        df (DataFrame): output dataframe.
+    """
+    df.columns=df.columns.str.strip().str.rstrip().str.lower()
+    return df
+
+@to_rd
 def clean(df,cols=[],
           drop_constants=False,
           drop_unnamed=True,
           verb=True,
          ):
-    """
-    Deletes temporary columns
-    :param df: pandas dataframe
+    """Deletes potentially temporary columns.
+
+    Steps:
+        1. Strip flanking white-spaces.
+        2. Lower-case letters.
+    
+    Parameters:
+        df (DataFrame): input dataframe.
+        drop_constants (bool): whether to delete the columns with a single unique value. 
+        drop_unnamed (bool): whether to delete the columns with 'Unnamed' prefix. 
+        verb (bool): verbose.
+        
+    Returns:
+        df (DataFrame): output dataframe.
     """
     cols_del=df.filter(regex="^(?:index|level|Unnamed|chunk|_).*$").columns.tolist()+df.filter(regex="^.*(?:\.1)$").columns.tolist()+cols
     # exceptions 
@@ -165,8 +275,19 @@ def clean(df,cols=[],
         return df.drop(cols_del,axis=1)
     else:
         return df
+    
 @to_rd
 def compress(df1,coff_categories=20,test=False):
+    """Compress the dataframe by converting columns containing strings/objects to categorical.
+    
+    Parameters:
+        df1 (DataFrame): input dataframe.
+        coff_categories (int): if the number of unique values are less than cutoff the it will be converted to categories. 
+        test (bool): verbose.
+        
+    Returns:
+        df1 (DataFrame): output dataframe.
+    """    
     if test: ini=df1.memory_usage().sum()
     ds=df1.select_dtypes('object').nunique()
     for c in ds[ds<=coff_categories].index:
@@ -175,7 +296,25 @@ def compress(df1,coff_categories=20,test=False):
     return df1
 
 @to_rd
-def clean_compress(df,kws_compress={},**kws_clean): return df.rd.clean(**kws_clean).rd.compress(**kws_compress)
+def clean_compress(df,kws_compress={},**kws_clean): 
+    """`clean` and `compress` the dataframe.
+    
+    Parameters:
+        df (DataFrame): input dataframe.
+        kws_compress (int): keyword arguments for the `compress` function. 
+        test (bool): verbose.
+        
+    Keyword Arguments:
+        kws_clean (dict): parameters provided to `clean` function.
+        
+    Returns:
+        df1 (DataFrame): output dataframe.
+
+    See Also:
+        `clean`
+        `compress`
+    """    
+    return df.rd.clean(**kws_clean).rd.compress(**kws_compress)
 
 ## nans:
 @to_rd
