@@ -316,88 +316,257 @@ def clean_compress(df,kws_compress={},**kws_clean):
     """    
     return df.rd.clean(**kws_clean).rd.compress(**kws_compress)
 
-## nans:
+## nans:    
 @to_rd
-def check_na_percentage(df,cols=None,how=None):
-    """
-    prefer check_na
-    """
-    if cols is None:
-        cols=df.columns.tolist()
-    ds1=(df.loc[:,cols].isnull().sum()/df.loc[:,cols].agg(len))*100
-    if how is None:
-        return ds1
-    else:
-        return getattr(ds1==0,how)
+def check_na(df,
+             subset=None,
+             perc=False,
+             cols=None,
+            ):
+    """Number/percentage of missing values in columns.
     
-@to_rd
-def check_na(df,cols=None):
-    if cols is None:
-        cols=df.columns.tolist()
-    return (df.loc[:,cols].isnull().sum()/df.loc[:,cols].agg(len))*100
+    Parameters:
+        df (DataFrame): input dataframe.
+        subset (list): list of columns.
+        perc (bool): output percentages.
+        cols (list): alias of `subset`.
+        
+    Returns:
+        ds (Series): output stats.
+    """    
+    if not cols is None and not subset is None: 
+        logging.error(f"cols and subset are alias, both cannot be used.")
+        return
+    if cols is None and not subset is None: cols=subset        
+    if cols is None: cols=df.columns.tolist()
+    if not perc:
+        return df.loc[:,cols].isnull().sum()
+    else:
+        return (df.loc[:,cols].isnull().sum()/df.loc[:,cols].agg(len))*100
 
+@to_rd
+def validate_no_na(df,subset=None,cols=None):
+    """Number/percentage of missing values in columns.
+    
+    Parameters:
+        df (DataFrame): input dataframe.
+        subset (list): list of columns.
+        perc (bool): output percentages.
+        cols (list): alias of `subset`.
+        
+    Returns:
+        ds (Series): output stats.
+    """
+    if not cols is None and not subset is None: 
+        logging.error(f"cols and subset are alias, both cannot be used.")
+        return
+    if cols is None and not subset is None: cols=subset        
+    if cols is None: cols=df.columns.tolist()
+    assert not df.loc[:,cols].isnull().any().any(), check_na(df,subset=subset,cols=cols,perc=False)
+    
 ## nunique:
 @to_rd
-def check_nunique(df,cols=None,):
+def check_nunique(df,subset=None,perc=False,cols=None,):
+    """Number/percentage of unique values in columns.
+    
+    Parameters:
+        df (DataFrame): input dataframe.
+        subset (list): list of columns.
+        perc (bool): output percentages.
+        cols (list): alias of `subset`.
+        
+    Returns:
+        ds (Series): output stats.
+    """    
+    if not cols is None and not subset is None: 
+        logging.error(f"cols and subset are alias, both cannot be used.")
+        return
+    if cols is None and not subset is None: cols=subset        
     if cols is None:
         cols=df.select_dtypes((object,bool)).columns.tolist()
-    return df.loc[:,cols].nunique()
+    if not perc:
+        return df.loc[:,cols].nunique()
+    else:
+        return (df.loc[:,cols].nunique()/df.loc[:,cols].agg(len))*100
+
 
 ## nunique:
 @to_rd
-def check_inflation(df1,cols=None,):
+def check_inflation(df1,subset=None,cols=None,):
+    """Occurances of values in columns.
+    
+    Parameters:
+        df (DataFrame): input dataframe.
+        subset (list): list of columns.
+        cols (list): alias of `subset`.
+        
+    Returns:
+        ds (Series): output stats.
+    """    
+    if not cols is None and not subset is None: 
+        logging.error(f"cols and subset are alias, both cannot be used.")
+        return
+    if cols is None and not subset is None: cols=subset        
+    if cols is None: cols=df.columns.tolist()    
     if cols is None:
         cols=df1.columns.tolist()
     return df1.loc[:,cols].apply(lambda x: (x.value_counts().values[0]/len(df1))*100)
-#     df.loc[:,cols].nunique()
     
 ## duplicates:
 @to_rd
-def check_duplicated(df,cols=None,subset=None,out='bool'):
-    if not cols is None and not subset is None: logging.error(f"cols and subset are alias, both cannot be used.")        
-    if cols is None and not subset is None: cols=subset        
-    if cols is None:
-        cols=df.columns
-    if df.duplicated(subset=cols).any():
-        logging.error('duplicates in the table!')  
-        if out=='bool':
-            return True
-        elif out in ['df','perc']:
-            df1=df.loc[df.duplicated(subset=cols,keep=False),:].sort_values(by=cols)
-            from roux.viz.annot import perc_label
-            logging.info("duplicate rows: "+perc_label(len(df1),len(df)))
-            if out=='df':
-                return df1
-            elif out=='perc':
-                return 100*(len(df1)/len(df))
+def check_duplicated(df,
+                     subset=None,
+                     cols=None,
+                     perc=False):
+    """Check duplicates.
+    
+    Parameters:
+        df (DataFrame): input dataframe.
+        subset (list): list of columns.
+        perc (bool): output percentages.
+        cols (list): alias of `subset`.
+        
+    Returns:
+        ds (Series): output stats.
+    """
+    if not cols is None and not subset is None:
+        logging.error(f"cols and subset are alias, both cannot be used.")
+        return
+    if cols is None and not subset is None: cols=subset
+    if cols is None: cols=df.columns.tolist()
+    df1=df.loc[df.duplicated(subset=cols,keep=False),:].sort_values(by=cols)
+    from roux.viz.annot import perc_label
+    logging.info("duplicate rows: "+perc_label(len(df1),len(df)))
+    if not perc:
+        return df1
     else:
-        return False
+        return 100*(len(df1)/len(df))
+
+@to_rd
+def validate_no_duplicates(df,
+                     subset=None,
+                     cols=None,
+                           ):
+    """Validate that no duplicates.
+    
+    Parameters:
+        df (DataFrame): input dataframe.
+        subset (list): list of columns.
+        cols (list): alias of `subset`.
+        
+    """
+    if not cols is None and not subset is None: 
+        logging.error(f"cols and subset are alias, both cannot be used.")
+        return
+    if cols is None and not subset is None: cols=subset
+    if cols is None: cols=df.columns.tolist()
+    assert not df.duplicated(subset=cols).any(), check_duplicated(df,subset=subset,cols=cols,perc=False)
+## asserts    
+        
+@to_rd
+def validate_dense(df01,subset=None,duplicates=True,na=True,message=None,):
+    """Validate no missing values and no duplicates in the dataframe.
+    
+    Parameters:
+        df01 (DataFrame): input dataframe.
+        subset (list): list of columns.
+        duplicates (bool): whether to check duplicates.
+        na (bool): whether to check na.
+        message (str): error message
+        
+    """    
+    if subset is None:
+        subset=df01.columns.tolist()
+    if duplicates: df01.rd.validate_no_duplicates(cols=subset)#, 'duplicates found' if message is None else message
+    if na: df01.rd.validate_no_na(cols=subset)# if message is None else message
+    return df01
+
+@to_rd
+def assert_dense(df01,subset=None,duplicates=True,na=True,message=None):
+    """Alias of `validate_dense`.
+    
+    Notes:
+        to be deprecated in future releases.
+    """
+    return validate_dense(df01,subset=subset,duplicates=duplicates,na=na,message=message)
 
 ## mappings    
 @to_rd        
-def check_mappings(df,cols=None,out='df'):
+def check_mappings(df,
+                   subset=None,
+                   out='full',
+                   cols=None,
+                  ):
+    """Mapping between items in two columns.
+    
+    Parameters:
+        df (DataFrame): input dataframe.
+        subset (list): list of columns.
+        out (str): format of the output.
+        cols (list): alias of `subset`.
+        
+    Returns:
+        ds (Series): output stats.
     """
-    identify duplicates within columns
-    """
-    if cols is None:
-        cols=df.columns.tolist()
+    if not cols is None and not subset is None: 
+        logging.error(f"cols and subset are alias, both cannot be used.")
+        return
+    if cols is None and not subset is None: cols=subset        
+    if cols is None: cols=df.columns.tolist()
     import itertools
     d={}
     for t in list(itertools.permutations(cols,2)):
         d[t]=df.groupby(t[0])[t[1]].nunique().value_counts()
     df2=pd.concat(d,axis=0,ignore_index=False,names=['from','to','map to']).to_frame('map from').sort_index().reset_index(-1).loc[:,['map from','map to']]
-    if out=='df':
+    if out=='full':
         return df2
     else:
         return df2.loc[tuple(cols),:]#'map to'].item()
+
+@to_rd        
+def validate_1_1_mappings(df,
+                   subset=None,
+                   cols=None,
+                  ):
+    """Validate that the papping between items in two columns is 1:1.
+    
+    Parameters:
+        df (DataFrame): input dataframe.
+        subset (list): list of columns.
+        out (str): format of the output.
+        cols (list): alias of `subset`.
+        
+    """
+    df1=check_mappings(df,
+                   subset=subset,
+                   cols=cols,
+                  )
+    assert all(df1['map to']==1), df1
     
 @to_rd
-def get_mappings(df1,cols=None,keep='1:1',clean=False):
+def get_mappings(df1,
+                 subset=None,
+                 keep='1:1',
+                 clean=False,
+                 cols=None,
+                ):
+    """Classify the mapapping between items in two columns.
+    
+    Parameters:
+        df1 (DataFrame): input dataframe.
+        subset (list): list of columns.
+        keep (str): type of mapping (1:1|1:m|m:1).
+        clean (bool): whether remove temporary columns. 
+        cols (list): alias of `subset`.
+        
+    Returns:
+        df (DataFrame): output dataframe.
     """
-    validate by df1.rd.check_mappings(cols)
-    """
-    if cols is None:
-        cols=df1.columns.tolist()
+    if not cols is None and not subset is None: 
+        logging.error(f"cols and subset are alias, both cannot be used.")
+        return
+    if cols is None and not subset is None: cols=subset        
+    if cols is None: cols=df.columns.tolist()
     if df1.rd.check_duplicated(cols):
         df1=df1.loc[:,cols].log.drop_duplicates()
     if len(cols)==2:
@@ -436,48 +605,6 @@ def get_mappings(df1,cols=None,keep='1:1',clean=False):
             assert(len(df1)==len(d1['1:1'])+len(d1['not']))
             return pd.concat(d1,axis=0,names=['mapping']).reset_index()
 
-## asserts    
-        
-@to_rd
-def validate_dense(df01,subset=None,duplicates=True,na=True,message=None):
-    if subset is None:
-        subset=df01.columns.tolist()
-    if duplicates: assert not df01.rd.check_duplicated(cols=subset), 'duplicates found' if message is None else message
-    if na: assert all(df01.rd.check_na(cols=subset)==0), 'na found' if message is None else message
-    return df01
-
-# alias. to be deprecate in the future 
-@to_rd
-def assert_dense(df01,subset=None,duplicates=True,na=True,message=None):
-    return validate_dense(df01,subset=subset,duplicates=duplicates,na=na,message=message)
-
-## filter
-@to_rd
-def filterby_mappings(df1,cols=None,maps=['1:1'],test=False):
-    """
-    :cols :
-    """
-    d1={}
-    d1['from']=df1.shape
-    
-    if cols is None:
-        cols=df1.columns.tolist()
-    assert(len(cols)==2)
-    if df1.rd.check_duplicated(cols):
-        df1=df1.loc[:,cols].log.drop_duplicates()
-    if isinstance(maps,str):
-        maps=[maps]
-    if '1:m' in maps or '1:1' in maps:
-        df1=df1.loc[(df1[cols[0]].isin(df1[cols[0]].value_counts().loc[lambda x: x==1].index)),:]
-    if 'm:1' in maps or '1:1' in maps:
-        df1=df1.loc[(df1[cols[1]].isin(df1[cols[1]].value_counts().loc[lambda x: x==1].index)),:]
-    if test: logging.info(df1.rd.check_mappings())
-
-    d1['to  ']=df1.shape
-    if d1['from']!=d1['to  ']:
-        for k in d1:
-            logging.info(f'shape changed {k} {d1[k]}')        
-    return df1
 
 @to_rd
 def groupby_filter_fast(df1,col,fun,how,coff):
@@ -501,7 +628,7 @@ def to_map_binary(df,colgroupby=None,colvalue=None):
     """
     colgroupby=[colgroupby] if isinstance(colgroupby,str) else colgroupby
     colvalue=[colvalue] if isinstance(colvalue,str) else colvalue
-    if df.rd.check_duplicated(colgroupby+colvalue):
+    if df.rd.check_duplicated(colgroupby+colvalue).shape[0]!=0:
         logging.warning('duplicates found')
         df=df.log.drop_duplicates(subset=colgroupby+colvalue)
     df['_value']=True
