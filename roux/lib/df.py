@@ -321,7 +321,6 @@ def clean_compress(df,kws_compress={},**kws_clean):
 def check_na(df,
              subset=None,
              perc=False,
-             cols=None,
             ):
     """Number/percentage of missing values in columns.
     
@@ -329,112 +328,88 @@ def check_na(df,
         df (DataFrame): input dataframe.
         subset (list): list of columns.
         perc (bool): output percentages.
-        cols (list): alias of `subset`.
         
     Returns:
         ds (Series): output stats.
     """    
-    if not cols is None and not subset is None: 
-        logging.error(f"cols and subset are alias, both cannot be used.")
-        return
-    if cols is None and not subset is None: cols=subset        
-    if cols is None: cols=df.columns.tolist()
+    if subset is None: subset=df.columns.tolist()
     if not perc:
-        return df.loc[:,cols].isnull().sum()
+        return df.loc[:,subset].isnull().sum()
     else:
-        return (df.loc[:,cols].isnull().sum()/df.loc[:,cols].agg(len))*100
+        return (df.loc[:,subset].isnull().sum()/df.loc[:,subset].agg(len))*100
 
 @to_rd
-def validate_no_na(df,subset=None,cols=None):
+def validate_no_na(df,subset=None):
     """Number/percentage of missing values in columns.
     
     Parameters:
         df (DataFrame): input dataframe.
         subset (list): list of columns.
         perc (bool): output percentages.
-        cols (list): alias of `subset`.
         
     Returns:
         ds (Series): output stats.
     """
-    if not cols is None and not subset is None: 
-        logging.error(f"cols and subset are alias, both cannot be used.")
-        return
-    if cols is None and not subset is None: cols=subset        
-    if cols is None: cols=df.columns.tolist()
-    assert not df.loc[:,cols].isnull().any().any(), check_na(df,subset=subset,cols=cols,perc=False)
-    
+    if subset is None: subset=df.columns.tolist()
+    return not df.loc[:,subset].isnull().any().any()
+
+@to_rd
+def assert_no_na(df,subset=None):
+    assert validate_no_na(df,subset=subset), check_na(df,subset=subset) 
+
 ## nunique:
 @to_rd
-def check_nunique(df,subset=None,perc=False,cols=None,):
+def check_nunique(df,subset=None,perc=False):
     """Number/percentage of unique values in columns.
     
     Parameters:
         df (DataFrame): input dataframe.
         subset (list): list of columns.
         perc (bool): output percentages.
-        cols (list): alias of `subset`.
         
     Returns:
         ds (Series): output stats.
-    """    
-    if not cols is None and not subset is None: 
-        logging.error(f"cols and subset are alias, both cannot be used.")
-        return
-    if cols is None and not subset is None: cols=subset        
-    if cols is None:
-        cols=df.select_dtypes((object,bool)).columns.tolist()
+    """
+    if subset is None:
+        subset=df.select_dtypes((object,bool)).columns.tolist()
     if not perc:
-        return df.loc[:,cols].nunique()
+        return df.loc[:,subset].nunique()
     else:
-        return (df.loc[:,cols].nunique()/df.loc[:,cols].agg(len))*100
+        return (df.loc[:,subset].nunique()/df.loc[:,subset].agg(len))*100
 
 
 ## nunique:
 @to_rd
-def check_inflation(df1,subset=None,cols=None,):
+def check_inflation(df1,subset=None):
     """Occurances of values in columns.
     
     Parameters:
         df (DataFrame): input dataframe.
         subset (list): list of columns.
-        cols (list): alias of `subset`.
         
     Returns:
         ds (Series): output stats.
-    """    
-    if not cols is None and not subset is None: 
-        logging.error(f"cols and subset are alias, both cannot be used.")
-        return
-    if cols is None and not subset is None: cols=subset        
-    if cols is None: cols=df.columns.tolist()    
-    if cols is None:
-        cols=df1.columns.tolist()
-    return df1.loc[:,cols].apply(lambda x: (x.value_counts().values[0]/len(df1))*100)
+    """
+    if subset is None: subset=df.columns.tolist()    
+    if subset is None:
+        subset=df1.columns.tolist()
+    return df1.loc[:,subset].apply(lambda x: (x.value_counts().values[0]/len(df1))*100)
     
 ## duplicates:
 @to_rd
-def check_duplicated(df,
-                     subset=None,
-                     cols=None,
-                     perc=False):
+def check_dups(df,subset=None,perc=False):
     """Check duplicates.
     
     Parameters:
         df (DataFrame): input dataframe.
         subset (list): list of columns.
         perc (bool): output percentages.
-        cols (list): alias of `subset`.
         
     Returns:
         ds (Series): output stats.
     """
-    if not cols is None and not subset is None:
-        logging.error(f"cols and subset are alias, both cannot be used.")
-        return
-    if cols is None and not subset is None: cols=subset
-    if cols is None: cols=df.columns.tolist()
-    df1=df.loc[df.duplicated(subset=cols,keep=False),:].sort_values(by=cols)
+    if subset is None: subset=df.columns.tolist()
+    df1=df.loc[df.duplicated(subset=subset,keep=False),:].sort_values(by=subset)
     from roux.viz.annot import perc_label
     logging.info("duplicate rows: "+perc_label(len(df1),len(df)))
     if not perc:
@@ -443,26 +418,28 @@ def check_duplicated(df,
         return 100*(len(df1)/len(df))
 
 @to_rd
-def validate_no_duplicates(df,
-                     subset=None,
-                     cols=None,
-                           ):
+def check_duplicated(df,subset=None,perc=False):return check_dups(df,subset=subset,perc=perc)
+
+@to_rd
+def validate_no_dups(df,subset=None,):
     """Validate that no duplicates.
     
     Parameters:
         df (DataFrame): input dataframe.
         subset (list): list of columns.
-        cols (list): alias of `subset`.
         
     """
-    if not cols is None and not subset is None: 
-        logging.error(f"cols and subset are alias, both cannot be used.")
-        return
-    if cols is None and not subset is None: cols=subset
-    if cols is None: cols=df.columns.tolist()
-    assert not df.duplicated(subset=cols).any(), check_duplicated(df,subset=subset,cols=cols,perc=False)
-## asserts    
-        
+    if subset is None: subset=df.columns.tolist()
+    return not df.duplicated(subset=subset).any()
+
+@to_rd
+def validate_no_duplicates(df,subset=None,):return validate_no_dups(df,subset=subset,)
+
+@to_rd
+def assert_no_dups(df,subset=None):
+    assert validate_no_dups(df,subset=subset), check_dups(df,subset=subset,perc=False)
+
+## asserts        
 @to_rd
 def validate_dense(df01,subset=None,duplicates=True,na=True,message=None,):
     """Validate no missing values and no duplicates in the dataframe.
@@ -477,9 +454,9 @@ def validate_dense(df01,subset=None,duplicates=True,na=True,message=None,):
     """    
     if subset is None:
         subset=df01.columns.tolist()
-    if duplicates: df01.rd.validate_no_duplicates(cols=subset)#, 'duplicates found' if message is None else message
-    if na: df01.rd.validate_no_na(cols=subset)# if message is None else message
-    return df01
+    if duplicates: df01.rd.validate_no_dups(subset=subset)#, 'duplicates found' if message is None else message
+    if na: df01.rd.validate_no_na(subset=subset)# if message is None else message
+    return True
 
 @to_rd
 def assert_dense(df01,subset=None,duplicates=True,na=True,message=None):
@@ -488,14 +465,13 @@ def assert_dense(df01,subset=None,duplicates=True,na=True,message=None):
     Notes:
         to be deprecated in future releases.
     """
-    return validate_dense(df01,subset=subset,duplicates=duplicates,na=na,message=message)
+    assert validate_dense(df01,subset=subset,duplicates=duplicates,na=na,message=message)
 
 ## mappings    
 @to_rd        
 def check_mappings(df,
                    subset=None,
                    out='full',
-                   cols=None,
                   ):
     """Mapping between items in two columns.
     
@@ -503,30 +479,24 @@ def check_mappings(df,
         df (DataFrame): input dataframe.
         subset (list): list of columns.
         out (str): format of the output.
-        cols (list): alias of `subset`.
         
     Returns:
         ds (Series): output stats.
     """
-    if not cols is None and not subset is None: 
-        logging.error(f"cols and subset are alias, both cannot be used.")
-        return
-    if cols is None and not subset is None: cols=subset        
-    if cols is None: cols=df.columns.tolist()
+    if subset is None: subset=df.columns.tolist()
     import itertools
     d={}
-    for t in list(itertools.permutations(cols,2)):
+    for t in list(itertools.permutations(subset,2)):
         d[t]=df.groupby(t[0])[t[1]].nunique().value_counts()
     df2=pd.concat(d,axis=0,ignore_index=False,names=['from','to','map to']).to_frame('map from').sort_index().reset_index(-1).loc[:,['map from','map to']]
     if out=='full':
         return df2
     else:
-        return df2.loc[tuple(cols),:]#'map to'].item()
+        return df2.loc[tuple(subset),:]#'map to'].item()
 
 @to_rd        
 def validate_1_1_mappings(df,
                    subset=None,
-                   cols=None,
                   ):
     """Validate that the papping between items in two columns is 1:1.
     
@@ -534,12 +504,10 @@ def validate_1_1_mappings(df,
         df (DataFrame): input dataframe.
         subset (list): list of columns.
         out (str): format of the output.
-        cols (list): alias of `subset`.
         
     """
     df1=check_mappings(df,
                    subset=subset,
-                   cols=cols,
                   )
     assert all(df1['map to']==1), df1
     
@@ -719,6 +687,7 @@ def to_dict(df,cols,drop_duplicates=False):
         return df.set_index(cols[0])[cols[1]].to_dict()
     else:
         logging.warning('format: {key:list}')
+        assert df[cols[1]].dtype=='O', df[cols[1]].dtype
         return df.groupby(cols[0])[cols[1]].unique().to_dict()        
 
 del to_dict
@@ -1075,12 +1044,13 @@ def swap_paired_cols(df_,suffixes=['gene1', 'gene2']):
 @to_rd
 def sort_columns_by_values(df,cols_sortby=['mutation gene1','mutation gene2'],
                             suffixes=['gene1','gene2'], # no spaces
+                           clean=False,
                             ):
     """
     sorts in ascending order. 
     `sorted` means values are sorted because gene1>gene2. 
     """
-    assert((df.rd.check_na(cols=cols_sortby)==0).all())
+    df.rd.assert_no_na(subset=cols_sortby)
     suffixes=[s.replace(' ','') for s in suffixes]
     dn2df={}
     # keys: (equal, to be sorted)
@@ -1097,7 +1067,9 @@ def sort_columns_by_values(df,cols_sortby=['mutation gene1','mutation gene2'],
         
     df1=pd.concat(dn2df,names=['equal','sorted']).reset_index([0,1])
     logging.info(df1.groupby(['equal','sorted']).size())
-    return df1         
+    if clean:
+        df1=df1.drop(['equal','sorted'],axis=1)
+    return df1
     
 # quantile bins
 @to_rd

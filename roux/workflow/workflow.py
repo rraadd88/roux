@@ -55,6 +55,7 @@ def to_scripts(packagen,packagep,
     """
     packagescriptsp=f"{packagep}/{packagen}"
     df_outp=f'{packagescriptsp}/.workflow/info.tsv'
+    makedirs(df_outp)
     if notebooksdp is None:
         notebooksdp=f'{packagescriptsp}/notebooks'
     if scripts:

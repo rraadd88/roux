@@ -23,7 +23,7 @@ def corr_to_str(method,r,p,fmt='<',n=True, ci=None,ci_type=None, magnitide=True)
     s0=f"$r_{method[0]}$={r:.2f}"
     if not ci is None:
         s0+=f"$\pm${ci:.2f}{ci_type if ci_type!='max' else ''}"
-    s0+=f"\n{pval2annot(p,fmt='<',linebreak=False)}"+('' if not n else f"\nn="+num2str(num=n,magnitude=False))
+    s0+=f"\n{pval2annot(p,fmt='<',linebreak=False, alpha=0.05)}"+('' if not n else f"\nn="+num2str(num=n,magnitude=False))
     return s0
 
 def get_corr(x,y,method='spearman',bootstrapped=False,ci_type='max',magnitide=True,

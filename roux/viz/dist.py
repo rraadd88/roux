@@ -115,6 +115,7 @@ def plot_dists(df1,x,y,
                offy_pval=None,
                saturate_color_alpha=1.5,
                ax=None,
+               kws_stats={},
                **kws):
     """
     TODOs:
@@ -136,6 +137,7 @@ def plot_dists(df1,x,y,
                           subsets=order,
         #                   alpha=0.05
                         axis=0,
+                        **kws_stats,
                          ).reset_index()
         # df1=df1.rd.renameby_replace({f"{} ":''})
         df2=df2.loc[(df2['subset1']==order[0]),:]
@@ -148,6 +150,7 @@ def plot_dists(df1,x,y,
                               colindex=colindex,
                           alpha=0.05,
                          axis=0,
+                         **kws_stats,
                          ).reset_index()
         # df1=df1.rd.renameby_replace({f"{} ":''})
         df2=df2.loc[(df2['subset1']==hue_order[0]),:]

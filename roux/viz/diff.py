@@ -158,83 +158,83 @@ def plot_stats_diff(df2,
     return ax
 
 ## volcano
-def plot_volcano(dplot,
-                 colindex,#='gene name test',
-                 colgroup=None,#='condition',
-                 x='difference between mean (subset1-subset2)',
-                 y='P (MWU test, FDR corrected)',
-                 coffs=[0.01,0.05,0.2],
-                 colns=None,#f'not mean+-{2}*std',
-                 ax=None,
-                 filter_rows=None,
-                 ylabel='significance\n(-log10(P))',
-                 kws_binby_pvalue_coffs={},
-                 out_df=False,
-                 title=None,
-                 **kws_ax):
-    """
-    1. create dplot
-    """
-    # 1
-    from roux.stat.diff import binby_pvalue_coffs
-    df1,df_=binby_pvalue_coffs(dplot,coffs=coffs,
-                                colindex=colindex,#'gene name test',
-                                 colgroup=colgroup,#'condition',
-                                 colns=colns,#None,#f'not mean+-{2}*std',
-                              color=True,
-                              **kws_binby_pvalue_coffs)
-    assert(df1[y].isnull().sum()==0)
-    df1[y]=df1[y].apply(lambda x : -1*(np.log10(x)))
-#     df1=df1.rename(columns={'value difference between mean (subset1-subset2)':x})
-    # 2
-    from roux.viz.colors import saturate_color
-    if ax is None:
-        fig,ax=plt.subplots(figsize=[3,3])
-    df1.plot.scatter(x=x,y=y,c='c',
-                       s=1,ax=ax)
-    ax.set(ylabel=ylabel,)
-    set_(ax,**kws_ax)
-    df_.apply(lambda x: ax.hlines(x['y'],x['x'],ax.get_xlim()[0 if x['change']=='decrease' else 1],
-                                                 colors=x['color'],
-                                                 linestyles="solid",lw=1,
-                                              ),axis=1)
-    df_.apply(lambda x: ax.vlines(x['x'],x['y'],ax.get_ylim()[1],
-                                                 colors=x['color'],
-                                                 linestyles="solid",lw=1,
-                                              ),axis=1)
-    df_.apply(lambda x: ax.text(ax.get_xlim()[0 if x['change']=='decrease' else 1],x['y'],x['text'],
-    #                                 color=saturate_color(x['color'],3),
-                                    color='k',alpha=x['y alpha'],
-                                    ha='left' if x['change']=='decrease' else 'right',
-                                              ),axis=1)
-    df_.loc[:,['y','y text','y alpha']].drop_duplicates().apply(lambda x: ax.text(ax.get_xlim()[1],x['y'],x['y text'],
-                                                                   color='k',alpha=x['y alpha']),
-                                                  axis=1)
-    if (filter_rows is not None):
-        if not all([isinstance(s,str) for s in filter_rows.values()]):
-            filter_rows={k:df1.sort_values(by=x).iloc[0,:][colindex] if v==min else df1.sort_values(by=x).iloc[0,:][colindex] if v==max else None for k,v in filter_rows.items()}
-        ## TODOS more than one color
-#         assert(len(filter_rows.keys())==1)
-        assert(all([isinstance(s,str) for s in filter_rows.values()]))
-        for k in filter_rows:
-            df_=df1.rd.filter_rows({k:filter_rows[k]})
-            df_.groupby(k).apply(lambda df: ax.scatter(x=df_[x],
-                                                                y=df_[y],
-                                                                marker='o', 
-                                                                facecolors='none',
-                                                                edgecolors='k',
-                                                                label=f"{df.name}\n(n={len(df)})",
-                                                                ))
-    ax.legend(loc='upper left',
-             bbox_to_anchor=[1,1])
-    ax.set_title(label=title,loc='left')
-    if out_df:
-        return ax,df1
-    else:
-        return ax
+from roux.viz.set import plot_enrichment as plot_volcano
+# def plot_volcano(dplot,
+#                  colindex,#='gene name test',
+#                  colgroup=None,#='condition',
+#                  x='difference between mean (subset1-subset2)',
+#                  y='P (MWU test, FDR corrected)',
+#                  coffs=[0.01,0.05,0.2],
+#                  colns=None,#f'not mean+-{2}*std',
+#                  ax=None,
+#                  filter_rows=None,
+#                  ylabel='significance\n(-log10(P))',
+#                  kws_binby_pvalue_coffs={},
+#                  out_df=False,
+#                  title=None,
+#                  **kws_ax):
+#     """
+#     shows border lines and numbers for each enrichment category
+#     """
+#     # 1
+#     from roux.stat.diff import binby_pvalue_coffs
+#     df1,df_=binby_pvalue_coffs(dplot,coffs=coffs,
+#                                 colindex=colindex,#'gene name test',
+#                                  colgroup=colgroup,#'condition',
+#                                  colns=colns,#None,#f'not mean+-{2}*std',
+#                               color=True,
+#                               **kws_binby_pvalue_coffs)
+#     assert(df1[y].isnull().sum()==0)
+#     df1[y]=df1[y].apply(lambda x : -1*(np.log10(x)))
+# #     df1=df1.rename(columns={'value difference between mean (subset1-subset2)':x})
+#     # 2
+#     from roux.viz.colors import saturate_color
+#     if ax is None:
+#         fig,ax=plt.subplots(figsize=[3,3])
+#     df1.plot.scatter(x=x,y=y,c='c',
+#                        s=1,ax=ax)
+#     ax.set(ylabel=ylabel,)
+#     set_(ax,**kws_ax)
+#     df_.apply(lambda x: ax.hlines(x['y'],x['x'],ax.get_xlim()[0 if x['change']=='decrease' else 1],
+#                                                  colors=x['color'],
+#                                                  linestyles="solid",lw=1,
+#                                               ),axis=1)
+#     df_.apply(lambda x: ax.vlines(x['x'],x['y'],ax.get_ylim()[1],
+#                                                  colors=x['color'],
+#                                                  linestyles="solid",lw=1,
+#                                               ),axis=1)
+#     df_.apply(lambda x: ax.text(ax.get_xlim()[0 if x['change']=='decrease' else 1],x['y'],x['text'],
+#     #                                 color=saturate_color(x['color'],3),
+#                                     color='k',alpha=x['y alpha'],
+#                                     ha='left' if x['change']=='decrease' else 'right',
+#                                               ),axis=1)
+#     df_.loc[:,['y','y text','y alpha']].drop_duplicates().apply(lambda x: ax.text(ax.get_xlim()[1],x['y'],x['y text'],
+#                                                                    color='k',alpha=x['y alpha']),
+#                                                   axis=1)
+#     if (filter_rows is not None):
+#         if not all([isinstance(s,str) for s in filter_rows.values()]):
+#             filter_rows={k:df1.sort_values(by=x).iloc[0,:][colindex] if v==min else df1.sort_values(by=x).iloc[0,:][colindex] if v==max else None for k,v in filter_rows.items()}
+#         ## TODOS more than one color
+# #         assert(len(filter_rows.keys())==1)
+#         assert(all([isinstance(s,str) for s in filter_rows.values()]))
+#         for k in filter_rows:
+#             df_=df1.rd.filter_rows({k:filter_rows[k]})
+#             df_.groupby(k).apply(lambda df: ax.scatter(x=df_[x],
+#                                                                 y=df_[y],
+#                                                                 marker='o', 
+#                                                                 facecolors='none',
+#                                                                 edgecolors='k',
+#                                                                 label=f"{df.name}\n(n={len(df)})",
+#                                                                 ))
+#     ax.legend(loc='upper left',
+#              bbox_to_anchor=[1,1])
+#     ax.set_title(label=title,loc='left')
+#     if out_df:
+#         return ax,df1
+#     else:
+#         return ax
 
 from roux.lib.str import linebreaker
-
 def plot_ranking(dplot,
              x,y,colgroup,
              estimator='min',

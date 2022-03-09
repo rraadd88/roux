@@ -8,6 +8,7 @@ def plot_enrichment(dplot,
                     annots_side=5,
                     coff_fdr=None,
                     xlim=None,
+                    xlim_off=0.2,
                     ylim=None,
                     ax=None,
                     break_pt=25,
@@ -21,15 +22,15 @@ def plot_enrichment(dplot,
     if coff_fdr is None: 
         coff_fdr=1
     from roux.stat.transform import log_pval
-    if y.startswith('P '):
-        dplot['significance\n(-log10(Q))']=dplot[y].apply(log_pval)
-        y='significance\n(-log10(Q))'
-        dplot['Q']=pd.cut(x=dplot['P (FE test, FDR corrected)'],
-                            bins=[
-                                # dplot['P (FE test, FDR corrected)'].min(),
-                                0,0.01,0.05,coff_fdr],
-                            right=False,
-                          )        
+    # if y.startswith('P '):
+    dplot['significance\n(-log10(Q))']=dplot[y].apply(log_pval)
+    dplot['Q']=pd.cut(x=dplot[y],
+                        bins=[
+                            # dplot['P (FE test, FDR corrected)'].min(),
+                            0,0.01,0.05,coff_fdr],
+                        right=False,
+                      )
+    y='significance\n(-log10(Q))'
     if not size is None:
         if not dplot[size].dtype == 'category':
             dplot[size]=pd.qcut(dplot[size],
@@ -38,7 +39,7 @@ def plot_enrichment(dplot,
         dplot=dplot.sort_values(size,ascending=False)
         dplot[size]=dplot[size].apply(lambda x: f"({x.left:.0f}, {x.right:.0f}]")
     if ax is None:
-        fig,ax=plt.subplots(figsize=[1.5,4])
+        fig,ax=plt.subplots()#(figsize=[1.5,4])
     sns.scatterplot(
                     data=dplot,
                     x=x,y=y,
@@ -58,15 +59,15 @@ def plot_enrichment(dplot,
         #          nrow=3,
                   ncol=2,)
     if xlim is None:
-        ax=set_axlims(ax,0.2,['x'])
+        ax=set_axlims(ax,off=xlim_off,axes=['x'])
     else:
         ax.set(xlim=xlim)
-    if ylim is None:
-        ax.set(ylim=(log_pval(coff_fdr),ax.get_ylim()[1]),
-    #               xlim=(dplot[x].min(),dplot[x].max()),
-              )
-    else:
-        ax.set(ylim=ylim)        
+    # if ylim is None:
+    #     ax.set(ylim=(log_pval(coff_fdr),ax.get_ylim()[1]),
+    # #               xlim=(dplot[x].min(),dplot[x].max()),
+    #           )
+    # else:
+    #     ax.set(ylim=ylim)        
     if annot_coff_fdr:
         ax.annotate(f"Q={coff_fdr}",
             xy=(ax.get_xlim()[0],log_pval(coff_fdr)), xycoords='data',

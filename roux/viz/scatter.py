@@ -66,8 +66,8 @@ def plot_scatter(dplot,colx,coly,colz=None,
     """
     ax= plt.subplot() if ax is None else ax
     
-    trendline_method = [trendline_method] if isinstance(trendline_method,str) else trendline_method
-    stat_method = [stat_method] if isinstance(stat_method,str) else stat_method
+    trendline_method = [trendline_method] if isinstance(trendline_method,str) else [] if trendline_method is None else trendline_method
+    stat_method = [stat_method] if isinstance(stat_method,str) else [] if stat_method is None else stat_method
     
     dplot=dplot.dropna(subset=[colx,coly]+[] if colz is None else [colz],how='any')
     if kind in ['hexbin']:

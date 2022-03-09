@@ -76,7 +76,8 @@ def get_pval(df,
              colvalue_bool=False,
              colindex=None,
              subsets=None,
-            test=False):
+            test=False,
+            fun=None):
     """
     either colsubset or subsets are needed 
     :param colvalue: dtype=bool (dtype=object not supported)
@@ -97,7 +98,12 @@ def get_pval(df,
 #         try:
         x,y=df.loc[(df[colsubset]==subsets[0]),colvalue].tolist(),df.loc[(df[colsubset]==subsets[1]),colvalue].tolist()
         if len(x)!=0 and len(y)!=0 and (nunique(x+y)!=1):
-            return sc.stats.mannwhitneyu(x,y,alternative='two-sided')
+            if fun is None:
+                logging.warning('mannwhitneyu used')                
+                return sc.stats.mannwhitneyu(x,y,alternative='two-sided')
+            else:
+                logging.warning('custom function used')
+                return fun(x,y)
         else:
             #if empty list: RuntimeWarning: divide by zero encountered in double_scalars  z = (bigu - meanrank) / sd
             return np.nan,np.nan
@@ -259,16 +265,21 @@ def get_q(ds1,col=None,verb=True,test_coff=0.1):
     else:
         df1['Q']=ds4
         return df1
-def get_significant_changes(df1,alpha,
+def get_significant_changes(df1,
+                            coff_p=0.025,
+                            coff_q=0.1,
+                            alpha=None,
                             changeby="",
-                            fdr=True,
+                            # fdr=True,
                             value_aggs=['mean','median'],
                            ):
     """
     groupby to get the comparable groups 
     # if both mean and median are high
     :param changeby: "" if check for change by both mean and median
-    """    
+    """
+    if coff_p is None and not alpha is None:
+        coff_p=alpha
     if df1.filter(regex='|'.join([f"{s} subset(1|2)" for s in value_aggs])).shape[1]:
         for s in value_aggs:
             df1[f'difference between {s} (subset1-subset2)']=df1[f'{s} subset1']-df1[f'{s} subset2']
@@ -281,9 +292,10 @@ def get_significant_changes(df1,alpha,
         if not f'P ({test} test)' in df1:
             continue
         # without fdr
-        df1[f'change is significant, P ({test} test) < {alpha}']=df1[f'P ({test} test)']<alpha
-        df1[f'Q ({test} test)']=get_q(df1[f'P ({test} test)'])
-        df1[f'change is significant ({test} test)']=df1[f'P ({test} test)']<alpha
+        df1[f'change is significant, P ({test} test) < {coff_p}']=df1[f'P ({test} test)']<coff_p
+        if not coff_q is None:
+            df1[f'Q ({test} test)']=get_q(df1[f'P ({test} test)'])
+            df1[f'change is significant, Q ({test} test) < {coff_q}']=df1[f'Q ({test} test)']<coff_q
         #     info(f"corrected alpha alphacSidak={alphacSidak},alphacBonf={alphacBonf}")
         # if test!='FE':
         #     df1.loc[df1[f"change is significant ({test} test)"],f"significant change ({test} test)"]=df1.loc[df1[f"change is significant ({test} test)"],'change']
@@ -315,14 +327,15 @@ def apply_get_significant_changes(df1,cols_value,
     return df2
 
 def get_stats_groupby(df1,cols,
-                      alpha,
+                      coff_p,coff_q,
+                      alpha=None,
                       fast=False,
                       **kws):
     """
     Iterate over groups
     """
     df2=getattr(df1.groupby(cols),f"{'progress' if not fast else 'parallel'}_apply")(lambda df: get_stats(df1=df,**kws)).reset_index().rd.clean()
-    return get_significant_changes(df1=df2,alpha=alpha)
+    return get_significant_changes(df1=df2,alpha=alpha,coff_p=coff_p,coff_q=coff_q,)
     
 def binby_pvalue_coffs(df1,coffs=[0.01,0.05,0.25],
                       color=False,

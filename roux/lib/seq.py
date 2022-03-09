@@ -273,9 +273,11 @@ def read_fasta(fap,key_type='id',duplicates=False):
         for seq_record in SeqIO.parse(fap, "fasta"):
             id2seq[getattr(seq_record,key_type)]=str(seq_record.seq)
         return id2seq
-def to_fasta(ids2seqs,fastap,force=False):
+def to_fasta(ids2seqs,fastap,
+             # force=False
+            ):
     from roux.lib.sys import makedirs,exists
-    if exists(fastap) and not force: return
+    # if exists(fastap) and not force: return
     makedirs(fastap)
     seqs = (SeqRecord.SeqRecord(Seq.Seq(ids2seqs[id]), id) for id in ids2seqs)
     SeqIO.write(seqs, fastap, "fasta")
