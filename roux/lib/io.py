@@ -8,11 +8,18 @@ from roux.lib.sys import * #is_interactive_notebook,basenamenoext,makedirs,get_a
 from roux.lib.str import replacemany
 from shutil import copyfile
 import logging
-# def copy(src, dst):copyfile(src, dst)
-# def cp(src, dst):copy(src, dst)
 
 ## paths
 def read_ps(ps,test=True):
+    """Read a list of paths.
+    
+    Parameters:
+        ps (list|str): list of paths or a string with wildcard/s.
+        test (bool): testing.
+
+    Returns:
+        ps (list): list of paths.
+    """
     if isinstance(ps,str): 
         if '*' in ps:
             ps=glob(ps)
@@ -31,6 +38,17 @@ def read_ps(ps,test=True):
     return ps
 
 def to_outp(ps,outd=None,outp=None,suffix=''):
+    """Infer output path based on the list of paths.
+    
+    Parameters:
+        ps (list): list of paths.
+        outd (str): path of the output directory.
+        outp (str): path of the output file.
+        suffix (str): suffix of the filename.
+    
+    Returns:
+        outp (str): path of the output file. 
+    """
     if not outp is None:
         return outp
     from roux.lib.str import get_prefix
@@ -42,20 +60,14 @@ def to_outp(ps,outd=None,outp=None,suffix=''):
     outp=f"{pre}_{suffix}{splitext(ps[0])[1]}"
     return outp
 
-## text files
-def cat(ps,outp):
-    """
-    Concatenate text files.
-    """
-    makedirs(outp,exist_ok=True)
-    with open(outp, 'w') as outfile:
-        for p in ps:
-            with open(p) as infile:
-                outfile.write(infile.read())    
-
 def get_encoding(p):
-    """
-    Get encoding of a file.
+    """Get encoding of a file.
+    
+    Parameters:
+        p (str): file path
+        
+    Returns:
+        s (string): encoding.
     """
     import chardet
     with open(p, 'rb') as f:
@@ -63,32 +75,42 @@ def get_encoding(p):
     return result['encoding']                
 
 import shutil
-def _to_zip(source, destination=None,
-          fmt='zip'):
-    """
-    Zip a folder.
-    Ref:
-    https://stackoverflow.com/a/50381250/3521099
-    """
-    if destination is None:
-        destination=source.rsplit('/')+"."+fmt
-    from os import sep
-    base = basename(destination)
-    fmt = base.split('.')[-1]
-    name = base.replace('.'+fmt,'')
-#     print(base,name,fmt)
-    archive_from = dirname(source)
-    if archive_from=='':
-        archive_from='./'
-#     archive_to = basename(source.strip(sep))
-#     print(archive_from,archive_to)
-    shutil.make_archive(name, fmt, archive_from, 
-#                         archive_to
-                       )
-    shutil.move(f'{name}.{fmt}', destination)
-    return destination
-
 def to_zip(p, outp=None,fmt='zip'):
+    """Compress a file/directory.
+    
+    Parameters:
+        p (str): path to the file/directory.
+        outp (str): path to the output compressed file.
+        fmt (str): format of the compressed file.
+    
+    Returns:
+        outp (str): path of the compressed file.
+    """
+    def _to_zip(source, destination=None,
+          fmt='zip'):
+        """
+        Zip a folder.
+        Ref:
+        https://stackoverflow.com/a/50381250/3521099
+        """
+        if destination is None:
+            destination=source.rsplit('/')+"."+fmt
+        from os import sep
+        base = basename(destination)
+        fmt = base.split('.')[-1]
+        name = base.replace('.'+fmt,'')
+    #     print(base,name,fmt)
+        archive_from = dirname(source)
+        if archive_from=='':
+            archive_from='./'
+    #     archive_to = basename(source.strip(sep))
+    #     print(archive_from,archive_to)
+        shutil.make_archive(name, fmt, archive_from, 
+    #                         archive_to
+                           )
+        shutil.move(f'{name}.{fmt}', destination)
+        return destination
+    
     if isinstance(p,str):
         if isdir(p):
             return _to_zip(p, destination=outp, fmt=fmt)        
@@ -99,6 +121,14 @@ def to_zip(p, outp=None,fmt='zip'):
         return _to_zip(outd+'/', destination=outp, fmt=fmt)
     
 def read_zip(p,file_open=None, fun_read=None):
+    """Read the contents of a zip file.
+    
+    Parameters:
+        p (str): path of the file.
+        file_open (str): path of file within the zip file to open.
+        fun_read (object): function to read the file.
+
+    """
     from io import BytesIO
     from zipfile import ZipFile
     from urllib.request import urlopen
@@ -114,10 +144,30 @@ def read_zip(p,file_open=None, fun_read=None):
             return fun_read(file.open(file_open))
         
 def get_version(suffix=''):
+    """Get the time-based version string.
+    
+    Parameters:
+        suffix (string): suffix.
+    
+    Returns:
+        version (string): version.
+    """
     return 'v'+get_time().replace('_','')+'_'+suffix
 
 def version(p,outd=None,
             **kws):
+    """Get the version of the file/directory.
+    
+    Parameters:
+        p (str): path.
+        outd (str): output directory.
+        
+    Keyword parameters:
+        kws (dict): provided to `get_version`.
+    
+    Returns: 
+        version (string): version.        
+    """
     p=p.rstrip("/")
     if outd is None:
         outd=f"{dirname(p)}{'/' if dirname(p)!='' else ''}"
@@ -130,26 +180,34 @@ def version(p,outd=None,
     return outp
 
 def backup(p,outd,
-#            timed=True,
            versioned=False,
            suffix='',
            zipped=False,
            test=True,
           no_test=False
           ):
-    """    
-    backup
+    """Backup a directory
+    
+    Steps:
         0. create version dir in outd
         1. move ps to version (time) dir with common parents till the level of the version dir
         2. zip or not
-
-    TODOs:
-    chain to if exists and force
-
-    trash dirs
-        find and move/zip
-        "find -regex .*/_.*"
-        "find -regex .*/test.*"
+        
+    Parameters:
+        p (str): input path.
+        outd (str): output directory path.
+        versioned (bool): custom version for the backup (False).
+        suffix (str): custom suffix for the backup ('').
+        zipped (bool): whether to zip the backup (False).
+        test (bool): testing (True).
+        no_test (bool): no testing (False).
+                
+    TODO:
+        1. Chain to if exists and force.
+        2. Option to remove dirs
+            find and move/zip
+            "find -regex .*/_.*"
+            "find -regex .*/test.*"
     """
     print(p)
     print(outd)    
@@ -186,8 +244,13 @@ def backup(p,outd,
         return l2
 
 def read_url(url):
-    """
-    Read text from a url.
+    """Read text from an URL.
+    
+    Parameters:
+        url (str): URL link.
+        
+    Returns:
+        s (string): text content of the URL.
     """
     from urllib.request import urlopen
     f = urlopen(url)
@@ -197,6 +260,18 @@ def read_url(url):
 def download(url,path=None,outd='data/database',
              force=False,
              verbose=True):
+    """Download a file.
+    
+    Parameters:
+        url (str): URL. 
+        path (str): custom output path (None)
+        outd (str): output directory ('data/database').
+        force (bool): overwrite output (False).
+        verbose (bool): verbose (True).
+        
+    Returns: 
+        path (str): output path (None)
+    """
     def get_download_date(path):
         import os
         import datetime
@@ -220,6 +295,20 @@ def download(url,path=None,outd='data/database',
 def post_read_table(df1,clean,tables,
                     verbose=True,
                     **kws_clean):
+    """Post-reading a table.
+    
+    Parameters: 
+        df1 (DataFrame): input dataframe.
+        clean (bool): whether to apply `clean` function. 
+        tables ()
+        verbose (bool): verbose.
+    
+    Keyword parameters:
+        kws_clean (dict): paramters provided to the `clean` function. 
+        
+    Returns:
+        df (DataFrame): output dataframe. 
+    """
     if clean:
         df1=df1.rd.clean(**kws_clean)
     if tables==1 and verbose:
@@ -228,43 +317,55 @@ def post_read_table(df1,clean,tables,
     
 from roux.lib.text import get_header
 def read_table(p,
-               params={},
                ext=None,
-               test=False,
-               filterby_time=None,
                clean=True,
+               filterby_time=None,
                check_paths=True, # read files in the path column
+               test=False,
+               params={},
                kws_clean={},
                kws_cloud={},
                tables=1,
                verbose=True,
-               **kws_read_tables,):
+               **kws_read_tables
+              ):
     """
-    :param replaces_index: 'basenamenoext' if path to basename
-    :param params['columns']: columns to read
+    Table/s reader.
+    
+    Parameters:
+        p (str): path of the file. It could be an input for `read_ps`, which would include strings with wildcards, list etc. 
+        ext (str): extension of the file (default: None meaning infered from the path).
+        clean=(default:True).
+        filterby_time=None).
+        check_paths (bool): read files in the path column (default:True). 
+        test (bool): testing (default:False).
+        params: parameters provided to the 'pd.read_csv' (default:{}). For example
+            params['columns']: columns to read.
+        kws_clean: parameters provided to 'rd.clean' (default:{}).
+        kws_cloud: parameters for reading files from google-drive (default:{}).
+        tables: how many tables to be read (default:1).
+        verbose: verbose (default:True).
+                
+    Keyword parameters:
+        kws_read_tables (dict): parameters provided to `read_tables` function. For example:
+            replaces_index (object|dict|list|str): for example, 'basenamenoext' if path to basename.
+            drop_index (bool): whether to drop the index column e.g. `path` (default: True).
+            colindex (str): the name of the column containing the paths (default: 'path')
+    
+    Returns:
+        df (DataFrame): output dataframe. 
+        
+    Examples:
+        1. For reading specific columns only set `params=dict(columns=list)`.
 
-    #read many
-    :param drop_index: (True)
-    :param colindex: ('path')
-    :param replaces_index: str|dict|fun
-    'decimal':'.'
-    
-    examples:
-    1. Specific columns only: params=dict(columns=list)
-    
-    2.
-    s='.vcf|vcf.gz'
-    read_table(p,
-               params_read_csv=dict(
-               #compression='gzip',
-               sep='\t',comment='#',header=None,
-               names=replacemany(get_header(path,comment='#',lineno=-1),['#','\n'],'').split('\t'))
-               )
-               
-    TODOs:
-    1. deprecate params_read_csv
-     if len(params_read_csv.keys())!=0:
-         params=params_read_csv.copy()
+        2. Reading a vcf file.
+            p='*.vcf|vcf.gz'
+            read_table(p,
+                       params_read_csv=dict(
+                       #compression='gzip',
+                       sep='\t',comment='#',header=None,
+                       names=replacemany(get_header(path,comment='#',lineno=-1),['#','\n'],'').split('\t'))
+                       )
     """
     if isinstance(p,list) or (isinstance(p,str) and ('*' in p)):
         if (isinstance(p,str) and ('*' in p)):
@@ -334,6 +435,14 @@ def read_table(p,
         return post_read_table(pd.read_table(p,**params,),clean=clean,tables=tables,verbose=verbose,**kws_clean)            
 
 def get_logp(ps):
+    """Infer the path of the log file.
+    
+    Parameters:
+        ps (list): list of paths.     
+
+    Returns:
+        p (str): path of the output file.     
+    """
     from roux.lib.str import get_prefix
     p=get_prefix(min(ps),max(ps),common=True,clean=True)
     if not isdir(p):
@@ -342,9 +451,9 @@ def get_logp(ps):
 
 def apply_on_paths(ps,func,
                    replaces_outp=None,
-                   path=None,
+                   # path=None,
                    replaces_index=None,
-                   drop_index=True,
+                   drop_index=True, # keep path
                    colindex='path',
                    filter_rows=None,
                    fast=False, 
@@ -356,25 +465,41 @@ def apply_on_paths(ps,func,
                    kws_read_table={},
                    **kws,
                   ):
-    """
-    :param func:
-    def apply_(p,outd='data/data_analysed',force=False):
-        outp=f"{outd}/{basenamenoext(p)}.pqt'
-        if exists(outp) and not force:
-            return
-        df01=read_table(p)
-    apply_on_paths(
-    ps=glob("data/data_analysed/*"),
-    func=apply_,
-    outd="data/data_analysed/",
-    force=True,
-    fast=False,
-    read_path=True,
-    )
-    :params path: tuple (colindex,replaces_index)
-    :param replaces_outp: to genrate outp
-    :param replaces_index: to replace (e.g. dirname) in p
-    :param colindex: column containing path 
+    """Apply a function on list of files.
+    
+    Parameters:
+        ps (str|list): paths or string to infer paths using `read_ps`.
+        func (function): function to be applied on each of the paths.
+        replaces_outp (dict|function): infer the output path (`outp`) by replacing substrings in the input paths (`p`).
+        filter_rows (dict): filter the rows based on dict, using `rd.filter_rows`.
+        fast (bool): parallel processing (default:False). 
+        progress_bar (bool): show progress bar(default:True).
+        params (dict): parameters provided to the `pd.read_csv` function.
+        dbug (bool): debug mode on (default:False).
+        test1 (bool): test on one path (default:False).
+        kws_read_table (dict): parameters provided to the `read_table` function (default:{}).
+        replaces_index (object|dict|list|str): for example, 'basenamenoext' if path to basename.
+        drop_index (bool): whether to drop the index column e.g. `path` (default: True).
+        colindex (str): the name of the column containing the paths (default: 'path')
+    
+    Keyword parameters:
+        kws (dict): parameters provided to the function.
+
+    Example:
+            1. Function: 
+                def apply_(p,outd='data/data_analysed',force=False):
+                    outp=f"{outd}/{basenamenoext(p)}.pqt'
+                    if exists(outp) and not force:
+                        return
+                    df01=read_table(p)
+                apply_on_paths(
+                ps=glob("data/data_analysed/*"),
+                func=apply_,
+                outd="data/data_analysed/",
+                force=True,
+                fast=False,
+                read_path=True,
+                )
     """
     def read_table_(df,read_path=False,
                     save_table=False,
@@ -450,9 +575,9 @@ def apply_on_paths(ps,func,
             to_list(df2.tolist(),logp)
             logging.info(logp)
         return df2
-    if not path is None:
-        drop_index=False
-        colindex,replaces_index=path
+    # if not path is None:
+    #     drop_index=False
+    #     colindex,replaces_index=path
     if drop_index:
         df2=df2.rd.clean().reset_index(drop=drop_index).rd.clean()
     else:
@@ -475,10 +600,25 @@ def read_tables(ps,
                     tables=None,
                     **kws_apply_on_paths,
                    ):
-    """
-    :param ps: list
+    """Read multiple tables.
     
-    :TODO: info: creation dates of the newest and the oldest files.
+    Parameters:
+        ps (list): list of paths.
+        fast (bool): parallel processing (default:False)
+        filterby_time (str): filter by time (default:None)
+        drop_index (bool): drop index (default:True)
+        to_dict (bool): output dictionary (default:False)
+        params (dict): parameters provided to the `pd.read_csv` function (default:{})
+        tables: number of tables (default:None).
+        
+    Keyword parameters:
+        kws_apply_on_paths (dict): parameters provided to `apply_on_paths`.
+        
+    Returns:
+        df (DataFrame): output dataframe. 
+    
+    TODOs:
+        Parameter to report the creation dates of the newest and the oldest files.
     """
     
     if not filterby_time is None:
@@ -499,6 +639,14 @@ def read_tables(ps,
         return {p:read_table(p,
                              params=params) for p in read_ps(ps)}
 def get_path(p):
+    """Preprocess the path.
+    
+    Parameters:
+        p (str): path.
+        
+    Returns:
+        p (str): processed path.
+    """
     if not 'My Drive' in p:
         p=p.replace(' ','_')
     else:
@@ -508,6 +656,20 @@ def get_path(p):
 def to_table(df,p,
              colgroupby=None,
              test=False,**kws):
+    """Save table.
+    
+    Parameters:
+        df (DataFrame): the input dataframe. 
+        p (str): output path.
+        colgroupby (str|list): columns to groupby with to save the subsets of the data as separate files.
+        test (bool): testing on (default:False).
+        
+    Keyword parameters:
+        kws (dict): parameters provided to the `to_manytables` function.
+    
+    Returns:
+        p (str): path of the output.    
+    """
     if is_interactive_notebook(): test=True
     p=get_path(p)
     if df is None:
@@ -537,11 +699,23 @@ def to_manytables(df,p,colgroupby,
                   ignore=False,
                   **kws_get_chunks):
     """
-    :params colvalue: if colgroupby=='chunk'
-    :params fmt: if '=' column names in the folder name e.g. col1=True
+Save table.
+    
+    Parameters:
+        df (DataFrame): the input dataframe. 
+        p (str): output path.
+        colgroupby (str|list): columns to groupby with to save the subsets of the data as separate files.
+        fmt (str): if '=' column names in the folder name e.g. col1=True.
+        ignore (bool): ignore the warnings (default:False).
+        
+    Keyword parameters:
+        kws_get_chunks (dict): parameters provided to the `get_chunks` function.
+    
+    Returns:
+        p (str): path of the output.   
     
     TODOs:
-    1. fmt='=' by default.
+        1. Change in default parameter: `fmt='='`.
     """
     outd,ext=splitext(p)
     if isinstance(colgroupby,str):
@@ -577,29 +751,47 @@ def to_table_pqt(df,p,engine='fastparquet',compression='gzip',**kws_pqt):
     if not exists(dirname(p)) and dirname(p)!='':
         makedirs(p,exist_ok=True)
     df.to_parquet(p,engine=engine,compression=compression,**kws_pqt)
-
-def to_pathtable(p):
-    """
-    temporary
-    back_compatible
-    TODOs:
-    1. deprecate
-    """
-    to_table(pd.DataFrame({'path':glob(f"{splitext(p)[0]}/*{splitext(p)[1]}")}),p)    
     
 def tsv2pqt(p):
+    """Convert tab-separated file to Apache parquet. 
+    
+    Parameters:
+        p (str): path of the input.
+        
+    Returns: 
+        p (str): path of the output.
+    """
     to_table_pqt(pd.read_csv(p,sep='\t',low_memory=False),f"{p}.pqt")
 def pqt2tsv(p):
+    """Convert Apache parquet file to tab-separated. 
+    
+    Parameters:
+        p (str): path of the input.
+        
+    Returns: 
+        p (str): path of the output.
+    """    
     to_table(read_table(p),f"{p}.tsv")
     
-def read_excel(p,sheet_name=None,to_dict=False,kws_cloud={},**params):
+def read_excel(p,sheet_name=None,to_dict=False,kws_cloud={},**kws):
+    """Read excel file
+    
+    Parameters:
+        p (str): path of the file. 
+        sheet_name (str|None): read 1st sheet if None (default:None)
+        to_dict (bool): return `dict` (default:False)
+        kws_cloud (dict): parameters provided to read the file from the google drive (default:{})
+    
+    Keyword parameters:
+        kws: parameters provided to the excel reader.
+    """
 #     if not 'xlrd' in sys.modules:
 #         logging.error('need xlrd to work with excel; pip install xlrd')
     if p.startswith("https://docs.google.com/spreadsheets/"):
         if not 'outd' in kws_cloud:
             raise ValueError("outd not found in kws_cloud")
         from roux.lib.google import download_file
-        return read_excel(download_file(p,**kws_cloud),**params)
+        return read_excel(download_file(p,**kws_cloud),**kws)
     if not to_dict:
         if sheet_name is None:
             xl = pd.ExcelFile(p)
@@ -608,7 +800,7 @@ def read_excel(p,sheet_name=None,to_dict=False,kws_cloud={},**params):
                 sheet_name=input(', '.join(xl.sheet_names))
             return xl.parse(sheet_name) 
         else:
-            return pd.read_excel(p, sheet_name, **params)
+            return pd.read_excel(p, sheet_name, **kws)
     else:
         xl = pd.ExcelFile(p)
         # see all sheet names
@@ -617,11 +809,21 @@ def read_excel(p,sheet_name=None,to_dict=False,kws_cloud={},**params):
             sheetname2df[sheet_name]=xl.parse(sheet_name) 
         return sheetname2df
         
-def to_excel(sheetname2df,datap,append=False,**kws):
+def to_excel(sheetname2df,outp,append=False,**kws):
+    """Save excel file.
+    
+    Parameters:
+        sheetname2df (dict): dictionary mapping the sheetname to the dataframe.
+        outp (str): output path. 
+        append (bool): append the dataframes (default:False).
+
+    Keyword parameters: 
+        kws: parameters provided to the excel writer.
+    """
 #     if not 'xlrd' in sys.modules:
 #         logging.error('need xlrd to work with excel; pip install xlrd')
-    makedirs(datap)
-    writer = pd.ExcelWriter(datap)
+    makedirs(outp)
+    writer = pd.ExcelWriter(outp)
     startrow=0
     for sn in sheetname2df:
         if not append:
@@ -633,6 +835,16 @@ def to_excel(sheetname2df,datap,append=False,**kws):
     
 ## to table: validate
 def check_chunks(outd,col,plot=True):
+    """Create chunks of the tables.
+    
+    Parameters:
+        outd (str): output directory.
+        col (str): the column with values that are used for getting the chunks.
+        plot (bool): plot the chunk sizes (default:True).
+    
+    Returns:
+        df3 (DataFrame): output dataframe.
+    """
     df1=pd.concat({p:read_table(f'{p}/*.pqt',params=dict(columns=[col])) for p in glob(outd)})
     df2=df1.reset_index(0).log.dropna()
     df3=df2.groupby('level_0')[col].nunique()

@@ -4,20 +4,69 @@ import scipy as sc
 import logging
 
 from scipy.stats import spearmanr,pearsonr
-def get_spearmanr(x,y):
+def get_spearmanr(x: np.array,y: np.array) -> tuple:
+    """Get Spearman correlation coefficient.
+
+    Args:
+        x (np.array): x vector.
+        y (np.array): y vector.
+
+    Returns:
+        tuple: rs, p-value
+    """
     t=sc.stats.spearmanr(x,y,nan_policy='omit')
     return t.correlation,float(t.pvalue)
-def get_pearsonr(x,y):
+
+def get_pearsonr(x: np.array,y: np.array) -> tuple:
+    """Get Pearson correlation coefficient.
+
+    Args:
+        x (np.array): x vector.
+        y (np.array): y vector.
+
+    Returns:
+        tuple: rs, p-value
+    """
     return sc.stats.pearsonr(x,y)
 
-def get_corr_bootstrapped(x,y,method='spearman',ci_type='max',random_state=1):
+def get_corr_bootstrapped(x: np.array,y: np.array,
+                          method='spearman',ci_type='max',random_state=1) -> tuple:
+    """Get correlations after bootstraping.
+
+    Args:
+        x (np.array): x vector.
+        y (np.array): y vector.
+        method (str, optional): method name. Defaults to 'spearman'.
+        ci_type (str, optional): confidence interval type. Defaults to 'max'.
+        random_state (int, optional): random state. Defaults to 1.
+
+    Returns:
+        tuple: mean correlation coefficient, confidence interval
+    """
     from roux.lib.stat.ml import get_cvsplits
     from roux.stat.variance import get_ci
     cv2xy=get_cvsplits(x,y,cv=5,outtest=False,random_state=1)
     rs=[globals()[f"get_{method}r"](**cv2xy[k])[0] for k in cv2xy]
     return np.mean(rs), get_ci(rs,ci_type=ci_type)
 
-def corr_to_str(method,r,p,fmt='<',n=True, ci=None,ci_type=None, magnitide=True):
+def corr_to_str(method: str,
+                r: float,p: float,
+                fmt='<',n=True, ci=None,ci_type=None, magnitide=True) -> str:
+    """Correlation to string
+
+    Args:
+        method (str): method name.
+        r (float): correlation coefficient.
+        p (float): p-value
+        fmt (str, optional): format of the p-value. Defaults to '<'.
+        n (bool, optional): sample size. Defaults to True.
+        ci (_type_, optional): confidence interval. Defaults to None.
+        ci_type (_type_, optional): confidence interval type. Defaults to None.
+        magnitide (bool, optional): show magnitude of the sample size. Defaults to True.
+
+    Returns:
+        str: string with the correation stats. 
+    """
     from roux.viz.annot import pval2annot
     from roux.lib.str import num2str
     s0=f"$r_{method[0]}$={r:.2f}"
@@ -26,11 +75,24 @@ def corr_to_str(method,r,p,fmt='<',n=True, ci=None,ci_type=None, magnitide=True)
     s0+=f"\n{pval2annot(p,fmt='<',linebreak=False, alpha=0.05)}"+('' if not n else f"\nn="+num2str(num=n,magnitude=False))
     return s0
 
-def get_corr(x,y,method='spearman',bootstrapped=False,ci_type='max',magnitide=True,
+def get_corr(x: np.array,y: np.array,
+            method='spearman',bootstrapped=False,ci_type='max',magnitide=True,
             outstr=False,
             **kws):
-    """
-    between vectors
+    """Correlation between vectors (wrapper).
+
+    Args:
+        x (np.array): x.
+        y (np.array): y.
+        method (str, optional): method name. Defaults to 'spearman'.
+        bootstrapped (bool, optional): bootstraping. Defaults to False.
+        ci_type (str, optional): confidence interval type. Defaults to 'max'.
+        magnitide (bool, optional): show magnitude. Defaults to True.
+        outstr (bool, optional): output as string. Defaults to False.
+    
+    Keyword arguments:
+        kws: parameters provided to `get_corr_bootstrapped` function.
+
     """
     n=len(x)
     if bootstrapped:
@@ -46,17 +108,18 @@ def get_corr(x,y,method='spearman',bootstrapped=False,ci_type='max',magnitide=Tr
             return r,p,n
         else:
             return corr_to_str(method,r,p,n=n, ci=None,ci_type=None, magnitide=magnitide)
-# def get_corr_str(x,y,method='spearman',bootstrapped=False,ci_type='max',
-#             outstr=True):
-#     return get_corr(x,y,method='spearman',bootstrapped=False,ci_type='max',
-#             outstr=False):    
 
-
-def corr_within(df,
+def corr_within(df: pd.DataFrame,
          method='spearman',
-         ):
-    """
-    :returns: linear 
+         ) -> pd.DataFrame:
+    """Correlation within a dataframe.
+
+    Args:
+        df (DataFrame): input dataframe.
+        method (str, optional): method name. Defaults to 'spearman'.
+
+    Returns:
+        DataFrame: output dataframe.
     """
     
     df1=df.corr(method=method).rd.fill_diagonal(filler=np.nan)
@@ -66,18 +129,34 @@ def corr_within(df,
     return df2
 
 
-def corrdf(df1,
-           colindex,
-           colsample,
-           colvalue,
+def corrdf(df1: pd.DataFrame,
+           colindex: str,
+           colsample: str,
+           colvalue: str,
            colgroupby=None,
            min_samples=1,
            fast=False,
            drop_diagonal=True,
            drop_duplicates=True,
-           **kws):
-    """
-    linear df
+           **kws) -> pd.DataFrame:
+    """Correlate within a dataframe.
+
+    Args:
+        df1 (DataFrame): input dataframe.
+        colindex (str): index column.
+        colsample (str): column with samples.
+        colvalue (str): column with the values.
+        colgroupby (str, optional): column with the groups. Defaults to None.
+        min_samples (int, optional): minimum allowed sample size. Defaults to 1.
+        fast (bool, optional): use parallel processing. Defaults to False.
+        drop_diagonal (bool, optional): drop values at the diagonal of the output. Defaults to True.
+        drop_duplicates (bool, optional): drop duplicate values. Defaults to True.
+
+    Keyword arguments:
+        kws: parameters provided to `corr_within` function.
+
+    Returns:
+        DataFrame: output dataframe.
     """
     
     if df1[colsample].nunique()<min_samples:
@@ -100,10 +179,16 @@ def corrdf(df1,
     return df2
 
 
-def corr_between(df1,df2,method):
-    """
-    df1 in columns
-    df2 in rows    
+def corr_between(df1: pd.DataFrame,df2: pd.DataFrame,method: str) -> pd.DataFrame:
+    """Correlate between dataframes.
+
+    Args:
+        df1 (DataFrame): pd.DataFrame #1. Its columns are mapped to the columns of the output matrix.
+        df2 (DataFrame): pd.DataFrame #2. Its columns are mapped to the rows of the output matrix.
+        method (methodname): method name
+
+    Returns:
+        DataFrame: correlation matrix.
     """
     from roux.lib.set import list2intersection
     index_common=list2intersection([df1.index.tolist(),df2.index.tolist()])
@@ -132,15 +217,28 @@ def corr_between(df1,df2,method):
     return df3.reset_index()
 
 
-def corrdfs(df1,df2,
-           colindex,
-           colsample,
-           colvalue,
+def corrdfs(df1: pd.DataFrame,df2: pd.DataFrame,
+           colindex: str,
+           colsample: str,
+           colvalue: str,
            colgroupby=None,
            min_samples=1,
            **kws):
-    """
-    linear df
+    """Correlate between dataframes.
+
+    Args:
+        df1 (DataFrame): input dataframe.
+        colindex (str): index column.
+        colsample (str): column with samples.
+        colvalue (str): column with the values.
+        colgroupby (str, optional): column with the groups. Defaults to None.
+        min_samples (int, optional): minimum allowed sample size. Defaults to 1.
+
+    Keyword arguments:
+        kws: parameters provided to `corr_between` function.
+
+    Returns:
+        DataFrame: output dataframe.
     """
     if len(df1[colsample].unique())<min_samples or len(df2[colsample].unique())<min_samples:
         return
@@ -158,85 +256,19 @@ def corrdfs(df1,df2,
             )).reset_index(0)
     return df3
 
-# def get_corr_str(r,p):
-#     from roux.viz.annot import pval2annot
-#     return f"$\\rho$={r:.1e} ({pval2annot(p,fmt='<')})".replace('\n','')
-
-# def get_spearmanr_str(x,y):    
-#     r,p=get_spearmanr(x,y)
-#     return get_correlation_str(r,p)
-
-## apply on paths
-def get_corr_within(p,
-           colmut,
-           colindex,
-           colsample,
-           colvalue,
-           colgroupby,
-           force=False,
-           **kws_replacemany):
-    from roux.lib.str import replacemany
-    from roux.lib.io import dirname,basename,basenamenoext,exists
-    from roux.lib.dfs import read_table,to_table
-    outp=replacemany(p,**kws_replacemany)
-    if exists(outp) and not force: 
-        return
-#     info(outp)
-    df01=read_table(p)
-    if not len(df01[colsample].unique())>=3:
-        return
-    if colmut in df01:
-        df01=df01.loc[((df01[colmut]=='no') & ~(df01['rearrangement fusion'])),:]
-#     from roux.stat.corr import corrdf
-    df1=corrdf(df01,
-               colindex=colindex,
-               colsample=colsample,
-               colvalue=colvalue,
-           colgroupby=colgroupby,
-                    method='spearman'
-          )
-    to_table(df1,outp)
-
-def get_corr_between(p,
-           colmut,
-           colindex,
-           colsample,
-           colvalue,
-           colgroupby=None,
-           force=False,
-           **kws_replacemany):
-    from roux.lib.str import replacemany
-    from roux.lib.io import dirname,basename,basenamenoext,exists
-    from roux.lib.dfs import read_table,to_table
-    outp=p
-    p=replacemany(p,**kws_replacemany)
-    ps=[f"{dirname(p)}/{s}.pqt" for s in basenamenoext(outp).split('--')]    
-    if exists(outp) and not force: 
-        return
-    dfs=[read_table(p) for p in ps]
-    if colmut in dfs[0]:
-        dfs=[df.loc[((df[colmut]=='no') & ~(df['rearrangement fusion'])),:] for df in dfs]
-    if not all([len(df[colsample].unique())>=3 for df in dfs]):
-        return
-#     from roux.stat.corr import corrdfs
-    df1=corrdfs(*dfs,
-               colindex=colindex,
-               colsample=colsample,
-               colvalue=colvalue,
-               colgroupby=colgroupby,                 
-                 method='spearman')
-    to_table(df1,outp)
-
 ## partial 
+def get_partial_corrs(df: pd.DataFrame,xs: list,ys: list, method='spearman',splits=5) -> pd.DataFrame:
+    """Get partial correlations.
 
+    Args:
+        df (DataFrame): input dataframe.
+        xs (list): columns used as x variables.
+        ys (list): columns used as y variables.
+        method (str, optional): method name. Defaults to 'spearman'.
+        splits (int, optional): number of splits. Defaults to 5.
 
-def get_partial_corrs(df,xs,ys,method='spearman',splits=5):
-    """
-    xs=['protein expression balance','coexpression']
-    ys=[
-    'coexpression',
-    'combined_score',['combined_score','coexpression'],]
-
+    Returns:
+        DataFrame: output dataframe.
     """
     import pingouin as pg
     import itertools
@@ -266,9 +298,18 @@ def get_partial_corrs(df,xs,ys,method='spearman',splits=5):
     return df1.reset_index()
 
 
-def check_collinearity(df3,threshold):
-    """
-    :TODO: calculate variance inflation factor (VIF).
+def check_collinearity(df3: pd.DataFrame,threshold: float) -> pd.DataFrame:
+    """Check collinearity.
+
+    Args:
+        df3 (DataFrame): input dataframe.
+        threshold (float): minimum threshold for the colinearity.
+
+    Returns:
+        DataFrame: output dataframe.
+    
+    TODOs:
+        1. Calculate variance inflation factor (VIF).
     """
     df4=df3.corr(method='spearman')
     # df4=df4.applymap(abs)
@@ -288,7 +329,16 @@ def check_collinearity(df3,threshold):
     df7=df7.groupby('subnetwork name').agg({'node name':list}).reset_index()
     return df7.groupby('subnetwork name').progress_apply(lambda df: df6.apply(lambda x: x['value'] if len(set([x['index'],x['variable']]) - set(df['node name'].tolist()[0]))==0 else np.nan,axis=1).min()).sort_values(ascending=False)
 
-def pairwise_chi2(df1,cols_values):
+def pairwise_chi2(df1: pd.DataFrame,cols_values: list) -> pd.DataFrame:
+    """Pairwise chi2 test.
+
+    Args:
+        df1 (DataFrame): pd.DataFrame
+        cols_values (list): list of columns.
+
+    Returns:
+        DataFrame: output dataframe.
+    """
     import itertools
     d1={}
     for cols in list(itertools.combinations(cols_values,2)):

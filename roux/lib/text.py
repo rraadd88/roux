@@ -1,15 +1,41 @@
 # from roux.global_imports import *
 
 def read(p):
+    """Read a file.
+
+    Args:
+        p (str): path.
+
+    Returns:
+        s (str): contents.
+    """
     with open(p,'r') as f:
         s=f.read()
     return s
 def read_lines(p):
+    """Read the lines in the file.
+
+    Args:
+        p (str): path.
+
+    Returns:
+        l (list): list.
+    """
     with open(p,'r') as f:
         s=f.readlines()
     return s
 
-def get_header(path,comment='#',lineno=None):
+def get_header(path: str,comment='#',lineno=None):
+    """Get the header of a file.
+
+    Args:
+        path (str): path.
+        comment (str): comment identifier.
+        lineno (int): line numbers upto.
+
+    Returns:
+        lines (list): header.
+    """
     import re
     file = open(path, "r")
     lines=[]
@@ -28,49 +54,20 @@ def get_header(path,comment='#',lineno=None):
             if i==lineno:
                 return line
             
-def pdf_to_text(pdf_path,pages=None):
-    """
-    This function extracts text from pdf file and return text as string.
-    :param pdf_path: path to pdf file.
-    :return: text string containing text of pdf.
-    """
-    def get_text(fh,pages):
-        import io
-        from pdfminer.converter import TextConverter
-        from pdfminer.pdfinterp import PDFResourceManager,PDFPageInterpreter
-        from pdfminer.pdfpage import PDFPage
-        from pdfminer.layout import LAParams
+## text files
+def cat(ps,outp):
+    """Concatenate text files.
 
-        resource_manager = PDFResourceManager()
-        fake_file_handle = io.StringIO()
-#         laparams = LAParams()
-#         laparams=None
-        laparams = LAParams()
-        for param in ("all_texts", "detect_vertical", "word_margin", "char_margin", "line_margin", "boxes_flow"):
-            paramv = locals().get(param, None)
-            if paramv is not None:
-                setattr(laparams, param, paramv)
+    Args:
+        ps (list): list of paths.
+        outp (str): output path.
 
-        converter = TextConverter(resource_manager, fake_file_handle,
-                                  laparams=laparams)
-        page_interpreter = PDFPageInterpreter(resource_manager, converter)
-        for pagei,page in enumerate(PDFPage.get_pages(fh, 
-                                      caching=True,
-                                      check_extractable=True)):
-            if pagei in pages:
-                page_interpreter.process_page(page)
-        text = fake_file_handle.getvalue()
-        # close open handles
-        converter.close()
-        fake_file_handle.close()   
-        return text 
-    if not isinstance(pdf_path,str):
-        import io
-        fh = io.BytesIO() 
-        fh.write(pdf_path) 
-        text=get_text(fh,pages)
-    else:  
-        with open(pdf_path, 'rb') as fh:
-            text=get_text(fh,pages)        
-    if text:
-        return text    
+    Returns:
+        outp (str): output path.
+    """
+    makedirs(outp,exist_ok=True)
+    with open(outp, 'w') as outfile:
+        for p in ps:
+            with open(p) as infile:
+                outfile.write(infile.read())    
+    return outp

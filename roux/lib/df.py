@@ -1,4 +1,4 @@
-"""For processing DataFrames"""
+"""For processing individual pandas DataFrames/Series"""
 import pandas as pd
 import numpy as np
 import logging
@@ -340,7 +340,7 @@ def check_na(df,
 
 @to_rd
 def validate_no_na(df,subset=None):
-    """Number/percentage of missing values in columns.
+    """Validate no missing values in columns.
     
     Parameters:
         df (DataFrame): input dataframe.
@@ -355,7 +355,18 @@ def validate_no_na(df,subset=None):
 
 @to_rd
 def assert_no_na(df,subset=None):
+    """Assert that no missing values in columns.
+    
+    Parameters:
+        df (DataFrame): input dataframe.
+        subset (list): list of columns.
+        perc (bool): output percentages.
+        
+    Returns:
+        ds (Series): output stats.
+    """    
     assert validate_no_na(df,subset=subset), check_na(df,subset=subset) 
+    return df
 
 ## nunique:
 @to_rd
@@ -418,7 +429,10 @@ def check_dups(df,subset=None,perc=False):
         return 100*(len(df1)/len(df))
 
 @to_rd
-def check_duplicated(df,subset=None,perc=False):return check_dups(df,subset=subset,perc=perc)
+def check_duplicated(df,subset=None,perc=False):
+    """Check duplicates (alias of `check_dups`)    
+    """
+    return check_dups(df,subset=subset,perc=perc)
 
 @to_rd
 def validate_no_dups(df,subset=None,):
@@ -427,17 +441,22 @@ def validate_no_dups(df,subset=None,):
     Parameters:
         df (DataFrame): input dataframe.
         subset (list): list of columns.
-        
     """
     if subset is None: subset=df.columns.tolist()
     return not df.duplicated(subset=subset).any()
 
 @to_rd
-def validate_no_duplicates(df,subset=None,):return validate_no_dups(df,subset=subset,)
+def validate_no_duplicates(df,subset=None,):
+    """Validate that no duplicates (alias of `validate_no_dups`)
+    """
+    return validate_no_dups(df,subset=subset,)
 
 @to_rd
 def assert_no_dups(df,subset=None):
+    """Assert that no duplicates
+    """    
     assert validate_no_dups(df,subset=subset), check_dups(df,subset=subset,perc=False)
+    return df
 
 ## asserts        
 @to_rd
@@ -466,6 +485,7 @@ def assert_dense(df01,subset=None,duplicates=True,na=True,message=None):
         to be deprecated in future releases.
     """
     assert validate_dense(df01,subset=subset,duplicates=duplicates,na=na,message=message)
+    return df01
 
 ## mappings    
 @to_rd        
@@ -576,9 +596,20 @@ def get_mappings(df1,
 
 @to_rd
 def groupby_filter_fast(df1,col,fun,how,coff):
-    """
-    TODOs:
-    deprecate if `pandas.core.groupby.DataFrameGroupBy.filter` is faster.
+    """Groupby and filter fast.
+    
+    Parameters:
+        df1 (DataFrame): input dataframe.
+        col (str): column name.
+        fun (object): function to filter with.
+        how (str): greater or less than `coff` (>|<).  
+        coff (float): cut-off.    
+        
+    Returns:
+        df1 (DataFrame): output dataframe.
+    
+    Todo:
+        Deprecation if `pandas.core.groupby.DataFrameGroupBy.filter` is faster.
     """
     ds1=df1.groupby(col).transform(fun)
     if how=='<':
@@ -590,9 +621,15 @@ def groupby_filter_fast(df1,col,fun,how,coff):
         
 @to_rd
 def to_map_binary(df,colgroupby=None,colvalue=None):
-    """
-    linear mappings to binary map
-    no mappings -> False
+    """Convert linear mappings to a binary map
+    
+    Parameters:
+        df (DataFrame): input dataframe.
+        colgroupby (str): name of the column for groupby.
+        colvalue (str): name of the column containing values.
+        
+    Returns:
+        df1 (DataFrame): output dataframe.
     """
     colgroupby=[colgroupby] if isinstance(colgroupby,str) else colgroupby
     colvalue=[colvalue] if isinstance(colvalue,str) else colvalue
@@ -604,15 +641,26 @@ def to_map_binary(df,colgroupby=None,colvalue=None):
     return df1
 
 ## intersections 
-
 @to_rd        
 def check_intersections(df,
                         colindex=None, # 'samples'
                         colgroupby=None, # 'yticklabels'
-                        plot=False,**kws_plot):
-    """
-    'variable',
-    lin -> map -> groupby (ds)
+                        plot=False,
+                        **kws_plot):
+    """Check intersections.
+    Linear dataframe to is converted to a binary map and then to a series using `groupby`.
+
+    Parameters:
+        df (DataFrame): input dataframe.
+        colindex (str): name of the index column.
+        colgroupby (str): name of the groupby column.
+        plot (bool): plot or not.
+    
+    Returns:
+        ds1 (Series): output Series.
+
+    Keyword Arguments:
+        kws_plot (dict): parameters provided to the plotting function.
     """
     # if isinstance(colindex,str):
     #     colindex=[colindex]
@@ -648,8 +696,13 @@ def check_intersections(df,
         return ds
 
 def get_totals(ds1):
-    """
-    :params ds1: check_intersections output
+    """Get totals from the output of `check_intersections`.
+    
+    Parameters:
+        ds1 (Series): input Series.
+    
+    Returns:
+        d (dict): output dictionary.
     """
     col=ds1.name if not ds1.name is None else 0
     df1=ds1.to_frame().reset_index()
@@ -657,11 +710,29 @@ def get_totals(ds1):
     
 #filter df
 @to_rd
-def filter_rows(df,d,sign='==',logic='and',
+def filter_rows(df,
+                d,
+                sign='==',
+                logic='and',
                 drop_constants=False,
                 test=False,
                 verb=True,
                ):
+    """Filter rows using a dictionary.
+    
+    Parameters:
+        df (DataFrame): input dataframe.
+        d (dict): dictionary.
+        sign (str): condition within mappings ('==').
+        logic (str): condition between mappings ('and').
+        drop_constants (bool): to drop the columns with single unique value (False).
+        test (bool): testing (False).
+        verb (bool): more verbose (True).
+                
+    Returns:
+        df (DataFrame): output dataframe.
+    
+    """
     if verb: logging.info(df.shape)    
     assert(all([isinstance(d[k],(str,list)) for k in d]))
     qry = f" {logic} ".join([f"`{k}` {sign} "+(f"'{v}'" if isinstance(v,str) else f"{v}") for k,v in d.items()])
@@ -675,11 +746,19 @@ def filter_rows(df,d,sign='==',logic='and',
         df1=df1.rd.drop_constants()
     return df1
 
-filter_rows_bydict=filter_rows
-
 ## conversion to type
 @to_rd
 def to_dict(df,cols,drop_duplicates=False):
+    """DataFrame to dictionary.
+    
+    Parameters:
+        df (DataFrame): input dataframe.
+        cols (list): list of two columns: 1st contains keys and second contains value.
+        drop_duplicates: whether to drop the duplicate values (False).
+        
+    Returns:
+        d (dict): output dictionary.
+    """
     df=df.log.dropna(subset=cols)
     if drop_duplicates:
         df=df.loc[:,cols].drop_duplicates()
@@ -690,12 +769,21 @@ def to_dict(df,cols,drop_duplicates=False):
         assert df[cols[1]].dtype=='O', df[cols[1]].dtype
         return df.groupby(cols[0])[cols[1]].unique().to_dict()        
 
+## to avoid overlap with `io_dict.to_dict`
 del to_dict
 
 ## conversion
 @to_rd
 def get_bools(df,cols,drop=False):
-    """
+    """Columns to bools. One-hot-encoder (`get_dummies`).
+    
+    Parameters:
+        df (DataFrame): input dataframe. 
+        cols (list): columns to encode.
+        drop (bool): drop the `cols` (False).
+    
+    Returns: 
+        df (DataFrame): output dataframe.
     """
     for c in cols:
         df_=pd.get_dummies(df[c],
@@ -710,10 +798,14 @@ def get_bools(df,cols,drop=False):
 
 @to_rd
 def agg_bools(df1,cols):
-    """
-    reverse pd.get_dummies
+    """Bools to columns. Reverse of one-hot encoder (`get_dummies`). 
     
-    :param df1: bools
+    Parameters:
+        df1 (DataFrame): input dataframe.
+        cols (list): columns. 
+    
+    Returns:
+        ds (Series): output series.
     """
     col='+'.join(cols)
 #     print(df1.loc[:,cols].T.sum())
@@ -729,13 +821,21 @@ def melt_paired(df,
                 suffixes=None,
                 cols_value=None,
                 ):
-    """
-    Completely/partially melt paired dataframe.
+    """Melt a paired dataframe.
     
-    Partial melt melts selected columns `cols_value`.
+    Parameters:
+        df (DataFrame): input dataframe.
+        cols_index (list): paired index columns (None).
+        suffixes (list): paired suffixes (None).
+        cols_value (list): names of the columns containing the values (None).
+
+    Notes:
+        Partial melt melts selected columns `cols_value`.
     
-    cols_value=['value1','value2'],
-    suffixes=['gene1','gene2'],
+    Examples:
+        Paired parameters:
+            cols_value=['value1','value2'],
+            suffixes=['gene1','gene2'],
     """
     if cols_value is None:
         assert not (cols_index is None and suffixes is None), "either cols_index or suffixes needed" 
@@ -771,10 +871,17 @@ def melt_paired(df,
 
 @to_rd
 def get_chunks(df1,colindex,colvalue,bins=None,value='right'):
-    """
-    based on other df
+    """Get chunks of a dataframe.
     
-    :param colvalue: value within [0-100]
+    Parameters:
+        df1 (DataFrame): input dataframe.
+        colindex (str): name of the index column.
+        colvalue (str): name of the column containing values [0-100]
+        bins (int): number of bins.
+        value (str): value to use as the name of the chunk ('right').
+        
+    Returns: 
+        ds (Series): output series.
     """
     from roux.lib.set import unique,nunique
     if bins==0:
@@ -797,86 +904,22 @@ def get_chunks(df1,colindex,colvalue,bins=None,value='right'):
     df1['chunk']=df1[colindex].map(d2)
     return df1['chunk']
 
-## symmetric dfs eg. submaps    
-@to_rd
-def dfmap2symmcolidx(df,test=False):
-    geneids=set(df.index).union(set(df.columns))
-    df_symm=pd.DataFrame(columns=geneids,index=geneids)
-    df_symm.loc[df.index,:]=df.loc[df.index,:]
-    df_symm.loc[:,df.columns]=df.loc[:,df.columns]
-    if test:
-        logging.debug(df_symm.shape)
-    return df_symm
-
-@to_rd
-def fill_diagonal(df,filler=None):
-    if df.shape[0]!=df.shape[1]:
-        logging.warning('df not symmetric')      
-#     ids=set(df.columns).intersection(df.index)
-    if filler is None:
-        filler=np.nan
-    if str(df.dtypes.unique()[0])=='bool' and (pd.isnull(filler)) :
-        logging.info('warning diagonal is replaced by True rather than nan')
-    np.fill_diagonal(df.values, filler)        
-    return df
-
-@to_rd
-def get_diagonalvals(df):
-    if df.shape[0]!=df.shape[1]:
-        logging.warning('df not symmetric')
-#     ids=set(df.columns).intersection(df.index)
-    ds=pd.Series(np.diag(df), index=[df.index, df.columns])
-#     id2val={}
-#     for i,c in zip(ids,ids):
-#         id2val[i]=df.loc[i,c]
-    return pd.DataFrame(ds,columns=['diagonal value']).reset_index()
-
-@to_rd
-def fill_symmetricdf_indices(dsubmap,vals=None):
-    if vals is None:
-        vals=np.unique(dsubmap.index.tolist()+dsubmap.columns.tolist())
-    for v in vals: 
-        if not v in dsubmap.columns:            
-            dsubmap[v]=np.nan
-        if not v in dsubmap.index:
-            dsubmap.loc[v,:]=np.nan
-    return dsubmap.loc[vals,vals]
-
-@to_rd
-def fill_symmetricdf_across_diagonal(df,fill=None):
-    df=fill_symmetricdf_indices(dsubmap=df,vals=None)
-    for c1i,c1 in enumerate(df.columns):
-        for c2i,c2 in enumerate(df.columns):
-            if c1i>c2i:
-                if fill is None:
-                    bools=[pd.isnull(i) for i in [df.loc[c1,c2],df.loc[c2,c1]]]
-                    if sum(bools)==1:
-                        if bools[0]==True:
-                            df.loc[c1,c2]=df.loc[c2,c1]
-                        elif bools[1]==True:
-                            df.loc[c2,c1]=df.loc[c1,c2]
-                elif fill=='lower': 
-                    df.loc[c1,c2]=df.loc[c2,c1]
-                elif fill=='upper':
-                    df.loc[c2,c1]=df.loc[c1,c2]                            
-    return df
-
-@to_rd
-def get_offdiagonal_values(dcorr,side='lower',take_diag=False,replace=np.nan):
-    for ii,i in enumerate(dcorr.index):
-        for ci,c in enumerate(dcorr.columns):            
-            if side=='lower' and ci>ii:
-                dcorr.loc[i,c]=replace
-            elif side=='upper' and ci<ii:
-                dcorr.loc[i,c]=replace
-            if not take_diag:
-                if ci==ii:
-                    dcorr.loc[i,c]=replace
-    return dcorr
-
 ## GROUPBY
 # aggregate dataframes
 def get_group(groups,i=None,verbose=True):
+    """Get a dataframe for a group out of the `groupby` object.
+
+    Parameters:
+        groups (object): groupby object.
+        i (int): index of the group (None).
+        verbose (bool): verbose (True).
+        
+    Returns: 
+        df (DataFrame): output dataframe.
+        
+    Notes: 
+        Useful for testing `groupby`.
+    """
     if not i is None: 
         dn=list(groups.groups.keys())[i]
     else:
@@ -886,19 +929,17 @@ def get_group(groups,i=None,verbose=True):
     df.name=dn
     return df
         
-@to_rd
-def dropna_by_subset(df,colgroupby,colaggs,colval,colvar,test=False):
-    df_agg=dfaggregate_unique(df,colgroupby,colaggs)
-    df_agg['has values']=df_agg.apply(lambda x : len(x[f'{colval}: list'])!=0,axis=1)
-    varswithvals=df_agg.loc[(df_agg['has values']),colvar].tolist()
-    if test:
-        df2info(df_agg)
-    df=df.loc[df[colvar].isin(varswithvals),:] 
-    return df
-
-
 # multiindex
 def coltuples2str(cols,sep=' '):
+    """Convert list of tuples (e.g. MultiIndex) to list of strings
+    
+    Parameters:
+        cols (list): list of tuples.
+        sep (str): separator within the joined tuples (' ').
+        
+    Returns:
+        cols_str (list): list of strings.
+    """
     from roux.lib.str import tuple2str
     cols_str=[]
     for col in cols:
@@ -906,7 +947,17 @@ def coltuples2str(cols,sep=' '):
     return cols_str
 
 @to_rd
-def column_suffixes2multiindex(df,suffixes,test=False):
+def to_multiindex_columns(df,suffixes,test=False):
+    """Single level columns to multiindex.
+    
+    Parameters:
+        df (DataFrame): input dataframe.
+        suffixes (list): list of suffixes.
+        test (bool): verbose (False).
+        
+    Returns:
+        df (DataFrame): output dataframe.
+    """
     cols=[c for c in df if c.endswith(f' {suffixes[0]}') or c.endswith(f' {suffixes[1]}')]
     if test:
         logging.info(cols)
@@ -916,47 +967,22 @@ def column_suffixes2multiindex(df,suffixes,test=False):
     df.columns=pd.MultiIndex.from_tuples(df.columns)
     return df
 
-## dtype conversion
-@to_rd
-def colobj2str(df,test=False):
-    cols_obj=df.dtypes[df.dtypes=='object'].index.tolist()
-    if test:
-        logging.info(cols_obj)
-    for c in cols_obj:
-        df[c]=df[c].astype('|S80')
-    return df
-
-@to_rd
-def split_rows(df,collist,rowsep=None):
-    """
-    for merging dfs with names with df with synonymns
-    param colsyn: col containing tuples of synonymns 
-    """
-    if not rowsep is None:
-        df.loc[:,collist]=df.loc[:,collist].apply(lambda x : x.split(rowsep))
-    return dellevelcol(df.set_index([c for c in df if c!=collist])[collist].apply(pd.Series).stack().reset_index().rename(columns={0:collist},
-                                                                                                                         errors='raise'))        
-### alias
-meltlistvalues=split_rows
-
-## apply
-@to_rd
-def apply_as_map(df,index,columns,values,
-                 fun,**kws):
-    """
-    :param fun: map to map
-    """
-    df1=df.pivot(index=index,columns=columns,values=values)
-    df2=fun(df1,**kws)
-    return df2.melt(ignore_index=False,value_name=values).reset_index()
-
 ## ranges
-
 @to_rd
-def boolean_to_ranges(df1,colindex,colbool,sort=True):
-    """
-    TODOs:
-    compare with io_sets.bools2intervals
+def to_ranges(df1,colindex,colbool,sort=True):
+    """Ranges from boolean columns.
+    
+    Parameters:
+        df1 (DataFrame): input dataframe.
+        colindex (str): column containing index items.
+        colbool (str): column containing boolean values.
+        sort (bool): sort the dataframe (True).
+        
+    Returns:
+        df1 (DataFrame): output dataframe.
+        
+    TODO:
+        compare with io_sets.bools2intervals.
     """
     import scipy as sc
     if sort:
@@ -965,16 +991,34 @@ def boolean_to_ranges(df1,colindex,colbool,sort=True):
     return df1.loc[(df1['group']!=0),:].groupby('group')[colindex].agg([min,max]).reset_index()
 
 @to_rd
-def ranges_to_boolean(df2):
-    low, high = np.array(df2).T[:,:, None]
+def to_boolean(df1):
+    """Boolean from ranges.
+    
+    Parameters:
+        df1 (DataFrame): input dataframe.
+        
+    Returns:
+        ds (Series): output series.
+        
+    TODO:
+        compare with io_sets.bools2intervals.
+    """    
+    low, high = np.array(df1).T[:,:, None]
     a = np.arange(high.max() + 1)
     return ((a >= low) & (a <= high)).any(axis=0)
 
 
 ## sorting
 def to_cat(ds1,cats,ordered = True):
-    """
-    Series op.
+    """To series containing categories.
+    
+    Parameters:
+        ds1 (Series): input series.
+        cats (list): categories.
+        ordered (bool): if the categories are ordered (True).
+
+    Returns:
+        ds1 (Series): output series.
     """
     ds1=ds1.astype('category')
     ds1=ds1.cat.set_categories(new_categories = cats, ordered = ordered)
@@ -983,16 +1027,39 @@ def to_cat(ds1,cats,ordered = True):
 
 @to_rd
 def sort_valuesby_list(df1,by,cats,**kws):
+    """Sort dataframe by custom order of items in a column.
+        
+    Parameters:
+        df1 (DataFrame): input dataframe.
+        by (str): column.
+        cats (list): ordered list of items.
+
+    Keyword parameters:
+        kws (dict): parameters provided to `sort_values`.
+    
+    Returns:
+        df (DataFrame): output dataframe.
+    """
     df1[by]=to_cat(df1[by],cats,ordered = True)
     return df1.sort_values(by=by, **kws)
 
 ## apply_agg
 def agg_by_order(x,order):
+    """Get first item in the order.
+
+    Parameters: 
+        x (list): list.
+        order (list): desired order of the items.
+
+    Returns:
+        k: first item.
+        
+    Notes:
+        Used for sorting strings. e.g. `damaging > other non-conserving > other conserving`
+
+    TODO: 
+        Convert categories to numbers and take min
     """
-    List op.
-    TODO: convert categories to numbers and take min
-    """
-    # damaging > other non-conserving > other conserving
     if len(x)==1:
 #         print(x.values)
         return list(x.values)[0]
@@ -1000,14 +1067,21 @@ def agg_by_order(x,order):
         if k in x.values:
             return k
 def agg_by_order_counts(x,order):
-    """
-    List op.
-    demo:
-    df=pd.DataFrame({'a1':['a','b','c','a','b','c','d'],
-    'b1':['a1','a1','a1','b1','b1','b1','b1'],})
-    df.groupby('b1').apply(lambda df : agg_by_order_counts(x=df['a1'],
-                                                   order=['b','c','a'],
-                                                   ))
+    """Get the aggregated counts by order*.
+
+    Parameters:
+        x (list): list.
+        order (list): desired order of the items.
+        
+    Returns:
+        df (DataFrame): output dataframe.
+    
+    Examples:
+        df=pd.DataFrame({'a1':['a','b','c','a','b','c','d'],
+        'b1':['a1','a1','a1','b1','b1','b1','b1'],})
+        df.groupby('b1').apply(lambda df : agg_by_order_counts(x=df['a1'],
+                                                       order=['b','c','a'],
+                                                       ))
     """    
     ds=x.value_counts()
     ds=ds.add_prefix(f"{x.name}=")
@@ -1019,6 +1093,20 @@ def groupby_sort_values(df,col_groupby,col_sortby,
                  subset=None,
                  col_subset=None,
                  func='mean',ascending=True):
+    """Sort groups. 
+    
+    Parameters:
+        df (DataFrame): input dataframe.
+        col_groupby (str|list): column/s to groupby with.
+        col_sortby (str|list): column/s to sort values with.
+        subset (list): columns (None).
+        col_subset (str): column containing the subset (None).
+        func (str): aggregate function, provided to numpy ('mean').
+        ascending (bool): sort values ascending (True).
+        
+    Returns:
+        df (DataFrame): output dataframe.
+    """
     gs=df.groupby(col_groupby)
     if subset is None:
         df1=gs.agg({col_sortby:getattr(np,func)}).reset_index()
@@ -1038,6 +1126,15 @@ sort_values_groupby=groupby_sort_values
 
 @to_rd
 def swap_paired_cols(df_,suffixes=['gene1', 'gene2']):
+    """Swap suffixes of paired columns.
+    
+    Parameters:
+        df_ (DataFrame): input dataframe.
+        suffixes (list): suffixes.
+    
+    Returns: 
+        df (DataFrame): output dataframe.    
+    """
     rename={c:c.replace(suffixes[0],suffixes[1]) if (suffixes[0] in c) else c.replace(suffixes[1],suffixes[0]) if (suffixes[1] in c) else c for c in df_}
     return df_.rename(columns=rename,errors='raise')
 
@@ -1046,9 +1143,18 @@ def sort_columns_by_values(df,cols_sortby=['mutation gene1','mutation gene2'],
                             suffixes=['gene1','gene2'], # no spaces
                            clean=False,
                             ):
-    """
-    sorts in ascending order. 
-    `sorted` means values are sorted because gene1>gene2. 
+    """Sort the values in columns in ascending order.
+    
+    Parameters:
+        df (DataFrame): input dataframe.
+        cols_sortby (list): (['mutation gene1','mutation gene2'])
+        suffixes (list): suffixes, without no spaces. (['gene1','gene2'])
+        
+    Returns:
+        df (DataFrame): output dataframe.
+        
+    Notes:
+        In the output dataframe, `sorted` means values are sorted because gene1>gene2.
     """
     df.rd.assert_no_na(subset=cols_sortby)
     suffixes=[s.replace(' ','') for s in suffixes]
@@ -1071,120 +1177,21 @@ def sort_columns_by_values(df,cols_sortby=['mutation gene1','mutation gene2'],
         df1=df1.drop(['equal','sorted'],axis=1)
     return df1
     
-# quantile bins
+## ids
 @to_rd
-def aggcol_by_qbins(df,colx,coly,colgroupby=None,bins=10):
+def make_ids(df,cols,ids_have_equal_length,sep='--',sort=False):
+    """Make ids by joining string ids in more than one columns.
+    
+    Parameters:
+        df (DataFrame): input dataframe.
+        cols (list): columns. 
+        ids_have_equal_length (bool): ids have equal length, if True faster processing.
+        sep (str): separator between the ids ('--').
+        sort (bool): sort the ids before joining (False).
+    
+    Returns:
+        ds (Series): output series.
     """
-    get_stats_by_bins(df,colx,coly,fun,bins=4)
-    """
-    from roux.stat.transform import get_qbins
-    df[f"{colx} qbin midpoint"]=get_qbins(ds=df[colx],
-                                          bins=bins,
-                                          value='mid')
-#     qcut(df[colx],bins,duplicates='drop')    
-    if colgroupby is None:
-        colgroupby='del'
-        df[colgroupby]='del'
-    from roux.stat.variance import confidence_interval_95
-    dplot=df.groupby([f"{colx} qbin",colgroupby]).agg({coly:[np.mean,confidence_interval_95],})
-    dplot.columns=coltuples2str(dplot.columns)
-    dplot=dplot.reset_index()
-    dplot[f"{colx} qbin midpoint"]=dplot[f"{colx} qbin"].apply(lambda x:x.mid).astype(float)
-    dplot[f"{colx} qbin midpoint"]=dplot[f"{colx} qbin midpoint"].apply(float)
-    if 'del' in dplot:
-        dplot=dplot.drop(['del'],axis=1)
-    return dplot
-
-# subsets
-from roux.lib.set import dropna
-@to_rd
-def get_intersectionsbysubsets(df,cols_fracby2vals,
-                               cols_subset,
-                               col_ids,
-                               bins
-#                                params_qcut={'bins':10},
-                              ):
-    """
-    cols_fracby:
-    cols_subset:
-    """
-    from roux.stat.transform import get_qbins
-    for coli,col in enumerate(cols_subset):
-        if is_col_numeric(df[col]):
-            try:
-                df[f"{col} bin"]=get_qbins(ds=df[col],bins=bins,value='mid')
-#                 qcut(df[col],**params_qcut)
-            except:
-                logging.info(col)
-            cols_subset[coli]=f"{col} bin"
-    for col_fracby in cols_fracby2vals:
-        val=cols_fracby2vals[col_fracby]
-        ids=df.loc[(df[col_fracby]==val),col_ids].dropna().unique()
-        for col_subset in cols_subset:
-            for subset in dropna(df[col_subset].unique()):
-                ids_subset=df.loc[(df[col_subset]==subset),col_ids].dropna().unique()
-                df.loc[(df[col_subset]==subset),f'P {col_fracby} {col_subset}']=len(set(ids_subset).intersection(ids))/len(ids_subset)
-    return df
-
-
-@to_rd
-def get_colsubset2stats(dannot,colssubset=None):
-    if colssubset is None:
-        colssubset=dannot_stats.columns
-    dannot_stats=dannot.loc[:,colssubset].apply(pd.Series.value_counts)
-
-    colsubset2classes=dannot_stats.apply(lambda x: x.index,axis=0)[dannot_stats.apply(lambda x: ~pd.isnull(x),axis=0)].apply(lambda x: dropna(x),axis=0).to_dict()
-    colsubset2classns=dannot_stats[dannot_stats.apply(lambda x: ~pd.isnull(x),axis=0)].apply(lambda x: dropna(x),axis=0).to_dict()
-    colsubset2classns={k:[int(i) for i in colsubset2classns[k]] for k in colsubset2classns}
-    return dannot_stats,colsubset2classes,colsubset2classns
-# 2d subsets
-@to_rd
-def subset_cols_by_cutoffs(df,col2cutoffs,quantile=False,outdf=False,
-                           fast=False,
-                           test=False):    
-    for col in col2cutoffs:
-        if isinstance(col2cutoffs[col],float):
-            if quantile:
-                cutoffs=[col2cutoffs[col],col2cutoffs[col]]
-                col2cutoffs[col]=[df[col].quantile(c) for c in cutoffs]
-            else:
-                col2cutoffs[col]=[col2cutoffs[col],col2cutoffs[col]]
-        elif not isinstance(col2cutoffs[col],list):
-            logging.error("cutoff should be float or list")
-        df.loc[(df[col]<=col2cutoffs[col][0]),f"{col} (high or low)"]='low'
-        df.loc[(df[col]>col2cutoffs[col][1]),f"{col} (high or low)"]='high'
-        logging.info(df.loc[:,f"{col} (high or low)"].isnull().sum())
-    colout=f"{'-'.join(list(col2cutoffs.keys()))} (low or high)"
-    def get_subsetname(x):
-        l=[x[f"{col} (high or low)"] for col in col2cutoffs]
-        if not any([pd.isnull(i) for i in l]):
-            return '-'.join(l)
-        else:
-            return np.nan
-    df[colout]=getattr(df,'progress_apply' if not fast else 'parallel_apply')(lambda x:  get_subsetname(x),axis=1)
-    if test:
-        logging.info(col2cutoffs)
-        if len(col2cutoffs.keys())==2:
-            element2color={'high-high':'r',
-                   'high-low':'g',
-                   'low-high':'b',
-                   'low-low':'k',
-                  }
-            import matplotlib.pyplot as plt
-            ax=plt.subplot()
-            df.groupby(colout).apply(lambda x: x.plot.scatter(x=list(col2cutoffs.keys())[0],
-                                                              y=list(col2cutoffs.keys())[1],
-                                                              alpha=1,ax=ax,label=x.name,color=element2color[x.name]))
-    if not outdf:
-        return df[colout]
-    else:
-        return df
-
-## make ids
-# from roux.lib.str import encode,decode
-
-@to_rd
-def make_ids(df,cols,ids_have_equal_length=True,sep='--',sort=False):
     get_ids=lambda x: '--'.join(x)
     get_ids_sorted=lambda x: '--'.join(sorted(x))
     if ids_have_equal_length:
@@ -1194,12 +1201,44 @@ def make_ids(df,cols,ids_have_equal_length=True,sep='--',sort=False):
 
 @to_rd
 def make_ids_sorted(df,cols,ids_have_equal_length,sep='--'):
+    """Make sorted ids by joining string ids in more than one columns.
+    
+    Parameters:
+        df (DataFrame): input dataframe.
+        cols (list): columns. 
+        ids_have_equal_length (bool): ids have equal length, if True faster processing.
+        sep (str): separator between the ids ('--').
+    
+    Returns:
+        ds (Series): output series.
+    """    
     return make_ids(df,cols,ids_have_equal_length,sep=sep,sort=True)
     
-def get_alt_id(s1='A--B',s2='A'): return [s for s in s1.split('--') if s!=s2][0]
+def get_alt_id(s1='A--B',s2='A'): 
+    """Get alternate/partner id from a paired id.
+    
+    Parameters:
+        s1 (str): joined id.
+        s2 (str): query id. 
+        
+    Returns:
+        s (str): partner id.
+    """    
+    return [s for s in s1.split('--') if s!=s2][0]
 
 @to_rd    
 def split_ids(df1,col,sep='--',prefix=None):
+    """Split joined ids to individual ones.
+    
+    Parameters:
+        df1 (DataFrame): input dataframe.
+        col (str): column containing the joined ids.
+        sep (str): separator within the joined ids ('--').
+        prefix (str): prefix of the individual ids (None).
+    
+    Return:
+        df1 (DataFrame): output dataframe.
+    """
     df=df1[col].str.split(sep,expand=True)
     for i in range(len(df.columns)):
         df1[f"{col} {i+1}"]=df[i]
@@ -1207,47 +1246,30 @@ def split_ids(df1,col,sep='--',prefix=None):
         df1=df1.rd.renameby_replace(replaces={f"{col} ":prefix})
     return df1
 
-reverse_ids_=lambda x: '--'.join(x.split('--')[::-1])                                 
-@to_rd
-def reverse_ids(df,col,colonly=None,fast=False):
-    """
-    :param col: ids
-    :param colonly: e.g. sorted
-    """
-    if colonly is None:
-        return getattr(df[col],f"{'progress' if not fast else 'parallel'}_apply")(reverse_ids_)
-    else:
-        return getattr(df,f"{'progress' if not fast else 'parallel'}_apply")(lambda x: reverse_ids_(x[col]) if x[colonly] else x[col], axis=1)
-                                 
-## merge/map ids
-@to_rd
-def map_ids(df,df2,colgroupby,col_mergeon,order_subsets=None,**kws_merge):
-    """
-    :param df: target
-    :param df2: sources. labels in colgroupby 
-    """
-    order_subsets=df[colgroupby].unique() if colgroupby is None else order_subsets
-    dn2df={}
-    for k in order_subsets:
-        dn2df[k]=df.merge(df2.groupby(colgroupby).get_group(k),
-                       on=col_mergeon,
-#                        how='inner',suffixes=[' Broad',''],
-                     **kws_merge)
-        dn2df[k]['merged on']=col_mergeon
-        df=df.loc[~df[col_mergeon].isin(dn2df[k][col_mergeon]),:]
-        logging.info(df[col_mergeon].nunique())
-    df3=pd.concat(dn2df,axis=0,names=[colgroupby]).reset_index(drop=True)
-    return df3,df
-
 ## tables io
 def dict2df(d,colkey='key',colvalue='value'):
+    """Dictionary to DataFrame.
+    
+    Parameters:
+        d (dict): dictionary.
+        colkey (str): name of column containing the keys.
+        colvalue (str): name of column containing the values.
+    
+    Returns:
+        df (DataFrame): output dataframe.
+    """
     if not isinstance(list(d.values())[0],list):
         return pd.DataFrame({colkey:d.keys(), colvalue:d.values()})
     else:
-#         d={k:d[k] if isinstance(d[k],list) else list(d[k]) for k in d}
         return pd.DataFrame(pd.concat({k:pd.Series(d[k]) for k in d})).droplevel(1).reset_index().rename(columns={'index':colkey,0:colvalue},
                                                                                                         errors='raise')
 def log_shape_change(d1,fun=''):
+    """Report the changes in the shapes of a DataFrame.
+
+    Parameters:
+        d1 (dic): dictionary containing the shapes.
+        fun (str): name of the function.
+    """
     if d1['from']!=d1['to']:
         prefix=f"{fun}: " if fun!='' else ''
         if d1['from'][0]==d1['to'][0]:
@@ -1262,11 +1284,21 @@ def log_apply(df, fun,
               validate_equal_width=False,
               validate_equal_shape=False,
               *args, **kwargs):
-    """Log the changes in the shapes of the dataframe before and after an operation/s.
+    """Report (log) the changes in the shapes of the dataframe before and after an operation/s.
     
-    :param validate_equal_length: Validate that the number of rows i.e. length of the dataframe remains the same before and after the operation. 
-    :param validate_equal_width: Validate that the number of columns i.e. width of the dataframe remains the same before and after the operation. 
-    :param validate_equal_shape: Validate that the number of rows and columns i.e. shape of the dataframe remains the same before and after the operation. 
+    Parameters:
+        df (DataFrame): input dataframe.
+        fun (object): function to apply on the dataframe.
+        validate_equal_length (bool): Validate that the number of rows i.e. length of the dataframe remains the same before and after the operation. 
+        validate_equal_width (bool): Validate that the number of columns i.e. width of the dataframe remains the same before and after the operation. 
+        validate_equal_shape (bool): Validate that the number of rows and columns i.e. shape of the dataframe remains the same before and after the operation. 
+    
+    Keyword parameters:
+        args (tuple): provided to `fun`.
+        kwargs (dict): provided to `fun`.
+    
+    Returns:
+        df (DataFrame): output dataframe.
     """
     d1={}
     d1['from']=df.shape
@@ -1283,11 +1315,12 @@ def log_apply(df, fun,
 
 @pd.api.extensions.register_dataframe_accessor("log")
 class log:
-    """
-    TODOs:
-    create the attr using strings e.g. setattr
-    import inspect
-    fun=inspect.currentframe().f_code.co_name
+    """Report (log) the changes in the shapes of the dataframe before and after an operation/s.
+        
+    TODO:
+        Create the attribures (`attr`) using strings e.g. setattr.
+        import inspect
+        fun=inspect.currentframe().f_code.co_name
     """    
     def __init__(self, pandas_obj):
         self._obj = pandas_obj

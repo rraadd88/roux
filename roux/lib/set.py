@@ -1,4 +1,4 @@
-## Also includes list, np vectors and tuple things
+"""Sets."""
 import itertools
 import numpy as np
 import pandas as pd
@@ -6,6 +6,15 @@ import logging
 
 ## io
 def to_list(l1,p):
+    """Save list.
+    
+    Parameters:
+        l1 (list): input list.
+        p (str): path.
+    
+    Returns:
+        p (str): path.        
+    """
     from roux.lib.sys import makedirs
     if not 'My Drive' in p:
         p=p.replace(' ','_')
@@ -17,92 +26,163 @@ def to_list(l1,p):
     return p
 
 from functools import reduce
-def union(l):return reduce(np.union1d, (l))
-def intersection(l):return reduce(np.intersect1d, (l))
+def union(l):
+    """Union of lists.
+    
+    Parameters: 
+        l (list): list of lists.
+        
+    Returns:
+        l (list): list.
+    """
+    return reduce(np.union1d, (l))
+def intersection(l):
+    """Intersections of lists.
+    
+    Parameters: 
+        l (list): list of lists.
+        
+    Returns:
+        l (list): list.
+    """
+    return reduce(np.intersect1d, (l))
 
-def list2union(l): return union(l)
-def list2intersection(l): return intersection(l)    
+# aliases: to be deprecated in th future 
+list2union=union
+list2intersection=intersection
 
-def nunion(l): return len(union(l))
-def nintersection(l): return len(intersection(l))
+def nunion(l):
+    """Count the items in union.
+    
+    Parameters: 
+        l (list): list of lists.
+        
+    Returns:
+        i (int): count.    
+    """
+    return len(union(l))
+
+def nintersection(l):
+    """Count the items in intersetion.
+    
+    Parameters: 
+        l (list): list of lists.
+        
+    Returns:
+        i (int): count.    
+    """
+    return len(intersection(l))
 
 # lists mostly for agg
 def dropna(x):
+    """Drop `np.nan` items from a list.
+    
+    Parameters:
+        x (list): list.
+    
+    Returns:
+        x (list): list.
+    """
     x_=[]
     for i in x:
         if not pd.isnull(i):
             x_.append(i)
     return x_
 
-def unique(l): return list(np.unique(l))
-def unique_str(l1): 
-    l2=unique(l1)
-    assert(len(l2)==1)
-    return l2[0]
-def nunique(l,**kws): return len(unique(l,**kws))
-def unique_dropna(l): return dropna(unique(l,drop='nan'))
-def unique_dropna_str(l,sep='; '): return tuple2str(dropna(unique(l,drop='nan')),sep=sep)
-def merge_unique_dropna(l): return dropna(unique(list(itertools.chain(*l)),drop='nan'))
-
-
-def list_value_counts(l):return dict(zip(*np.unique(l, return_counts=True)))
-def tuple2str(tup,sep='; '): 
-    if not isinstance(tup,list):
-        tup=tuple(tup)
-    tup=[str(s) for s in tup]
-    tup=sep.join(list(tup))
-    return tup
-def list2str(x):
+def unique(l):
+    """Unique items in a list.
+    
+    Parameters:
+        l (list): input list.
+    
+    Returns:
+        l (list): list.
+    """
+    return list(np.unique(l))
+    
+def list2str(x,ignore=False):
+    """Returns string if single item in a list.
+    
+    Parameters:
+        x (list): list
+        
+    Returns:
+        s (str): string.        
+    """
     x=list(x)
+    if not ignore:
+        assert(len(x)==1)        
     if len(x)>1:
         logging.warning('more than 1 str value encountered, returning list')
         return x
     else:
         return x[0]
 
+def unique_str(l,**kws):
+    """Unique single item from a list.
+    
+    Parameters:
+        l (list): input list.
+    
+    Returns:
+        l (list): list.
+    """
+    return list2str(unique(dropna(l)))    
+
+def nunique(l,**kws):
+    """Count unique items in a list
+    
+    Parameters:
+        l (list): list
+    
+    Returns:
+        i (int): count.
+    """
+    return len(unique(l,**kws))
+
 def flatten(l):
+    """List of lists to list.
+    
+    Parameters:
+        l (list): input list.
+        
+    Returns:
+        l (list): output list.
+    """    
     return list(np.hstack(np.array(l,dtype=object)))
 
 def get_alt(l1,s,): 
+    """Get alternate item between two.
+        
+    Parameters:
+        l1 (list): list.
+        s (str): item.
+        
+    Returns: 
+        s (str): alternate item.
+    """
     assert(s in l1)
     return [i for i in l1 if i!=s][0]
 
-def rankwithlist(l,lwith,test=False):
-    """
-    rank l wrt lwith
-    """
-    if not (isinstance(l,list) and isinstance(lwith,list)):
-        l,lwith=list(l),list(lwith)
-    from scipy.stats import rankdata
-    if test:
-        print(l,lwith)
-        print(rankdata(l),rankdata(lwith))
-        print(rankdata(l+lwith))
-    return rankdata(l+lwith)[:len(l)]
-
-# getting sections from boolian vector
-def bools2intervals(v):
-    return np.flatnonzero(np.diff(np.r_[0,v,0])!=0).reshape(-1,2) - [0,1]
-def dfbool2intervals(df,colbool):
-    """
-    ds contains bool values
-    """
-    df.index=range(len(df))
-    intervals=bools2intervals(df[colbool])
-    for intervali,interval in enumerate(intervals):
-        df.loc[interval[0]:interval[1],f'{colbool} interval id']=intervali
-        df.loc[interval[0]:interval[1],f'{colbool} interval start']=interval[0]
-        df.loc[interval[0]:interval[1],f'{colbool} interval stop']=interval[1]
-        df.loc[interval[0]:interval[1],f'{colbool} interval length']=interval[1]-interval[0]+1
-        df.loc[interval[0]:interval[1],f'{colbool} interval within index']=range(interval[1]-interval[0]+1)    
-    df[f'{colbool} interval index']=df.index    
-    return df
 
 def intersections(dn2list,jaccard=False,count=True,fast=False,test=False):
+    """Get intersections between lists.
+    
+    Parameters:
+        dn2list (dist): dictionary mapping to lists.
+        jaccard (bool): return jaccard indices.
+        count (bool): return counts.
+        fast (bool): fast.
+        test (bool): verbose.
+    
+    Returns:
+        df (DataFrame): output dataframe.
+            
+    TODOs: 
+        1. feed as an estimator to `df.corr()`.
+        2. faster processing by filling up the symetric half of the adjacency matrix.
     """
-    TODO: feed as an estimator to df.corr()
-    TODO: way to fill up the symetric half of the adjacency matrix
-    """
+    dn2list={k:dropna(dn2list[k]) for k in dn2list}
     df=pd.DataFrame(index=dn2list.keys(),
                 columns=dn2list.keys())
     if jaccard:
@@ -127,51 +207,49 @@ def intersections(dn2list,jaccard=False,count=True,fast=False,test=False):
                 df.loc[k1,k2]=l
     return df
 
-def jaccard_index_dict(dn2list,jaccard=True,count=False,fast=False,test=False):
-    return intersections(dn2list,
-                         jaccard=jaccard,count=count,
-                         fast=fast,test=test)
-
-compare_lists_jaccard=intersections
-
-## stats
-def jaccard_index_df(df):
-    from roux.lib.set import jaccard_index_dict
-    return jaccard_index_dict(df.apply(lambda x: dropna(x)).to_dict())
-
-def jaccard_index(l1,l2):
-    l1,l2=dropna(l1),dropna(l2)
-    i=len(set(l1).intersection(l2))
-    u=len(set(l1).union(l2))
-    return i/u,i,u
-
-def difference(l1,l2): return list(set(l1).difference(l2))
-
-def group_list_bylen(l,length): return list(zip(*(iter(l),) * length))
-def sort_list_by_list(l,byl): return [x for x,_ in sorted(zip(l,byl))]
-
 ## ranges
 def range_overlap(l1,l2):
+    """Overlap between ranges.
+    
+    Parameters:
+        l1 (list): start and end integers of one range.
+        l2 (list): start and end integers of other range.
+        
+    Returns:
+        l (list): overlapped range. 
+    """
     return list(set.intersection(set(range(l1[0],l1[1]+1,1)),
                             set(range(l2[0],l2[1]+1,1))))
 
-from roux.lib.df import boolean_to_ranges,ranges_to_boolean
-
-def get_windows(a, size = None, overlap = None, segments=None, 
+from roux.lib.df import to_ranges,to_boolean
+def get_windows(a, 
+                size = None, 
+                overlap = None, 
+                windows=None, 
                 overlap_fraction=None,
                 stretch_last=False,
                 out_ranges=True,
                ):
-    """
-
-    :param out_ranges: ranges if True else positions.
+    """Windows/segments from a range. 
     
+    Parameters:
+        a (list): range.
+        size (int): size of the windows. 
+        windows (int): number of windows.
+        overlap_fraction (float): overlap fraction. 
+        overlap (int): overlap length. 
+        stretch_last (bool): stretch last window. 
+        out_ranges (bool): whether to output ranges.
+    
+    Returns:
+        df1 (DataFrame): output dataframe.
+        
     Notes:
-    int gives floor.
+        1. For development, use of `int` provides `np.floor`.
     """
-    if not segments is None and size is None:
+    if not windows is None and size is None:
         # TODOs
-        size = int(len(a)/segments)
+        size = int(len(a)/windows)
     if not overlap_fraction is None and overlap is None:
         overlap=int(size*overlap_fraction)
     shape = (a.size - size + 1, size)
@@ -201,3 +279,36 @@ def get_windows(a, size = None, overlap = None, segments=None,
             if df1.iloc[-1,:]['end']!=a[-1]:
                 df1.iloc[-1,:]['end']=a[-1]
         return df1
+    
+def bools2intervals(v):
+    """Convert bools to intervals.
+    
+    Parameters:
+        v (list): list of bools.
+        
+    Returns:
+        l (list): intervals.
+    """
+    return np.flatnonzero(np.diff(np.r_[0,v,0])!=0).reshape(-1,2) - [0,1]
+
+def list2ranges(l):    
+    ls=[]
+    for l in zip(l[:-1],l[1:]):
+        ls.append(l)
+    return ls
+
+# def dfbool2intervals(df,colbool):
+#     """
+#     ds contains bool values
+#     """
+#     df.index=range(len(df))
+#     intervals=bools2intervals(df[colbool])
+#     for intervali,interval in enumerate(intervals):
+#         df.loc[interval[0]:interval[1],f'{colbool} interval id']=intervali
+#         df.loc[interval[0]:interval[1],f'{colbool} interval start']=interval[0]
+#         df.loc[interval[0]:interval[1],f'{colbool} interval stop']=interval[1]
+#         df.loc[interval[0]:interval[1],f'{colbool} interval length']=interval[1]-interval[0]+1
+#         df.loc[interval[0]:interval[1],f'{colbool} interval within index']=range(interval[1]-interval[0]+1)    
+#     df[f'{colbool} interval index']=df.index    
+#     return df
+    

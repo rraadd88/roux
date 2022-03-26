@@ -1,24 +1,27 @@
 #!usr/bin/python
 
-"""
-================================
-``io_strs``
-================================
-"""
+"""Strings."""
 import re
 import logging
 import numpy as np
 
 # convert
-def s2re(s,ss2re):
-    for ss in ss2re:
-        s=s.replace(ss,ss2re[ss])
-    return s
-
-def replacebyposition(s,i,replaceby):
+def substitution(s,i,replaceby):
+    """Substitute character in a string.
+    
+    Parameters:
+        s (string): string.
+        i (int): location.
+        replaceby (string): character to substitute with.
+        
+    Returns:
+        s (string): output string.
+    """
     l=list(s)
     l[i]=replaceby
     return "".join(l)
+# alias
+replacebyposition=substitution
 
 def replace_many(s,replaces,replacewith='',
                ignore=False):
@@ -47,17 +50,19 @@ def replace_many(s,replaces,replacewith='',
             raise ValueError(replaces)
     if not ignore: assert(s!=s_)
     return s
+# alias
 replacemany=replace_many
 
-def replacelist(l,replaces,replacewith=''):
-    lout=[]    
-    for s in l:
-        for r in replaces:
-            s=s.replace(r,replacewith)
-        lout.append(s) 
-    return lout
-
-def tuple2str(tup,sep=' '): 
+def tuple2str(tup,sep=' '):
+    """Join tuple items.
+    
+    Parameters:
+        tup (tuple|list): input tuple/list.
+        sep (str): separator between the items.
+        
+    Returns:
+        s (str): output string.
+    """    
     if isinstance(tup,tuple):
         tup=[str(s) for s in tup if not s=='']
         if len(tup)!=1:
@@ -68,59 +73,47 @@ def tuple2str(tup,sep=' '):
         logging.error("tup is not str either")
     return tup
 
-def isstrallowed(s,form):
-    """
-    Checks is input string conforms to input regex (`form`).
-
-    :param s: input string.
-    :param form: eg. for hdf5: `"^[a-zA-Z_][a-zA-Z0-9_]*$"`
-    """
-    import re
-    match = re.match(form,s)
-    return match is not None
-
-def convertstr2format(col,form):
-    """
-    Convert input string to input regex (`form`).
-    
-    :param col: input string.
-    :param form: eg. for hdf5: `"^[a-zA-Z_][a-zA-Z0-9_]*$"`
-    """
-    if not isstrallowed(col,form):
-        col=col.replace(" ","_") 
-        if not isstrallowed(col,form):
-            chars_disallowed=[char for char in col if not isstrallowed(char,form)]
-            for char in chars_disallowed:
-                col=col.replace(char,"_")
-    return col
-
 def normalisestr(s):
+    """Normalise string.
+    
+    Parameters:
+        s (string): input string.
+    
+    Returns:
+        s (string): output string.
+    """
+    if not isinstance(s,str):
+        s=s.decode("utf-8")
     import re
     return re.sub('\W+','', s.lower()).replace('_','')
 
-
-def remove_accents_df(df):
-    cols=df.dtypes[(df.dtypes!=float) & (df.dtypes!=int) ].index.tolist()
+def to_path(s,replacewith='_'):
+    """Normalise a string to be used as a path of file.
     
-    df[cols] = df[cols].apply(lambda x: x.str.normalize('NFKD').str.encode('ascii', errors='ignore').str.decode('utf-8'))
-    return df
-
-def make_pathable_string(s,replacewith='_'):
-    """
-    Removes symbols from a string to be compatible with directory structure.
-
-    :param s: string
+    Parameters:
+        s (string): input string.
+        replacewith (str): replace the whitespaces or incompatible characters with.
+        
+    Returns:
+        s (string): output string.
     """
     import re
     return re.sub(r'[^\w+/.]',replacewith, s).replace('+','_').replace('/My_Drive/','/My Drive/')
 #     return re.sub('\W+',replacewith, s.lower() )
 
-def linebreaker(i,break_pt=16,sep=' '):
-    """
-    used for adding labels in plots.
+# alias to be deprecated in the future
+make_pathable_string=to_path
 
-    :param l: list of strings
-    :param break_pt: number, insert new line after this many letters 
+def linebreaker(i,break_pt=16,sep=' '):
+    """Insert `newline`s within a string. 
+    
+    Parameters:
+        i (str): string.
+        break_pt (int): insert `newline` at this interval. 
+        sep (string): separator to split the string with.
+        
+    Returns:
+        s (string): output string.
     """
     if len(i)>break_pt:
         i_words=i.split(sep)
@@ -139,34 +132,23 @@ def linebreaker(i,break_pt=16,sep=' '):
     else:
         return i
 
-def splitlabel(label,splitby=' ',ctrl='__'):
-    """
-    used for adding labels in plots.
-
-    :param label: string
-    :param splitby: string split the label by this character/string
-    :param ctrl: string, marker that denotes a control condition  
-    """
-    splits=label.split(splitby)
-    if len(splits)==2:
-        return splits
-    elif len(splits)==1:
-
-        return splits+[ctrl]
-
-
-def byte2str(b): 
-    if not isinstance(b,str):
-        return b.decode("utf-8")
-    else:
-        return b
-        
-
 # find
-def findall(s,substring,outends=False,outstrs=False,
+def findall(s,ss,outends=False,outstrs=False,
            suffixlen=0):
+    """Find the substrings or their locations in a string.
+   
+    Parameters:
+        s (string): input string.
+        ss (string): substring.
+        outends (bool): output end positions.
+        outstrs (bool): output strings.
+        suffixlen (int): length of the suffix.
+    
+    Returns:
+        l (list): output list.
+    """
     import re
-    finds=list(re.finditer(substring, s))
+    finds=list(re.finditer(ss, s))
     if outends or outstrs:
         locs=[(a.start(), a.end()) for a in finds]
         if not outstrs:
@@ -176,44 +158,61 @@ def findall(s,substring,outends=False,outstrs=False,
     else:
         return [a.start() for a in finds]
         
-def getall_fillers(s,leftmarker='{',rightmarker='}',
-                  leftoff=0,rightoff=0):
+def get_marked_substrings(s,leftmarker='{',rightmarker='}',
+                          leftoff=0,rightoff=0):
+    """Get the substrings flanked with markers from a string.
+    
+    Parameters:
+        s (str): input string.
+        leftmarker (str): marker on the left.
+        rightmarker (str): marker on the right. 
+        leftoff (int): offset on the left.
+        rightoff (int): offset on the right.
+    
+    Returns:
+        l (list): list of substrings.
+    """
     filers=[]
     for ini, end in zip(findall(s,leftmarker,outends=False),findall(s,rightmarker,outends=False)):
         filers.append(s[ini+1+leftoff:end+rightoff])
     return filers    
 
+getall_fillers=get_marked_substrings
 ###
-def list2ranges(l):    
-    ls=[]
-    for l in zip(l[:-1],l[1:]):
-        ls.append(l)
-    return ls
+def mark_substrings(s,ss,
+                  leftmarker='(',rightmarker=')'):
+    """Mark sub-string/s in a string.
+    
+    Parameters:
+        s (str): input string.
+        ss (str): substring.
+        leftmarker (str): marker on the left.
+        rightmarker (str): marker on the right. 
+    
+    Returns:
+        s (str): string.
+    """
+    pos=s.find(ss)
+    return f"{s[:pos]}{leftmarker}{s[pos:pos+len(ss)]}{rightmarker}"
 
-def str2tiles(s,tilelen=10,test=False):
-    tile2range={'tiles1': list(np.arange(0,len(s),tilelen)),
-    'tiles2': list(np.arange(tilelen/2,len(s),tilelen))}
-
-    for tile in tile2range:
-        if len(tile2range[tile])%2!=0:
-            tile2range[tile]=tile2range[tile]+[len(s)]
-        tile2range[tile]=list2ranges(tile2range[tile])    
-    range2tiles={}
-    for rang in sorted(tile2range['tiles1']+tile2range['tiles2']):
-        range2tiles[f"{int(rang[0])}_{int(rang[1])}"]=s[int(rang[0]):int(rang[1])]
-    if test:
-        print(tile2range)
-    return range2tiles
-
-def bracket(s,sbracket):
-    pos=s.find(sbracket)
-    return f"{s[:pos]}({s[pos:pos+len(sbracket)]})"
-
-def get_bracket(s,l='(',r=')'):
+def get_bracket(s,leftmarker='(',righttmarker=')'):
+    """Get bracketed substrings.
+    
+    Parameters:
+        s (string): string.
+        leftmarker (str): marker on the left.
+        rightmarker (str): marker on the right. 
+    
+    Returns:
+        s (str): string.
+        
+    TODOs:
+        1. Use `get_marked_substrings`.
+    """
 #     import re
 #     re.search(r'{l}(.*?){r}', s).group(1)    
-    if l in s and r in s:
-        return s[s.find(l)+1:s.find(r)]
+    if leftmarker in s and righttmarker in s:
+        return s[s.find(leftmarker)+1:s.find(righttmarker)]
     else:
         return '' 
     
@@ -222,13 +221,25 @@ def align(s1,s2,
           prefix=False,
           suffix=False,
           common=True):
-    """
-    test:
-    [
-    get_prefix(source,target,common=False),
-    get_prefix(source,target,common=True),
-    get_suffix(source,target,common=False),
-    get_suffix(source,target,common=True),]
+    """Align strings.
+        
+    Parameters:
+        s1 (str): string #1.
+        s2 (str): string #2.
+        prefix (str): prefix.
+        suffix (str): suffix.
+        common (str): common substring.
+    
+    Returns:
+        l (list): output list.
+        
+    Notes:
+        1. Code to test:
+            [
+            get_prefix(source,target,common=False),
+            get_prefix(source,target,common=True),
+            get_suffix(source,target,common=False),
+            get_suffix(source,target,common=True),]
     """
     
     for i,t in enumerate(zip(list(s1),list(s2))):
@@ -241,6 +252,17 @@ def align(s1,s2,
 
 from roux.lib.set import unique_str    
 def get_prefix(s1,s2,common=True,clean=True): 
+    """Get the prefix of the strings
+    
+    Parameters:
+        s1 (str): 1st string.
+        s2 (str): 2nd string.
+        common (bool): get the common prefix (default:True).
+        clean (bool): clean the leading and trailing whitespaces (default:True).
+        
+    Returns:
+        s (str): prefix.
+    """
     l1=align(s1,s2,prefix=True,common=common)
     if not common:
         return l1
@@ -250,7 +272,18 @@ def get_prefix(s1,s2,common=True,clean=True):
             return s3
         else:
             return s3.strip().rsplit(' ', 1)[0]    
-def get_suffix(s1,s2,common=True,clean=True): 
+def get_suffix(s1,s2,common=True,clean=True):
+    """Get the suffix of the strings
+    
+    Parameters:
+        s1 (str): 1st string.
+        s2 (str): 2nd string.
+        common (bool): get the common prefix (default:True).
+        clean (bool): clean the leading and trailing whitespaces (default:True).
+        
+    Returns:
+        s (str): suffix.
+    """    
     l1=align(s1,s2,suffix=True,common=common)
     if not common:
         if not clean:
@@ -265,68 +298,80 @@ def get_suffix(s1,s2,common=True,clean=True):
         else:
             return s3.strip()#.rsplit(' ', 1)[0]
 def get_fix(s1,s2,**kws):
+    """Infer common prefix or suffix.
+    
+    Parameters:
+        s1 (str): 1st string.
+        s2 (str): 2nd string.
+    
+    Keyword parameters:
+        kws: parameters provided to the `get_prefix` and `get_suffix` functions.
+        
+    Returns:
+        s (str): prefix or suffix.
+    """
     s3=get_prefix(s1,s2,**kws)
     s4=get_suffix(s1,s2,**kws)
     return s3 if len(s3)>=len(s4) else s4
 
 def removesuffix(s1,suffix):
-    """
-    TODOS: 
-    deprecate in py>39 use .removesuffix() instead.
+    """Remove suffix.
+    
+    Paramters:
+        s1 (str): input string.
+        suffix (str): suffix.
+        
+    Returns:
+        s1 (str): string without the suffix.
+        
+    TODOs: 
+        1. Deprecate in py>39 use .removesuffix() instead.
     """
     if s1.endswith(suffix):
         return s1[:s1.rfind(suffix)]
     else:
         return s1
 
-## filenames 
-def strlist2one(l,label=''):
-    # find unique prefix
-    from roux.lib.set import unique
-    from os.path import splitext
-    for si in range(len(l[0]))[::-1]:
-        s_i=l[0][:si]
-        if all([s_i in s for s in l]):
-    #         si=si+1
-            break
-    return f"{l[0][:si]}{''.join(list(unique([s[si] for s in l])))}{label}{splitext(l[0])[1]}"
-
-def str_split(strng, sep, pos):
-    """https://stackoverflow.com/a/52008134/3521099"""
-    strng = strng.split(sep)
-    return sep.join(strng[:pos]), sep.join(strng[pos:])
-
-
-
-def str_ranges2list(s,func=int,range_marker='-',sep=',',replace=['[',']']):
-    s=replacemany(s,replace)
-    from roux.lib.set import flatten
-    return flatten([list(range(func(i.split(range_marker)[0]),func(i.split(range_marker)[1])+1)) if '-' in i else int(i) for i in s.split(sep)])
-
-def str2urlformat(s):
-    import urllib
-    return urllib.parse.quote_plus(s)
-
 # dict
 # def str2dict(s): return dict(item.split("=") for item in s.split(";"))
 def str2dict(s,sep=';',sep_equal='='):
-    """
-    thanks to https://stackoverflow.com/a/186873/3521099
+    """String to dictionary.
+    
+    Parameters:
+        s (str): string.
+        sep (str): separator between entries (default:';').
+        sep_equal (str): separator between the keys and the values (default:'=').
+    
+    Returns:
+        d (dict): dictionary.
+    
+    References:
+        1. https://stackoverflow.com/a/186873/3521099
     """
     return dict(item.split(sep_equal) for item in s.split(sep))
 
-def dict2str(d1,sep=';',sep2='='): return sep.join([sep2.join([k,str(v)]) for k,v in d1.items()])
+def dict2str(d1,sep=';',sep_equal='='): 
+    """Dictionary to string.
+    
+    Parameters:
+        d (dict): dictionary.
+        sep (str): separator between entries (default:';').
+        sep_equal (str): separator between the keys and the values (default:'=').
+    
+    Returns:
+        s (str): string.
+    """
+    return sep.join([sep_equal.join([k,str(v)]) for k,v in d1.items()])
 
-# def s2dict(s,sep=';',sep_key=':',):
-#     d={}
-#     for pair in s.split(sep):
-#         if pair!='':
-#             d[pair.split(sep_key)[0]]=pair.split(sep_key)[1]
-#     return d
-
-# TODO: deprecate
-# from roux.lib.sys import get_logger,get_datetime,get_time
 def str2num(s):
+    """String to number.
+    
+    Parameters:
+        s (str): string.
+        
+    Returns:
+        i (int): number.
+    """
     import re
     s1=" ".join(re.findall("[a-zA-Z]+", s))
     assert len(s1)==1, f"len({s1})!=1"
@@ -335,12 +380,21 @@ def str2num(s):
     assert len(s)==len(s1)+len(i1), f"do not add up"
     return int(int(i1)*{'':1, 'K':1e3, 'M':1e6, 'G':1e9, 'T':1e12, 'P':1e15}[s1])
 
-# from roux.lib.dict import str2dict
 def num2str(num,magnitude=False,
            coff=10000,decimals=0):
-    """
+    """Number to string.
+    
+    Parameters:
+        num (int): number.
+        magnitude (bool): use magnitudes (default:False).
+        coff (int): cutoff (default:10000).
+        decimals (int): decimal points (default:0).
+        
+    Returns:
+        s (str): string.
+        
     TODOs
-    1. ~ if magnitude else not
+        1. ~ if magnitude else not
     """
     if not magnitude:
         return f"{num:.1e}" if num>coff else f"{num}"
@@ -359,6 +413,17 @@ def num2str(num,magnitude=False,
 
 ## ids
 def encode(data,**kws):
+    """Encode the data as a string.
+    
+    Parameters:
+        data (dict|Series): input data. 
+        
+    Keyword parameters:
+        kws: parameters provided to `encode`.
+        
+    Returns:
+        s (string): output string. 
+    """
     import pandas as pd
     if isinstance(data,pd.Series):
         data=data.to_dict()
@@ -368,13 +433,25 @@ def encode(data,**kws):
     if not isinstance(data,bytes):
         data=data.encode(encoding='utf8')
     import zlib
-    from base64 import urlsafe_b64encode as b64e, urlsafe_b64decode as b64d
-    return b64e(zlib.compress(data, 9)).decode("utf-8")
+    from base64 import urlsafe_b64encode as b64e
+    return b64e(zlib.compress(data, 9)).decode("utf-8",**kws)
 
-def decode(obscured,out=None,**kws):
+def decode(s,out=None,**kws):
+    """Decode data from a string.
+    
+    Parameters:
+        s (string): encoded string. 
+        out (str): output format (dict|df).
+        
+    Keyword parameters:
+        kws: parameters provided to `dict2df`.
+        
+    Returns:
+        d (dict|DataFrame): output data. 
+    """
     import zlib
-    from base64 import urlsafe_b64encode as b64e, urlsafe_b64decode as b64d
-    s2=zlib.decompress(b64d(obscured)).decode("utf-8")
+    from base64 import urlsafe_b64decode as b64d
+    s2=zlib.decompress(b64d(s)).decode("utf-8")
     if out in ['dict','df']:
 #         from roux.lib.str import str2dict
         d1=str2dict(s2, sep=';', sep_equal='=')

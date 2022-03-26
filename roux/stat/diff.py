@@ -1,3 +1,4 @@
+from argparse import ArgumentError
 import pandas as pd
 import numpy as np
 import scipy as sc
@@ -5,7 +6,111 @@ import logging
 from icecream import ic as info
 from roux.lib.set import *
 
-def get_subset2metrics(df,colvalue,colsubset,colindex,outstr=False,subset_control=None):
+# difference between values
+def get_ratio_sorted(a: float,b: float,increase=True) -> float:
+    """Get ratio sorted.
+
+    Args:
+        a (float): value #1.
+        b (float): value #2.
+        increase (bool, optional): check for increase. Defaults to True.
+
+    Returns:
+        float: output.
+    """
+    l=sorted([a,b])
+    if not increase:
+        l=l[::-1]
+    if l[0]!=0 and l[1]!=0:
+        return l[1]/l[0]
+
+def diff(a: float,b: float,absolute=True) -> float:
+    """Get difference
+
+    Args:
+        a (float): value #1.
+        b (float): value #2.
+        absolute (bool, optional): get absolute difference. Defaults to True.
+
+    Returns:
+        float: output.
+    """
+    diff=a-b
+    if absolute:
+        return abs(diff)
+    else:
+        return diff
+
+def get_diff_sorted(a: float,b: float) -> float:
+    """Difference sorted/absolute.
+
+    Args:
+        a (float): value #1.
+        b (float): value #2.
+
+    Returns:
+        float: output.
+    """
+    return diff(a,b,absolute=True)
+
+def balance(a: float,b: float,absolute=True) -> float:
+    """Balance.
+
+    Args:
+        a (float): value #1.
+        b (float): value #2.
+        absolute (bool, optional): absolute difference. Defaults to True.
+
+    Returns:
+        float: output.
+    """
+    sum_=a+b
+    if sum_!=0:
+        return 1-(diff(a,b,absolute=absolute)/(sum_))
+    else:
+        return np.nan
+
+# differnece by groups
+def get_col2metrics(df,
+                    colxs: list,
+                    coly: str,
+                    method='mannwhitneyu',
+                    alternative='two-sided') -> dict:
+    """Get column-wise metrics.
+
+    Args:
+        df (DataFrame): input dataframe.
+        colxs (list): columns.
+        coly (str): y column, contains 2 values.
+        method (str, optional): method name. Defaults to 'mannwhitneyu'.
+        alternative (str, optional): alternative for the statistical test. Defaults to 'two-sided'.
+
+    Returns:
+        dict: output.
+    """
+    from scipy import stats
+    class1,class2=df[coly].unique()
+    d={}
+    for colx in colxs:
+        _,d[colx]=getattr(stats,method)(df.loc[(df[coly]==class1),colx],
+                                       df.loc[(df[coly]==class2),colx],
+                                       alternative=alternative)
+    return d    
+
+def get_subset2metrics(df: pd.DataFrame,colvalue: str,colsubset: str,colindex: str,outstr=False,subset_control=None) -> dict:
+    """Get subset-wise metrics.
+
+    Args:
+        df (DataFrame): input dataframe
+        colvalue (str): column with values.
+        colsubset (str): column with subsets.
+        colindex (str): column with index.
+        outstr (bool, optional): if output string. Defaults to False.
+        subset_control (str, optional): control/reference subset. Defaults to None.
+
+    Returns:
+        dict: subset-wise metrics
+    """
     if subset_control is None:
         subset_control=df[colsubset].unique().tolist()[-1]
     from scipy.stats import mannwhitneyu    
@@ -26,43 +131,10 @@ def get_subset2metrics(df,colvalue,colsubset,colindex,outstr=False,subset_contro
                                       linebreak=False) for k in subset2metrics}
     return subset2metrics
 
-def get_ratio_sorted(a,b,increase=True):
-    l=sorted([a,b])
-    if not increase:
-        l=l[::-1]
-    if l[0]!=0 and l[1]!=0:
-        return l[1]/l[0]
-
-def diff(a,b,absolute=True): 
-    diff=a-b
-    if absolute:
-        return abs(diff)
-    else:
-        return diff
-def get_diff_sorted(a,b): return diff(a,b,absolute=True)
-
-def balance(a,b,absolute=True):
-    sum_=a+b
-    if sum_!=0:
-        return 1-(diff(a,b,absolute=absolute)/(sum_))
-    else:
-        return np.nan
     
-def get_col2metrics(df,colxs,coly,method='mannwhitneyu',alternative='two-sided'):
-    """
-    coly: two values
-    """
-    from scipy import stats
-    class1,class2=df[coly].unique()
-    d={}
-    for colx in colxs:
-        _,d[colx]=getattr(stats,method)(df.loc[(df[coly]==class1),colx],
-                                       df.loc[(df[coly]==class2),colx],
-                                       alternative=alternative)
-    return d    
-
 ## for linear dfs
 def get_demo_data():
+    """Demo data to test the differences."""
     subsets=list('abcd')
     np.random.seed(88)
     df1=pd.concat({s:pd.Series([np.random.uniform(0,si+1) for _ in range((si+1)*100)]) for si,s in enumerate(subsets)},
@@ -70,24 +142,39 @@ def get_demo_data():
     df1['bool']=df1['value']>df1['value'].quantile(0.5)
     return df1
 
-def get_pval(df,
+def get_pval(df: pd.DataFrame,
              colvalue='value',
              colsubset='subset',
              colvalue_bool=False,
              colindex=None,
              subsets=None,
             test=False,
-            fun=None):
-    """
-    either colsubset or subsets are needed 
-    :param colvalue: dtype=bool (dtype=object not supported)
+            fun=None) -> tuple:
+    """Get p-value.
+
+    Args:
+        df (DataFrame): input dataframe.
+        colvalue (str, optional): column with values. Defaults to 'value'.
+        colsubset (str, optional): column with subsets. Defaults to 'subset'.
+        colvalue_bool (bool, optional): column with boolean values. Defaults to False.
+        colindex (str, optional): column with the index. Defaults to None.
+        subsets (list, optional): subset types. Defaults to None.
+        test (bool, optional): test. Defaults to False.
+        fun (function, optional): function. Defaults to None.
+
+    Raises:
+        ArgumentError: colvalue or colsubset not found in df.
+        ValueError: need only 2 subsets.
+
+    Returns:
+        tuple: stat,p-value
     """
     if not ((colvalue in df) and (colsubset in df)):
-        logging.error(f"colvalue or colsubset not found in df: {colvalue} or {colsubset}")
+        raise ArgumentError(f"colvalue or colsubset not found in df: {colvalue} or {colsubset}")
     if subsets is None:
         subsets=sorted(df[colsubset].unique())
     if len(subsets)!=2:
-        logging.error('need only 2 subsets')
+        raise ValueError('need only 2 subsets')
         return
     else:
         df=df.loc[df[colsubset].isin(subsets),:]
@@ -119,10 +206,10 @@ def get_pval(df,
         else:
             return np.nan,np.nan      
         
-def get_stat(df1,
-              colsubset,
-              colvalue,
-              colindex,
+def get_stat(df1: pd.DataFrame,
+              colsubset: str,
+              colvalue: str,
+              colindex: str,
               subsets=None,
               cols_subsets=['subset1', 'subset2'],
               df2=None,
@@ -131,19 +218,38 @@ def get_stat(df1,
 #               debug=False,
              verb=False,
              **kws,
-             ):
+             ) -> pd.DataFrame:
+    """Get statistics.
+
+    Args:
+        df1 (DataFrame): input dataframe.
+        colvalue (str, optional): column with values. Defaults to 'value'.
+        colsubset (str, optional): column with subsets. Defaults to 'subset'.
+        colindex (str, optional): column with the index. Defaults to None.
+        subsets (list, optional): subset types. Defaults to None.
+        cols_subsets (list, optional): columns with subsets. Defaults to ['subset1', 'subset2'].
+        df2 (DataFrame, optional): second dataframe. Defaults to None.
+        stats (list, optional): summary statistics. Defaults to [np.mean,np.median,np.var]+[len].
+        coff_samples_min (int, optional): minimum sample size required. Defaults to None.
+        verb (bool, optional): verbose. Defaults to False.
+    
+    Keyword Arguments:
+        kws: parameters provided to `get_pval` function.
+
+    Raises:
+        ArgumentError: colvalue or colsubset not found in df.
+        ValueError: len(subsets)<2
+
+    Returns:
+        DataFrame: output dataframe.
     """
-    Either MWU or FE
-    :param df2: pairs of comparisons between subsets
-    either colsubset or subsets are needed 
-    """        
     if not ((colvalue in df1) and (colsubset in df1)):
-        logging.error(f"colvalue or colsubset not found in df: {colvalue} or {colsubset}")
+        raise ArgumentError(f"colvalue or colsubset not found in df: {colvalue} or {colsubset}")
         return
     if subsets is None:
         subsets=sorted(df1[colsubset].unique())
     if len(subsets)<2:
-        logging.error("len(subsets)<2")
+        raise ValueError("len(subsets)<2")
         return
     colvalue_bool=df1[colvalue].dtype==bool
     if df2 is None:
@@ -192,30 +298,44 @@ def get_stat(df1,
                 df3.filter(like="P (").columns.tolist()]=np.nan
     return df3
 
-def get_stats(df1,
-              colsubset,
-              cols_value,
-              colindex,
+def get_stats(df1: pd.DataFrame,
+              colsubset: str,
+              cols_value: list,
+              colindex: str,
               subsets=None,
               df2=None,
               cols_subsets=['subset1', 'subset2'],
               stats=[np.mean,np.median,np.var,len],
               axis=0, # concat 
               test=False,
-              **kws):
+              **kws) -> pd.DataFrame:
+    """Get statistics by iterating over columns wuth values.
+
+    Args:
+        df1 (DataFrame): input dataframe.
+        colsubset (str, optional): column with subsets.
+        cols_value (list): list of columns with values.
+        colindex (str, optional): column with the index.
+        subsets (list, optional): subset types. Defaults to None.
+        df2 (DataFrame, optional): second dataframe, e.g. `pd.DataFrame({"subset1":['test'],"subset2":['reference']})`. Defaults to None.
+        cols_subsets (list, optional): columns with subsets. Defaults to ['subset1', 'subset2'].
+        stats (list, optional): summary statistics. Defaults to [np.mean,np.median,np.var]+[len].
+        axis (int, optional): 1 if different tests else use 0. Defaults to 0.
+    
+    Keyword Arguments:
+        kws: parameters provided to `get_pval` function.
+
+    Raises:
+        ArgumentError: colvalue or colsubset not found in df.
+        ValueError: len(subsets)<2
+
+    Returns:
+        DataFrame: output dataframe.
+
+    TODOs:
+        1. No column prefix if `len(cols_value)==1`.
+
     """
-    Iterate over cols_value,
-    :param axis: 1 if different tests else use 0.
-    :param df2: pd.DataFrame({"subset1":['test'],
-                              "subset2":['reference']})
-                              
-    TODOS:
-    no col prefix if len(cols_value)==1
-    """
-#     from roux.lib.dfs import to_table
-#     to_table(df1,'test/get_stats.tsv')
-#     stats=[s for s in stats if not s in [sum,len]]
-#     from tqdm import tqdm
     dn2df={}
     if subsets is None:
         subsets=sorted(df1[colsubset].unique())
@@ -265,18 +385,27 @@ def get_q(ds1,col=None,verb=True,test_coff=0.1):
     else:
         df1['Q']=ds4
         return df1
-def get_significant_changes(df1,
+
+def get_significant_changes(df1: pd.DataFrame,
                             coff_p=0.025,
                             coff_q=0.1,
                             alpha=None,
                             changeby="",
                             # fdr=True,
                             value_aggs=['mean','median'],
-                           ):
-    """
-    groupby to get the comparable groups 
-    # if both mean and median are high
-    :param changeby: "" if check for change by both mean and median
+                           ) -> pd.DataFrame:
+    """Get significant changes.
+
+    Args:
+        df1 (DataFrame): input dataframe.
+        coff_p (float, optional): cutoff on p-value. Defaults to 0.025.
+        coff_q (float, optional): cutoff on q-value. Defaults to 0.1.
+        alpha (float, optional): alias for `coff_p`. Defaults to None.
+        changeby (str, optional): "" if check for change by both mean and median. Defaults to "".
+        value_aggs (list, optional): values to aggregate. Defaults to ['mean','median'].
+
+    Returns:
+        DataFrame: output dataframe.
     """
     if coff_p is None and not alpha is None:
         coff_p=alpha
@@ -302,12 +431,22 @@ def get_significant_changes(df1,
         #     df1[f"significant change ({test} test)"]=df1[f"significant change ({test} test)"].fillna('ns')
     return df1
 
-def apply_get_significant_changes(df1,cols_value,
-                                    cols_groupby, # e.g. genes id
-                                    cols_grouped, # e.g. tissue
+def apply_get_significant_changes(df1: pd.DataFrame,cols_value: list,
+                                    cols_groupby: list, # e.g. genes id
+                                    cols_grouped: list, # e.g. tissue
                                     fast=False,
                                     **kws,
-                                    ):
+                                    ) -> pd.DataFrame:
+    """Apply on dataframe to get significant changes.
+
+    Args:
+        df1 (DataFrame): input dataframe.
+        cols_value (list): columns with values.
+        cols_groupby (list): columns with groups.
+
+    Returns:
+        DataFrame: output dataframe.
+    """
     d1={}
     from tqdm import tqdm
     for c in tqdm(cols_value):
@@ -326,26 +465,56 @@ def apply_get_significant_changes(df1,cols_value,
     assert(not df2.columns.duplicated().any())
     return df2
 
-def get_stats_groupby(df1,cols,
-                      coff_p,coff_q,
+def get_stats_groupby(df1: pd.DataFrame,cols: list,
+                      coff_p: float,coff_q: float,
                       alpha=None,
                       fast=False,
-                      **kws):
-    """
-    Iterate over groups
+                      **kws) -> pd.DataFrame:
+    """Iterate over groups, to get the differences.
+
+    Args:
+        df1 (DataFrame): input dataframe.
+        cols (list): columns to interate over.
+        coff_p (float, optional): cutoff on p-value. Defaults to 0.025.
+        coff_q (float, optional): cutoff on q-value. Defaults to 0.1.
+        alpha (float, optional): alias for `coff_p`. Defaults to None.
+        fast (bool, optional): parallel processing. Defaults to False.
+
+    Returns:
+        DataFrame: output dataframe.
     """
     df2=getattr(df1.groupby(cols),f"{'progress' if not fast else 'parallel'}_apply")(lambda df: get_stats(df1=df,**kws)).reset_index().rd.clean()
     return get_significant_changes(df1=df2,alpha=alpha,coff_p=coff_p,coff_q=coff_q,)
     
-def binby_pvalue_coffs(df1,coffs=[0.01,0.05,0.25],
-                      color=False,
-                       testn='MWU test, FDR corrected',
-                       colindex='genes id',
-                       colgroup='tissue',
-                      preffix='',
-                      colns=None, # plot as ns, not counted
-                      palette=None,#['#f55f5f','#ababab','#046C9A',],
-                      ):
+def binby_pvalue_coffs(df1: pd.DataFrame,
+                    coffs=[0.01,0.05,0.25],
+                    color=False,
+                    testn='MWU test, FDR corrected',
+                    colindex='genes id',
+                    colgroup='tissue',
+                    preffix='',
+                    colns=None, # plot as ns, not counted
+                    palette=None,#['#f55f5f','#ababab','#046C9A',],
+                      ) -> tuple:
+    """Bin data by pvalue cutoffs.
+
+    Args:
+        df1 (DataFrame): input dataframe.
+        coffs (list, optional): cut-offs. Defaults to [0.01,0.05,0.25].
+        color (bool, optional): color asignment. Defaults to False.
+        testn (str, optional): test number. Defaults to 'MWU test, FDR corrected'.
+        colindex (str, optional): column with index. Defaults to 'genes id'.
+        colgroup (str, optional): column with the groups. Defaults to 'tissue'.
+        preffix (str, optional): prefix. Defaults to ''.
+        colns (_type_, optional): columns number. Defaults to None.
+        notcountedpalette (_type_, optional): _description_. Defaults to None.
+
+    Returns:
+        tuple: output.
+    
+    Notes:
+        1. To be deprecated in the favor of the functions used for enrichment analysis for example. 
+    """
     assert(len(df1)!=0)
     if palette is None:
         from roux.viz.colors import get_colors_default
@@ -400,7 +569,7 @@ def binby_pvalue_coffs(df1,coffs=[0.01,0.05,0.25],
 
 # from roux.viz.diff import plot_stats_diff
 ## confounding effects
-def get_stats_regression(df_,
+def get_stats_regression(df_: pd.DataFrame,
                         d0={},
                         variable=None,
                         covariates=None,
@@ -409,11 +578,21 @@ def get_stats_regression(df_,
                         verb=False,
                         test=False,
                         **kws,
-                        ):
-    """
-    :params variable: to get params of e.g. 'C(variable)[T.True]'
-    :params covariates: variables
-    :params d0: model name to base equation e.g. 'y ~ x'
+                        ) -> pd.DataFrame:
+    """Get stats from regression models.
+
+    Args:
+        df_ (DataFrame): input dataframe.
+        d0 (dict, optional): model name to base equation e.g. 'y ~ x'. Defaults to {}.
+        variable (_type_, optional): to get params of e.g. 'C(variable)[T.True]'. Defaults to None.
+        covariates (_type_, optional): variables. Defaults to None.
+        converged_only (bool, optional): get the stats from the converged models only. Defaults to False.
+        out (str, optional): output format. Defaults to 'df'.
+        verb (bool, optional): verbose. Defaults to False.
+        test (bool, optional): test. Defaults to False.
+
+    Returns:
+        DataFrame: output.
     """
     def to_df(res):
         if isinstance(res.summary().tables[1],pd.DataFrame):
@@ -486,9 +665,30 @@ def get_stats_regression(df_,
             else:
                 return pd.concat(d1,axis=0,names=['model type']).reset_index(0)
     
-def filter_regressions(df1,variable,colindex='gene id',coff_q=0.1,
-                      by_covariates=True,coff_p_covariates=0.05,
-                      test=False):
+def filter_regressions(df1: pd.DataFrame,
+                       variable: str,
+                       colindex: str,
+                       coff_q=0.1,
+                       by_covariates=True,
+                       coff_p_covariates=0.05,
+                       test=False) -> pd.DataFrame:
+    """Filter regression statistics.
+
+    Args:
+        df1 (DataFrame): input dataframe.
+        variable (str): variable name to filter by.
+        colindex (str): columns with index.
+        coff_q (float, optional): cut-off on the q-value. Defaults to 0.1.
+        by_covariates (bool, optional): filter by these covaliates. Defaults to True.
+        coff_p_covariates (float, optional): cut-off on the p-value for the covariates. Defaults to 0.05.
+        test (bool, optional): test. Defaults to False.
+
+    Raises:
+        ValueError: pval.
+
+    Returns:
+        DataFrame: output.
+    """
     pval='P>|t|' if 'P>|t|' in df1['stat'].tolist() else 'P>|z|' if 'P>|z|' in df1['stat'].tolist() else None
     if pval is None:
         raise ValueError(pval)

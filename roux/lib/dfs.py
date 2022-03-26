@@ -1,23 +1,17 @@
-"""
-io_df -> io_dfs -> io_files
-
-dtypes
-'b'       boolean
-'i'       (signed) integer
-'u'       unsigned integer
-'f'       floating-point
-'c'       complex-floating point
-'O'       (Python) objects
-'S', 'a'  (byte-)string
-'U'       Unicode
-'V'       raw data (void)
-"""
+"""For processing multiple pandas DataFrames/Series"""
 from roux.lib.df import *
 from roux.lib import to_rd
         
 def filter_dfs(dfs,cols,how='inner'):
-    """
+    """Filter dataframes based items in the common columns.
+
+    Parameters:
+        dfs (list): list of dataframes.
+        cols (list): list of columns.
+        how (str): how to filter ('inner')
     
+    Returns
+        dfs (list): list of dataframes.        
     """
     def apply_(dfs,col,how):
         from roux.lib.set import list2intersection,list2union
@@ -38,7 +32,8 @@ def filter_dfs(dfs,cols,how='inner'):
     return dfs
 
 @to_rd
-def merge_paired(df1,df2,
+def merge_paired(
+    df1,df2,
     left_ons, # suffixed
     right_on, # to be suffixed
     common=[], # not suffixed
@@ -50,12 +45,34 @@ def merge_paired(df1,df2,
     verb=True,
     **kws,
     ):
-    """
-    how='inner',
-    left_ons=['gene id gene1','gene id gene2'], # suffixed
-    common='sample id', # not suffixed
-    right_on='gene id', # to be suffixed
-    right_ons_common=[], # not to be suffixed    
+    """Merge uppaired dataframes to a paired dataframe. 
+    
+    Parameters:
+        df1 (DataFrame): paired dataframe.  
+        df2 (DataFrame): unpaired dataframe.
+        left_ons (list): columns of the `df1` (suffixed).
+        right_on (str|list): column/s of the `df2` (to be suffixed).
+        common (str|list): common column/s between `df1` and `df2` (not suffixed).
+        right_ons_common (str|list): common column/s between `df2` to be used for merging (not to be suffixed).
+        how (str): method of merging ('inner').
+        validates (list): validate mappings for the 1st mapping between `df1` and `df2` and 2nd one between `df1+df2` and `df2` (['1:1','1:1']).
+        suffixes (list): suffixes to be used (None).
+        test (bool): testing (False).
+        verb (bool): verbose (True).
+     
+    Keyword Parameters:
+        kws (dict): parameters provided to `merge`.
+    
+    Returns:
+        df (DataFrame): output dataframe.
+    
+    Examples:
+        Parameters:
+            how='inner',
+            left_ons=['gene id gene1','gene id gene2'], # suffixed
+            common='sample id', # not suffixed
+            right_on='gene id', # to be suffixed
+            right_ons_common=[], # not to be suffixed    
     """
     if isinstance(right_on,str):
         right_on=[right_on]
@@ -102,85 +119,24 @@ def merge_paired(df1,df2,
 
 ## merge dfs
 def merge_dfs(dfs,
-             **params_merge):
-    """    
+             **kws):
+    """Merge dataframes from left to right.   
+    
+    Parameters:
+        dfs (list): list of dataframes.
+        
+    Keyword Parameters:
+        kws (dict): parameters provided to `merge`.
+    
+    Returns:
+        df (DataFrame): output dataframe.
+        
     Notes:
-        Merge from left to right. For example, reduce(lambda x, y: x.merge(y), [1, 2, 3, 4, 5]) merges ((((1.merge(2)).merge(3)).merge(4)).merge(5)). 
+        For example, reduce(lambda x, y: x.merge(y), [1, 2, 3, 4, 5]) merges ((((1.merge(2)).merge(3)).merge(4)).merge(5)). 
     """ 
-    if params_merge['on']!='outer': logging.warning("Drop-outs may occur if on!='outer'. Make sure that the dataframes are ordered properly from left to right.")
+    if kws['on']!='outer': logging.warning("Drop-outs may occur if on!='outer'. Make sure that the dataframes are ordered properly from left to right.")
     from functools import reduce
     logging.info(f"merge_dfs: shape changed from : dfs shape={[df.shape for df in dfs]}")
-    df3=reduce(lambda df1,df2: pd.merge(df1,df2,**params_merge), dfs)
+    df3=reduce(lambda df1,df2: pd.merge(df1,df2,**kws), dfs)
     logging.info(f"merge_dfs: shape changed to   : {df3.shape}")
     return df3
-
-# def merge_dfs_auto(dfs,how='left',suffixes=['','_'],
-#               test=False,fast=False,drop_duplicates=True,
-#               sort=True,
-#               **params_merge):
-#     """
-    
-#     """
-#     from roux.lib.set import list2intersection,flatten
-#     if isinstance(dfs,dict):
-#         dfs=list(dfs.values())
-#     if all([isinstance(df,str) for df in dfs]):
-#         dfs=[read_table(p) for p in dfs]
-#     if not 'on' in params_merge:
-#         params_merge['on']=list(list2intersection([df.columns for df in dfs]))
-#         if len(params_merge['on'])==0:
-#             logging.error('no common columns found for infer params_merge[on]')
-#             return
-#     else:
-#         if isinstance(params_merge['on'],str):
-#             params_merge['on']=[params_merge['on']]
-#     params_merge['how']=how
-#     params_merge['suffixes']=suffixes
-#     # sort largest first
-#     if test:
-#         logging.info(params_merge)
-#         d={dfi:[len(df)] for dfi,df in enumerate(dfs)}
-#         logging.info(f'size: {d}')
-#     dfi2cols_value={dfi:df.select_dtypes([int,float]).columns.tolist() for dfi,df in enumerate(dfs)}
-#     cols_common=list(np.unique(params_merge['on']+list(list2intersection(dfi2cols_value.values()))))
-#     dfi2cols_value={k:list(set(dfi2cols_value[k]).difference(cols_common)) for k in dfi2cols_value}
-#     dfis_duplicates=[dfi for dfi in dfi2cols_value if len(dfs[dfi])!=len(dfs[dfi].loc[:,cols_common].drop_duplicates())]
-#     if test:
-#         logging.info(f'cols_common: {cols_common}',)
-#         logging.info(f'dfi2cols_value: {dfi2cols_value}',)
-#         logging.info(f'duplicates in dfs: {dfis_duplicates}',)
-#     for dfi in dfi2cols_value:
-#         if (dfi in dfis_duplicates) and drop_duplicates:
-#             dfs[dfi]=drop_duplicates_by_agg(dfs[dfi],cols_common,dfi2cols_value[dfi],fast=fast)
-#     if sort:
-#         d={dfi:[len(df)] for dfi,df in enumerate(dfs)}
-#         logging.info(f"size agg: {d}")
-#         from roux.lib.dict import sort_dict
-#         sorted_indices_by_size=sort_dict({dfi:[len(df.drop_duplicates(subset=params_merge['on']))] for dfi,df in enumerate(dfs)},0)
-#         logging.info(f'size dedup: {sorted_indices_by_size}')
-#         sorted_indices_by_size=list(sorted_indices_by_size.keys())#[::-1]
-#         dfs=[dfs[i] for i in sorted_indices_by_size]
-# #     from functools import reduce
-# #     df1=reduce(lambda df1,df2: pd.merge(df1,df2,**params_merge), dfs)
-#     df1=merge_dfs(dfs,**params_merge)
-#     cols_std=[f"{c} var" for c in flatten(list(dfi2cols_value.values())) if f"{c} var" in df1]
-#     cols_del=[c for c in cols_std if df1[c].isnull().all()]
-#     df1=df1.drop(cols_del,axis=1)
-#     return df1
-
-def merge_subset(df,colsubset,subset,cols_value,
-                          on,how='left',suffixes=['','.1'],
-                          **kws_merge):
-    """
-    merge a subset from a linear df, sideways
-    """
-    if isinstance(on,str): on=[on]
-    return df.loc[(df[colsubset]!=subset),:].merge(
-                                            df.loc[(df[colsubset]==subset),on+cols_value],
-                                          on=on,
-                                          how=how, 
-                                        suffixes=suffixes,
-                                          **kws_merge,
-                                            )
-
-

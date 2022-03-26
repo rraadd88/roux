@@ -1,8 +1,17 @@
 from roux.lib.df import *
 
-def log_likelihood(y_true, y_pred):
-    """
-    source: https://github.com/saezlab/protein_attenuation/blob/6c1e81af37d72ef09835ee287f63b000c7c6663c/src/protein_attenuation/utils.py
+def log_likelihood(y_true: list, y_pred: list) -> float:
+    """Log likelihood.
+
+    Args:
+        y_true (list): True
+        y_pred (list): Predicted.
+
+    Returns:
+        float: log likelihood
+
+    Reference: 
+        1. https://github.com/saezlab/protein_attenuation/blob/6c1e81af37d72ef09835ee287f63b000c7c6663c/src/protein_attenuation/utils.py
     """
     n = len(y_true)
     ssr = np.power(y_true - y_pred, 2).sum()
@@ -13,10 +22,18 @@ def log_likelihood(y_true, y_pred):
 
     return ln_l
 
-
 def f_statistic(y_true, y_pred, n, p):
-    """
-    source: https://github.com/saezlab/protein_attenuation/blob/6c1e81af37d72ef09835ee287f63b000c7c6663c/src/protein_attenuation/utils.py
+    """F-statistic.
+
+    Args:
+        y_true (list): True
+        y_pred (list): Predicted.
+
+    Returns:
+        float: F-statistic
+
+    Reference: 
+        1. https://github.com/saezlab/protein_attenuation/blob/6c1e81af37d72ef09835ee287f63b000c7c6663c/src/protein_attenuation/utils.py
     """
     msm = np.power(y_pred - y_true.mean(), 2).sum() / p
     mse = np.power(y_true - y_pred, 2).sum() / (n - p - 1)
@@ -26,23 +43,30 @@ def f_statistic(y_true, y_pred, n, p):
     f_pval = stats.f.sf(f, p, n - p - 1)
 
     return f, f_pval
-
-def get_roc_auc(true,test,outmore=False):
-    from sklearn.metrics import roc_curve, auc
-    fpr, tpr, thresholds = roc_curve(true,test)
-    a=auc(fpr, tpr)
-    if not outmore:
-        return a
-    else:
-        return fpr, tpr, thresholds,a
     
 def compare_bools_jaccard(x,y):
-    #https://stackoverflow.com/a/40589850/3521099
-    x = np.asarray(x, np.bool) # Not necessary, if you keep your data
-    y = np.asarray(y, np.bool) # in a boolean array already!
+    """Compare bools in terms of the jaccard index.
+
+    Args:
+        x (list): list of bools.
+        y (list): list of bools.
+
+    Returns:
+        float: jaccard index.
+    """
+    x = np.asarray(x, np.bool)
+    y = np.asarray(y, np.bool)
     return np.double(np.bitwise_and(x, y).sum()) / np.double(np.bitwise_or(x, y).sum())
 
-def compare_bools_jaccard_df(df):
+def compare_bools_jaccard_df(df: pd.DataFrame) -> pd.DataFrame:
+    """Pairwise compare bools in terms of the jaccard index.
+
+    Args:
+        df (DataFrame): dataframe with boolean columns.
+
+    Returns:
+        DataFrame: matrix with comparisons between the columns.
+    """
     from roux.stat.binary import compare_bools_jaccard
     dmetrics=pd.DataFrame(index=df.columns.tolist(),columns=df.columns.tolist())
     for c1i,c1 in enumerate(df.columns):
@@ -57,14 +81,49 @@ def compare_bools_jaccard_df(df):
                 dmetrics.loc[c1,c2]=dmetrics.loc[c2,c1]
     return dmetrics
 
-def classify_bools(l): return 'both' if all(l) else 'either' if any(l) else 'neither'
+def classify_bools(l: list) -> str:
+    """Classify bools.
+
+    Args:
+        l (list): list of bools
+
+    Returns:
+        str: classification.
+    """
+    return 'both' if all(l) else 'either' if any(l) else 'neither'
 
 ## agg
-def frac(x): return (sum(x)/len(x))
-def perc(x): return frac(x)*100
+def frac(x: list) -> float:
+    """Fraction.
+
+    Args:
+        x (list): list of bools.
+
+    Returns:
+        float: fraction of True values.
+    """
+    return (sum(x)/len(x))
+def perc(x: list) -> float:
+    """Percentage.
+
+    Args:
+        x (list): list of bools.
+
+    Returns:
+        float: Percentage of the True values
+    """
+    return frac(x)*100
 
 ## confusion_matrix
-def get_stats_confusion_matrix(df_):
+def get_stats_confusion_matrix(df_: pd.DataFrame) -> pd.DataFrame:
+    """Get stats confusion matrix.
+
+    Args:
+        df_ (DataFrame): Confusion matrix.
+
+    Returns:
+        DataFrame: stats.
+    """
     d0={}
     d0['TP']=df_.loc[True,True]
     d0['TN']=df_.loc[False,False]

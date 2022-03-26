@@ -1,34 +1,31 @@
 from roux.lib.dfs import *
 import matplotlib.pyplot as plt
-    
-# compare    
-def get_ddist(df,window_size_max=10,corr=False):
-    print(df.shape)
-    print(f"window=",end='')
-    method2ddists={}
-    for window in range(1,window_size_max,1):
-        print(window,end=' ')
-        method2ddists[f'DTW (window={window:02d})']=get_ddist_dtw(df,window)
-    if corr:
-        method2ddists['1-spearman']=dmap2lin((1-df.T.corr(method='spearman')),colvalue_name='distance').set_index(['index','column'])
-        method2ddists['1-pearson']=dmap2lin((1-df.T.corr(method='pearson')),colvalue_name='distance').set_index(['index','column'])
 
-    ddist=pd.concat(method2ddists,axis=1,)
-    ddist.columns=coltuples2str(ddist.columns)
-    ddist=ddist.reset_index()
-    ddist=ddist.loc[(ddist['index']!=ddist['column']),:]
-    ddist['interaction id']=ddist.apply(lambda x : '--'.join(list(sorted([x['index'],x['column']]))),axis=1)
-    print(ddist.shape,end='')
-    ddist=ddist.drop_duplicates(subset=['interaction id'])
-    print(ddist.shape)   
-    return ddist
+# scikit learn       
+def check_clusters(df: pd.DataFrame):
+    """Check clusters.
 
-# scikit learn below       
-def check_clusters(df):
+    Args:
+        df (DataFrame): dataframe.
+
+    """
     return (df.groupby(['cluster #']).agg({'silhouette value':np.max})['silhouette value']>=df['silhouette value'].mean()).all()
-def get_clusters(X,n_clusters,random_state=88,
+
+def get_clusters(X: np.array,n_clusters: int,random_state=88,
                  params={},
-                 test=False):
+                 test=False) -> dict:
+    """Get clusters.
+
+    Args:
+        X (np.array): vector
+        n_clusters (int): int
+        random_state (int, optional): random state. Defaults to 88.
+        params (dict, optional): parameters for the `MiniBatchKMeans` function. Defaults to {}.
+        test (bool, optional): test. Defaults to False.
+
+    Returns:
+        dict: 
+    """
     from sklearn import cluster,metrics
     kmeans = cluster.MiniBatchKMeans(n_clusters=n_clusters,
                              random_state=random_state,
@@ -52,7 +49,16 @@ def get_clusters(X,n_clusters,random_state=88,
           }
     return dn2df
 
-def get_n_clusters_optimum(df5,test=False):
+def get_n_clusters_optimum(df5: pd.DataFrame,test=False) -> int:
+    """Get n clusters optimum.
+
+    Args:
+        df5 (DataFrame): input dataframe
+        test (bool, optional): test. Defaults to False.
+
+    Returns:
+        int: knee point.
+    """
     from kneed import KneeLocator
     kn = KneeLocator(x=df5['total clusters'], y=df5['inertia'], curve='convex', direction='decreasing')
     if test:
@@ -61,7 +67,17 @@ def get_n_clusters_optimum(df5,test=False):
         plt.title(f"knee point={kn.knee}")
     return kn.knee
         
-def plot_silhouette(df,n_clusters_optimum=None,ax=None):
+def plot_silhouette(df: pd.DataFrame,n_clusters_optimum=None,ax=None):
+    """Plot silhouette
+
+    Args:
+        df (DataFrame): input dataframe.
+        n_clusters_optimum (int, optional): number of clusters. Defaults to None:int.
+        ax (axes, optional): axes object. Defaults to None:axes.
+
+    Returns:
+        ax (axes, optional): axes object. Defaults to None:axes.
+    """
     import matplotlib.pyplot as plt
     import seaborn as sns
     ax=plt.subplot() if ax is None else ax
@@ -85,14 +101,20 @@ def plot_silhouette(df,n_clusters_optimum=None,ax=None):
     ax.set_xlabel('clusters')  
     return ax
 
-def get_clusters_optimum(X,n_clusters=range(2,11),
+def get_clusters_optimum(X: np.array,n_clusters=range(2,11),
                          params_clustering={},
                          test=False,
-                        ):
-    """
-    :param X: samples to cluster in indexed 
-    
-    cluster center intertia
+                        ) -> dict:
+    """Get optimum clusters.
+
+    Args:
+        X (np.array): samples to cluster in indexed format.
+        n_clusters (int, optional): _description_. Defaults to range(2,11).
+        params_clustering (dict, optional): parameters provided to `get_clusters`. Defaults to {}.
+        test (bool, optional): test. Defaults to False.
+
+    Returns:
+        dict: _description_
     """
     dn2d={}
     for n in n_clusters:
@@ -113,15 +135,35 @@ def get_clusters_optimum(X,n_clusters=range(2,11),
     dn2df={dn:dn2df[dn].loc[(dn2df[dn]['total clusters']==n_clusters_optimum),:].drop(['total clusters'],axis=1) for dn in dn2df}
     return dn2df
 
-def cluster_1d(ds,n_clusters,clf_type='gmm',
-               random_state=88,
-                 test=False,
-               returns=['df','coff','ax','model'],
-#                 return_coff=False,
-#                   return_ax=False,
-               ax=None,
-               bins=50,
-              **kws_clf):
+def cluster_1d(ds: pd.Series,
+                n_clusters: int,
+                clf_type='gmm',
+                random_state=88,
+                test=False,
+                returns=['df','coff','ax','model'],
+                #                 return_coff=False,
+                #                   return_ax=False,
+                ax=None,
+                bins=50,
+                **kws_clf) -> dict:
+    """Cluster 1D data.
+
+    Args:
+        ds (Series): series.
+        n_clusters (int): number of clusters.
+        clf_type (str, optional): type of classification. Defaults to 'gmm'.
+        random_state (int, optional): random state. Defaults to 88.
+        test (bool, optional): test. Defaults to False.
+        returns (list, optional): return format. Defaults to ['df','coff','ax','model'].
+        ax (axes, optional): axes object. Defaults to None.
+        bins (int, optional): number of bins. Defaults to 50.
+
+    Raises:
+        ValueError: clf_type
+
+    Returns:
+        dict: _description_
+    """
     x=ds.to_numpy()
     X=x.reshape(-1,1)
     if clf_type.lower()=='gmm':
@@ -179,6 +221,17 @@ def cluster_1d(ds,n_clusters,clf_type='gmm',
 def get_pos_umap(df1,spread=100,
                  test=False,k='',
                  **kws):
+    """Get positions of the umap points.
+
+    Args:
+        df1 (DataFrame): input dataframe
+        spread (int, optional): spead extent. Defaults to 100.
+        test (bool, optional): test. Defaults to False.
+        k (str, optional): number of clusters. Defaults to ''.
+
+    Returns:
+        DataFrame: output dataframe.
+    """
     import umap
     reducer = umap.UMAP(spread=spread,*kws)
     embedding = reducer.fit_transform(df1)
