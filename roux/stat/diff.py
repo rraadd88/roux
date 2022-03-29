@@ -2,6 +2,7 @@ from argparse import ArgumentError
 import pandas as pd
 import numpy as np
 import scipy as sc
+import matplotlib.pyplot as plt
 import logging
 from icecream import ic as info
 from roux.lib.set import *
@@ -668,10 +669,10 @@ def get_stats_regression(df_: pd.DataFrame,
 def filter_regressions(df1: pd.DataFrame,
                        variable: str,
                        colindex: str,
-                       coff_q=0.1,
-                       by_covariates=True,
-                       coff_p_covariates=0.05,
-                       test=False) -> pd.DataFrame:
+                       coff_q : float=0.1,
+                       by_covariates: bool=True,
+                       coff_p_covariates: float=0.05,
+                       test: bool=False) -> pd.DataFrame:
     """Filter regression statistics.
 
     Args:
@@ -726,3 +727,109 @@ def filter_regressions(df1: pd.DataFrame,
     info(df3[colindex].nunique())
     return df3
     
+import statsmodels.api as sm
+import statsmodels.formula.api as smf
+
+def get_model_summary(model: object) -> pd.DataFrame:
+    """Get model summary.
+
+    Args:
+        model (object): model.
+
+    Returns:
+        pd.DataFrame: output.
+    """
+    df_=model.summary().tables[0]
+    return df_.loc[:,[0,1]].append(df_.loc[:,[2,3]].rename(columns={2:0,3:1})).rename(columns={0:'index',1:'value'}).append(dmap2lin(model.summary().tables[1]),sort=True)
+
+def run_lr_test(data: pd.DataFrame,
+                formula: str,
+                covariate: str,
+                col_group: str,
+                params_model: dict ={'reml':False}
+                ) -> tuple:
+    """Run LR test.
+
+    Args:
+        data (pd.DataFrame): input data.
+        formula (str): formula.
+        covariate (str): covariate.
+        col_group (str): column with the group.
+        params_model (dict, optional): parameters of the model. Defaults to {'reml':False}.
+
+    Returns:
+        tuple: output tupe (stat, pval,dres).
+    """
+
+    sc.stats.chisqprob = lambda chisq, df: sc.stats.chi2.sf(chisq, df)
+    def get_lrtest(llmin, llmax):
+        stat = 2 * (llmax - llmin)
+        pval = sc.stats.chisqprob(stat, 1)
+        return stat, pval        
+    data=data.dropna()
+    # without covariate
+    model = smf.mixedlm(formula, data,groups=data[col_group])
+    modelf = model.fit(**params_model)
+    llf = modelf.llf
+
+    # with covariate
+    model_covariate = smf.mixedlm(f"{formula}+ {covariate}", data,groups=data[col_group])
+    modelf_covariate = model_covariate.fit(**params_model)
+    llf_covariate = modelf_covariate.llf
+
+    # compare
+    stat, pval = get_lrtest(llf, llf_covariate)
+    print(f'stat {stat:.2e} pval {pval:.2e}')
+    
+    # results
+    dres=delunnamedcol(pd.concat({False:get_model_summary(modelf),
+    True:get_model_summary(modelf_covariate)},axis=0,names=['covariate included','Unnamed']).reset_index())
+    return stat, pval,dres
+
+def plot_residuals_versus_fitted(model: object) -> plt.Axes:
+    """plot Residuals Versus Fitted (RVF).
+
+    Args:
+        model (object): model.
+
+    Returns:
+        plt.Axes: output.
+    """
+    fig = plt.figure(figsize = (5, 3))
+    ax = sns.scatterplot(y = model.resid, x = model.fittedvalues,alpha=0.2)
+    ax.set_xlabel("fitted")
+    ax.set_ylabel("residuals")
+    l = sm.stats.diagnostic.het_white(model.resid, model.model.exog)
+    ax.set_title("LM test "+pval2annot(l[1],alpha=0.05,fmt='<',linebreak=False)+", FE test "+pval2annot(l[3],alpha=0.05,fmt='<',linebreak=False))    
+    return ax
+
+def plot_residuals_versus_groups(model: object) -> plt.Axes:
+    """plot Residuals Versus groups.
+
+    Args:
+        model (object): model.
+
+    Returns:
+        plt.Axes: output.
+    """
+    fig = plt.figure(figsize = (5, 3))
+    ax = sns.pointplot(x = model.model.groups, 
+                       y = model.resid,
+                      ci='sd',
+                      join=False)
+    ax.set_ylabel("residuals")
+    ax.set_xlabel("groups")
+    return ax
+
+def plot_model_sanity(model: object):
+    """Plot sanity stats.
+
+    Args:
+        model (object): model.
+    """
+    from roux.viz.scatter import plot_qq 
+    from roux.viz.dist import plot_normal 
+    plot_normal(x=model.resid)
+    plot_qq(x=model.resid)
+    plot_residuals_versus_fitted(model)
+    plot_residuals_versus_groups(model)

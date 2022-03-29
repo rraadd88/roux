@@ -1,6 +1,24 @@
 from roux.global_imports import *
-def fit_curve_fit(func,xdata=None,ydata=None,bounds=(-np.inf, np.inf),
-                  test=False,plot=False):
+
+def fit_curve_fit(func,
+                  xdata: np.array = None,
+                  ydata: np.array=None,
+                  bounds: tuple =(-np.inf, np.inf),
+                  test=False,
+                  plot=False) -> tuple:
+    """Wrapper around `scipy`'s `curve_fit`.
+
+    Args:
+        func (function): fitting function.
+        xdata (np.array, optional): x data. Defaults to None.
+        ydata (np.array, optional): y data. Defaults to None.
+        bounds (tuple, optional): bounds. Defaults to (-np.inf, np.inf).
+        test (bool, optional): test. Defaults to False.
+        plot (bool, optional): plot. Defaults to False.
+
+    Returns:
+        tuple: output.
+    """
     from scipy.optimize import curve_fit
     # >>>
     # Define the data to be fit with some noise:
@@ -36,77 +54,25 @@ def fit_curve_fit(func,xdata=None,ydata=None,bounds=(-np.inf, np.inf),
         plt.show()
     return func(xdata, *popt),popt
 
-# deprecated
-def fit_power_law(xdata,ydata,yerr=None,pinit = [1.5, -1.5],axes=None):
-    from scipy import optimize
-    powerlaw = lambda x, amp, index: amp * (x**index)
-    ##########
-    # Fitting the data -- Least Squares Method
-    ##########
+def fit_gauss_bimodal(
+    data: np.array,
+    bins: int=50,
+    expected: tuple=(1,.2,250,2,.2,125),
+    test=False) -> tuple:
+    """Fit bimodal gaussian distribution to the data in vector format.
 
-    # Power-law fitting is best done by first converting
-    # to a linear equation and then fitting to a straight line.
-    # Note that the `logyerr` term here is ignoring a constant prefactor.
-    #
-    #  y = a * x^b
-    #  log(y) = log(a) + b*log(x)
-    #
+    Args:
+        data (np.array): vector.
+        bins (int, optional): bins. Defaults to 50.
+        expected (tuple, optional): expected parameters. Defaults to (1,.2,250,2,.2,125).
+        test (bool, optional): test. Defaults to False.
 
-    logx = np.log10(xdata)
-    logy = np.log10(ydata)
-    if yerr is None:
-        yerr=np.repeat(0,len(ydata))
-    logyerr = yerr / ydata
+    Returns:
+        tuple: _description_
 
-    # define our (line) fitting function
-    fitfunc = lambda p, x: p[0] + p[1] * x
-    errfunc = lambda p, x, y, err: (y - fitfunc(p, x)) / err
-
-    out = optimize.leastsq(errfunc, pinit,
-                           args=(logx, logy, logyerr), 
-                           full_output=1,
-#                           bounds=bounds
-                          )
-
-    pfinal = out[0]
-    covar = out[1]
-    print (pfinal)
-    print (covar)
-
-    index = pfinal[1]
-    amp = 10.0**pfinal[0]
-#     amp = pfinal[0]
-    
-#     indexErr = np.sqrt( covar[1][1] )
-#     ampErr = np.sqrt( covar[0][0] ) * amp
-
-    ##########
-    # Plotting data
-    ##########
-    if axes is None:
-        fig,axes=plt.subplots(nrows=2,ncols=1,figsize=[5,5])
-    ax=axes[0]
-#     ax.scatter(xdata, ydata, color='gray',marker='o',label='data')  # Data
-    ax.bar(xdata,ydata,width=1.0,facecolor='gray', edgecolor='gray',label='data')
-    ax.plot(xdata, powerlaw(xdata, amp, index),color='red',label='fitted')     # Fit
-#     plt.text(5, 6.5, 'Ampli = %5.2f +/- %5.2f' % (amp, ampErr))
-#     plt.text(5, 5.5, 'Index = %5.2f +/- %5.2f' % (index, indexErr))
-    ax.set_xlabel('# of degrees')
-    ax.set_ylabel('frequency')
-    ax.set_xlim(ax.get_xlim()[0]*0.3,ax.get_xlim()[1]*0.3)
-    ax.legend()
-    
-    ax=axes[1]
-    ax.scatter(xdata, ydata, color='gray',marker='o',label='data')  # Data
-    ax.loglog(xdata, powerlaw(xdata, amp, index),color='red',label='fitted')
-    ax.set_xlabel('# of degrees (log scale)')
-    ax.set_ylabel('frequency (log scale)')
-    ax.legend()
-
-def fit_gauss_bimodal(data,bins=50,expected=(1,.2,250,2,.2,125),test=False):
-    #
-#     expected=(1,.2,250,2,.2,125)
-#     data=concatenate((normal(1,.2,5000),normal(2,.2,2500)))
+    Notes:
+        Observed better performance with `roux.stat.cluster.cluster_1d`.
+    """
     from scipy.optimize import curve_fit
     def gauss(x,mu,sigma,A):
         return A*np.exp(-(x-mu)**2/2/sigma**2)
@@ -124,12 +90,28 @@ def fit_gauss_bimodal(data,bins=50,expected=(1,.2,250,2,.2,125),test=False):
     return params,sigma
 
 ## 2D
-def get_grid(x,y,z=None,
-               off=0,
-               grids=100,
-               method='linear',
-               test=False,
-               **kws):
+def get_grid(x: np.array,
+        y: np.array,
+        z: np.array =None,
+        off: int=0,
+        grids: int=100,
+        method='linear',
+        test=False,
+        **kws) -> tuple:
+    """2D grids from 1d data.
+
+    Args:
+        x (np.array): vector.
+        y (np.array): vector.
+        z (np.array, optional): vector. Defaults to None.
+        off (int, optional): offsets. Defaults to 0.
+        grids (int, optional): grids. Defaults to 100.
+        method (str, optional): method. Defaults to 'linear'.
+        test (bool, optional): test. Defaults to False.
+
+    Returns:
+        tuple: output.
+    """
     xoff=(np.max(x)-np.min(x))*off
     yoff=(np.max(y)-np.min(y))*off    
     xi=np.linspace(np.min(x)-xoff,np.max(x)+xoff,grids)
@@ -145,13 +127,32 @@ def get_grid(x,y,z=None,
                                    )
         return X,Y,Z
     
-def fit_gaussian2d(x,y,z,
-                   grid=True,
-                grids=20,
-                method='linear',
-                   off=0,
-                rescalez=True,
-                  test=False):
+def fit_gaussian2d(
+    x: np.array,
+    y: np.array,
+    z: np.array,
+    grid=True,
+    grids=20,
+    method='linear',
+    off=0,
+    rescalez=True,
+    test=False) -> tuple:
+    """Fit gaussian 2D.
+
+    Args:
+        x (np.array): vector.
+        y (np.array): vector.
+        z (np.array): vector.
+        grid (bool, optional): grid. Defaults to True.
+        grids (int, optional): grids. Defaults to 20.
+        method (str, optional): method. Defaults to 'linear'.
+        off (int, optional): offsets. Defaults to 0.
+        rescalez (bool, optional): rescalez. Defaults to True.
+        test (bool, optional): test. Defaults to False.
+
+    Returns:
+        tuple: output.
+    """
     if grid:
         xg,yg,zg=get_grid(x,y,z,
                         grids=grids,
@@ -205,20 +206,42 @@ def fit_gaussian2d(x,y,z,
         zg_hat=zg_hat_
     return xg,yg,zg,zg_hat  
 
-def fit_2d_distribution_kde(x, y, bandwidth, 
-                            xmin=None,xmax=None,xbins=100j, 
-                            ymin=None,ymax=None,ybins=100j, 
-                           test=False,
-                           **kwargs,): 
+def fit_2d_distribution_kde(x: np.array, 
+                            y: np.array,
+                            bandwidth: float, 
+                            xmin: float=None,
+                            xmax: float=None,
+                            xbins=100j, 
+                            ymin: float=None,
+                            ymax: float=None,
+                            ybins=100j, 
+                            test=False,
+                            **kwargs,) -> tuple: 
     """
-    Build 2D kernel density estimate (KDE).
-    
-    ## cut off outliers
-    quantile_coff=0.01
-    params_grid=merge_dicts([
-    df01.loc[:,var2col.values()].quantile(quantile_coff).rename(index=flip_dict({f"{k}min":var2col[k] for k in var2col})).to_dict(),
-    df01.loc[:,var2col.values()].quantile(1-quantile_coff).rename(index=flip_dict({f"{k}max":var2col[k] for k in var2col})).to_dict(),
-            ])
+    2D kernel density estimate (KDE).
+
+    Notes:
+        Cut off outliers:
+            quantile_coff=0.01
+            params_grid=merge_dicts([
+            df01.loc[:,var2col.values()].quantile(quantile_coff).rename(index=flip_dict({f"{k}min":var2col[k] for k in var2col})).to_dict(),
+            df01.loc[:,var2col.values()].quantile(1-quantile_coff).rename(index=flip_dict({f"{k}max":var2col[k] for k in var2col})).to_dict(),
+                    ])
+
+    Args:
+        x (np.array): vector.
+        y (np.array): vector.
+        bandwidth (float): bandwidth
+        xmin (float, optional): x minimum. Defaults to None.
+        xmax (float, optional): x maximum. Defaults to None.
+        xbins (_type_, optional): x bins. Defaults to 100j.
+        ymin (float, optional): y minimum. Defaults to None.
+        ymax (float, optional): y maximum. Defaults to None.
+        ybins (_type_, optional): y bins. Defaults to 100j.
+        test (bool, optional): test. Defaults to False.
+
+    Returns:
+        tuple: output.
     """
     from sklearn.neighbors import KernelDensity
     # create grid of sample locations (default: 100x100)
@@ -244,3 +267,81 @@ def fit_2d_distribution_kde(x, y, bandwidth,
                  'title':f"bandwidth{bandwidth}_bins{xbins}"})
     return xx, yy, zz    
 
+def check_poly_fit(d: pd.DataFrame,
+            xcol: str,
+            ycol: str,
+            degmax: int=5) -> pd.DataFrame:
+    """Check the fit of a polynomial equations.
+
+    Args:
+        d (pd.DataFrame): input dataframe.
+        xcol (str): column containing the x values.
+        ycol (str): column containing the y values.
+        degmax (int, optional): degree maximum. Defaults to 5.
+
+    Returns:
+        pd.DataFrame: _description_
+    """
+    from scipy.stats import linregress
+    ns=range(1,degmax+1,1)
+    plt.figure(figsize=[9,5])
+    ax=plt.subplot(121)
+    d.plot.scatter(x=xcol,y=ycol,alpha=0.3,color='gray',ax=ax)
+    metrics=pd.DataFrame(index=ns,columns=['r','standard error'])
+    for n in ns:
+        fit = np.polyfit(d[xcol], d[ycol], n) 
+        yp = np.poly1d(fit)
+        _,_,r,_,e = linregress(yp(d[xcol]), d[ycol])
+        metrics.loc[n,'r']=r
+        metrics.loc[n,'standard error']=e    
+        ax.plot(d[xcol], yp(d[xcol]), '-',color=plt.get_cmap('hsv')(n/float(max(ns))),
+                alpha=1,
+                lw='4')
+    ax.legend(['degree=%d' % n for n in ns],bbox_to_anchor=(1, 1))
+
+    metrics.index.name='degree'
+    ax=plt.subplot(122)
+    ax=metrics.plot.barh(ax=ax)
+    ax.legend(bbox_to_anchor=[1,1])
+#     metrics.plot.barh('standard error')
+    plt.tight_layout()
+    return metrics
+
+def mlr_2(df: pd.DataFrame,coly: str,colxs: list) -> tuple:
+    """Multiple linear regression between two variables.
+
+    Args:
+        df (pd.DataFrame): input dataframe.
+        coly (str): column  containing y values.
+        colxs (list): columns containing x values.
+
+    Returns:
+        tuple: output.
+    """
+    from sklearn.preprocessing import PolynomialFeatures
+    from sklearn.linear_model import LinearRegression
+    poly = PolynomialFeatures(interaction_only=True,include_bias = False)
+    X=poly.fit_transform(df.loc[:,colxs])
+    # pd.DataFrame()
+    y=df.loc[:,coly].tolist()
+    reg = LinearRegression().fit(X, y)
+    label_score=f"$r^2$={reg.score(X, y):.2g}"
+    label_eqn="$y$="+''.join([f"{l[0]:+.2g}*{l[1]}" for l in zip(reg.coef_,['$x_1$','$x_2$','$x_1$*$x_2$'])])[1:]
+    dplot=pd.DataFrame({f'{coly}': y,
+    f'{coly} predicted': reg.predict(X),})
+    return label_score,label_eqn,dplot
+
+def get_mlr_2_str(df: pd.DataFrame,coly: str,colxs: list) -> str:
+    """Get the result of the multiple linear regression between two variables as a string.
+
+    Args:
+        df (pd.DataFrame): input dataframe.
+        coly (str): column  containing y values.
+        colxs (list): columns containing x values.
+
+    Returns:
+        str: output.
+    """
+    label_score,label_eqn,dplot_reg=mlr_2(df,coly,colxs)
+    label_eqn=label_eqn.replace('$y$','$z$').replace('$x_1$','$x$').replace('$x_2$','$y$')
+    return f"{label_eqn} ({label_score})"

@@ -1,9 +1,16 @@
 import numpy as np
 
-def get_intersection_locations(y1,y2,test=False,x=None): 
-    """
-    get x co-ords of the intersections
-    x[idx]
+def get_intersection_locations(y1: np.array,y2: np.array,test: bool=False,x: np.array=None) -> list: 
+    """Get co-ordinates of the intersection (x[idx]).
+
+    Args:
+        y1 (np.array): vector.
+        y2 (np.array): vector.
+        test (bool, optional): test mode. Defaults to False.
+        x (np.array, optional): vector. Defaults to None.
+
+    Returns:
+        list: output.
     """
     idxs=np.argwhere(np.diff(np.sign(y1 - y2))).flatten()
     if test:

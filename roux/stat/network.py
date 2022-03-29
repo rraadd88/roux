@@ -1,5 +1,18 @@
 import pandas as pd
-def get_subgraphs(df1,source='gene1 id',target='gene2 id'):
+
+def get_subgraphs(df1: pd.DataFrame,
+                 source: str,
+                 target: str) -> pd.DataFrame:
+    """Subgraphs from the the edge list.
+
+    Args:
+        df1 (pd.DataFrame): input dataframe containing edge-list.
+        source (str): source node.
+        target (str): taget node.
+
+    Returns:
+        pd.DataFrame: output.
+    """
     import networkx as nx
     g=nx.from_pandas_edgelist(df1,source=source,target=target)
     ug = g.to_undirected()

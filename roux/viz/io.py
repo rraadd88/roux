@@ -14,6 +14,18 @@ def concat_images(ps,how='h',test=False,
        )
     return outp
 
+def to_montage(ps,layout,hspace=0,vspace=0,
+               test=False,
+               **kws_outp):
+    outp=to_outp(ps,**kws_outp)
+    env=get_env('imagemagick')
+    runbash(
+        f"{env['PATH'].split(':')[0]}/montage -geometry +{hspace}+{vspace} -tile {layout} {' '.join(ps)} {outp}",
+        env=env,
+        test=test,
+       )
+    return outp
+
 def to_gif(ps,outp,
           duration=200, loop=0,
           optimize=True):
