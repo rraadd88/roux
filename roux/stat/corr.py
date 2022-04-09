@@ -109,152 +109,152 @@ def get_corr(x: np.array,y: np.array,
         else:
             return corr_to_str(method,r,p,n=n, ci=None,ci_type=None, magnitide=magnitide)
 
-def corr_within(df: pd.DataFrame,
-         method='spearman',
-         ) -> pd.DataFrame:
-    """Correlation within a dataframe.
+# def corr_within(df: pd.DataFrame,
+#          method='spearman',
+#          ) -> pd.DataFrame:
+#     """Correlation within a dataframe.
 
-    Args:
-        df (DataFrame): input dataframe.
-        method (str, optional): method name. Defaults to 'spearman'.
+#     Args:
+#         df (DataFrame): input dataframe.
+#         method (str, optional): method name. Defaults to 'spearman'.
 
-    Returns:
-        DataFrame: output dataframe.
-    """
+#     Returns:
+#         DataFrame: output dataframe.
+#     """
     
-    df1=df.corr(method=method).rd.fill_diagonal(filler=np.nan)
-    df2=df1.melt(ignore_index=False)
-    col=df2.index.name
-    df2=df2.rename(columns={col:col+'2'}).reset_index().rename(columns={col:col+'1','value':f'$r_{method[0]}$'})
-    return df2
+#     df1=df.corr(method=method).rd.fill_diagonal(filler=np.nan)
+#     df2=df1.melt(ignore_index=False)
+#     col=df2.index.name
+#     df2=df2.rename(columns={col:col+'2'}).reset_index().rename(columns={col:col+'1','value':f'$r_{method[0]}$'})
+#     return df2
 
 
-def corrdf(df1: pd.DataFrame,
-           colindex: str,
-           colsample: str,
-           colvalue: str,
-           colgroupby=None,
-           min_samples=1,
-           fast=False,
-           drop_diagonal=True,
-           drop_duplicates=True,
-           **kws) -> pd.DataFrame:
-    """Correlate within a dataframe.
+# def corrdf(df1: pd.DataFrame,
+#            colindex: str,
+#            colsample: str,
+#            colvalue: str,
+#            colgroupby=None,
+#            min_samples=1,
+#            fast=False,
+#            drop_diagonal=True,
+#            drop_duplicates=True,
+#            **kws) -> pd.DataFrame:
+#     """Correlate within a dataframe.
 
-    Args:
-        df1 (DataFrame): input dataframe.
-        colindex (str): index column.
-        colsample (str): column with samples.
-        colvalue (str): column with the values.
-        colgroupby (str, optional): column with the groups. Defaults to None.
-        min_samples (int, optional): minimum allowed sample size. Defaults to 1.
-        fast (bool, optional): use parallel processing. Defaults to False.
-        drop_diagonal (bool, optional): drop values at the diagonal of the output. Defaults to True.
-        drop_duplicates (bool, optional): drop duplicate values. Defaults to True.
+#     Args:
+#         df1 (DataFrame): input dataframe.
+#         colindex (str): index column.
+#         colsample (str): column with samples.
+#         colvalue (str): column with the values.
+#         colgroupby (str, optional): column with the groups. Defaults to None.
+#         min_samples (int, optional): minimum allowed sample size. Defaults to 1.
+#         fast (bool, optional): use parallel processing. Defaults to False.
+#         drop_diagonal (bool, optional): drop values at the diagonal of the output. Defaults to True.
+#         drop_duplicates (bool, optional): drop duplicate values. Defaults to True.
 
-    Keyword arguments:
-        kws: parameters provided to `corr_within` function.
+#     Keyword arguments:
+#         kws: parameters provided to `corr_within` function.
 
-    Returns:
-        DataFrame: output dataframe.
-    """
+#     Returns:
+#         DataFrame: output dataframe.
+#     """
     
-    if df1[colsample].nunique()<min_samples:
-        logging.info(f"not enough samples in {colsample} ({df1[colsample].nunique()})")
-        return     
-    if colgroupby is None:
-        df2=corr_within(
-            df1.pivot(index=colindex,columns=colsample,values=colvalue),
-            **kws,
-            )
-    else:
-        df2=getattr(df1.groupby(colgroupby),'progress_apply' if not fast else 'parallel_apply')(lambda df: corr_within(
-            df.pivot(index=colindex,columns=colsample,values=colvalue),
-            **kws,
-            )).rd.clean().reset_index(0)
-    if drop_diagonal:
-        df2=df2.loc[(df2['{colsample}1']!=df2['{colsample}2']),:]
-    if drop_duplicates:
-        df2=df2.drop_duplicates(subset=colgroupby)
-    return df2
+#     if df1[colsample].nunique()<min_samples:
+#         logging.info(f"not enough samples in {colsample} ({df1[colsample].nunique()})")
+#         return     
+#     if colgroupby is None:
+#         df2=corr_within(
+#             df1.pivot(index=colindex,columns=colsample,values=colvalue),
+#             **kws,
+#             )
+#     else:
+#         df2=getattr(df1.groupby(colgroupby),'progress_apply' if not fast else 'parallel_apply')(lambda df: corr_within(
+#             df.pivot(index=colindex,columns=colsample,values=colvalue),
+#             **kws,
+#             )).rd.clean().reset_index(0)
+#     if drop_diagonal:
+#         df2=df2.loc[(df2['{colsample}1']!=df2['{colsample}2']),:]
+#     if drop_duplicates:
+#         df2=df2.drop_duplicates(subset=colgroupby)
+#     return df2
 
 
-def corr_between(df1: pd.DataFrame,df2: pd.DataFrame,method: str) -> pd.DataFrame:
-    """Correlate between dataframes.
+# def corr_between(df1: pd.DataFrame,df2: pd.DataFrame,method: str) -> pd.DataFrame:
+#     """Correlate between dataframes.
 
-    Args:
-        df1 (DataFrame): pd.DataFrame #1. Its columns are mapped to the columns of the output matrix.
-        df2 (DataFrame): pd.DataFrame #2. Its columns are mapped to the rows of the output matrix.
-        method (methodname): method name
+#     Args:
+#         df1 (DataFrame): pd.DataFrame #1. Its columns are mapped to the columns of the output matrix.
+#         df2 (DataFrame): pd.DataFrame #2. Its columns are mapped to the rows of the output matrix.
+#         method (methodname): method name
 
-    Returns:
-        DataFrame: correlation matrix.
-    """
-    from roux.lib.set import list2intersection
-    index_common=list2intersection([df1.index.tolist(),df2.index.tolist()])
-    # get the common indices with loc. it sorts the dfs too.
-    df1=df1.loc[index_common,:]
-    df2=df2.loc[index_common,:]
+#     Returns:
+#         DataFrame: correlation matrix.
+#     """
+#     from roux.lib.set import list2intersection
+#     index_common=list2intersection([df1.index.tolist(),df2.index.tolist()])
+#     # get the common indices with loc. it sorts the dfs too.
+#     df1=df1.loc[index_common,:]
+#     df2=df2.loc[index_common,:]
     
-    dcorr=pd.DataFrame(columns=df1.columns,index=df2.columns)
-    dpval=pd.DataFrame(columns=df1.columns,index=df2.columns)
-    from tqdm import tqdm
-    for c1 in tqdm(df1.columns):
-        for c2 in df2:
-            if method=='spearman':
-                dcorr.loc[c2,c1],dpval.loc[c2,c1]=get_spearmanr(df1[c1],df2[c2],)
-            elif method=='pearson':
-                dcorr.loc[c2,c1],dpval.loc[c2,c1]=get_pearsonr(df1[c1],df2[c2],)                
-    dn2df={f'$r_{method[0]}$':dcorr,
-          f'P ($r_{method[0]}$)':dpval,}
-    dn2df={k:dn2df[k].melt(ignore_index=False) for k in dn2df}
-    df3=pd.concat(dn2df,
-             axis=0,
-             )
-    df3=df3.rename(columns={df1.columns.name:df1.columns.name+'2'}
-              ).reset_index(1).rename(columns={df1.columns.name:df1.columns.name+'1'})
-    df3.index.name='variable correlation'
-    return df3.reset_index()
+#     dcorr=pd.DataFrame(columns=df1.columns,index=df2.columns)
+#     dpval=pd.DataFrame(columns=df1.columns,index=df2.columns)
+#     from tqdm import tqdm
+#     for c1 in tqdm(df1.columns):
+#         for c2 in df2:
+#             if method=='spearman':
+#                 dcorr.loc[c2,c1],dpval.loc[c2,c1]=get_spearmanr(df1[c1],df2[c2],)
+#             elif method=='pearson':
+#                 dcorr.loc[c2,c1],dpval.loc[c2,c1]=get_pearsonr(df1[c1],df2[c2],)                
+#     dn2df={f'$r_{method[0]}$':dcorr,
+#           f'P ($r_{method[0]}$)':dpval,}
+#     dn2df={k:dn2df[k].melt(ignore_index=False) for k in dn2df}
+#     df3=pd.concat(dn2df,
+#              axis=0,
+#              )
+#     df3=df3.rename(columns={df1.columns.name:df1.columns.name+'2'}
+#               ).reset_index(1).rename(columns={df1.columns.name:df1.columns.name+'1'})
+#     df3.index.name='variable correlation'
+#     return df3.reset_index()
 
 
-def corrdfs(df1: pd.DataFrame,df2: pd.DataFrame,
-           colindex: str,
-           colsample: str,
-           colvalue: str,
-           colgroupby=None,
-           min_samples=1,
-           **kws):
-    """Correlate between dataframes.
+# def corrdfs(df1: pd.DataFrame,df2: pd.DataFrame,
+#            colindex: str,
+#            colsample: str,
+#            colvalue: str,
+#            colgroupby=None,
+#            min_samples=1,
+#            **kws):
+#     """Correlate between dataframes.
 
-    Args:
-        df1 (DataFrame): input dataframe.
-        colindex (str): index column.
-        colsample (str): column with samples.
-        colvalue (str): column with the values.
-        colgroupby (str, optional): column with the groups. Defaults to None.
-        min_samples (int, optional): minimum allowed sample size. Defaults to 1.
+#     Args:
+#         df1 (DataFrame): input dataframe.
+#         colindex (str): index column.
+#         colsample (str): column with samples.
+#         colvalue (str): column with the values.
+#         colgroupby (str, optional): column with the groups. Defaults to None.
+#         min_samples (int, optional): minimum allowed sample size. Defaults to 1.
 
-    Keyword arguments:
-        kws: parameters provided to `corr_between` function.
+#     Keyword arguments:
+#         kws: parameters provided to `corr_between` function.
 
-    Returns:
-        DataFrame: output dataframe.
-    """
-    if len(df1[colsample].unique())<min_samples or len(df2[colsample].unique())<min_samples:
-        return
-    if colgroupby is None:
-        df3=corr_between(
-            df1.pivot(index=colindex,columns=colsample,values=colvalue),
-            df2.pivot(index=colindex,columns=colsample,values=colvalue),
-            **kws,
-            )
-    else:
-        df3=df1.groupby(colgroupby).apply(lambda df: corr_between(
-            df.pivot(index=colindex,columns=colsample,values=colvalue),
-            df2.loc[(df2[colgroupby]==df.name),:].pivot(index=colindex,columns=colsample,values=colvalue),
-            **kws,
-            )).reset_index(0)
-    return df3
+#     Returns:
+#         DataFrame: output dataframe.
+#     """
+#     if len(df1[colsample].unique())<min_samples or len(df2[colsample].unique())<min_samples:
+#         return
+#     if colgroupby is None:
+#         df3=corr_between(
+#             df1.pivot(index=colindex,columns=colsample,values=colvalue),
+#             df2.pivot(index=colindex,columns=colsample,values=colvalue),
+#             **kws,
+#             )
+#     else:
+#         df3=df1.groupby(colgroupby).apply(lambda df: corr_between(
+#             df.pivot(index=colindex,columns=colsample,values=colvalue),
+#             df2.loc[(df2[colgroupby]==df.name),:].pivot(index=colindex,columns=colsample,values=colvalue),
+#             **kws,
+#             )).reset_index(0)
+#     return df3
 
 ## partial 
 def get_partial_corrs(df: pd.DataFrame,xs: list,ys: list, method='spearman',splits=5) -> pd.DataFrame:

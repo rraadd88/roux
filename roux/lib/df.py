@@ -554,8 +554,8 @@ def get_mappings(df1,
         logging.error(f"cols and subset are alias, both cannot be used.")
         return
     if cols is None and not subset is None: cols=subset        
-    if cols is None: cols=df.columns.tolist()
-    if df1.rd.check_duplicated(cols):
+    if cols is None: cols=df1.columns.tolist()
+    if not df1.rd.validate_no_dups(cols):
         df1=df1.loc[:,cols].log.drop_duplicates()
     if len(cols)==2:
         from roux.lib.set import get_alt
@@ -844,6 +844,7 @@ def melt_paired(df,
             suffixes=get_suffix(*cols_index,common=False, clean=True)
         # both suffixes should not be in any column name
         assert(not any([all([s in c for s in suffixes]) for c in df]))
+        assert not any([c==s for s in suffixes for c in df]), "suffix should not be the column name"
         cols_common=[c for c in df if not any([s in c for s in suffixes])]
         dn2df={}
         for s in suffixes:

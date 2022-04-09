@@ -1,5 +1,6 @@
 from roux.lib.dfs import *
 import matplotlib.pyplot as plt
+import scipy as sc
 
 # scikit learn       
 def check_clusters(df: pd.DataFrame):
@@ -135,16 +136,58 @@ def get_clusters_optimum(X: np.array,n_clusters=range(2,11),
     dn2df={dn:dn2df[dn].loc[(dn2df[dn]['total clusters']==n_clusters_optimum),:].drop(['total clusters'],axis=1) for dn in dn2df}
     return dn2df
 
+def get_gmm_params(g,x,
+                         n_clusters=2,
+                         test=False,
+                        ):
+    """Intersection point of the two peak Gaussian mixture Models (GMMs).
+    
+    Args:
+        out (str): `coff` only or `params` for all the parameters.
+        
+    """
+    assert n_clusters==2
+    weights = g.weights_
+    means = g.means_
+    covars = g.covariances_
+    stds=np.sqrt(covars).ravel().reshape(n_clusters,1)
+    # logging.info(f'weights {weights}')
+    f = x.reshape(-1,1)
+    x.sort()
+    two_pdfs = sc.stats.norm.pdf(np.array([x,x]), means, stds)
+    mix_pdf = np.matmul(weights.reshape(1,n_clusters), two_pdfs)
+    return mix_pdf,two_pdfs,means,weights
+    
+def get_gmm_intersection(x,two_pdfs,means,weights,test=False):
+    from roux.stat.solve import get_intersection_locations
+    idxs=get_intersection_locations(y1=two_pdfs[0]*weights[0],
+                                    y2=two_pdfs[1]*weights[1],
+                                    test=False,x=x)
+    x_intersections=x[idxs]
+    if test: logging.info(f'intersections {x_intersections}')
+    ms=sorted([means[0][0],means[1][0]])
+    if len(x_intersections)>1:
+        if test:
+            logging.info(x_intersections)
+            logging.info(ms)
+            logging.info([i for i in x_intersections if i>ms[0] and i<ms[1]])
+        coffs_=[i for i in x_intersections if i>ms[0] and i<ms[1]]
+        if len(coffs_)!=0:
+            coff=coffs_[0]
+        else:
+            coff=None
+        if test:
+            logging.info(coff)
+    else:
+        coff=x_intersections[0]
+    return coff
+
 def cluster_1d(ds: pd.Series,
                 n_clusters: int,
                 clf_type='gmm',
                 random_state=88,
                 test=False,
-                returns=['df','coff','ax','model'],
-                #                 return_coff=False,
-                #                   return_ax=False,
-                ax=None,
-                bins=50,
+                returns=['coff'],
                 **kws_clf) -> dict:
     """Cluster 1D data.
 
@@ -156,7 +199,6 @@ def cluster_1d(ds: pd.Series,
         test (bool, optional): test. Defaults to False.
         returns (list, optional): return format. Defaults to ['df','coff','ax','model'].
         ax (axes, optional): axes object. Defaults to None.
-        bins (int, optional): number of bins. Defaults to 50.
 
     Raises:
         ValueError: clf_type
@@ -164,6 +206,7 @@ def cluster_1d(ds: pd.Series,
     Returns:
         dict: _description_
     """
+    assert not ds._is_view, "input series should be a copy not a view"
     x=ds.to_numpy()
     X=x.reshape(-1,1)
     if clf_type.lower()=='gmm':
@@ -176,24 +219,22 @@ def cluster_1d(ds: pd.Series,
         raise ValueError(clf_type)
     ## fit and predic
     labels =model.fit_predict(X)
-    if not model.converged_:
-        logging.warning('not converged')
+    assert model.converged_
     df=pd.DataFrame({'value':x,
-    'label':labels==1})
-    
+                     'label':labels==1})
+    if clf_type=='gmm':
+        mix_pdf,two_pdfs,means,weights=get_gmm_params(g=model,x=x,
+                             n_clusters=n_clusters,
+                             test=test,
+                            )
+        coff=get_gmm_intersection(x,two_pdfs,means,weights,test=test)
+    d={}
+    for k in returns:
+        d[k]=locals()[k]        
     if test:
-        if ax is None:
-            plt.figure(figsize=[2.5,2.5])
-            ax=plt.subplot()
-        df['value'].hist(bins=bins,density=True,
-                         histtype='step',
-                         ax=ax)
         if clf_type=='gmm':
-            from roux.viz.dist import plot_gaussianmixture    
-            ax,coff=plot_gaussianmixture(g=model,x=x,
-                                         n_clusters=n_clusters,
-                                         ax=ax,
-                                        )
+            from roux.viz.dist import plot_gmm
+            ax=plot_gmm(x,coff,mix_pdf,two_pdfs,weights,n_clusters=n_clusters,)
         else:
             coffs=df.groupby('label')['value'].agg(min).values
             for c in coffs:
@@ -203,18 +244,6 @@ def cluster_1d(ds: pd.Series,
             logging.info(f"coff:{c}; selected from {coffs}")
             ax.axvline(coff,color='k')
             ax.text(coff,ax.get_ylim()[1],f"{coff:.1f}",ha='center',va='bottom')            
-    d={'df':df,}
-#     if clf_type=='gmm':    
-#         weights = clf.weights_
-#         means = clf.means_
-#         covars = clf.covariances_
-#         stds=np.sqrt(covars).ravel().reshape(2,1)
-    for k in returns:
-        d[k]=locals()[k]
-#     if 'coff' in returns:
-#         d['coff']=coff
-#     if 'ax' in returns:
-#         d['ax']=coff
     return d
 
 ## umap

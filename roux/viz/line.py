@@ -6,12 +6,28 @@ from os.path import exists, basename,dirname
 from icecream import ic as info
 from roux.viz.ax_ import *
 
-def plot_range(df00,colvalue,
-               colindex,
-               k,
-               headsize=15,
-               headcolor='lightgray',
-               ax=None):
+def plot_range(df00: pd.DataFrame,
+               colvalue: str,
+               colindex: str,
+               k: str,
+               headsize: int=15,
+               headcolor: str='lightgray',
+    ax: plt.Axes=None,
+    ) -> plt.Axes:
+    """Plot range/intervals e.g. genome coordinates as lines.
+
+    Args:
+        df00 (pd.DataFrame): input data.
+        colvalue (str): column with values.
+        colindex (str): column with ids.
+        k (str): subset name.
+        headsize (int, optional): margin at top. Defaults to 15.
+        headcolor (str, optional): color of the margin. Defaults to 'lightgray'.
+        ax (plt.Axes, optional): `plt.Axes` object. Defaults to None.
+
+    Returns:
+        plt.Axes: `plt.Axes` object.
+    """
     df00['rank']=df00[colvalue].rank()
     x,y=df00.rd.filter_rows({colindex:k}).iloc[0,:]['rank'],df00.rd.filter_rows({colindex:k}).iloc[0,:][colvalue]
     if ax is None:
@@ -37,37 +53,50 @@ def plot_range(df00,colvalue,
                    )
     ax.axis(False)
     return ax
+    
+def plot_connections(
+    dplot: pd.DataFrame,
+    label2xy: dict,
+    colval: str='$r_{s}$',
+    line_scale: int=40,
+    legend_title: str='similarity',
+    label2rename: dict=None,
+    element2color: dict=None,
+    xoff: float=0,
+    yoff: float=0,
+    rectangle: dict={'width':0.2,'height':0.32},
+    params_text: dict={'ha':'center','va':'center'},
+    params_legend: dict={'bbox_to_anchor':(1.1, 0.5),
+    'ncol':1,
+    'frameon':False},
+    legend_elements: list=[],
+    params_line: dict={'alpha':1},
+    ax: plt.Axes=None,
+    test: bool=False
+    ) -> plt.Axes:
+    """Plot connections between points with annotations.
 
-def plot_summarystats(df,cols=['mean','min','max','50%'],plotp=None,ax=None,value_name=None):
-    if ax is None:ax=plt.subplot(111)
-    if not any([True if c in df else False for c in cols]):
-        df=df.describe().T
-    ax=df.loc[:,cols].plot(ax=ax)
-    ax.fill_between(df.index, df['mean']-df['std'], df['mean']+df['std'], color='b', alpha=0.2,label='std')
-    ax.legend(bbox_to_anchor=[1,1])
-    if value_name is None:
-        ax.set_ylabel('value')
-    else:
-        ax.set_ylabel(value_name)
-    ax.set_xticklabels(df.index)    
-    return ax
-    
-def plot_mean_std(df,cols=['mean','min','max','50%'],plotp=None):
-    return plot_summarystats(df,cols=cols,plotp=plotp)
-    
-def plot_connections(dplot,label2xy,colval='$r_{s}$',line_scale=40,legend_title='similarity',
-                        label2rename=None,
-                        element2color=None,
-                         xoff=0,yoff=0,
-                     rectangle={'width':0.2,'height':0.32},
-                     params_text={'ha':'center','va':'center'},
-                     params_legend={'bbox_to_anchor':(1.1, 0.5),
-                                  'ncol':1,
-                                  'frameon':False},
-                     legend_elements=[],
-                     params_line={'alpha':1},
-                     ax=None,
-                    test=False):
+    Args:
+        dplot (pd.DataFrame): input data.
+        label2xy (dict): label to position.
+        colval (str, optional): column with values. Defaults to '{s}$'.
+        line_scale (int, optional): line_scale. Defaults to 40.
+        legend_title (str, optional): legend_title. Defaults to 'similarity'.
+        label2rename (dict, optional): label2rename. Defaults to None.
+        element2color (dict, optional): element2color. Defaults to None.
+        xoff (float, optional): xoff. Defaults to 0.
+        yoff (float, optional): yoff. Defaults to 0.
+        rectangle (_type_, optional): rectangle. Defaults to {'width':0.2,'height':0.32}.
+        params_text (_type_, optional): params_text. Defaults to {'ha':'center','va':'center'}.
+        params_legend (_type_, optional): params_legend. Defaults to {'bbox_to_anchor':(1.1, 0.5), 'ncol':1, 'frameon':False}.
+        legend_elements (list, optional): legend_elements. Defaults to [].
+        params_line (_type_, optional): params_line. Defaults to {'alpha':1}.
+        ax (plt.Axes, optional): `plt.Axes` object. Defaults to None.
+        test (bool, optional): test mode. Defaults to False.
+
+    Returns:
+        plt.Axes: `plt.Axes` object.
+    """
     import matplotlib.patches as mpatches
     from matplotlib.collections import PatchCollection
     label2xy={k:[label2xy[k][0]+xoff,label2xy[k][1]+yoff] for k in label2xy}
@@ -140,36 +169,32 @@ def plot_connections(dplot,label2xy,colval='$r_{s}$',line_scale=40,legend_title=
         ax.set_axis_off()      
     return ax
 
-def plot_groupby_qbin(dplot,bins,
-                      colindex,colx,coly,
-                      colhue=None,
-                      ax=None,
-                      aggfunc=None,
-                      ticklabels_precision=1,
-                      **params_pointplot,
-                     ):
-    from roux.stat.transform import get_qbins
-    d=get_qbins(dplot.set_index(colindex)[f"{colx}"],bins, 'mid')
-    d={k:"{:.{}f}".format(d[k],ticklabels_precision) for k in d}
-    d={k:int(d[k]) if ticklabels_precision==0 else float(d[k]) for k in d}
-    dplot[f"{colx}\n(midpoint of qbin)"]=dplot[colindex].map(d)
-    if not aggfunc is None: 
-        dplot=dplot.groupby([colhue,f"{colx}\n(midpoint of qbin)"]).agg({coly:aggfunc}).reset_index()
-    if ax is None: ax=plt.subplot()
-    sns.pointplot(data=dplot,
-                  x=f"{colx}\n(midpoint of qbin)",
-                  y=coly,
-                  hue=colhue,
-                  ax=ax,
-                  **params_pointplot)
-    return ax
+def plot_kinetics(
+    df1: pd.DataFrame,
+    x: str,
+    y: str,
+    hue: str,
+    cmap: str='Reds_r',
+    ax: plt.Axes=None,
+    test: bool=False,
+    kws_legend: dict={},
+    **kws_set,
+    ) -> plt.Axes:
+    """Plot time-dependent kinetic data.
 
-def plot_kinetics(df1, x, y, hue, cmap='Reds_r',
-                 ax=None,
-                test=False,
-                  kws_legend={},
-                  **kws_set,
-                 ):
+    Args:
+        df1 (pd.DataFrame): input data.
+        x (str): x column.
+        y (str): y column.
+        hue (str): hue column.
+        cmap (str, optional): colormap. Defaults to 'Reds_r'.
+        ax (plt.Axes, optional): `plt.Axes` object. Defaults to None.
+        test (bool, optional): test mode. Defaults to False.
+        kws_legend (dict, optional): legend parameters. Defaults to {}.
+
+    Returns:
+        plt.Axes: `plt.Axes` object.
+    """
     from roux.viz.ax_ import rename_legends
     from roux.viz.colors import get_ncolors
     df1=df1.sort_values(hue,ascending=False)

@@ -1,16 +1,76 @@
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
-import seaborn as sns
-import matplotlib as mpl
 from roux.viz.ax_ import *
 
-def plot_value_counts(df,col,logx=False,
-                      kws_hist={'bins':10},
-                      kws_bar={},
-                     grid=False,
-                     axes=None,fig=None,
-                     hist=True):
+def plot_barh(
+    df1: pd.DataFrame,
+    colx: str,
+    coly: str,
+    colannnotside: str=None,
+    x1: float=None,
+    offx: float=0,
+    ax: plt.Axes=None,
+    **kws
+    ) -> plt.Axes:
+    """Plot horizontal bar plot with text on them.
+
+    Args:
+        df1 (pd.DataFrame): input data.
+        colx (str): x column.
+        coly (str): y column.
+        colannnotside (str): column with annotations to show on the right side of the plot.
+        x1 (float): x position of the text.
+        offx (float): x-offset of x1, multiplier.
+        color (str): color of the bars.
+        ax (plt.Axes, optional): `plt.Axes` object. Defaults to None.
+
+    Keyword Args:
+        kws: parameters provided to the `barh` function.
+
+    Returns:
+        plt.Axes: `plt.Axes` object.
+    """    
+    df1['y']=range(len(df1[coly]))
+    if ax is None:
+        fig,ax=plt.subplots(figsize=[4.45,len(df1)*0.33])
+    if x1 is None:
+        x1=get_axlims(ax)['x']['min']+(get_axlims(ax)['x']['len']*(0.05*(1-offx)))
+    ax=df1.set_index(coly)[colx].plot.barh(width=0.8,ax=ax,**kws)
+    df1['yticklabel']=[t.get_text() for t in ax.get_yticklabels()]
+    _=df1.apply(lambda x: ax.text(x1,x['y'],x['yticklabel'],va='center'),axis=1)
+    if colannnotside is None:
+        colannnotside=colx
+    _=df1.apply(lambda x: ax.text(ax.get_xlim()[1],x['y'],f" {x[colannnotside]}",va='center'),axis=1)
+    ax.get_yaxis().set_visible(False)
+    ax.invert_yaxis()
+    ax.set(xlabel=colx,)
+    return ax
+
+def plot_value_counts(
+    df: pd.DataFrame,
+    col: str,
+    logx: bool=False,
+    kws_hist: dict={'bins':10},
+    kws_bar: dict={},
+    grid: bool=False,
+    axes: list=None,
+    fig: object=None,
+    hist: bool=True
+    ):
+    """Plot pandas's `value_counts`. 
+
+    Args:
+        df (pd.DataFrame): input data `value_counts`.
+        col (str): column with counts.
+        logx (bool, optional): x-axis on log-scale. Defaults to False.
+        kws_hist (_type_, optional): parameters provided to the `hist` function. Defaults to {'bins':10}.
+        kws_bar (dict, optional): parameters provided to the `bar` function. Defaults to {}.
+        grid (bool, optional): show grids or not. Defaults to False.
+        axes (list, optional): list of `plt.axes`. Defaults to None.
+        fig (object, optional): figure object. Defaults to None.
+        hist (bool, optional): show histgram. Defaults to True.
+    """
     dplot=pd.DataFrame(df[col].value_counts()).sort_values(by=col,ascending=True)
     figsize=(4, len(dplot)*0.4)
     if axes is None:
@@ -44,30 +104,29 @@ def plot_value_counts(df,col,logx=False,
             axes.set_xscale("log")
             if grid:
                 axes.set_axisbelow(False)
-            
-# def plot_barh_stacked_percentage(df1,cols_y,ax=None):
-#     dplot=pd.DataFrame({k:df1.drop_duplicates(k)[f'{k} '].value_counts() for k in cols_y})
-#     dplot_=dplot.apply(lambda x:x/x.sum()*100,axis=0)
-#     d=dplot.sum().to_dict()
-#     dplot_=dplot_.rename(columns={k:f"{k}\n(n={d[k]})" for k in d})
-#     dplot_.index.name='subset'
-#     if ax is None: ax=plt.subplot()
-#     dplot_.T.plot.barh(stacked=True,ax=ax)
-#     ax.legend(bbox_to_anchor=[1,1])
-#     ax.set(xlim=[0,100],xlabel='%')
-#     _=[ax.text(1,y,f"{s:.0f}%",va='center') for y,s in enumerate(dplot_.iloc[0,:])]
-#     return ax
 
-def plot_barh_stacked_percentage(df1,coly,colannot,
-                     color=None,
-                     yoff=0,
-                     ax=None,
-                     ):
+def plot_barh_stacked_percentage(
+    df1: pd.DataFrame,
+    coly: str,
+    colannot: str,
+    color: str=None,
+    yoff: float=0,
+    ax: plt.Axes = None,
+    ) -> plt.Axes:
+    """Plot horizontal stacked bar plot with percentages.
+
+    Args:
+        df1 (pd.DataFrame): input data. values in rows sum to 100%.
+        coly (str): y column. yticklabels, e.g. retained and dropped.
+        colannot (str): column with annotations.
+        color (str, optional): color. Defaults to None.
+        yoff (float, optional): y-offset. Defaults to 0.
+        ax (plt.Axes, optional): `plt.Axes` object. Defaults to None.
+
+    Returns:
+        plt.Axes: `plt.Axes` object.
     """
-    :param dplot: values in rows sum to 100% 
-    :param coly: yticklabels, e.g. retained and dropped 
-    :param colannot: col to annot
-    """
+
     from roux.viz.ax_ import get_ticklabel2position
     from roux.viz.colors import get_colors_default
     if color is None:
@@ -89,14 +148,34 @@ def plot_barh_stacked_percentage(df1,coly,colannot,
           yticklabels=[f"{t.get_text()}\n(n={d1[t.get_text()]})" for t in ax.get_yticklabels()])
     return ax
 
-def plot_bar_serial(ax,d1,polygon=False,
-             polygon_x2i=0,
-             labelis=[],
-             y=0,
-             ylabel=None,
-             off_arrowy=0.15,
-             **kws_rectangle):
-    kws_rectangle=dict(height=0.5,linewidth=1)
+def plot_bar_serial(
+    d1: dict,
+    polygon: bool=False,
+    polygon_x2i: float=0,
+    labelis: list=[],
+    y: float=0,
+    ylabel: str=None,
+    off_arrowy: float=0.15,
+    kws_rectangle=dict(height=0.5,linewidth=1),
+    ax: plt.Axes = None,
+    ) -> plt.Axes:
+    """Barplots with serial increase in resolution.
+
+    Args:
+        d1 (dict): dictionary with the data.
+        polygon (bool, optional): show polygon. Defaults to False.
+        polygon_x2i (float, optional): connect polygon to this subset. Defaults to 0.
+        labelis (list, optional): label these subsets. Defaults to [].
+        y (float, optional): y position. Defaults to 0.
+        ylabel (str, optional): y label. Defaults to None.
+        off_arrowy (float, optional): offset for the arrow. Defaults to 0.15.
+        kws_rectangle (_type_, optional): parameters provided to the `rectangle` function. Defaults to dict(height=0.5,linewidth=1).
+        ax (plt.Axes, optional): `plt.Axes` object. Defaults to None.
+
+    Returns:
+        plt.Axes: `plt.Axes` object.
+    """
+
     kws1=dict(
     xs=[(list(d1.values())[i]/sum(list(d1.values())))*100 for i in range(len(d1))],
     cs=['#f55f5f', '#D3DDDC'] if len(d1)==2 else ['#f55f5f','#e49e9d', '#D3DDDC'],
@@ -104,6 +183,7 @@ def plot_bar_serial(ax,d1,polygon=False,
     size=sum(list(d1.values())),
     xmax=100,
     y=y,
+    ax=None,
     )
     
     import matplotlib.patches as patches
@@ -144,15 +224,45 @@ def plot_bar_serial(ax,d1,polygon=False,
             
     return ax
 
-def plot_barh_stacked_percentage_intersections(df0,
-                                               colxbool='paralog',
-                                               colybool='essential',
-                                               colvalue='value',
-                                               colid='gene id',
-                                               colalt='singleton',
-                                               coffgroup=0.95,
-                                               colgroupby='tissue',
-                                              ):
+def plot_barh_stacked_percentage_intersections(
+    df0: pd.DataFrame,
+    colxbool: str,
+    colybool: str,
+    colvalue: str,
+    colid: str,
+    colalt: str,
+    colgroupby: str,
+    coffgroup: float=0.95,
+    ax: plt.Axes = None,
+    ) -> plt.Axes:
+    """Plot horizontal stacked bar plot with percentages and intesections.
+
+    Args:
+        df0 (pd.DataFrame): input data.
+        colxbool (str): x column.
+        colybool (str): y column.
+        colvalue (str): column with the values.
+        colid (str): column with ids.
+        colalt (str): column with the alternative subset.
+        colgroupby (str): column with groups.
+        coffgroup (float, optional): cut-off between the groups. Defaults to 0.95.
+        ax (plt.Axes, optional): `plt.Axes` object. Defaults to None.
+
+    Returns:
+        plt.Axes: `plt.Axes` object.
+
+    Examples:
+        Parameters:
+            colxbool='paralog',
+            colybool='essential',
+            colvalue='value',
+            colid='gene id',
+            colalt='singleton',
+            coffgroup=0.95,
+            colgroupby='tissue',
+
+    """
+
     ##1 threshold for value by group
     def apply_(df):
         coff=np.quantile(df.loc[df[colybool],colvalue],coffgroup)
@@ -185,148 +295,5 @@ def plot_barh_stacked_percentage_intersections(df0,
           ylabel=None)
     return ax
 
-def plot_intersections(ds1,
-                            item_name=None,
-                            figsize=[4,4],text_width=2,
-                            yorder=None,
-                            sort_by='cardinality',
-                            sort_categories_by=None,#'cardinality',
-                            element_size=40,
-                            facecolor='gray',
-                            bari_annot=None, # 0, 'max_intersections'
-                            totals_bar=False,
-                            totals_text=True,                           
-                            intersections_ylabel=None,
-                            intersections_min=None,
-                            test=False,
-                            annot_text=False,
-                           set_ylabelx=-0.25,set_ylabely=0.5,
-#                             post_fun=None,
-                            **kws,
-                          ):
-    """
-    upset
-    sort_by:{‘cardinality’, ‘degree’}
-    If ‘cardinality’, subset are listed from largest to smallest. If ‘degree’, they are listed in order of the number of categories intersected.
-
-    sort_categories_by:{‘cardinality’, None}
-    Whether to sort the categories by total cardinality, or leave them in the provided order.
-
-    Ref: https://upsetplot.readthedocs.io/en/stable/api.html
-    """
-    assert(isinstance(ds1,pd.Series))
-    if (item_name is None) and (not ds1.name is None):
-        item_name=ds1.name
-    if intersections_min is None:
-        intersections_min=len(ds1)
-    if not yorder is None:
-        yorder= [c for c in yorder if c in ds1.index.names][::-1]
-        ds1.index = ds1.index.reorder_levels(yorder) 
-    ds2=(ds1/ds1.sum())*100
-    import upsetplot as up
-    d=up.plot(ds2,
-              figsize=figsize,
-              text_width=text_width,
-              sort_by=sort_by,
-              sort_categories_by=sort_categories_by,
-              facecolor=facecolor,element_size=element_size,
-              **kws,
-             ) 
-    d['totals'].set_visible(totals_bar)
-    if totals_text:
-        from roux.lib.df import get_totals
-        d_=get_totals(ds1)
-        d['matrix'].set_yticklabels([f"{s.get_text()} (n={d_[s.get_text()]})" for s in d['matrix'].get_yticklabels()],
-                                          )
-    if totals_bar:
-        d['totals'].set(ylim=d['totals'].get_ylim()[::-1],
-                       xlabel='%')
-    set_ylabel(ax=d['intersections'],
-              s=(f"{item_name}s " if not item_name is None else "")+f"%\n(total={ds1.sum()})",
-               x=set_ylabelx, y=set_ylabely,
-              )        
-    d['intersections'].set(
-                          xlim=[-0.5,intersections_min-0.5],
-                          )
-    if sort_by=='cardinality':
-        y=ds2.max()
-    elif sort_by=='degree':
-        y=ds2.loc[tuple([True for i in ds2.index.names])]
-#     if bari_annot=='max_intersections':
-#         l1=[i for i,t in enumerate(ds1.index) if t==tuple(np.repeat(True,len(ds1.index.names)))]
-#         if len(l1)==1:
-#             bari_annot=l1[0]
-#             print(bari_annot)
-#     print(sum(ds1==ds1.max()))
-#     print(bari_annot)
-    if sum(ds1==ds1.max())!=1:
-        bari_annot=None
-    if isinstance(bari_annot,int):
-        bari_annot=[bari_annot]
-    if isinstance(bari_annot,list):
-#         print(bari_annot)
-        for i in bari_annot:
-            d['intersections'].get_children()[i].set_color("#f55f5f")
-    if annot_text and bari_annot==0:
-        d['intersections'].text(bari_annot-0.25,y,f"{y:.1f}%",
-                                ha='left',va='bottom',color="#f55f5f",zorder=10)
-    
-#     if intersections_ylabel    
-#     if not post_fun is None: post_fun(ax['intersections'])
-    return d
-
-def plot_text(df1,
-            xlabel='overlap %',
-            ylabel='gene set name',
-            cols='s',
-            colannot='Q',
-              offx=0,
-              xmin=None,
-            ax=None,
-          ):
-    from roux.viz.annot import pval2annot
-    df1['y']=range(len(df1[ylabel]))#[::-1]
-    x1=(df1[xlabel].min() if xmin is None else xmin)+((df1[xlabel].max()-(df1[xlabel].min() if xmin is None else xmin))*offx)
-    if ax is None:
-        fig,ax=plt.subplots(figsize=[4.45,len(df1)*0.33])
-    ax=df1.set_index(ylabel)[xlabel].plot.barh(color='#60badc',#'#0094cc',#'#0c7ec2',
-                                                                  width=0.8,
-                                                                  ax=ax)
-    _=df1.apply(lambda x: ax.text(x1,x['y'],x[ylabel],
-                                va='center'),axis=1)
-    _=df1.apply(lambda x: ax.text(ax.get_xlim()[1],
-                                   x['y'],f" {x[cols]}",
-                                va='center'),axis=1)
-    ax.get_yaxis().set_visible(False)
-    ax.set(xlabel=xlabel,
-          )
-    return ax
-
-# def plot_text(df1,
-#             xlabel='overlap %',
-#             ylabel='gene set name',
-#             cols='s',
-#             colannot='Q',
-#               offx=0.05,
-#               xmin=None,
-#             ax=None,
-#           ):
-#     from roux.viz.annot import pval2annot
-#     d1=get_axlims(ax)
-#     print(xmin)
-#     print(df1[xlabel].min() if xmin is None else xmin)
-#     x1=(df1[xlabel].min() if xmin is None else xmin)+((df1[xlabel].max()-(df1[xlabel].min() if xmin is None else xmin))*offx)
-#     if ax is None:
-#         fig,ax=plt.subplots(figsize=[4.45,len(df1)*0.33])
-#     ax=df1.set_index(ylabel)[xlabel].plot.barh(color='#60badc',#'#0094cc',#'#0c7ec2',
-#                                                                   width=0.8,
-#                                                                   ax=ax)
-#     _=df1.apply(lambda x: ax.text(x1,x['y'],x[ylabel],
-#                                 va='center'),axis=1)
-#     _=df1.apply(lambda x: ax.text(ax.get_xlim()[1],
-#                                    x['y'],f" {x[cols]}",
-#                                 va='center'),axis=1)
-#     ax.get_yaxis().set_visible(False)
-#     ax.set(xlabel=xlabel,
-#           )
-#     return ax
+# redirections, to be deprecated in the future
+from roux.viz.sets import plot_intersections

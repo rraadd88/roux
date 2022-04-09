@@ -429,7 +429,7 @@ def encode(data,**kws):
         data=data.to_dict()
     if isinstance(data,dict):
 #         from roux.lib.str import dict2str
-        data=dict2str(dict(sorted(data.items())), sep=';', sep2='=')
+        data=dict2str(dict(sorted(data.items())), sep=';', sep_equal='=')
     if not isinstance(data,bytes):
         data=data.encode(encoding='utf8')
     import zlib

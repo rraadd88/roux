@@ -1,30 +1,51 @@
 from roux.lib.io import *
 from roux.query.ensembl import release2prefix
 
-def get_ensembl_dataset_name(x):
+def get_ensembl_dataset_name(x: str) -> str:
+    """Get the name of the Ensembl dataset.
+
+    Args:
+        x (str): species name.
+
+    Returns:
+        str: output.
+    """
     l=x.lower().split(' ')
     assert(len(l)==2)
     return f"{l[0][0]}{l[1]}_gene_ensembl"
 
 def query(
-          species,
-          release,
-          attributes=None,
-          filters=None,
-          databasep='data/database',
-          dataset_name=None,
-          force=False,
-          **kws_query,):
-    """
-    
-        filters={
-              # REMOVE: mitochondria/sex chr
-                 'chromosome_name':[str(i) for i in list(range(1,23))],
-              # REMOVE: non protein coding
-                 'biotype':['protein_coding'],
-                 }
+          species: str,
+          release: int,
+          attributes: list=None,
+          filters: list=None,
+          databasep: str='data/database',
+          dataset_name: str=None,
+          force: bool=False,
+          **kws_query,) -> pd.DataFrame:
+    """Query the biomart database.
 
-    TODO: restrict to a ensembl release version
+    Args:
+        species (str): species name.
+        release (int): Ensembl release. 
+        attributes (list, optional): list of attributes. Defaults to None.
+        filters (list, optional): list of filters. Defaults to None.
+        databasep (str, optional): path to the local database folder. Defaults to 'data/database'.
+        dataset_name (str, optional): dataset name. Defaults to None.
+        force (bool, optional): overwrite output. Defaults to False.
+
+    Returns:
+        pd.DataFrame: output
+
+    Examples: 
+        1. Setting filters for the human data:
+            filters={
+            # REMOVE: mitochondria/sex chr
+                'chromosome_name':[str(i) for i in list(range(1,23))],
+            # REMOVE: non protein coding
+                'biotype':['protein_coding'],
+                }
+ 
     """
     if dataset_name is None:
         dataset_name=get_ensembl_dataset_name(species)

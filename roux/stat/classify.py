@@ -312,7 +312,7 @@ def get_probability(estimatorn2grid_search: dict,
         def plot_(df5):
             assert len(df5)==4, df5
             df6=df5.pivot(index='prediction',columns='actual',values='count').sort_index(axis=0,ascending=False).sort_index(axis=1,ascending=False)
-            from roux.lib.plot.heatmap import plot_crosstab
+            from roux.viz.heatmap import plot_crosstab
             ax=plot_crosstab(df6,annot_pval=None,
                             confusion=True)
             ax.set_title(df5.name,loc='left')

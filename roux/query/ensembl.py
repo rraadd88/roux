@@ -29,102 +29,149 @@ release2prefix={100:'apr2020.archive',
 
 
 #pyensembl faster
-def gid2gname(id,ensembl):
-    """
-        from pyensembl import EnsemblRelease
-        ensembl EnsemblRelease(release=100)    
-    """
-    try:
-        return ensembl.gene_name_of_gene_id(id)
-    except:
-        return np.nan
+def to_gene_name(k: str ,ensembl: object) -> str:
+    """Gene id to gene name.
 
-def gname2gid(name,ensembl):
-    """
-        from pyensembl import EnsemblRelease
-        ensembl EnsemblRelease(release=100)    
+    Args:
+        k (str): gene id.
+        ensembl (object): ensembl object.
+
+    Returns:
+        str: gene name.
+
+    Notes:
+        1. `ensembl` object.
+            from pyensembl import EnsemblRelease
+            ensembl EnsemblRelease(release=100)    
     """
     try:
-        names=ensembl.gene_ids_of_gene_name(name)
-        if len(names)>1:
-            logging.warning('more than one ids')
-            return '; '.join(names)
-        else:
-            return names[0]
+        return ensembl.gene_name_of_gene_id(k)
     except:
         return np.nan
     
-def tid2pid(id,ensembl):
-    """
-        from pyensembl import EnsemblRelease
-        ensembl EnsemblRelease(release=100)    
+def to_protein_id(k: str,ensembl: object) -> str:
+    """Transcript id to protein id.
+
+    Args:
+        x (str): transcript id.
+        ensembl (str): ensembl object.
+
+    Returns:
+        str: protein id.
+        
+    Notes:
+        1. `ensembl` object.
+            from pyensembl import EnsemblRelease
+            ensembl EnsemblRelease(release=100)    
     """
     try:
-        t=ensembl.transcript_by_id(id)
+        t=ensembl.transcript_by_id(k)
         return t.protein_id
     except:
         return np.nan    
     
-def tid2gid(id,ensembl):
-    """
-        from pyensembl import EnsemblRelease
-        ensembl EnsemblRelease(release=100)    
+def to_gene_id(k: str ,ensembl: object) -> str:
+    """Transcript id to gene id.
+
+    Args:
+        k (str): transcript id.
+        ensembl (object): ensembl object.
+
+    Returns:
+        str: gene id.
+        
+    Notes:
+        1. `ensembl` object.
+            from pyensembl import EnsemblRelease
+            ensembl EnsemblRelease(release=100)    
     """
     try:
-        t=ensembl.transcript_by_id(id)
+        t=ensembl.transcript_by_id(k)
         return t.gene_id
     except:
         return np.nan 
     
-def pid2tid(id,ensembl):
-    """
-        from pyensembl import EnsemblRelease
-        ensembl EnsemblRelease(release=100)    
+def to_transcript_id(k: str ,ensembl: object) -> str:
+    """Protein id to transcript id.
+
+    Args:
+        k (str): protein id.
+        ensembl (object): ensembl object.
+
+    Returns:
+        str: transcript id.
+        
+    Notes:
+        1. `ensembl` object.
+            from pyensembl import EnsemblRelease
+            ensembl EnsemblRelease(release=100)    
     """
     try:
-        return ensembl.transcript_id_of_protein_id(id)
+        return ensembl.transcript_id_of_protein_id(k)
     except:
-        return np.nan    
+        return np.nan 
     
-def gid2dnaseq(id,ensembl):
-    """
-        from pyensembl import EnsemblRelease
-        ensembl EnsemblRelease(release=100)    
+def to_dnaseq(k: str ,ensembl: object) -> str:
+    """Gene id to DNA sequence.
+
+    Args:
+        k (str): gene id.
+        ensembl (object): ensembl object.
+
+    Returns:
+        str: DNA sequence.
+        
+    Notes:
+        1. `ensembl` object.
+            from pyensembl import EnsemblRelease
+            ensembl EnsemblRelease(release=100)    
     """
     try:
-        g=ensembl.gene_by_id(id)
+        g=ensembl.gene_by_id(k)
         ts=g.transcripts
         lens=[len(t.protein_sequence) if not t.protein_sequence is None else 0 for t in ts]
         return ts[lens.index(max(lens))].id, ts[lens.index(max(lens))].protein_sequence
     except:
         return np.nan,np.nan    
     
-def gid2pid_longest(gid,ensembl):
-    """
-        from pyensembl import EnsemblRelease
-        ensembl EnsemblRelease(release=100)    
-    """
+def to_protein_id_longest(k: str ,ensembl: object) -> str:
+    """Gene id to protein id of the longest protein.
+
+    Args:
+        k (str): gene id.
+        ensembl (object): ensembl object.
+
+    Returns:
+        str: protein id.
+        
+    Notes:
+        1. `ensembl` object.
+            from pyensembl import EnsemblRelease
+            ensembl EnsemblRelease(release=100)    
+    """    
     g=ensembl.gene_by_id(gid)
     return pd.Series({t.protein_id:t.protein_sequence for t in g.transcripts}).dropna().apply(len).sort_values().tail(1).index.to_list()[0]
 
-def tid2prtseq(id,ensembl):
-    """
-        from pyensembl import EnsemblRelease
-        ensembl EnsemblRelease(release=100)    
-    """
+def to_protein_seq(k: str ,ensembl: object,
+                    transcript: bool=False) -> str:
+    """Protein/transcript id to protein sequence.
+
+    Args:
+        k (str): protein id.
+        ensembl (object): ensembl object.
+
+    Returns:
+        str: protein sequence.
+        
+    Notes:
+        1. `ensembl` object.
+            from pyensembl import EnsemblRelease
+            ensembl EnsemblRelease(release=100)    
+    """    
     try:
-        t=ensembl.transcript_by_id(id)
-        return t.protein_sequence
-    except:
-        return np.nan
-def pid2prtseq(id,ensembl,
-               length=False):
-    """
-        from pyensembl import EnsemblRelease
-        ensembl EnsemblRelease(release=100)    
-    """
-    try:
-        t=ensembl.protein_sequence(id)
+        # t=ensembl.transcript_by_id(k)
+        # return t.protein_sequence
+        t=ensembl.protein_sequence(k)
         if not length:
             return t
         else:
@@ -132,61 +179,104 @@ def pid2prtseq(id,ensembl,
     except:
         return np.nan    
     
-def tid2cdsseq(id,ensembl):
-    """
-        from pyensembl import EnsemblRelease
-        ensembl EnsemblRelease(release=100)    
-    """
+def to_cdsseq(k: str,
+               ensembl: object) -> str:
+    """Transcript id to coding sequence (CDS).
+
+    Args:
+        k (str): transcript id.
+        ensembl (object): ensembl object.
+
+    Returns:
+        str: CDS sequence.
+        
+    Notes:
+        1. `ensembl` object.
+            from pyensembl import EnsemblRelease
+            ensembl EnsemblRelease(release=100)    
+    """    
     try:
-        t=ensembl.transcript_by_id(id)
+        t=ensembl.transcript_by_id(k)
         return t.coding_sequence
     except:
         return np.nan 
     
-def get_utr_sequence(ensembl,x,loc='five'):
-    """
-        from pyensembl import EnsemblRelease
-        ensembl EnsemblRelease(release=100)    
-    """
+def get_utr_sequence(k: str,ensembl: object,loc: str='five') -> str:
+    """Protein id to UTR sequence.
+
+    Args:
+        k (str): transcript id.
+        ensembl (object): ensembl object.
+        loc (str): location of the UTR.
+
+    Returns:
+        str: UTR sequence.
+        
+    Notes:
+        1. `ensembl` object.
+            from pyensembl import EnsemblRelease
+            ensembl EnsemblRelease(release=100)    
+    """    
     try:
-        t=ensembl.transcript_by_protein_id(x)
+        t=ensembl.transcript_by_protein_id(k)
         return getattr(t,f'{loc}_prime_utr_sequence')
     except: 
-        logging.warning(f"{x}: no sequence found")
+        logging.warning(f"{k}: no sequence found")
         return     
     
-def pid2tid(protein_id,ensembl):    
-    """
-        from pyensembl import EnsemblRelease
-        ensembl EnsemblRelease(release=100)    
-    """
-    if (protein_id in ensembl.protein_ids() and (not pd.isnull(protein_id))):
-        return ensembl.transcript_by_protein_id(protein_id).transcript_id
-    else:
-        return np.nan    
+def is_protein_coding(k: str,ensembl: object,geneid: bool=True) -> bool:
+    """A gene or protein is protein coding or not.
 
-def is_protein_coding(x,ensembl,geneid=True):
-    """
-        from pyensembl import EnsemblRelease
-        ensembl EnsemblRelease(release=100)    
-    """
+    Args:
+        k (str): protein/gene id.
+        ensembl (object): ensembl object.
+        geneid (bool): if gene id is provided.
+
+    Returns:
+        bool: is protein coding.
+        
+    Notes:
+        1. `ensembl` object.
+            from pyensembl import EnsemblRelease
+            ensembl EnsemblRelease(release=100)    
+    """    
     try:
         if geneid:
-            g=ensembl.gene_by_id(x)
+            g=ensembl.gene_by_id(k)
         else:
-            g=ensembl.transcript_by_id(x)
+            g=ensembl.transcript_by_id(k)
     except:
         logging.error('gene id not found')
         return 
     return g.is_protein_coding
 
 #restful api    
-def rest(ids,function='lookup',
-                 target_taxon='9606',
-                 release='100',
-                 format_='full',
-                 test=False,
-                 **kws):
+def rest(ids: list,
+        function: str='lookup',
+        target_taxon: str='9606',
+        release: str='100',
+        format_: str='full',
+        test: bool=False,
+        **kws):
+    """Query Ensembl database using REST API.
+
+    Args:
+        ids (list): ids.
+        function (str, optional): query function. Defaults to 'lookup'.
+        target_taxon (str, optional): taxonomic id of the species. Defaults to '9606'.
+        release (str, optional): ensembl release. Defaults to '100'.
+        format_ (str, optional): format of the output. Defaults to 'full'.
+        test (bool, optional): test mode. Defaults to False.
+
+    Keyword Args:
+        kws: additional queries.
+
+    Raises:
+        ValueError: ids should be str or list.
+
+    Returns:
+        dict: output.
+    """
     import requests, sys
 
     server = f"https://e{release}.rest.ensembl.org"
@@ -213,17 +303,28 @@ def rest(ids,function='lookup',
     #     print(repr(decoded))
         return decoded
 
-def geneid2homology(x='ENSG00000148584',
-                    release=100,
-                    homologytype='orthologues',
-                   outd='data/database',
-                   force=False):
+def to_homology(
+                    x: str,
+                    release: int=100,
+                    homologytype: str='orthologues',
+                    outd: str='data/database',
+                    force: bool=False
+                    ) -> dict:
     """
-    Gene id to homology.
-    
-        outp='data/database/'+replacemany(p.split(';content-type')[0],{'https://':'','?':'/',';':'/'})+'.json'
+    Query homology of a gene using Ensembl REST API.
         
-    Ref: f"https://e{release}.rest.ensembl.org/documentation/info/homology_ensemblgene
+    Args:
+        x (str): gene id.
+        release (int, optional): Ensembl release number. Defaults to 100.
+        homologytype (str, optional): type of the homology. Defaults to 'orthologues'.
+        outd (str, optional): path of the output folder. Defaults to 'data/database'.
+        force (bool, optional): overwrite output. Defaults to False.
+
+    Returns:
+        dict: output.
+
+    References:
+        1. Documentation: https://e{release}.rest.ensembl.org/documentation/info/homology_ensemblgene
     """
     p=f"https://e{release}.rest.ensembl.org/homology/id/{x}?type={homologytype};compara=vertebrates;sequence=none;cigar_line=0;content-type=application/json;format=full"
     outp=outp=f"{outd}/{p.replace('https://','')}.json"
@@ -234,12 +335,23 @@ def geneid2homology(x='ENSG00000148584',
         to_dict(d1,outp)
     return d1
 
-def proteinid2domains(x,
-                    release,
-                      species='homo_sapiens',
-                     outd='data/database',
-                     force=False):
-    """
+def to_domains(x: str,
+                    release: int,
+                    species: str='homo_sapiens',
+                    outd: str='data/database',
+                    force: bool=False
+                    ) -> pd.DataFrame:
+    """Protein id to domains. 
+
+    Args:
+        x (str): protein id.
+        release (int): Ensembl release.
+        species (str, optional): species name. Defaults to 'homo_sapiens'.
+        outd (str, optional): path of the output directory. Defaults to 'data/database'.
+        force (bool, optional): overwrite output. Defaults to False.
+
+    Returns:
+        pd.DataFrame: output.
     """
     species=species.lower().replace(' ','_')
     p=f'https://e{release}.rest.ensembl.org/overlap/translation/{x}?content-type=application/json;species={species};feature=protein_feature;type=pfam'
@@ -256,10 +368,17 @@ def proteinid2domains(x,
     #d1 is a list
     return pd.concat([pd.DataFrame(pd.Series(d)).T for d in d1],
                      axis=0)
-pid2domains=proteinid2domains
 
 ## species
-def taxid2name(k):
+def to_species_name(k: str) -> str:
+    """Convert to species name.
+
+    Args:
+        k (_type_): taxonomic id.
+
+    Returns:
+        str: species name.
+    """
     server = f"https://e{release}.rest.ensembl.org"
     ext = f"/taxonomy/id/{k}?"
     r = requests.get(server+ext, headers={ "Content-Type" : "application/json"})
@@ -269,7 +388,15 @@ def taxid2name(k):
     decoded = r.json()
     return decoded['scientific_name']
 
-def taxname2id(k):
+def to_taxid(k: str) -> str:
+    """Convert to taxonomic ids.  
+
+    Args:
+        k (str): species name.
+
+    Returns:
+        str: taxonomic id.
+    """
     server = f"https://e{release}.rest.ensembl.org"
     ext = f"/taxonomy/name/{k}?"
     r = requests.get(server+ext, headers={ "Content-Type" : "application/json"})
@@ -284,10 +411,29 @@ def taxname2id(k):
         return
     
 ## convert between assemblies    
-def convert_coords_human_assemblies(release,chrom,start,end,
-                                    frm=38,to=37,
-                                    test=False,
-                                   force=False):
+def convert_coords_human_assemblies(release: int,
+                                    chrom: str,
+                                    start: int,
+                                    end: int,
+                                    frm: int=38,
+                                    to: int=37,
+                                    test: bool=False,
+                                    force: bool=False) -> dict:
+    """Convert coordinates between human assemblies.
+
+    Args:
+        release (int): Ensembl release.
+        chrom (str): chromosome name.
+        start (int): start position.
+        end (int): end position.
+        frm (int, optional): assembly to convert from. Defaults to 38.
+        to (int, optional): assembly to convert to. Defaults to 37.
+        test (bool, optional): test mode. Defaults to False.
+        force (bool, optional): overwrite outputs. Defaults to False.
+
+    Returns:
+        dict: output.
+    """
     import requests, sys,yaml 
     server = f"https://e{release}.rest.ensembl.org"
     ext = f"/map/human/GRCh{frm}/{chrom}:{start}..{end}:1/GRCh{to}?"
@@ -306,44 +452,29 @@ def convert_coords_human_assemblies(release,chrom,start,end,
 #             if 'mapped' in d_:
 # #                 return d_['mapped']['seq_region_name'],d_['mapped']['start'],d_['mapped']['end']
 #                 return pd.Series(d_['mapped'])#['seq_region_name'],d_['mapped']['start'],d_['mapped']['end']
-    
-## convert coords 
-def coords2geneid(x,
-                 biotype='protein_coding'):
-    # x=df02.iloc[0,:]
-    from pyensembl import EnsemblRelease
-    ensembl=EnsemblRelease(release=100)
-    contig,pos=x['Genome Location'].split(':')
 
-    start,end=[int(s) for s in pos.split('-')]
+def map_id(df1: pd.DataFrame,
+            gene_id: str,
+            release: str,
+            release_to: str,
+            out: str='df',
+            test: bool=False) -> pd.DataFrame:
+    """Map ids between releases.
 
-    # l1=ensembl.gene_ids_at_locus
-    l1=ensembl.genes_at_locus(contig=contig,
-                              position=start, 
-                              end=end, 
-                              strand=None)
+    Args:
+        df1 (pd.DataFrame): input dataframe.
+        gene_id (str): gene id.
+        release (str): release to convert from.
+        release_to (str): release to convert to.
+        out (str, optional): output type. Defaults to 'df'.
+        test (bool, optional): test mode. Defaults to False.
 
-    # def range_overlap(l1,l2):
-    #     return set.intersection(set(range(l1[0],l1[1]+1,1)),
-    #                             set(range(l2[0],l2[1]+1,1)))
-#     ds1=pd.Series({ 
-    d1={}
-    for g in l1:
-        if g.biotype==biotype:
-            d1[g.gene_id]=len(range_overlap([g.start,g.end],[start,end]))
-    ds1=pd.Series(d1).sort_values(ascending=False)
-    print(ds1)
-    return ds1.index[0]
+    Returns:
+        pd.DataFrame: output.
 
-
-def map_id(df1,gene_id,release,release_to,out='df',
-            test=False):
+    Notes:     
+        1. m:m mappings are possible. e.g. https://useast.ensembl.org/Homo_sapiens/Gene/Idhistory?db=core;g=ENSG00000276410;r=6:26043227-26043713;t=ENST00000615966
     """
-    gene_id='ENSG00000187990',release=75,release_to=100,
-    
-    ## m:m mappings are possible
-    ## e.g. https://useast.ensembl.org/Homo_sapiens/Gene/Idhistory?db=core;g=ENSG00000276410;r=6:26043227-26043713;t=ENST00000615966
-    """        
     def get_release(df2,release,which,
                     col='Release',
                     test=False):
@@ -386,7 +517,15 @@ def map_id(df1,gene_id,release,release_to,out='df',
     #     print(df2)
     #     return 'error'
 
-def read_idmapper_output(outp):
+def read_idmapper_output(outp: str) -> pd.DataFrame:
+    """Read the output of Ensembl's idmapper.
+
+    Args:
+        outp (str): path to the file.
+
+    Returns:
+        pd.DataFrame: output.
+    """
     from pathlib import Path
     file = Path(outp)
     file.write_text(file.read_text().replace('.Old stable ID', 'Old stable ID'))
@@ -397,7 +536,18 @@ def read_idmapper_output(outp):
     df1['Release']=df1['Release'].astype(float)
     return df1
 
-def map_ids_(ids,df00,release,release_to):
+def map_ids_(ids: list,df00: pd.DataFrame,release: int,release_to: int) -> pd.DataFrame:
+    """Function for mapping many ids.
+
+    Args:
+        ids (list): list of ids.
+        df00 (pd.DataFrame): source dataframe.
+        release (str): release to convert from.
+        release_to (str): release to convert to.
+
+    Returns:
+        pd.DataFrame: output.
+    """
     df0=pd.DataFrame(ids,columns=[f'id {release}'])
     df0['id']=df0[f'id {release}'].parallel_apply(lambda x: map_id(df00,gene_id=x,
                                                    release=release,
@@ -408,17 +558,31 @@ def map_ids_(ids,df00,release,release_to):
     df2=df0.log().explode('id').log.dropna(subset=['id'])
     return df2
 
-def map_ids(srcp,
-        dbp,
-        ids,
-        release=75,
-        release_to=100,
-           species='human',
-           test=False):
-    """
-    srcp='deps/ensembl-tools/scripts/id_history_converter/IDmapper.pl',
-    dbp='data/database/ensembl_id_history_converter/db.pqt',
-    ids=ensembl.gene_ids(),    
+def map_ids(srcp: str,
+        dbp: str,
+        ids: list,
+        release: int=75,
+        release_to: int=100,
+        species: str='human',
+        test: bool=False) -> pd.DataFrame:
+    """Map many ids between Ensembl releases.
+
+    Args:
+        srcp (str): path to the IDmapper.pl file.
+        dbp (str): path to the database.
+        ids (list): list of ids.
+        release (str): release to convert from.
+        release_to (str): release to convert to.
+        species (str, optional): species name. Defaults to 'human'.
+        test (bool, optional): test mode. Defaults to False.
+
+    Returns:
+        pd.DataFrame: output.
+
+    Examples:
+        srcp='deps/ensembl-tools/scripts/id_history_converter/IDmapper.pl',
+        dbp='data/database/ensembl_id_history_converter/db.pqt',
+        ids=ensembl.gene_ids(),    
     """
     from roux.query.ensembl import map_ids_,read_idmapper_output
     if exists(dbp):

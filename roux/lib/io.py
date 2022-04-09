@@ -652,6 +652,7 @@ def get_path(p):
     else:
         logging.warning('probably working on google drive; space/s left in the path.')
     return p
+
 ## save table
 def to_table(df,p,
              colgroupby=None,
@@ -686,10 +687,8 @@ def to_table(df,p,
         to_manytables(df,p,colgroupby,**kws)
     elif p.endswith('.tsv') or p.endswith('.tab'):
         df.to_csv(p,sep='\t')
-        if test:logging.info(p)
     elif p.endswith('.pqt'):
         to_table_pqt(df,p,**kws)
-        if test: logging.info(p)
     else: 
         logging.error(f'unknown extension {p}')
     return p
@@ -699,7 +698,7 @@ def to_manytables(df,p,colgroupby,
                   ignore=False,
                   **kws_get_chunks):
     """
-Save table.
+    Save many table.
     
     Parameters:
         df (DataFrame): the input dataframe. 
@@ -852,8 +851,11 @@ def to_excel_commented(p: str,d1: dict,
     wb = load_workbook(filename = outp)
     for sh in wb:
         for k in [s+'1' for s in ascii_uppercase]:
-            if not sh[k].value is None:
-                sh[k].comment = Comment(d1[sh[k].value],author=author)
+            if (not sh[k].value is None):
+                if (sh[k].value in d1):
+                    sh[k].comment = Comment(d1[sh[k].value],author=author)
+                else:
+                    logging.warning(f"no comment for column: '{sh[k].value}'")
             else:
                 break
     wb.save(outp)

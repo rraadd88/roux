@@ -3,25 +3,53 @@ from roux.viz.colors import *
 from roux.viz.annot import *
 from roux.viz.ax_ import *
 
-## single 
-def hist_annot(dplot,colx,
-               colssubsets=[],
-               bins=100,
-                subset_unclassified=True,cmap='Reds_r',
-               ylimoff=1.2,
-               ywithinoff=1.2,
-                annotaslegend=True,
-                annotn=True,
-                params_scatter={'zorder':2,'alpha':0.1,'marker':'|'},
-               xlim=None,
-                ax=None):
+## single distributions.
+def hist_annot(
+    dplot: pd.DataFrame,
+    colx: str,
+    colssubsets: list=[],
+    bins: int=100,
+    subset_unclassified: bool=True,
+    cmap: str='hsv',
+    ylimoff: float=1.2,
+    ywithinoff: float=1.2,
+    annotaslegend: bool=True,
+    annotn: bool=True,
+    params_scatter: dict={'zorder':2,'alpha':0.1,'marker':'|'},
+    xlim: tuple=None,
+    ax: plt.Axes = None,
+    **kws,
+    ) -> plt.Axes:
+    """Annoted histogram.
+
+    Args:
+        dplot (pd.DataFrame): input dataframe.
+        colx (str): x column.
+        colssubsets (list, optional): columns indicating subsets. Defaults to [].
+        bins (int, optional): bins. Defaults to 100.
+        subset_unclassified (bool, optional): call non-annotated subset as 'unclassified'. Defaults to True.
+        cmap (str, optional): colormap. Defaults to 'Reds_r'.
+        ylimoff (float, optional): y-offset for y-axis limit . Defaults to 1.2.
+        ywithinoff (float, optional): y-offset for the distance within labels. Defaults to 1.2.
+        annotaslegend (bool, optional): convert labels to legends. Defaults to True.
+        annotn (bool, optional): annotate sample sizes. Defaults to True.
+        params_scatter (_type_, optional): parameters of the scatter plot. Defaults to {'zorder':2,'alpha':0.1,'marker':'|'}.
+        xlim (tuple, optional): x-axis limits. Defaults to None.
+        ax (plt.Axes, optional): `plt.Axes` object. Defaults to None.
+
+    Keyword Args:
+        kws: parameters provided to the `hist` function.
+
+    Returns:
+        plt.Axes: `plt.Axes` object.
+    """
     from roux.viz.ax_ import reset_legend_colors
     if not xlim is None:
         logging.warning('colx adjusted to xlim')
         dplot.loc[(dplot[colx]<xlim[0]),colx]=xlim[0]
         dplot.loc[(dplot[colx]>xlim[1]),colx]=xlim[1]
     if ax is None:ax=plt.subplot(111)
-    ax=dplot[colx].hist(bins=bins,ax=ax,color='gray',zorder=1)
+    ax=dplot[colx].hist(bins=bins,ax=ax,zorder=1,**kws,)
     ax.set_xlabel(colx)
     ax.set_ylabel('count')
     if not xlim is None:
@@ -45,51 +73,82 @@ def hist_annot(dplot,colx,
 #     ax=reset_legend_colors(ax)
 #     ax.legend(bbox_to_anchor=[1,1])
     return ax
+        
+def plot_gmm(
+    x: pd.Series,
+    coff: float=None,
+    mix_pdf: object=None,
+    two_pdfs: tuple=None,
+    weights: tuple=None,
+    n_clusters: int=2,
+    bins: int=20,
+    test: bool=False,
+    ax: plt.Axes = None,
+    **kws,
+    ) -> plt.Axes:
+    """Plot Gaussian mixture Models (GMMs).
 
-def plot_gaussianmixture(g,x,
-                         n_clusters=2,
-                         ax=None,
-                         test=False,
-                        ):
-    from roux.stat.solve import get_intersection_locations
-    weights = g.weights_
-    means = g.means_
-    covars = g.covariances_
-    stds=np.sqrt(covars).ravel().reshape(n_clusters,1)
-    
-    f = x.reshape(-1,1)
-    x.sort()
-#     plt.hist(f, bins=100, histtype='bar', density=True, ec='red', alpha=0.5)
-    two_pdfs = sc.stats.norm.pdf(np.array([x,x]), means, stds)
-    mix_pdf = np.matmul(weights.reshape(1,n_clusters), two_pdfs)
+    Args:
+        x (pd.Series): input vector.
+        coff (float, optional): intersection between two fitted distributions. Defaults to None.
+        mix_pdf (object, optional): Probability density function of the mixed distribution. Defaults to None.
+        two_pdfs (tuple, optional): Probability density functions of the separate distributions. Defaults to None.
+        weights (tuple, optional): weights of the individual distributions. Defaults to None.
+        n_clusters (int, optional): number of distributions. Defaults to 2.
+        bins (int, optional): bins. Defaults to 50.
+        test (bool, optional): test mode. Defaults to False.
+        ax (plt.Axes, optional): `plt.Axes` object. Defaults to None.
+        
+    Keyword Args:
+        kws: parameters provided to the `hist` function.
+
+    Returns:
+        plt.Axes: `plt.Axes` object.
+    """
+    if mix_pdf is None:
+        from roux.stat.cluster import cluster_1d
+        d_=cluster_1d(x,
+                n_clusters=n_clusters,
+                clf_type='gmm',
+                random_state=88,
+                test=False,
+                returns=['coff','mix_pdf','two_pdfs','weights'],
+                )
+        coff,mix_pdf,two_pdfs,weights=d_['coff'],d_['mix_pdf'],d_['two_pdfs'],d_['weights']
+    if ax is None:
+        plt.figure(figsize=[2.5,2.5])
+        ax=plt.subplot()
+    # plot histogram
+    pd.Series(x).hist(density=True,
+                      histtype='step',
+                      bins=bins,
+                      ax=ax,
+                      **kws)
+    # plot fitted distributions
     ax.plot(x,mix_pdf.ravel(), c='lightgray')
     _=[ax.plot(x,two_pdfs[i]*weights[i], c='gray') for i in range(n_clusters)]
 #     ax.plot(x,two_pdfs[1]*weights[1], c='gray')
-    logging.info(f'weights {weights}')
-    if n_clusters!=2:
-        coff=None
-        return ax,coff
-    idxs=get_intersection_locations(y1=two_pdfs[0]*weights[0],
-                                    y2=two_pdfs[1]*weights[1],
-                                    test=False,x=x)
-    x_intersections=x[idxs]
-#     x_intersections=get_intersection_of_gaussians(means[0][0],stds[0][0],
-#                                                   means[1][0],stds[1][0],)
-    if test: logging.info(f'intersections {x_intersections}')
-    ms=sorted([means[0][0],means[1][0]])
-#     print(ms)
-#     print(x_intersections)    
-    if len(x_intersections)>1:
-        coff=[i for i in x_intersections if i>ms[0] and i<ms[1]][0]
-    else:
-        coff=x_intersections[0]
-    ax.axvline(coff,color='k')
-    ax.text(coff,ax.get_ylim()[1],f"{coff:.1f}",ha='center',va='bottom')
-    return ax,coff
+    if n_clusters==2:
+        ax.axvline(coff,color='k')
+        ax.text(coff,ax.get_ylim()[1],f"{coff:.1f}",ha='center',va='bottom')
+    return ax
 
-def plot_normal(x):
+def plot_normal(
+    x: pd.Series,
+    ax: plt.Axes = None,
+    ) -> plt.Axes:
+    """Plot normal distribution.
+
+    Args:
+        x (pd.Series): input vector.
+        ax (plt.Axes, optional): `plt.Axes` object. Defaults to None.
+
+    Returns:
+        plt.Axes: `plt.Axes` object.
+    """
+    if not ax is None:
+        fig,ax = plt.subplots(figsize = [3, 3])
     import statsmodels.api as sm
-    fig = plt.figure(figsize = [3, 3])
     ax = sns.distplot(x, hist = True, 
                       kde_kws = {"shade" : True, "lw": 1, }, 
                       fit = sc.stats.norm,
@@ -99,29 +158,60 @@ def plot_normal(x):
     ax.legend()
     return ax
 
-## pair 
-def plot_dists(df1,x,y,
-               colindex,
-               hue=None,
-               order=None,
-               hue_order=None,
-               kind='box',
-               show_p=True,
-               show_n=True,
-               show_n_prefix='',
-               offx_n=0,
-               xlim=None,
-               offx_pval=0.05,
-               offy_pval=None,
-               saturate_color_alpha=1.5,
-               ax=None,
-               kws_stats={},
-               **kws):
-    """
+## paired distributions.
+def plot_dists(
+    df1: pd.DataFrame,
+    x: str,
+    y: str,
+    colindex: str,
+    hue: str=None,
+    order: list=None,
+    hue_order: list=None,
+    kind: str='box',
+    show_p: bool=True,
+    show_n: bool=True,
+    show_n_prefix: str='',
+    offx_n: float=0,
+    xlim: tuple=None,
+    offx_pval: float=0.05,
+    offy_pval: float=None,
+    saturate_color_alpha: float=1.5,
+    ax: plt.Axes = None,
+    kws_stats: dict={},
+    **kws
+    ) -> plt.Axes:
+    """Plot distributions.
+
+    Args:
+        df1 (pd.DataFrame): input data.
+        x (str): x column.
+        y (str): y column.
+        colindex (str): index column.
+        hue (str, optional): column with values to be encoded as hues. Defaults to None.
+        order (list, optional): order of categorical values. Defaults to None.
+        hue_order (list, optional): order of values to be encoded as hues. Defaults to None.
+        kind (str, optional): kind of distribution. Defaults to 'box'.
+        show_p (bool, optional): show p-values. Defaults to True.
+        show_n (bool, optional): show sample sizes. Defaults to True.
+        show_n_prefix (str, optional): show prefix of sample size label i.e. `n=`. Defaults to ''.
+        offx_n (float, optional): x-offset for the sample size label. Defaults to 0.
+        xlim (tuple, optional): x-axis limits. Defaults to None.
+        offx_pval (float, optional): x-offset for the p-value labels. Defaults to 0.05.
+        offy_pval (float, optional): y-offset for the p-value labels. Defaults to None.
+        saturate_color_alpha (float, optional): saturation of the color. Defaults to 1.5.
+        ax (plt.Axes, optional): `plt.Axes` object. Defaults to None.
+        kws_stats (dict, optional): parameters provided to the stat function. Defaults to {}.
+
+    Keyword Args:
+        kws: parameters provided to the `seaborn` function. 
+
+    Returns:
+        plt.Axes: `plt.Axes` object.
+        
     TODOs:
-    1. show n 
-    2. show pval
-    3. sort
+        1. Sort categories.
+        2. Change alpha of the boxplot rather than changing saturation of the swarmplot. 
+
     """
     df1[y]=df1[y].astype(str)
     if order is None:
@@ -217,59 +307,34 @@ def plot_dists(df1,x,y,
         o1.get_frame().set_edgecolor((0.95,0.95,0.95))
     return ax
 
-def pointplot_join_hues(df1,x,y,hue,hues,
-                        order,hue_order,
-                        dodge,
-                        cmap='Reds',
-                        ax=None,
-                        **kws_pointplot):
-    if ax is None:_,ax=plt.subplots(figsize=[3,3])
-    df1.groupby([hues]).apply(lambda df2: sns.pointplot(data=df2,
-                                                        x=x,y=y,hue=hue,hues=hues,
-                                                        order=order,hue_order=hue_order,
-                                                        dodge=dodge,
-                                                      **kws_pointplot,
-                                                       zorder=5,
-                                                      ax=ax,
-                                                     ))
-    # ax.legend()
-    from roux.viz.ax_ import get_ticklabel2position,sort_legends
-    df1['y']=df1[y].map(get_ticklabel2position(ax,axis='y'))
-    df1['hue']=df1[hue].map(dict(zip(hue_order,[-1,1])))*dodge*0.5
-    df1['y hue']=df1['y']+df1['hue']
+def pointplot_groupbyedgecolor(
+    data: pd.DataFrame,
+    ax: plt.Axes = None,
+    **kws
+    ) -> plt.Axes:
+    """Plot seaborn's `pointplot` grouped by edgecolor of points.
 
-    df2=df1.pivot(index=[y,hues],
-                columns=[hue,],
-                values=[x,'y hue','y','hue'],
-                ).reset_index()#.rd.flatten_columns()
-    from roux.viz.colors import get_val2color
-    df2['color'],_=get_val2color(df2[hues],vmin=-0.2,cmap=cmap)
-    df2['label']=df2[hues].apply(lambda x: f"{hues}{x:.1f}")
-    # x=df2.iloc[0,:]
-#     return df2
-    _=df2.groupby([hues,'color']).apply(lambda df2: df2.apply(lambda x1: ax.plot(x1[x],x1['y hue'],
-                                                           color=df2.name[1],
-                                                           label=x1['label'].tolist()[0] if x1[y].tolist()[0]==order[0] else None,
-                                                           zorder=1,
-                                                           ),axis=1))
-    sort_legends(ax, sort_order=hue_order+sorted(df2['label'].unique()),
-                bbox_to_anchor=[1,1])
-    return ax
-
-
-def pointplot_groupbyedgecolor(data,ax=None,**kws_pointplot):
+    Args:
+        data (pd.DataFrame): input data.
+        ax (plt.Axes, optional): `plt.Axes` object. Defaults to None.
+    
+    Keyword Args:
+        kws: parameters provided to the `seaborn`'s `pointplot` function. 
+        
+    Returns:
+        plt.Axes: `plt.Axes` object.
+    """
     ax=plt.subplot() if ax is None else ax
     ax=sns.pointplot(data=data,
                      ax=ax,
-                     **kws_pointplot)
+                     **kws)
     plt.setp(ax.collections, sizes=[100])   
     for c in ax.collections:
-        if c.get_label().startswith(kws_pointplot['hue_order'][0].split(' ')[0]):
+        if c.get_label().startswith(kws['hue_order'][0].split(' ')[0]):
             c.set_linewidth(2)
             c.set_edgecolor('k')
         else:
             c.set_linewidth(2)        
             c.set_edgecolor('w')
     ax.legend(bbox_to_anchor=[1,1])
-    return ax
-
+    return ax    
