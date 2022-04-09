@@ -44,7 +44,7 @@ requirements = {
          'pybiomart'],
 'workflow':['snakemake',
             'gitpython',
-           'networkx',
+            'networkx',
             'pygraphviz'],
 'dev':[
     'sphinx',
@@ -55,6 +55,7 @@ requirements = {
     'isort',
     'pytest == 6.*',
     'pytest-cov == 2.*',
+    'testbook',
 ],
 }
 extras_require={k:l for k,l in requirements.items() if not k=='base'}
