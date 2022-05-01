@@ -35,7 +35,7 @@ def drop_low_complexity(df1: pd.DataFrame,
     logging.info(f"{len(l1)}(/{len(cols)}) low complexity columns {'could be ' if test else ''}dropped:")
     info(df_)
     if len(cols_keep)!=0:
-        assert(all([c in df1 for c in cols_keep]))
+        assert all([c in df1 for c in cols_keep]), ([c for c in cols_keep if not c in df1])
         cols_kept=[c for c in l1 if c in cols_keep]
         info(cols_kept)
         l1=[c for c in l1 if not c in cols_keep]

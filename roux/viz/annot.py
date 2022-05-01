@@ -9,12 +9,14 @@ from roux.stat.io import perc_label,pval2annot
 
 # labels 
 def set_label(
-    x: float,
-    y: float,
     s: str,
     ax: plt.Axes,
+    x: float= 0,
+    y: float= 0,
     ha: str='left',
     va: str='top',
+    loc=None,
+    off_loc=0.01,
     title: bool=False,
     **kws,
     ) -> plt.Axes:
@@ -27,17 +29,41 @@ def set_label(
         ax (plt.Axes): `plt.Axes` object.
         ha (str, optional): horizontal alignment. Defaults to 'left'.
         va (str, optional): vertical alignment. Defaults to 'top'.
+        loc (int, optional): location of the label. 1:'upper right', 2:'upper left', 3:'lower left':3, 4:'lower right'
+        offs_loc (tuple,optional): x and y location offsets.
         title (bool, optional): set as title. Defaults to False.
-
+        
     Returns:
         plt.Axes: `plt.Axes` object.
     """
     if title:
         ax.set_title(s,**kws)
-    else:
-        ax.text(s=s,transform=ax.transAxes,
-                x=x,y=y,ha=ha,va=va,
-                **kws)
+    elif not loc is None:
+        if loc==1 or loc=='upper right':
+            x=1-off_loc
+            y=1-off_loc
+            ha='right'
+            va='top'
+        elif loc==2 or loc=='upper left':
+            x=0+off_loc
+            y=1-off_loc
+            ha='left'
+            va='top'
+        elif loc==3 or loc=='lower left':
+            x=0+off_loc
+            y=0+off_loc
+            ha='left'
+            va='bottom'            
+        elif loc==4 or loc=='lower right':
+            x=1-off_loc
+            y=0+off_loc
+            ha='right'
+            va='bottom'            
+        else:
+            raise ValueError(loc)
+    ax.text(s=s,transform=ax.transAxes,
+            x=x,y=y,ha=ha,va=va,
+            **kws)
     return ax
 
 def annot_side(
@@ -46,7 +72,10 @@ def annot_side(
     colx: str,
     coly: str,
     cols: str,
+    hue: str=None,
     loc: str='right',
+    scatter=False,
+    lines=True,
     invert_xaxis: bool=False, 
     offx3: float=0.15,
     offymin: float=0.1,
@@ -56,6 +85,7 @@ def annot_side(
     zorder: int=1,
     color: str='gray',
     kws_line: dict={},
+    kws_scatter: dict={'zorder':2,'alpha':0.75,'marker':'|','s':100},
     **kws_text,
     ) -> plt.Axes:
     """Annot elements of the plots on the of the side plot.
@@ -65,6 +95,7 @@ def annot_side(
         colx (str): column with x values.
         coly (str): column with y values.
         cols (str): column with labels.
+        hue (str): column with colors of the labels.
         ax (plt.Axes, optional): `plt.Axes` object. Defaults to None.
         loc (str, optional): location. Defaults to 'right'.
         invert_xaxis (bool, optional): invert xaxis. Defaults to False.
@@ -86,34 +117,68 @@ def annot_side(
     if len(df1)==0: 
         logging.warning("annot_side: no data found")
         return
-    df1=df1.sort_values(coly,ascending=True)
+    if isinstance(colx,float):
+        df1['colx']=colx
+        colx='colx'
+    if isinstance(coly,float):
+        df1['coly']=coly
+        coly='coly'
+    # assert not 'y' in df1, 'table should not contain a column named `y`'
+    df1=df1.sort_values(coly if loc!='top' else colx,ascending=True)
     from roux.viz.ax_ import get_axlims
     d1=get_axlims(ax)
-    df1['y']=np.linspace(d1['y']['min']+((d1['y']['len'])*offymin),
-                        d1['y']['max']*offymax,
+    # if loc=='top', annotations x is y and y is x
+    df1['y']=np.linspace(d1['y' if loc!='top' else 'x']['min']+((d1['y' if loc!='top' else 'x']['len'])*offymin),
+                        d1['y' if loc!='top' else 'x']['max']*offymax,
                         len(df1))
-    x2=d1['x']['min' if not invert_xaxis else 'max'] if loc=='left' else d1['x']['max' if not invert_xaxis else 'min']
-    x3=d1['x']['min']-(d1['x']['len']*offx3) if (loc=='left' and not invert_xaxis) else d1['x']['max']+(d1['x']['len']*offx3)
-    df1.apply(lambda x: ax.plot([x[colx],x2],
-                               [x[coly],x['y']],
-                               color=color,lw=1,**kws_line,
-                               zorder=zorder,
-                               ),axis=1)
-    df1.apply(lambda x: ax.text(x3,x['y'],
+    x2=d1['x'if loc!='top' else 'y']['min' if not invert_xaxis else 'max'] if loc=='left' else d1['x'if loc!='top' else 'y']['max' if not invert_xaxis else 'min']
+    x3=d1['x']['min']-(d1['x']['len']*offx3) if (loc=='left' and not invert_xaxis) else \
+        d1['y']['max']+(d1['y']['len']*offx3) if loc=='top' else \
+        d1['x']['max']+(d1['x']['len']*offx3)
+    # print(x2,x3)
+    # line#1
+    # print(df1.loc[:,[colx,coly,'y']].iloc[0,:])
+    if lines:
+        df1.apply(lambda x: ax.plot([x[colx],x2] if loc!='top' else [x[colx], x['y']],
+                                   [x[coly],x['y']] if loc!='top' else [x[coly], x2],
+                                   color=color,lw=1,**kws_line,
+                                   zorder=zorder,
+                                   ),axis=1)
+    if scatter:
+        df1.plot.scatter(x=colx,y=coly,ax=ax,
+                        **kws_scatter)
+        
+    ## text
+    df1.apply(lambda x: ax.text(x3 if loc!='top' else x['y'],
+                                x['y'] if loc!='top' else x3,
                                 linebreaker(x[cols],break_pt=break_pt,),
-                                ha='right' if loc=='left' else 'left',
-                                va='bottom',**kws_text,
-    #                           color=element2color[x['comparison type']],
+                                ha='right' if loc=='left' else 'center' if loc=='top' else 'left',
+                                va='bottom',
+                                color=x[hue] if not hue is None else 'k',
+                                # **{k:v for k,v in kws_text.items() if not (k==color and not hue is None)},
+                                rotation=0  if loc!='top' else 90,
+                                **kws_text,
                               zorder=2),axis=1)
-    df1.apply(lambda x:ax.axhline(y = x['y'], 
-                                 xmin=0 if loc=='left' else 1,
-                                 xmax=0-(length_axhline-1)-offx3 if loc=='left' else length_axhline+offx3,
-                                         clip_on = False,color=color,lw=1,
-                                ),axis=1)
-    ax.set_xlim([d1['x']['min'],d1['x']['max']])
+    # line #2
+    if lines:
+        if loc!='top':
+            df1.apply(lambda x:ax.axhline(y = x['y'], 
+                                         xmin=0 if loc=='left' else 1,
+                                         xmax=0-(length_axhline-1)-offx3 if loc=='left' else length_axhline+offx3,
+                                                 clip_on = False,color=color,lw=1,
+                                        ),axis=1)
+        else:
+            df1.apply(lambda x:ax.axvline(x = x['y'], 
+                                         ymin=0 if loc=='left' else 1,
+                                         ymax=0-(length_axhline-1)-offx3 if loc=='left' else length_axhline+offx3,
+                                                 clip_on = False,color=color,lw=1,
+                                        ),axis=1)
     if loc=='left':
         ax.yaxis.tick_right()
         ax.yaxis.set_label_position("right")
+    ax.set(xlim=[d1['x']['min'],d1['x']['max']],
+           ylim=[d1['y']['min'],d1['y']['max']],
+            )
     return ax
 
 # variance

@@ -143,6 +143,21 @@ def get_demo_data():
     df1['bool']=df1['value']>df1['value'].quantile(0.5)
     return df1
 
+def compare_classes(x,y,method=None):
+    """
+    """
+    if len(x)!=0 and len(y)!=0:# and (nunique(x+y)!=1):
+        dplot=pd.crosstab(x,y)
+        if (dplot.shape!=(2,2) and len(dplot)!=0) or method=='chi2':
+            stat,pval,_,_=sc.stats.chi2_contingency(dplot)
+            # stat_label='${\chi}^2$'
+        else:
+            stat,pval=sc.stats.fisher_exact(dplot)
+            # stat_label='OR'
+        return stat,pval
+    else:
+        return np.nan,np.nan
+
 def get_pval(df: pd.DataFrame,
              colvalue='value',
              colsubset='subset',
@@ -187,11 +202,12 @@ def get_pval(df: pd.DataFrame,
         x,y=df.loc[(df[colsubset]==subsets[0]),colvalue].tolist(),df.loc[(df[colsubset]==subsets[1]),colvalue].tolist()
         if len(x)!=0 and len(y)!=0 and (nunique(x+y)!=1):
             if fun is None:
-                logging.warning('mannwhitneyu used')                
+                if test: logging.warning('mannwhitneyu used')               
                 return sc.stats.mannwhitneyu(x,y,alternative='two-sided')
             else:
                 logging.warning('custom function used')
-                return fun(x,y)
+                return fun(df.loc[(df[colsubset]==subsets[0]),colvalue],
+                           df.loc[(df[colsubset]==subsets[1]),colvalue])
         else:
             #if empty list: RuntimeWarning: divide by zero encountered in double_scalars  z = (bigu - meanrank) / sd
             return np.nan,np.nan
@@ -243,6 +259,9 @@ def get_stat(df1: pd.DataFrame,
 
     Returns:
         DataFrame: output dataframe.
+        
+    TODOs:
+        1. Rename to more specific `get_diff`, also other `get_stat*`/`get_pval*` functions.
     """
     if not ((colvalue in df1) and (colsubset in df1)):
         raise ArgumentError(f"colvalue or colsubset not found in df: {colvalue} or {colsubset}")
@@ -391,7 +410,7 @@ def get_significant_changes(df1: pd.DataFrame,
                             coff_p=0.025,
                             coff_q=0.1,
                             alpha=None,
-                            changeby="",
+                            changeby="mean",
                             # fdr=True,
                             value_aggs=['mean','median'],
                            ) -> pd.DataFrame:
@@ -414,8 +433,11 @@ def get_significant_changes(df1: pd.DataFrame,
         for s in value_aggs:
             df1[f'difference between {s} (subset1-subset2)']=df1[f'{s} subset1']-df1[f'{s} subset2']
         ## call change if both mean and median are changed
-        df1.loc[((df1.filter(like=f'difference between {changeby}')>0).T.sum()==2),'change']='increase'
-        df1.loc[((df1.filter(like=f'difference between {changeby}')<0).T.sum()==2),'change']='decrease'
+        # df1.loc[((df1.filter(like=f'difference between {changeby}')>0).T.sum()==2),'change']='increase'
+        # df1.loc[((df1.filter(like=f'difference between {changeby}')<0).T.sum()==2),'change']='decrease'
+        info(changeby)
+        df1.loc[(df1[f'difference between {changeby} (subset1-subset2)']>0),'change']='increase'
+        df1.loc[(df1[f'difference between {changeby} (subset1-subset2)']<0),'change']='decrease'
         df1['change']=df1['change'].fillna('ns')
     from statsmodels.stats.multitest import multipletests
     for test in ['MWU','FE']:
@@ -425,11 +447,12 @@ def get_significant_changes(df1: pd.DataFrame,
         df1[f'change is significant, P ({test} test) < {coff_p}']=df1[f'P ({test} test)']<coff_p
         if not coff_q is None:
             df1[f'Q ({test} test)']=get_q(df1[f'P ({test} test)'])
-            df1[f'change is significant, Q ({test} test) < {coff_q}']=df1[f'Q ({test} test)']<coff_q
+            # df1[f'change is significant, Q ({test} test) < {coff_q}']=df1[f'Q ({test} test)']<coff_q
         #     info(f"corrected alpha alphacSidak={alphacSidak},alphacBonf={alphacBonf}")
         # if test!='FE':
-        #     df1.loc[df1[f"change is significant ({test} test)"],f"significant change ({test} test)"]=df1.loc[df1[f"change is significant ({test} test)"],'change']
-        #     df1[f"significant change ({test} test)"]=df1[f"significant change ({test} test)"].fillna('ns')
+            df1[f"significant change, Q ({test} test) < {coff_q}"]=df1.apply(lambda x: x['change'] if x[f'Q ({test} test)']<coff_q else 'ns',axis=1)
+            # df1.loc[df1[f'change is significant, Q ({test} test) < {coff_q}'],f"significant change, Q ({test} test) < {coff_q}"]=df1.loc[df1[f"change is significant, Q ({test} test) < {coff_q}"],'change']
+            # df1[f"significant change, Q ({test} test) < {coff_q}"]=df1[f"significant change, Q ({test} test) < {coff_q}"].fillna('ns')
     return df1
 
 def apply_get_significant_changes(df1: pd.DataFrame,cols_value: list,
@@ -467,7 +490,8 @@ def apply_get_significant_changes(df1: pd.DataFrame,cols_value: list,
     return df2
 
 def get_stats_groupby(df1: pd.DataFrame,cols: list,
-                      coff_p: float,coff_q: float,
+                      coff_p: float=0.05,
+                      coff_q: float=0.1,
                       alpha=None,
                       fast=False,
                       **kws) -> pd.DataFrame:
@@ -595,6 +619,8 @@ def get_stats_regression(df_: pd.DataFrame,
     Returns:
         DataFrame: output.
     """
+    if test and hasattr(df_,'name'):
+        info(df_.name)
     def to_df(res):
         if isinstance(res.summary().tables[1],pd.DataFrame):
             df1=res.summary().tables[1]

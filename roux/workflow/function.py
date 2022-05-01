@@ -3,21 +3,42 @@ from roux.lib.str import replace_many,make_pathable_string
 from roux.lib.set import unique
 import pandas as pd
 
-def get_quoted_path(s1):
+def get_quoted_path(
+    s1:str
+    ) -> str:
+    """Quoted paths.
+
+    Args:
+        s1 (str): path.
+
+    Returns:
+        str: quoted path.
+    """
     s1=f'"{s1}"'
     if "{metadata" in s1:
         s1='f'+s1
         s1=replace_many(s1,{"[":"['","]":"']"})
     return s1
 
-def get_path(s: str,
-             validate: bool,
-             prefixes=['data/','metadata/','plot/'],
-            test=False) -> str:
-    """
+def get_path(
+    s: str,
+    validate: bool,
+    prefixes=['data/','metadata/','plot/'],
+    test=False) -> str:
+    """Extract pathsfrom a line of code.
+
+    Args:
+        s (str): line of code.
+        validate (bool): validate the output.
+        prefixes (list, optional): allowed prefixes. Defaults to ['data/','metadata/','plot/'].
+        test (bool, optional): test mode. Defaults to False.
+
+    Returns:
+        str: path.
+
     TODOs:
-    use *s
-    """    
+        1. Use wildcards i.e. *'s.
+    """
     if ('=' in s):# and ((not "='" in s) or (not '="' in s)):
         s=s[s.find('=')+1:]
     if ')' in s:
@@ -47,7 +68,20 @@ def get_path(s: str,
     s1=get_quoted_path(s1)
     s1=replace_many(s1,{'//':'/','///':'/'},ignore=True)
     return s1
-def remove_dirs_from_outputs(outputs,test=False):
+
+def remove_dirs_from_outputs(
+    outputs: list,
+    test: bool=False
+    ) -> list:
+    """Remove directories from the output paths.
+
+    Args:
+        outputs (list): output paths.
+        test (bool, optional): test mode. Defaults to False.
+
+    Returns:
+        list: paths.
+    """
     l_=[s.replace('"','') for s in outputs if not s.startswith('f')]
     if any([isdir(p) for p in l_]) and any([not isdir(p) for p in l_]):
         # if filepath is available remove the directory paths
@@ -55,7 +89,19 @@ def remove_dirs_from_outputs(outputs,test=False):
         if test: logging.info("directory paths removed")
     if test: print(outputs)
     return outputs
-def get_ios(l: list,test=False) -> tuple:
+
+def get_ios(
+    l: list,
+    test=False) -> tuple:
+    """Get input and output (IO) paths.
+
+    Args:
+        l (list): list of lines of code.
+        test (bool, optional): test mode. Defaults to False.
+
+    Returns:
+        tuple: paths of inputs and outputs.
+    """
     ios=[s_ for s_ in l if (('data/' in s_) or ('plot/' in s_) or ('figs/' in s_))]
     if test:info(ios)
     inputs=[f'{get_path(s,validate=False,test=test)}' for s in ios if ('read_' in s) or (s.lstrip().startswith('p='))]
@@ -64,16 +110,46 @@ def get_ios(l: list,test=False) -> tuple:
     inputs,outputs=[p for p in inputs if p!='""'],[p for p in outputs if p!='""']
     return unique(inputs),unique(outputs)
 
-def get_name(s : str, i: int) -> str: 
-    assert s.startswith('# ## step')
-    assert s.count('step')==1
-    s1=make_pathable_string(s.replace('# ## step',f'step{i:02}')).lower().replace('/','_')
+def get_name(
+    s : str, 
+    i: int,
+    sep_step: str='## step',
+    ) -> str:
+    """Get name of the function.
+
+    Args:
+        s (str): lines in markdown format.
+        sep_step (str, optional): separator marking the start of a step. Defaults to "## step".        
+        i (int): index of the step.
+
+    Returns:
+        str: name of the function.
+    """
+    assert s.startswith(f'# {sep_step}')
+    assert s.count(sep_step)==1
+    s1=make_pathable_string(s.replace(f'# {sep_step}',f'step{i:02}')).lower().replace('/','_')
     s1=s1 if len(s1)>=80 else s1[:80]
     s1=replace_many(s1,{' ':'_','.':'_'},ignore=True)
     return s1
 
-def get_step(l: list,name: str,
-             test=False,s4='    ') -> dict:
+def get_step(
+    l: list,
+    name: str,
+    sep_step: str='## step',
+    sep_step_end: str='## tests',
+    test=False,
+    tab='    ') -> dict:
+    """Get code for a step.
+
+    Args:
+        l (list): list of lines of code
+        name (str): name of the function.
+        test (bool, optional): test mode. Defaults to False.
+        tab (str, optional): tab format. Defaults to '    '.
+
+    Returns:
+        dict: step name to code map. 
+    """
     # to_fun():
     if test:info(name,l[-1])
     docs=[]
@@ -84,7 +160,8 @@ def get_step(l: list,name: str,
     for i,s in enumerate(l):
         if (s.startswith('#') and not s.startswith('# In[')) and get_docs:
             if i==0:
-                s='# '+s.split('step ')[1][0].upper()+s.split('step ')[1][1:]+'.'
+                info(s)
+                s='# '+s.split(sep_step.split('## ')[0]+' ')[1][0].upper()+s.split(sep_step.split('## ')[0]+' ')[1][1:]+'.'
             docs.append(s)
         else:
             get_docs=False
@@ -112,10 +189,10 @@ def get_step(l: list,name: str,
         output_type='figures'
     else:
         output_type='data'
-    inputs_str=f',\n{s4*3}'.join(inputs)
-    outputs_str=f',\n{s4*3}'.join(outputs)
+    inputs_str=f',\n{tab*3}'.join(inputs)
+    outputs_str=f',\n{tab*3}'.join(outputs)
     if output_type!='data' and (not any([isdir(p.replace('"','')) for p in outputs])):
-        outputs_str=f'report([\n{s4*3}{outputs_str}],\n{s4*3}category="{output_type}")'
+        outputs_str=f'report([\n{tab*3}{outputs_str}],\n{tab*3}category="{output_type}")'
 #     elif output_type in ['plots','figures']:
 #         outputs_str=''
     ## snakemake rule
@@ -139,7 +216,7 @@ def get_step(l: list,name: str,
     "        metadata (dict): Dictionary containing information required for the analysis. Metadata files are located in `metadata` folder are read using `roux.workflow.io.read_metadata` function.",
     f"",
     f"    Snakemake rule:",
-    '\n'.join([s4+s+s4 for s in config]),
+    '\n'.join([tab+s+tab for s in config]),
     f"    {quotes}",
     "    "+'\n    '.join(code_with_comments),
     ]
@@ -147,12 +224,39 @@ def get_step(l: list,name: str,
     function='\n'.join(function)
     return {'function':function,'config':config_str,'inputs':inputs,'outputs':outputs,}
 
-def to_task(notebookp,force=False,validate=False,
-           path_prefix=None,
-           verbose=True,
-            test=False):
+def to_task(
+    notebookp,
+    sep_step: str='## step',
+    sep_step_end: str='## tests',
+    notebook_suffix: str='_v',
+    force=False,
+    validate=False,
+    path_prefix=None,
+    verbose=True,
+    test=False) -> str:
+    """Get the lines of code for a task (script to be saved as an individual `.py` file).
+
+    Args:
+        notebookp (_type_): path of the notebook.
+        sep_step (str, optional): separator marking the start of a step. Defaults to "## step".        
+        sep_step_end (str, optional): separator marking the end of a step. Defaults to "## tests".        
+        notebook_suffix (str, optional): suffix of the notebook file to be considered as a "task".
+        force (bool, optional): overwrite output. Defaults to False.
+        validate (bool, optional): validate output. Defaults to False.
+        path_prefix (_type_, optional): prefix to the path. Defaults to None.
+        verbose (bool, optional): show verbose. Defaults to True.
+        test (bool, optional): test mode. Defaults to False.
+
+    Returns:
+        str: lines of the code.
+    """
+    if not sep_step.startswith('## '):
+        raise ValueError(f"{sep_step} should start with '## '")
     # from roux.lib.str import removesuffix
-    pyp=f"{dirname(notebookp)}/lib/task{basenamenoext(notebookp).split('_v')[0]}.py"
+    if notebook_suffix!='':
+        pyp=f"{dirname(notebookp)}/lib/task{basenamenoext(notebookp).split(notebook_suffix)[0]}.py"
+    else:
+        pyp=f"{dirname(notebookp)}/lib/task{basenamenoext(notebookp)}.py"        
     if exists(pyp) and not force and not test: return 
     if verbose: info(basename(notebookp))
     from roux.workflow.io import to_py, get_lines
@@ -171,15 +275,19 @@ def to_task(notebookp,force=False,validate=False,
     l1=[] # start of the file
     l2=[] # start of code
     for s in l0:
-        if s.startswith('# ## step'):
+        if s.startswith(f'# {sep_step}'):
             l2=[] # start of code
             get_header=False        
             get=True
             k=s
-        elif (s.startswith('## trash') or s.startswith('## tests')) and len(l2)!=0:
+        elif s.startswith(sep_step_end) and len(l2)!=0:
             get=False
-            stepn=f"{taskn}_{get_name(k,i=len(d0.keys())+1)}"
-            d0[stepn]=get_step(l2,name=stepn,test=test or verbose)
+            stepn=f"{taskn}_{get_name(k,i=len(d0.keys())+1,sep_step=sep_step)}"
+            d0[stepn]=get_step(l2,name=stepn,
+                               sep_step=sep_step,
+                               sep_step_end=sep_step_end,
+                               test=test or verbose,
+                              )
             l2=[]
             stepn=None
         elif s.startswith('# In'):

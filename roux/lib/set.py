@@ -164,7 +164,16 @@ def get_alt(l1,s,):
     assert(s in l1)
     return [i for i in l1 if i!=s][0]
 
-
+def jaccard_index(l1,l2):
+    # if len(l1)==0 or len(l2)==0:
+    #     return 0,0,0
+    x1=len(set(l1).intersection(set(l2)))
+    x2=len(set(l1).union(set(l2)))
+    if x1==0 or len(l1)==0 or len(l2)==0:
+        return 0,x1,x2
+    else:
+        return x1/x2,x1,x2
+    
 def intersections(dn2list,jaccard=False,count=True,fast=False,test=False):
     """Get intersections between lists.
     
@@ -196,7 +205,8 @@ def intersections(dn2list,jaccard=False,count=True,fast=False,test=False):
                 continue
             if jaccard:
                 if len(dn2list[k1].union(dn2list[k2]))!=0:
-                    l=len(set(dn2list[k1]).intersection(dn2list[k2]))/len(dn2list[k1].union(dn2list[k2]))
+                    l=jaccard_index(dn2list[k1],dn2list[k2])
+                    # l=len(set(dn2list[k1]).intersection(dn2list[k2]))/len(dn2list[k1].union(dn2list[k2]))
                 else:
                     l=np.nan
             else:

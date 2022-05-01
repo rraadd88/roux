@@ -549,7 +549,8 @@ def apply_on_paths(ps,func,
             d_['  to']=len(ps)
             if d_['from']!=d_['  to']:
                 logging.info(f"force=False, so len(ps) reduced from: {d_['from']}")
-                logging.info(f"                                  to: {d_['  to']}")            
+                logging.info(f"                                  to: {d_['  to']}")
+    if dbug: info(ps)
     df1=pd.DataFrame({'path':ps})
     if len(df1)==0:
         logging.info('no paths remained to be processed.')
@@ -656,7 +657,8 @@ def get_path(p):
 ## save table
 def to_table(df,p,
              colgroupby=None,
-             test=False,**kws):
+             test=False,
+             **kws):
     """Save table.
     
     Parameters:
@@ -686,7 +688,7 @@ def to_table(df,p,
     if not colgroupby is None:
         to_manytables(df,p,colgroupby,**kws)
     elif p.endswith('.tsv') or p.endswith('.tab'):
-        df.to_csv(p,sep='\t')
+        df.to_csv(p,sep='\t',**kws)
     elif p.endswith('.pqt'):
         to_table_pqt(df,p,**kws)
     else: 
@@ -822,6 +824,7 @@ def to_excel(sheetname2df,outp,append=False,**kws):
 #     if not 'xlrd' in sys.modules:
 #         logging.error('need xlrd to work with excel; pip install xlrd')
     makedirs(outp)
+    outp=get_path(outp)
     writer = pd.ExcelWriter(outp)
     startrow=0
     for sn in sheetname2df:
@@ -831,6 +834,7 @@ def to_excel(sheetname2df,outp,append=False,**kws):
             sheetname2df[sn].to_excel(writer,startrow=startrow,index=False,**kws)  
             startrow+=len(sheetname2df[sn])+2
     writer.save()
+    return outp
 
 def to_excel_commented(p: str,d1: dict,
                        outp: str=None,author: str='Author'):

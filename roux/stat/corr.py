@@ -2,6 +2,7 @@ import pandas as pd
 import numpy as np
 import scipy as sc
 import logging
+from roux.lib.sys import info
 
 from scipy.stats import spearmanr,pearsonr
 def get_spearmanr(x: np.array,y: np.array) -> tuple:
@@ -29,8 +30,14 @@ def get_pearsonr(x: np.array,y: np.array) -> tuple:
     """
     return sc.stats.pearsonr(x,y)
 
-def get_corr_bootstrapped(x: np.array,y: np.array,
-                          method='spearman',ci_type='max',random_state=1) -> tuple:
+def get_corr_bootstrapped(x: np.array,
+                          y: np.array,
+                          method='spearman',
+                          ci_type='max',
+                          cv:int=5,
+                          random_state=1,
+                          verbose=False,
+                         ) -> tuple:
     """Get correlations after bootstraping.
 
     Args:
@@ -38,15 +45,17 @@ def get_corr_bootstrapped(x: np.array,y: np.array,
         y (np.array): y vector.
         method (str, optional): method name. Defaults to 'spearman'.
         ci_type (str, optional): confidence interval type. Defaults to 'max'.
+        cv (int, optional): number of bootstraps. Defaults to 5.
         random_state (int, optional): random state. Defaults to 1.
 
     Returns:
         tuple: mean correlation coefficient, confidence interval
     """
-    from roux.lib.stat.ml import get_cvsplits
+    from roux.stat.classify import get_cvsplits
     from roux.stat.variance import get_ci
-    cv2xy=get_cvsplits(x,y,cv=5,outtest=False,random_state=1)
+    cv2xy=get_cvsplits(x,y,cv=cv,outtest=False,random_state=1)
     rs=[globals()[f"get_{method}r"](**cv2xy[k])[0] for k in cv2xy]
+    if verbose: info(cv,ci_type)
     return np.mean(rs), get_ci(rs,ci_type=ci_type)
 
 def corr_to_str(method: str,
@@ -75,10 +84,14 @@ def corr_to_str(method: str,
     s0+=f"\n{pval2annot(p,fmt='<',linebreak=False, alpha=0.05)}"+('' if not n else f"\nn="+num2str(num=n,magnitude=False))
     return s0
 
-def get_corr(x: np.array,y: np.array,
-            method='spearman',bootstrapped=False,ci_type='max',magnitide=True,
-            outstr=False,
-            **kws):
+def get_corr(
+    x: np.array,y: np.array,
+    method='spearman',
+    bootstrapped=False,
+    ci_type='max',
+    magnitide=True,
+    outstr=False,
+    **kws):
     """Correlation between vectors (wrapper).
 
     Args:
@@ -101,160 +114,72 @@ def get_corr(x: np.array,y: np.array,
         if not outstr:
             return r,p,ci,n
         else:
-            return corr_to_str(method,r,p,n=n, ci=ci,ci_type=ci_type, magnitide=magnitide)
+            return corr_to_str(method,r,p,n=n, ci=ci,ci_type=ci_type, magnitide=magnitide),r
     else:
         r,p=globals()[f"get_{method}r"](x, y)
         if not outstr:
             return r,p,n
         else:
-            return corr_to_str(method,r,p,n=n, ci=None,ci_type=None, magnitide=magnitide)
+            return corr_to_str(method,r,p,n=n, ci=None,ci_type=None, magnitide=magnitide),r
 
-# def corr_within(df: pd.DataFrame,
-#          method='spearman',
-#          ) -> pd.DataFrame:
-#     """Correlation within a dataframe.
+def get_corrs(df1,
+              method,
+              cols,
+              cols_with=[],
+              coff_inflation_min=None,
+              test=False,
+              **kws):
+    """Correlate columns of a dataframes.
 
-#     Args:
-#         df (DataFrame): input dataframe.
-#         method (str, optional): method name. Defaults to 'spearman'.
+    Args:
+        df1 (DataFrame): input dataframe.
+        method (str): method of correlation `spearman` or `pearson`.        
+        cols (str): columns.
+        cols_with (str): columns to correlate with i.e. variable2.
 
-#     Returns:
-#         DataFrame: output dataframe.
-#     """
+    Keyword arguments:
+        kws: parameters provided to `get_corr` function.
+
+    Returns:
+        DataFrame: output dataframe.
+        
+    TODOs:
+        2. Provide 2D array to `scipy.stats.spearmanr`?
+        1. Add parallel processing through `fast` parameter.
+    """
+    import itertools
+    from roux.stat.diff import get_q
+    # check inflation/over-representations
+    from roux.lib.df import check_inflation
+    ds_=check_inflation(df1,subset=cols+cols_with).loc[lambda x: x>=(50 if coff_inflation_min is None else coff_inflation_min)]
+    info(ds_)
+    if not coff_inflation_min is None:
+        # remove inflated
+        cols=[c for c in cols if not c in ds_.index.tolist()]
+        cols_with=[c for c in cols_with if not c in ds_.index.tolist()]
+    if len(cols_with)==0:
+        o1=itertools.combinations(cols,2)
+    else:
+        o1=itertools.product(cols,cols_with)
+    # remove inf
+    df1=df1.loc[:,np.unique(cols+cols_with)].replace([np.inf, -np.inf], np.nan)
     
-#     df1=df.corr(method=method).rd.fill_diagonal(filler=np.nan)
-#     df2=df1.melt(ignore_index=False)
-#     col=df2.index.name
-#     df2=df2.rename(columns={col:col+'2'}).reset_index().rename(columns={col:col+'1','value':f'$r_{method[0]}$'})
-#     return df2
-
-
-# def corrdf(df1: pd.DataFrame,
-#            colindex: str,
-#            colsample: str,
-#            colvalue: str,
-#            colgroupby=None,
-#            min_samples=1,
-#            fast=False,
-#            drop_diagonal=True,
-#            drop_duplicates=True,
-#            **kws) -> pd.DataFrame:
-#     """Correlate within a dataframe.
-
-#     Args:
-#         df1 (DataFrame): input dataframe.
-#         colindex (str): index column.
-#         colsample (str): column with samples.
-#         colvalue (str): column with the values.
-#         colgroupby (str, optional): column with the groups. Defaults to None.
-#         min_samples (int, optional): minimum allowed sample size. Defaults to 1.
-#         fast (bool, optional): use parallel processing. Defaults to False.
-#         drop_diagonal (bool, optional): drop values at the diagonal of the output. Defaults to True.
-#         drop_duplicates (bool, optional): drop duplicate values. Defaults to True.
-
-#     Keyword arguments:
-#         kws: parameters provided to `corr_within` function.
-
-#     Returns:
-#         DataFrame: output dataframe.
-#     """
-    
-#     if df1[colsample].nunique()<min_samples:
-#         logging.info(f"not enough samples in {colsample} ({df1[colsample].nunique()})")
-#         return     
-#     if colgroupby is None:
-#         df2=corr_within(
-#             df1.pivot(index=colindex,columns=colsample,values=colvalue),
-#             **kws,
-#             )
-#     else:
-#         df2=getattr(df1.groupby(colgroupby),'progress_apply' if not fast else 'parallel_apply')(lambda df: corr_within(
-#             df.pivot(index=colindex,columns=colsample,values=colvalue),
-#             **kws,
-#             )).rd.clean().reset_index(0)
-#     if drop_diagonal:
-#         df2=df2.loc[(df2['{colsample}1']!=df2['{colsample}2']),:]
-#     if drop_duplicates:
-#         df2=df2.drop_duplicates(subset=colgroupby)
-#     return df2
-
-
-# def corr_between(df1: pd.DataFrame,df2: pd.DataFrame,method: str) -> pd.DataFrame:
-#     """Correlate between dataframes.
-
-#     Args:
-#         df1 (DataFrame): pd.DataFrame #1. Its columns are mapped to the columns of the output matrix.
-#         df2 (DataFrame): pd.DataFrame #2. Its columns are mapped to the rows of the output matrix.
-#         method (methodname): method name
-
-#     Returns:
-#         DataFrame: correlation matrix.
-#     """
-#     from roux.lib.set import list2intersection
-#     index_common=list2intersection([df1.index.tolist(),df2.index.tolist()])
-#     # get the common indices with loc. it sorts the dfs too.
-#     df1=df1.loc[index_common,:]
-#     df2=df2.loc[index_common,:]
-    
-#     dcorr=pd.DataFrame(columns=df1.columns,index=df2.columns)
-#     dpval=pd.DataFrame(columns=df1.columns,index=df2.columns)
-#     from tqdm import tqdm
-#     for c1 in tqdm(df1.columns):
-#         for c2 in df2:
-#             if method=='spearman':
-#                 dcorr.loc[c2,c1],dpval.loc[c2,c1]=get_spearmanr(df1[c1],df2[c2],)
-#             elif method=='pearson':
-#                 dcorr.loc[c2,c1],dpval.loc[c2,c1]=get_pearsonr(df1[c1],df2[c2],)                
-#     dn2df={f'$r_{method[0]}$':dcorr,
-#           f'P ($r_{method[0]}$)':dpval,}
-#     dn2df={k:dn2df[k].melt(ignore_index=False) for k in dn2df}
-#     df3=pd.concat(dn2df,
-#              axis=0,
-#              )
-#     df3=df3.rename(columns={df1.columns.name:df1.columns.name+'2'}
-#               ).reset_index(1).rename(columns={df1.columns.name:df1.columns.name+'1'})
-#     df3.index.name='variable correlation'
-#     return df3.reset_index()
-
-
-# def corrdfs(df1: pd.DataFrame,df2: pd.DataFrame,
-#            colindex: str,
-#            colsample: str,
-#            colvalue: str,
-#            colgroupby=None,
-#            min_samples=1,
-#            **kws):
-#     """Correlate between dataframes.
-
-#     Args:
-#         df1 (DataFrame): input dataframe.
-#         colindex (str): index column.
-#         colsample (str): column with samples.
-#         colvalue (str): column with the values.
-#         colgroupby (str, optional): column with the groups. Defaults to None.
-#         min_samples (int, optional): minimum allowed sample size. Defaults to 1.
-
-#     Keyword arguments:
-#         kws: parameters provided to `corr_between` function.
-
-#     Returns:
-#         DataFrame: output dataframe.
-#     """
-#     if len(df1[colsample].unique())<min_samples or len(df2[colsample].unique())<min_samples:
-#         return
-#     if colgroupby is None:
-#         df3=corr_between(
-#             df1.pivot(index=colindex,columns=colsample,values=colvalue),
-#             df2.pivot(index=colindex,columns=colsample,values=colvalue),
-#             **kws,
-#             )
-#     else:
-#         df3=df1.groupby(colgroupby).apply(lambda df: corr_between(
-#             df.pivot(index=colindex,columns=colsample,values=colvalue),
-#             df2.loc[(df2[colgroupby]==df.name),:].pivot(index=colindex,columns=colsample,values=colvalue),
-#             **kws,
-#             )).reset_index(0)
-#     return df3
+    df0=pd.DataFrame(o1,columns=['variable1','variable2'])
+    df0=df0.loc[(df0['variable1']!=df0['variable2']),:]
+    if test:
+        info(df0)
+    df2=df0.groupby(['variable1','variable2']).progress_apply(lambda df: get_corr(x=df1[df.name[0]],
+                                                                                  y=df1[df.name[1]],
+                                                                                  method=method,
+                                                                                  **kws)).apply(pd.Series)
+    df2.columns=[f"$r_{method[0]}$",'P','n']
+    df2=(df2
+        .reset_index()
+        .log.dropna(subset=['P'])
+        .groupby(['variable1']+(['variable2'] if len(cols_with)==0 else []),as_index=False).apply(lambda df: get_q(df,'P')).reset_index(drop=True)
+        .sort_values(['Q',f"$r_{method[0]}$"],ascending=[True,False])
+        )
+    return df2
 
 ## partial 
 def get_partial_corrs(df: pd.DataFrame,xs: list,ys: list, method='spearman',splits=5) -> pd.DataFrame:
@@ -297,12 +222,17 @@ def get_partial_corrs(df: pd.DataFrame,xs: list,ys: list, method='spearman',spli
             df1[f"{c}_covar"]=df1[f"{c}_covar"].apply(eval)
     return df1.reset_index()
 
-
-def check_collinearity(df3: pd.DataFrame,threshold: float) -> pd.DataFrame:
+def check_collinearity(
+    df1,
+    threshold=0.7,
+    colvalue='$r_s$',
+    cols_variable=['variable1','variable2'],
+    coff_pval=0.05,
+    )-> pd.Series:
     """Check collinearity.
 
     Args:
-        df3 (DataFrame): input dataframe.
+        df1 (DataFrame): input dataframe.
         threshold (float): minimum threshold for the colinearity.
 
     Returns:
@@ -311,23 +241,30 @@ def check_collinearity(df3: pd.DataFrame,threshold: float) -> pd.DataFrame:
     TODOs:
         1. Calculate variance inflation factor (VIF).
     """
-    df4=df3.corr(method='spearman')
-    # df4=df4.applymap(abs)
-    from roux.lib.dfs import get_offdiagonal_values
-    df5=get_offdiagonal_values(df4.copy())
-    df6=df5.melt(ignore_index=False).dropna().reset_index()
-    df6['value']=df6['value'].apply(abs)
-    df6['is collinear']=df6['value'].apply(lambda x: x>=threshold)
-    perc=(df6['is collinear'].sum()/len(df6))*100
-    logging.info(f"% collinear vars: {perc} ({df6['is collinear'].sum()}/{len(df3.columns)})")
+    cols=df1.columns.tolist()
+    df2=get_corrs(df1=df1,
+        method='spearman',
+        cols=cols,
+        cols_with=cols,
+        coff_inflation_min=50,
+        )
+    df2=df2.loc[(df2['P']<0.05),:]
+
+    df2['is collinear']=df2[colvalue].abs().apply(lambda x: x>=threshold)
+    perc=(df2['is collinear'].sum()/len(df2))*100
+    logging.info(f"% collinear vars: {perc} ({df2['is collinear'].sum()}/{len(df1.columns)})")
     if perc==0:
-        logging.info(f"max corr={df6['value'].max()}")
+        logging.info(f"max corr={df2[colvalue].max()}")
         return
-    df6=df6.loc[(df6['is collinear']),:]
+    df2=df2.loc[(df2['is collinear']),:]
     from roux.stat.network import get_subgraphs
-    df7=get_subgraphs(df6.loc[df6['is collinear'],:],'index','variable')
-    df7=df7.groupby('subnetwork name').agg({'node name':list}).reset_index()
-    return df7.groupby('subnetwork name').progress_apply(lambda df: df6.apply(lambda x: x['value'] if len(set([x['index'],x['variable']]) - set(df['node name'].tolist()[0]))==0 else np.nan,axis=1).min()).sort_values(ascending=False)
+    df3=get_subgraphs(df2.loc[df2['is collinear'],:],cols_variable[0],cols_variable[1])
+    df3=df3.groupby('subnetwork name').agg({'node name':list}).reset_index()
+    return (df3
+            .groupby('subnetwork name')
+            .progress_apply(lambda df: df2.apply(lambda x: x[colvalue] if len(set([x[cols_variable[0]],x[cols_variable[1]]]) - set(df['node name'].tolist()[0]))==0 else np.nan,axis=1).min())
+            .sort_values(ascending=False)
+           )    
 
 def pairwise_chi2(df1: pd.DataFrame,cols_values: list) -> pd.DataFrame:
     """Pairwise chi2 test.

@@ -54,6 +54,12 @@ def set_ylabel(
 #     return set_label(x=x,y=y,s=ax.get_ylabel() if s is None else s,
 #                                                        ha='right',va='bottom',ax=ax)
 
+def rename_labels(ax,d1):
+    ax.set_xlabel(replace_many(ax.get_xlabel(),d1,ignore=True))
+    ax.set_ylabel(replace_many(ax.get_ylabel(),d1,ignore=True))
+    ax.set_title(replace_many(ax.get_title(),d1,ignore=True))
+    return ax
+
 ## ticklabels
 def rename_ticklabels(
     ax: plt.Axes,
@@ -377,6 +383,7 @@ def append_legends(
     return ax
 
 ## legend related stuff: also includes colormaps
+
 def sort_legends(
     ax: plt.Axes,
     sort_order: list=None,
@@ -403,6 +410,8 @@ def sort_legends(
             return
         handles,labels =[handles[idx] for idx in sort_order],[labels[idx] for idx in sort_order]
     return ax.legend(handles, labels,**kws)
+
+def drop_duplicate_legend(ax,**kws): return sort_legends(ax=ax,sort_order=None,**kws)
 
 def reset_legend_colors(ax):
     """Reset legend colors.

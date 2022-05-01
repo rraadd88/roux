@@ -2,50 +2,51 @@ from roux.global_imports import *
 from roux.lib.str import make_pathable_string
 
 # stats
-def annot_stats(dplot: pd.DataFrame,
-            colx: str,
-            coly: str,
-            colz: str,
-            stat_method: list=[],
-            bootstrapped: bool=False,
-            params_set_label: dict={},
-            ax: plt.Axes = None,
-            ) -> plt.Axes:
-    """Annotate stats on a scatter plot.
+# def annot_stats(dplot: pd.DataFrame,
+#             colx: str,
+#             coly: str,
+#             colz: str,
+#             stat_method: list=[],
+#             bootstrapped: bool=False,
+#             params_set_label: dict={},
+#             ax: plt.Axes = None,
+#             ) -> plt.Axes:
+#     """Annotate stats on a scatter plot.
 
-    Args:
-        dplot (pd.DataFrame): input dataframe.
-        colx (str): x column.
-        coly (str): y column.
-        colz (str): z column.
-        stat_method (list, optional): names of stat methods to apply. Defaults to [].
-        bootstrapped (bool, optional): to bootstrap the data or not. Defaults to False.
-        params_set_label (dict, optional): parameters provided to the `set_label` function. Defaults to {}.
-        ax (plt.Axes, optional): `plt.Axes` object. Defaults to None.
+#     Args:
+#         dplot (pd.DataFrame): input dataframe.
+#         colx (str): x column.
+#         coly (str): y column.
+#         colz (str): z column.
+#         stat_method (list, optional): names of stat methods to apply. Defaults to [].
+#         bootstrapped (bool, optional): to bootstrap the data or not. Defaults to False.
+#         params_set_label (dict, optional): parameters provided to the `set_label` function. Defaults to {}.
+#         ax (plt.Axes, optional): `plt.Axes` object. Defaults to None.
 
-    Returns:
-        plt.Axes: `plt.Axes` object.
-    """
-    stat_method = [stat_method] if isinstance(stat_method,str) else stat_method
-    from roux.viz.ax_ import set_label
-    if 'mlr' in stat_method:
-        from roux.lib.stat.poly import get_mlr_2_str
-        ax=set_label(ax,label=get_mlr_2_str(dplot,colz,[colx,coly]),
-                    title=True,params={'loc':'left'})
-    if 'spearman' in stat_method or 'pearson' in stat_method:
-        from roux.stat.corr import get_corr
-        ax=set_label(ax,label=get_corr(dplot[colx],dplot[coly],method=stat_method[0],
-                                       bootstrapped=bootstrapped,
-                                       outstr=True,n=True),
-                    **params_set_label)
-    return ax
+#     Returns:
+#         plt.Axes: `plt.Axes` object.
+#     """
+#     stat_method = [stat_method] if isinstance(stat_method,str) else stat_method
+#     from roux.viz.ax_ import set_label
+#     if 'mlr' in stat_method:
+#         from roux.lib.stat.poly import get_mlr_2_str
+#         ax=set_label(ax,label=get_mlr_2_str(dplot,colz,[colx,coly]),
+#                     title=True,params={'loc':'left'})
+#     if 'spearman' in stat_method or 'pearson' in stat_method:
+#         from roux.stat.corr import get_corr
+#         ax=set_label(ax,label=get_corr(dplot[colx],dplot[coly],method=stat_method[0],
+#                                        bootstrapped=bootstrapped,
+#                                        outstr=True,n=True),
+#                     **params_set_label)
+#     return ax
 
 def plot_trendline(dplot: pd.DataFrame,
                     colx: str,
                     coly: str,
-                    params_plot: dict={'color':'r','linestyle':'solid','lw':2},
+                    params_plot: dict={'color':'r','lw':2},
                     poly: bool=False,
                     lowess: bool=True,
+                    linestyle: str= 'solid',
                     params_poly: dict={'deg':1},
                     params_lowess: dict={'frac':0.7,'it':5},
                     ax: plt.Axes = None,
@@ -78,11 +79,11 @@ def plot_trendline(dplot: pd.DataFrame,
         coef = np.polyfit(dplot[colx], dplot[coly],**params_poly)
         poly1d_fn = np.poly1d(coef)
         # poly1d_fn is now a function which takes in x and returns an estimate for y
-        ax.plot(dplot[colx], poly1d_fn(dplot[colx]), **params_plot,**kws)
+        ax.plot(dplot[colx], poly1d_fn(dplot[colx]),linestyle=linestyle, **params_plot,**kws)
     if lowess:
         from statsmodels.nonparametric.smoothers_lowess import lowess
         xys_lowess=lowess(dplot[coly], dplot[colx],frac=0.7,it=5)
-        ax.plot(xys_lowess[:,0],xys_lowess[:,1], **params_plot,**kws)
+        ax.plot(xys_lowess[:,0],xys_lowess[:,1],linestyle=linestyle, **params_plot,**kws)
     return ax
 
 # @to_class(rd)
@@ -103,7 +104,7 @@ def plot_scatter(
     title: str=None,
     params_plot: dict={},
     params_plot_trendline: dict={},
-    params_set_label: dict=dict(x=0,y=1),
+    params_set_label: dict={},
     ax: plt.Axes = None,
     **kws,
     ) -> plt.Axes:
@@ -174,7 +175,9 @@ def plot_scatter(
                            **params_plot,
                            **kws)
         if not colz is None:
-            ax.legend(loc=loc,bbox_to_anchor=bbox_to_anchor,title=colz if title is None else title)
+            leg=ax.legend(loc=loc,bbox_to_anchor=bbox_to_anchor,title=colz if title is None else title)
+            if '\n' in title:
+                leg._legend_box.align = "center"
     from roux.viz.ax_ import set_label_colorbar
 #     print(colz)
     ax=set_label_colorbar(ax,colz if label_colorbar is None else label_colorbar)
@@ -185,13 +188,19 @@ def plot_scatter(
                     title=True,params={'loc':'left'})
     if 'spearman' in stat_method or 'pearson' in stat_method:
         from roux.stat.corr import get_corr
-        ax=set_label(ax=ax,s=get_corr(dplot[colx],dplot[coly],method=stat_method[0],
+        label,r=get_corr(dplot[colx],dplot[coly],method=stat_method[0],
                                        bootstrapped=bootstrapped,
-                                       outstr=True,n=True),
-                    **params_set_label)
+                                       outstr=True,
+                                      # n=True
+                                     )
+        if r>=0:
+            params_set_label['loc']=2
+        elif r<0:
+            params_set_label['loc']=1
+        ax=set_label(ax=ax,s=label,**params_set_label)
     from roux.viz.colors import saturate_color
     plot_trendline(dplot,colx,coly,
-                    params_plot={'color':saturate_color(params_plot['color'],alpha=1.5) if 'color' in params_plot else None,},
+                    params_plot={'color':saturate_color(params_plot['color'],alpha=1.75) if 'color' in params_plot else None,},
                     poly='poly' in trendline_method,
                     lowess='lowess' in trendline_method,
                    ax=ax, 

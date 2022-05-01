@@ -1,10 +1,12 @@
 import matplotlib.pyplot as plt
+from os.path import splitext
 
 def plot_image(
     imp: str,
     ax: plt.Axes=None,
     force=False,
     margin=0,
+    axes=False,
     test=False,
     **kwarg
     ) -> plt.Axes:
@@ -36,7 +38,7 @@ def plot_image(
     im=plt.imread(pngp)
     ax.imshow(im,interpolation='catrom')
     ax.set(**{'xticks':[],'yticks':[],'xlabel':'','ylabel':''})
-    ax.margins(margin)   
-    if not test:
+    ax.margins(margin)
+    if not axes:
         ax.axis('off')
     return ax 

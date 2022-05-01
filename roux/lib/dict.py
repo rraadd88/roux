@@ -115,7 +115,9 @@ def read_pickle(p):
     import pickle
     return pickle.load(open(p,
                'rb'))
-
+def is_dict(p):
+    return p.endswith(('.yml','.yaml','.json'))
+    
 def read_dict(p,fmt='',**kws):
     """Read dictionary file.
     

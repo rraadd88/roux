@@ -112,7 +112,7 @@ def mix_colors(d: dict) -> str:
     """Mix colors.
 
     Args:
-        d (dict): colors.
+        d (dict): colors to alpha map.
 
     Returns:
         str: hex color.

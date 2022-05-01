@@ -47,6 +47,7 @@ def savefig(
     dpi: int=500,
     force: bool=True,
     kws_replace_many: dict={},
+    kws_savefig: dict={},
     **kws,
     ) -> str:
     """Wrapper around `plt.savefig`.
@@ -61,7 +62,12 @@ def savefig(
         dpi (int, optional): dpi. Defaults to 500.
         force (bool, optional): overwrite output. Defaults to True.
         kws_replace_many (dict, optional): parameters provided to the `replace_many` function. Defaults to {}.
-
+    
+    Keyword Args:
+        kws: parameters provided to `to_plotp` function.
+        kws_savefig: parameters provided to `to_savefig` function.
+        kws_replace_many: parameters provided to `replace_many` function.
+    
     Returns:
         str: output path.
     """
@@ -87,7 +93,8 @@ def savefig(
     if '.' in plotp:
         plt.savefig(plotp,
                     dpi=dpi,
-                    bbox_inches=bbox_inches if (not bbox_inches is None) else 'tight' if tight_layout else None
+                    bbox_inches=bbox_inches if (not bbox_inches is None) else 'tight' if tight_layout else None,
+                    **kws_savefig
                    )
     else:
         for fmt in fmts:
@@ -98,7 +105,9 @@ def savefig(
             plt.savefig(plotp,
                         format=fmt,
                         dpi=dpi,
-                        bbox_inches=bbox_inches if (not bbox_inches is None) else 'tight' if tight_layout else None)
+                        bbox_inches=bbox_inches if (not bbox_inches is None) else 'tight' if tight_layout else None,
+                       **kws_savefig,
+                       )
     if not is_interactive_notebook():
         plt.clf();plt.close()
     return plotp
@@ -186,8 +195,8 @@ def get_plot_inputs(
         if not outd in plotp:
             plotp=f"{outd}/{plotp}"
     if df1 is None:
-        df1=read_table(f"{plotp.split('.')[0]}/df1.tsv");
-    kws_plot=update_kws_plot(kws_plot,kws_plotp=f"{plotp.split('.')[0]}/kws_plot.json")
+        df1=read_table(f"{splitext(plotp)[0]}/df1.tsv");
+    kws_plot=update_kws_plot(kws_plot,kws_plotp=f"{splitext(plotp)[0]}/kws_plot.json")
     return plotp,df1,kws_plot
 
 def log_code():
@@ -306,6 +315,7 @@ def to_plot(
     show_path_offy: float=0,
     force: bool=True,
     test: bool=False,
+    quiet:bool=True,
     **kws) -> str:
     """Save a plot.
 
@@ -320,7 +330,8 @@ def to_plot(
         show_path_offy (float, optional): y-offset for the path label. Defaults to 0.
         force (bool, optional): overwrite output. Defaults to True.
         test (bool, optional): test mode. Defaults to False.
-
+        quiet (bool, optional): quiet mode. Defaults to False.
+        
     Returns:
         str: output path.
     """
@@ -331,9 +342,13 @@ def to_plot(
                     s=plotp.split('plot/')[1] if 'plot/' in plotp else plotp,
                     ha='center')
     if df1 is None:
-        logging.warning("no data provided to_plot")
+        if not quiet:
+            logging.warning("no data provided to_plot")
         return plotp
-    outd=plotp.split('.')[0]
+    outd=plotp
+    outd=remove_extension(outd,('.png', '.pdf','.jpg','.jpeg','.svg'))
+    if test:
+        info(outd)
     df1p=f"{outd}/df1.tsv"
     paramp=f"{outd}/kws_plot.json"    
     srcp=f"{outd}/plot.py"
@@ -352,6 +367,7 @@ def to_plot(
 def read_plot(
     p: str,
     safe: bool=False,
+    test: bool= False,
     **kws
     ) -> plt.Axes:
     """Generate the plot from data, parameters and a script.
@@ -359,13 +375,15 @@ def read_plot(
     Args:
         p (str): path of the plot saved using `to_plot` function.
         safe (bool, optional): read as an image. Defaults to False.
-
+        test (bool, optional): test mode. Defaults to False.
+        
     Returns:
         plt.Axes: `plt.Axes` object.
     """
     if not safe:
         if not p.endswith('.py'):
             p=f"{abspath(dirname(p))}/{basenamenoext(p)}/plot.py"
+            if test:info(p)
             # p=f"{splitext(p)[0]}.py"
         from roux.workflow.io import import_from_file
         return import_from_file(p).plot_(**kws)

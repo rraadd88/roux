@@ -401,10 +401,10 @@ def check_inflation(df1,subset=None):
     Returns:
         ds (Series): output stats.
     """
-    if subset is None: subset=df.columns.tolist()    
+    if subset is None: subset=df1.columns.tolist()    
     if subset is None:
         subset=df1.columns.tolist()
-    return df1.loc[:,subset].apply(lambda x: (x.value_counts().values[0]/len(df1))*100)
+    return df1.loc[:,subset].apply(lambda x: (x.value_counts().values[0]/len(df1))*100).sort_values(ascending=False)
     
 ## duplicates:
 @to_rd
@@ -487,7 +487,35 @@ def assert_dense(df01,subset=None,duplicates=True,na=True,message=None):
     assert validate_dense(df01,subset=subset,duplicates=duplicates,na=na,message=message)
     return df01
 
-## mappings    
+## mappings
+@to_rd
+def classify_mappings(
+    df1: pd.DataFrame,
+    col1: str,
+    col2: str,
+    clean: bool=False,
+    ) -> pd.DataFrame:
+    """Classify mappings between items in two columns.
+    
+    Parameters:
+        df1 (DataFrame): input dataframe.
+        col1 (str): column #1.
+        col2 (str): column #2.
+        clean (str): drop columns with the counts.
+        
+    Returns:
+        (pd.DataFrame): output.
+    """    
+    df1[col2+' count']=df1.groupby(col1)[col2].transform('nunique')
+    df1[col1+' count']=df1.groupby(col2)[col1].transform('nunique')
+    df1['mapping']=df1.apply(lambda x: "1:1" if (x[col1+' count']==1) and (x[col2+' count']==1) else \
+                                        "1:m" if (x[col1+' count']==1) else \
+                                        "m:1" if (x[col2+' count']==1) else "m:m",
+                                        axis=1)
+    if clean:
+        df1=df1.drop([col1+' count',col2+' count'],axis=1)
+    return df1
+
 @to_rd        
 def check_mappings(df,
                    subset=None,
@@ -842,9 +870,12 @@ def melt_paired(df,
         if suffixes is None and not cols_index is None:
             from roux.lib.str import get_suffix
             suffixes=get_suffix(*cols_index,common=False, clean=True)
+            
         # both suffixes should not be in any column name
-        assert(not any([all([s in c for s in suffixes]) for c in df]))
+        assert not any([all([s in c for s in suffixes]) for c in df]), "both suffixes should not be in a single column name"
         assert not any([c==s for s in suffixes for c in df]), "suffix should not be the column name"
+        assert all([any([s in c for c in df]) for s in suffixes]), "both suffix should be in the column names"
+        
         cols_common=[c for c in df if not any([s in c for s in suffixes])]
         dn2df={}
         for s in suffixes:
@@ -1196,6 +1227,7 @@ def make_ids(df,cols,ids_have_equal_length,sep='--',sort=False):
     get_ids=lambda x: '--'.join(x)
     get_ids_sorted=lambda x: '--'.join(sorted(x))
     if ids_have_equal_length:
+        logging.warning("ids should be of equal character length and should not contain non-alphanumeric characters e.g. '.'")
         return np.apply_along_axis(get_ids if not sort else get_ids_sorted, 1, df.loc[:,cols].values)
     else:
         return df.loc[:,cols].agg(lambda x: sep.join(x if not sort else sorted(x)),axis=1)
@@ -1215,7 +1247,7 @@ def make_ids_sorted(df,cols,ids_have_equal_length,sep='--'):
     """    
     return make_ids(df,cols,ids_have_equal_length,sep=sep,sort=True)
     
-def get_alt_id(s1='A--B',s2='A'): 
+def get_alt_id(s1='A--B',s2='A',sep='--'): 
     """Get alternate/partner id from a paired id.
     
     Parameters:
@@ -1225,7 +1257,7 @@ def get_alt_id(s1='A--B',s2='A'):
     Returns:
         s (str): partner id.
     """    
-    return [s for s in s1.split('--') if s!=s2][0]
+    return [s for s in s1.split(sep) if s!=s2][0]
 
 @to_rd    
 def split_ids(df1,col,sep='--',prefix=None):

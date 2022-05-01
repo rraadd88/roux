@@ -73,6 +73,7 @@ def plot_crosstab(
     method: str=None,#'chi2'|fe
     confusion: bool=False,
     rename_cols: bool=True,
+    sort_cols: tuple=(True,True),    
     annot_pval: str='bottom',
     cmap: str='Reds',
     ax: plt.Axes=None,
@@ -97,12 +98,16 @@ def plot_crosstab(
         plt.Axes: `plt.Axes` object.
 
     TODOs:
-        1. Use `plot_table` function to make the plot.
+        1. Use `compare_classes` to get the stats.
     """
     if not cols is None:
         dplot=pd.crosstab(df1[cols[0]],df1[cols[1]])
     else:
         dplot=df1.copy()
+    dplot=(dplot
+        .sort_index(axis=0,ascending=sort_cols[0])
+        .sort_index(axis=1,ascending=sort_cols[1])
+          )        
     if dplot.shape!=(2,2) or method=='chi2':
         stat,pval,_,_=sc.stats.chi2_contingency(dplot)
         stat_label='${\chi}^2$'
@@ -124,7 +129,6 @@ def plot_crosstab(
                             :]
     info(stat,pval)
     # dplot=dplot.sort_index(ascending=False,axis=1).sort_index(ascending=False,axis=0)
-    
     ax=plot_table(dplot,
                     cmap=cmap,
                     ax=ax,

@@ -7,8 +7,12 @@ def perc_label(a,b=None,bracket=True):
         a=sum(a)
     return f"{(a/b)*100:.0f}%"+(f" ({num2str(a)}/{num2str(b)})" if bracket else "")
 
-def pval2annot(pval,alternative=None,alpha=None,fmt='*',#swarm=False
+def pval2annot(pval,
+               alternative=None,alpha=None,
+               fmt='*',#swarm=False
+               power=True,
                linebreak=False,
+               prefix='P',
                q=False,
               ):
     """
@@ -21,15 +25,33 @@ def pval2annot(pval,alternative=None,alpha=None,fmt='*',#swarm=False
     if pd.isnull(pval):
         annot= ''
     elif pval < 0.0001:
-        annot= "****" if fmt=='*' else f"P<\n{0.0001:.0e}" if fmt=='<' else f"P={pval:.1g}" if len(f"P={pval:.1g}")<6 else f"P=\n{pval:.1g}"  if not linebreak else f"P={pval:.1g}"
+        annot= "****" if fmt=='*' else \
+        f"P<\n{0.0001:.0e}" if fmt=='<' else \
+        f"P={pval:.1g}" if len(f"P={pval:.1g}")<6 else \
+        f"P=\n{pval:.1g}"  if not linebreak else \
+        f"P={pval:.1g}"
     elif (pval < 0.001):
-        annot= "***"  if fmt=='*' else f"P<\n{0.001:.0e}" if fmt=='<' else f"P={pval:.1g}" if len(f"P={pval:.1g}")<6 else f"P=\n{pval:.1g}" if not linebreak else f"P={pval:.1g}"
+        annot= "***"  if fmt=='*' else \
+        f"P<\n{0.001:.0e}" if fmt=='<' else \
+        f"P={pval:.1g}" if len(f"P={pval:.1g}")<6 else \
+        f"P=\n{pval:.1g}" if not linebreak else \
+        f"P={pval:.1g}"
     elif (pval < 0.01):
-        annot= "**" if fmt=='*' else f"P<\n{0.01:.0e}" if fmt=='<' else f"P={pval:.1g}" if len(f"P={pval:.1g}")<6 else f"P=\n{pval:.1g}" if not linebreak else f"P={pval:.1g}"
+        annot= "**" if fmt=='*' else \
+        f"P<\n{0.01:.0e}" if fmt=='<' else \
+        f"P={pval:.1g}" if len(f"P={pval:.1g}")<6 else \
+        f"P=\n{pval:.1g}" if not linebreak else \
+        f"P={pval:.1g}"
     elif (pval < alpha):
-        annot= "*" if fmt=='*' else f"P<\n{alpha}" if fmt=='<' else f"P={pval:.1g}" if len(f"P={pval:.1g}")<6 else f"P=\n{pval:.1g}" if not linebreak else f"P={pval:.1g}"
+        annot= "*" if fmt=='*' else \
+        f"P<\n{alpha}" if fmt=='<' else \
+        f"P={pval:.1g}" if len(f"P={pval:.1g}")<6 else \
+        f"P=\n{pval:.1g}" if not linebreak else \
+        f"P={pval:.1g}"
     else:
-        annot= "ns" if fmt=='*' else f"P=\n{pval:.0e}" if fmt=='<' else f"P={pval:.1g}" if len(f"P={pval:.1g}")<6 else f"P=\n{pval:.1g}" if not linebreak else f"P={pval:.1g}"
+        annot= "ns" if fmt=='*' else \
+        f"P=\n{pval:.0e}" if fmt=='<' else f"P={pval:.1g}" if len(f"P={pval:.1g}")<6 else f"P=\n{pval:.1g}" if not linebreak else f"P={pval:.1g}"
     annot=annot if linebreak else annot.replace('\n','')
-    annot=annot if not q else annot.replace('P','Q') 
+    if prefix!='P':
+        annot=annot.replace('P',prefix if not q else 'q')
     return annot 

@@ -185,7 +185,7 @@ def get_gmm_intersection(x,two_pdfs,means,weights,test=False):
 def cluster_1d(ds: pd.Series,
                 n_clusters: int,
                 clf_type='gmm',
-                random_state=88,
+                random_state=1,
                 test=False,
                 returns=['coff'],
                 **kws_clf) -> dict:
@@ -211,7 +211,7 @@ def cluster_1d(ds: pd.Series,
     X=x.reshape(-1,1)
     if clf_type.lower()=='gmm':
         from sklearn.mixture import GaussianMixture
-        model = GaussianMixture(n_components=n_clusters,)
+        model = GaussianMixture(n_components=n_clusters,random_state=random_state)
     elif clf_type.lower()=='kmeans':
         from sklearn.cluster import KMeans
         model=KMeans(n_clusters=n_clusters,**kws_clf).fit(X,)

@@ -1,11 +1,22 @@
+import pandas as pd
+import matplotlib.pyplot as plt
 ## TODOs: use ## stats
 
-def plot_workflow_log(dplot):
-    """
-    dplot=dparam
+def plot_workflow_log(
+    dplot: pd.DataFrame
+    ) -> plt.Axes:
+    """Plot workflow log.
+
+    Args:
+        dplot (pd.DataFrame): input data (dparam).
+
+    Returns:
+        plt.Axes: output.
+
+    TODOs:
+        1. use the statistics tagged as `## stats`. 
     """
     parameters_count_max=dplot.groupby(['function name']).agg({'parameter name input list':lambda x: len(x)+1}).max().values[0]
-    import matplotlib.pyplot as plt
     plt.figure(figsize=[parameters_count_max*1.5,#*0.3,
                         len(dplot)*0.5+2,])
     ax=plt.subplot(1,5,2)

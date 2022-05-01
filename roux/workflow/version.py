@@ -1,4 +1,12 @@
-def git_commit(repop,suffix_message=''):
+def git_commit(
+    repop: str,
+    suffix_message: str=''):
+    """Version control.
+
+    Args:
+        repop (str): path to the repository.
+        suffix_message (str, optional): add suffix to the version (commit) message. Defaults to ''.
+    """
     from git import Repo
     repo=Repo(repop,search_parent_directories=True)
     def commit_changes(repo):

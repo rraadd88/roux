@@ -171,7 +171,7 @@ def plot_enrichment(
     annot_coff_fdr: bool=False,
     kws_annot: dict=dict(
                     loc='right',
-                    annot_count_max=5,
+                    # annot_count_max=5,
                     offx3=0.15,
                     ),
     **kwargs

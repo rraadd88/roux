@@ -45,6 +45,23 @@ def basenamenoext(p):
     """
     return splitext(basename(p))[0]
 
+def remove_extension(
+    p: str,
+    exts: tuple,
+    ):
+    """Filename without the extension.
+
+    Args:
+        p (str): path.
+        exts (tuple): extensions.
+
+    Returns:
+        s (str): output.
+    """
+    while p.endswith(exts):
+        p=splitext(p)[0]
+    return p
+
 def makedirs(p: str,exist_ok=True,**kws):
     """Make directories recursively.
 

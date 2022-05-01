@@ -1,19 +1,21 @@
 # import pandas as pd
 from roux.global_imports import *
 
-
-def get_paired_sets_stats(l1: list,l2: list) -> list:
+def get_paired_sets_stats(l1: list,l2: list,test: bool=False) -> list:
     """Paired stats comparing two sets.
 
     Args:
         l1 (list): set #1.
-        l2 (list): set #2
+        l2 (list): set #2.
+        test (bool): test mode. Defaults to False.
 
     Returns:
         list: tuple (overlap, intersection, union, ratio).
     """
     if all([isinstance(l, list) for l  in [l1,l2]]):
+        if test: print(l1,l2)
         l=list(jaccard_index(l1,l2))
+        from roux.stat.diff import get_ratio_sorted
         l.append(get_ratio_sorted(len(l1),len(l2)))
         return l
 

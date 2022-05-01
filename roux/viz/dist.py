@@ -11,7 +11,9 @@ def hist_annot(
     bins: int=100,
     subset_unclassified: bool=True,
     cmap: str='hsv',
-    ylimoff: float=1.2,
+    ymin=None,
+    ymax=None,
+    ylimoff: float=1,
     ywithinoff: float=1.2,
     annotaslegend: bool=True,
     annotn: bool=True,
@@ -42,6 +44,9 @@ def hist_annot(
 
     Returns:
         plt.Axes: `plt.Axes` object.
+    
+    TODOs:
+        For scatter, use `annot_side` with `loc='top'`.
     """
     from roux.viz.ax_ import reset_legend_colors
     if not xlim is None:
@@ -60,14 +65,14 @@ def hist_annot(
     for colsubsetsi,(colsubsets,color) in enumerate(zip(colssubsets,colors)):
         subsets=[s for s in dropna(dplot[colsubsets].unique()) if not (subset_unclassified and s=='unclassified')]
         for subseti,subset in enumerate(subsets):
-            y=(ax.set_ylim()[1]-ax.set_ylim()[0])*((10-(subseti*ywithinoff+colsubsetsi))/10-0.05)+ax.set_ylim()[0]
+            y=((ax.set_ylim()[1] if ymax is None else ymax) - (ax.set_ylim()[0] if ymin is None else ymin))*((10-(subseti*ywithinoff+colsubsetsi))/10-0.05)+ax.set_ylim()[0]
             X=dplot.loc[(dplot[colsubsets]==subset),colx]
             Y=[y for i in X]
             ax.scatter(X,Y,
                        color=color,**params_scatter)
-            ax.text(max(X) if not annotaslegend else ax.get_xlim()[1],
+            ax.text((max(X) if not annotaslegend else ax.get_xlim()[1]),
                     max(Y),
-                    f" {subset}\n(n={len(X)})" if annotn else f" {subset}",
+                    f"{subset}\n(n={len(X)})" if annotn else f" {subset}",
                     ha='left',va='center')
     #     break
 #     ax=reset_legend_colors(ax)
@@ -82,8 +87,14 @@ def plot_gmm(
     weights: tuple=None,
     n_clusters: int=2,
     bins: int=20,
+    show_cutoff: bool=True,
+    show_cutoff_line: bool=True,
+    colors: list=['gray','gray','lightgray'],
+    out_coff: bool= False,
+    hist: bool=True,
     test: bool=False,
     ax: plt.Axes = None,
+    kws_axvline=dict(color='k'),
     **kws,
     ) -> plt.Axes:
     """Plot Gaussian mixture Models (GMMs).
@@ -96,11 +107,16 @@ def plot_gmm(
         weights (tuple, optional): weights of the individual distributions. Defaults to None.
         n_clusters (int, optional): number of distributions. Defaults to 2.
         bins (int, optional): bins. Defaults to 50.
+        colors (list, optional): colors of the invividual distributions and of the mixed one. Defaults to ['gray','gray','lightgray'].
+        'gray'
+        out_coff (bool,False): return the cutoff. Defaults to False.
+        hist (bool, optional): show histogram. Defaults to True.
         test (bool, optional): test mode. Defaults to False.
         ax (plt.Axes, optional): `plt.Axes` object. Defaults to None.
         
     Keyword Args:
         kws: parameters provided to the `hist` function.
+        kws_axvline: parameters provided to the `axvline` function.
 
     Returns:
         plt.Axes: `plt.Axes` object.
@@ -119,19 +135,26 @@ def plot_gmm(
         plt.figure(figsize=[2.5,2.5])
         ax=plt.subplot()
     # plot histogram
-    pd.Series(x).hist(density=True,
-                      histtype='step',
-                      bins=bins,
-                      ax=ax,
-                      **kws)
+    if hist:
+        pd.Series(x).hist(density=True,
+                          histtype='step',
+                          bins=bins,
+                          ax=ax,
+                          **kws)
     # plot fitted distributions
-    ax.plot(x,mix_pdf.ravel(), c='lightgray')
-    _=[ax.plot(x,two_pdfs[i]*weights[i], c='gray') for i in range(n_clusters)]
+    ax.plot(x,mix_pdf.ravel(), c=colors[-1])
+    for i in range(n_clusters):
+        ax.plot(x,two_pdfs[i]*weights[i], c=colors[i])
 #     ax.plot(x,two_pdfs[1]*weights[1], c='gray')
     if n_clusters==2:
-        ax.axvline(coff,color='k')
-        ax.text(coff,ax.get_ylim()[1],f"{coff:.1f}",ha='center',va='bottom')
-    return ax
+        if show_cutoff_line:
+            ax.axvline(coff,**kws_axvline)
+        if show_cutoff:
+            ax.text(coff,ax.get_ylim()[1],f"{coff:.1f}",ha='center',va='bottom')
+    if not out_coff:
+        return ax
+    else:
+        return ax,coff        
 
 def plot_normal(
     x: pd.Series,
@@ -171,12 +194,14 @@ def plot_dists(
     show_p: bool=True,
     show_n: bool=True,
     show_n_prefix: str='',
+    alternative: str='two-sided',
     offx_n: float=0,
     xlim: tuple=None,
     offx_pval: float=0.05,
     offy_pval: float=None,
     saturate_color_alpha: float=1.5,
     ax: plt.Axes = None,
+    test: bool= False,
     kws_stats: dict={},
     **kws
     ) -> plt.Axes:
@@ -200,6 +225,7 @@ def plot_dists(
         offy_pval (float, optional): y-offset for the p-value labels. Defaults to None.
         saturate_color_alpha (float, optional): saturation of the color. Defaults to 1.5.
         ax (plt.Axes, optional): `plt.Axes` object. Defaults to None.
+        test (bool, optional): test mode. Defaults to False.
         kws_stats (dict, optional): parameters provided to the stat function. Defaults to {}.
 
     Keyword Args:
@@ -228,24 +254,33 @@ def plot_dists(
         #                   alpha=0.05
                         axis=0,
                         **kws_stats,
-                         ).reset_index()
-        # df1=df1.rd.renameby_replace({f"{} ":''})
-        df2=df2.loc[(df2['subset1']==order[0]),:]
-        d1=df2.rd.to_dict(['subset2','P (MWU test)'])
+                         )
+        if df2 is None:
+            logging.error("get_stats failed.")
+            d1={}
+        else:
+            df2=df2.reset_index()
+            # df1=df1.rd.renameby_replace({f"{} ":''})
+            df2=df2.loc[(df2['subset1']==order[0]),:]
+            # print(df2)
+            d1=df2.rd.to_dict(['subset2','P (MWU test)'])
     elif (not hue is None) and (isinstance(show_p,bool) and show_p):
         from roux.stat.diff import get_stats_groupby
         df2=get_stats_groupby(df1,cols=[y],
                           colsubset=hue,
                           cols_value=[x],
-                              colindex=colindex,
+                          colindex=colindex,
                           alpha=0.05,
-                         axis=0,
-                         **kws_stats,
+                          axis=0,
+                          **kws_stats,
                          ).reset_index()
         # df1=df1.rd.renameby_replace({f"{} ":''})
-        df2=df2.loc[(df2['subset1']==hue_order[0]),:]
+        if test:
+            print(df2['subset1'])
+        # df2=df2.loc[(df2['subset1']==hue_order[1]),:]
         d1=df2.rd.to_dict([y,'P (MWU test)'])
-
+        if test:
+            print(d1)
     if ax is None:
         _,ax=plt.subplots(figsize=[2,2])
     if isinstance(kind,str):
@@ -261,7 +296,6 @@ def plot_dists(
             from roux.viz.colors import saturate_color
             kws['palette']=[saturate_color(color=c, alpha=saturate_color_alpha+0.5) for c in kws['palette']]
             # print(kws['palette'])
-        
         getattr(sns,k+"plot")(data=df1,
                     x=x,y=y,
                     hue=hue,
@@ -279,19 +313,24 @@ def plot_dists(
     d3=get_axlims(ax)
     if isinstance(show_p,(bool,dict)):
         if isinstance(show_p,bool) and show_p:
-            d1={k:pval2annot(d1[k],alternative='two-sided',fmt='<',linebreak=False) for k in d1}
+            d1={k:pval2annot(d1[k],alternative=alternative,fmt='<',linebreak=False) for k in d1}
         else:
             d1=show_p
         if offy_pval is None and hue is None:
             offy_pval=-0.5
+        else:
+            offy_pval=0            
         if isinstance(d1,dict):
             for k,s in d1.items():
+                if test:
+                    print(d1)
+                    print(d2)
+                    print(d3)
                 ax.text(d3['x']['max']+(d3['x']['len']*offx_pval),d2[k]+offy_pval,s,va='center')
     if show_n:
         df1_=df1.groupby(y).apply(lambda df: df.groupby(colindex).ngroups).to_frame('n').reset_index()
         df1_['y']=df1_[y].map(d2)
         import matplotlib.transforms as transforms
-        
         df1_.apply(lambda x: ax.text(x=1.15+offx_n,y=x['y'],
                                    s=show_n_prefix+str(x['n']),va='center',ha='right',
                                      transform=transforms.blended_transform_factory(ax.transAxes,ax.transData),
