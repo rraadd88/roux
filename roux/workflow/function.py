@@ -59,7 +59,7 @@ def get_path(
                               ' ',"f'",'f"','"',"'","(",")"],
                            '',
                           ignore=True)
-        if test:info(s)
+        # if test:info(s)
         if any([s.startswith(s_) for s_ in prefixes]):
             s1=s
         else:
@@ -160,7 +160,7 @@ def get_step(
     for i,s in enumerate(l):
         if (s.startswith('#') and not s.startswith('# In[')) and get_docs:
             if i==0:
-                info(s)
+                # info(s)
                 s='# '+s.split(sep_step.split('## ')[0]+' ')[1][0].upper()+s.split(sep_step.split('## ')[0]+' ')[1][1:]+'.'
             docs.append(s)
         else:
@@ -265,6 +265,8 @@ def to_task(
              pyp=pyp.replace('/lib/','/.lib/'),
              force=force)
     l0=get_lines(notebookp, keep_comments=True)
+    # print(l0)
+    # info(sep_step,sep_step_end)
     if not path_prefix is None:
         l0=[replace_many(s,{'data/':'../data/'},ignore=True) for s in l0]
     taskn=basenamenoext(pyp)
@@ -310,7 +312,8 @@ def to_task(
     df0.index.name='step #'
     df0=df0.reset_index()
     if len(df0)==0 and not validate:
-        if verbose: logging.warning('no functions found')
+        # if verbose: 
+        logging.warning('no functions found')
         return None,None 
     if not test:
         makedirs(pyp)

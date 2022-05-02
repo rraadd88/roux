@@ -1,3 +1,4 @@
+from pathlib import Path
 from roux.lib.sys import logging,exists,dirname,basename,makedirs,basenamenoext,info,abspath
 from roux.lib.io import read_ps
 import pandas as pd
@@ -48,6 +49,7 @@ def get_scripts(
     # print(df1.shape)
     from roux.workflow.function import to_task
     if not fast or df1['notebook path'].nunique()<5:
+        # df2=df1['notebook path'].apply(lambda x: print(x,force,not fast,notebook_suffix,kws))
         df2=df1['notebook path'].apply(lambda x: to_task(x,force=force,verbose=not fast,
                                                          notebook_suffix=notebook_suffix,
                                                          **kws))
@@ -74,13 +76,13 @@ def get_scripts(
     # if test:print(d1)
     df2['output paths']=df2['output paths'].apply(lambda x: f",\n{tab}{tab}".join(flatten(x)) if isinstance(x,list) else '')
     df2=df2.reset_index(drop=True)
-    assert len(df2)!=0, 'no functions found'    
+    assert len(df2)!=0, 'no functions found'
     return df2
 
 def to_scripts(
     # packagen: str,
     packagep: str,
-    notebooksdp: str=None,
+    notebooksdp: str,
     validate: bool=False,
     ps: list=None,
     notebook_prefix: str='\d{2}',
@@ -124,11 +126,13 @@ def to_scripts(
         1. For version control, use https://github.com/jupyterlab/jupyterlab-git.
     """
     packagen=basename(dirname(abspath(".")))
-    packagescriptsp=f"{packagep}/{packagen}"
+    # packagescriptsp=f"{packagep}/{packagen}"
+    packagescriptsp=notebooksdp
     df_outp=f'{packagescriptsp}/.workflow/info.tsv'
     makedirs(df_outp)
-    if notebooksdp is None:
-        notebooksdp=f'{packagescriptsp}/notebooks'
+    # if notebooksdp is None:
+    #     notebooksdp=f'{packagescriptsp}/notebooks'
+    # info(packagescriptsp,notebooksdp)
     if scripts:
         # get all the notebooks
         if not ps is None:
@@ -148,6 +152,7 @@ def to_scripts(
         df2=get_scripts(ps,force=force,
                         notebook_prefix=notebook_prefix,
                         notebook_suffix=notebook_suffix,
+                        sep_step=sep_step,
                         **kws)
         if test: info(df2.shape)
         if not make_all and exists(df_outp):
@@ -158,6 +163,9 @@ def to_scripts(
             #     logging.warning('likely incomplete workflow')
         df2.to_csv(df_outp,sep='\t')
         if test: info(df_outp)
+        ## make __init__.py if not exists
+        initp=Path(f'{notebooksdp}/lib/__init__.py')
+        if not initp.exists(): initp.touch()
     if workflow or (ps is None):
         ## workflow inferred
         if not 'df2' in globals():
