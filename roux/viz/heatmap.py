@@ -72,7 +72,7 @@ def plot_crosstab(
     alpha: float=0.05,
     method: str=None,#'chi2'|fe
     confusion: bool=False,
-    rename_cols: bool=True,
+    rename_cols: bool=False,
     sort_cols: tuple=(True,True),    
     annot_pval: str='bottom',
     cmap: str='Reds',
@@ -148,5 +148,5 @@ def plot_crosstab(
                  ax=ax)
     if confusion:    
         ax=annot_confusion_matrix(dplot,ax=ax,
-                          off=0.5)
+                                      off=0.5)
     return ax

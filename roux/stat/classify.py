@@ -456,10 +456,11 @@ def run_grid_search(df: pd.DataFrame,
     if not outp is None:
         for k in dn2df:
             if isinstance(dn2df[k],dict):
-                dn2df[k]=dellevelcol(pd.concat(dn2df[k],axis=0,names=['estimator name']).reset_index())
+                dn2df[k]=pd.concat(dn2df[k],axis=0,names=['estimator name']).reset_index(0)
+            if 'permutation #' in dn2df[k]:
+                dn2df[k]['permutation #']=dn2df[k]['permutation #'].astype(int)
             to_table(dn2df[k],f'{outp}/{k}.pqt')
-        df_=plot_metrics(outd=outp,
-                      plot=True)
+        df_=plot_metrics(outd=outp,plot=True)
         to_table(df_,f'{outp}/metrics.pqt')
     else:
         return estimatorn2grid_search
@@ -621,7 +622,7 @@ def get_feature_importances(estimatorn2grid_search: dict,
             var_name='permutation #',
             value_name='importance',
            )
-    df2=dellevelcol(pd.concat(dn2df,axis=0,names=['estimator name']).reset_index())
+    df2=pd.concat(dn2df,axis=0,names=['estimator name']).reset_index(0)
     from roux.stat.transform import rescale
     def apply_(df):
         df['importance rescaled']=rescale(df['importance'])
@@ -664,7 +665,7 @@ def get_partial_dependence(estimatorn2grid_search: dict,
                                     'feature value':t[1][0]})
         df1=pd.concat(dn2df,axis=0,names=['estimator name']).reset_index()
         df1['feature name']=featuren
-        return dellevelcol(df1)
+        return df1.rd.clean()
     df4=df3.groupby('feature #',as_index=False).progress_apply(lambda df:apply_(featuren=df.iloc[0,:]['feature name'],
                                                                                 featurei=df.iloc[0,:]['feature #'],
                                                                                 estimatorn2grid_search=estimatorn2grid_search))

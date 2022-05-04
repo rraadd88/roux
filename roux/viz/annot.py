@@ -71,11 +71,12 @@ def annot_side(
     df1: pd.DataFrame,
     colx: str,
     coly: str,
-    cols: str,
+    cols: str=None,
     hue: str=None,
     loc: str='right',
     scatter=False,
     lines=True,
+    text=False,
     invert_xaxis: bool=False, 
     offx3: float=0.15,
     offymin: float=0.1,
@@ -149,16 +150,17 @@ def annot_side(
                         **kws_scatter)
         
     ## text
-    df1.apply(lambda x: ax.text(x3 if loc!='top' else x['y'],
-                                x['y'] if loc!='top' else x3,
-                                linebreaker(x[cols],break_pt=break_pt,),
-                                ha='right' if loc=='left' else 'center' if loc=='top' else 'left',
-                                va='bottom',
-                                color=x[hue] if not hue is None else 'k',
-                                # **{k:v for k,v in kws_text.items() if not (k==color and not hue is None)},
-                                rotation=0  if loc!='top' else 90,
-                                **kws_text,
-                              zorder=2),axis=1)
+    if text:
+        df1.apply(lambda x: ax.text(x3 if loc!='top' else x['y'],
+                                    x['y'] if loc!='top' else x3,
+                                    linebreaker(x[cols],break_pt=break_pt,),
+                                    ha='right' if loc=='left' else 'center' if loc=='top' else 'left',
+                                    va='bottom',
+                                    color=x[hue] if not hue is None else 'k',
+                                    # **{k:v for k,v in kws_text.items() if not (k==color and not hue is None)},
+                                    rotation=0  if loc!='top' else 90,
+                                    **kws_text,
+                                  zorder=2),axis=1)
     # line #2
     if lines:
         if loc!='top':
