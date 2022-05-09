@@ -140,3 +140,25 @@ def merge_dfs(dfs,
     df3=reduce(lambda df1,df2: pd.merge(df1,df2,**kws), dfs)
     logging.info(f"merge_dfs: shape changed to   : {df3.shape}")
     return df3
+
+def compare_rows(df1,df2,
+                 test=False,
+                 **kws,):
+    cols=list(set(df1.columns.tolist()) & set(df1.columns.tolist()))
+    if test: info(cols)
+    cols_sort=list(set(df1.select_dtypes(object).columns.tolist()) & set(cols))
+    if test: info(cols_sort)
+    if len(df1)==len(df2):
+        return df1.loc[:,cols].sort_values(cols_sort).reset_index(drop=True).compare(
+        df2.loc[:,cols].sort_values(cols_sort).reset_index(drop=True),
+        keep_equal=True,
+            **kws
+        )#.rd.assert_no_na()
+    else:
+        logging.warning(f'unequal lengths: {len(df1)}!={len(df2)}')
+        df_=df1.loc[:,cols].merge(right=df1.loc[:,cols],
+                                    on=cols_sort,
+                                    how='outer',
+                                    indicator=True)
+        logging.info(df_['_merge'].value_counts())
+        return df_.loc[(df_['_merge']!='both'),:]

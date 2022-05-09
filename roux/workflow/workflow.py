@@ -39,25 +39,34 @@ def get_scripts(
     if test: info(d1)
     assert len(d1)!=0, f'no notebooks with the {notebook_prefix} prefix and {notebook_suffix} suffix found'
     if notebook_suffix!='':
-        d1={p.split(notebook_suffix)[0]:v for p,v in d1.items()}
+        ## remove suffix
+        # d1={p.split(notebook_suffix)[0]:v for p,v in d1.items()}
+        d1={re.split(notebook_suffix, p)[0].rstrip('_'):v for p,v in d1.items()}
+    # print(d1.keys())
+    # brk
     df1=pd.DataFrame(pd.Series(d1,name='notebook path'))
-    df1.index.name='step name'
+    df1.index.name='task name'
     df1=df1.sort_index().reset_index()
-    if not df1['step name'].apply(lambda x: x[:1].isdigit()).all():
+    if not df1['task name'].apply(lambda x: x[:1].isdigit()).all():
         logging.warning('notebooks are not numbered')
     # df1=df1.loc[(df1['notebook path'].apply(lambda x: (notebook_suffix in x))),:]
     # print(df1.shape)
     from roux.workflow.function import to_task
     if not fast or df1['notebook path'].nunique()<5:
         # df2=df1['notebook path'].apply(lambda x: print(x,force,not fast,notebook_suffix,kws))
-        df2=df1['notebook path'].apply(lambda x: to_task(x,force=force,verbose=not fast,
-                                                         notebook_suffix=notebook_suffix,
-                                                         **kws))
+        df2=df1.apply(lambda x: to_task(notebookp=x['notebook path'],
+                                        task=x['task name'],
+                                         force=force,verbose=not fast,
+                                         notebook_suffix=notebook_suffix,
+                                         **kws),
+                                         axis=1)
     else:
         from roux.lib.df import get_name
         from pandarallel import pandarallel
         pandarallel.initialize(nb_workers=cores,progress_bar=True)
-        df2=df1.groupby(['notebook path']).parallel_apply(lambda x: to_task(get_name(x,['notebook path'])[0],
+        df2=df1.groupby(['notebook path','task name']).parallel_apply(lambda x: to_task(
+                                                                            notebookp=get_name(x,['notebook path'])[0],
+                                                                            task=get_name(x,['task name'])[0],
                                                                             force=force,verbose=not fast,
                                                                             notebook_suffix=notebook_suffix,
                                                                             **kws))

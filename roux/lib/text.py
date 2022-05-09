@@ -12,18 +12,8 @@ def read(p):
     with open(p,'r') as f:
         s=f.read()
     return s
-def read_lines(p):
-    """Read the lines in the file.
 
-    Args:
-        p (str): path.
-
-    Returns:
-        l (list): list.
-    """
-    with open(p,'r') as f:
-        s=f.readlines()
-    return s
+from roux.lib.set import read_lines
 
 def get_header(path: str,comment='#',lineno=None):
     """Get the header of a file.

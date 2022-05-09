@@ -1316,6 +1316,10 @@ def log_apply(df, fun,
               validate_equal_length=False,
               validate_equal_width=False,
               validate_equal_shape=False,
+              validate_no_decrease_length=False,
+              validate_no_decrease_width=False,
+              validate_no_increase_length=False,
+              validate_no_increase_width=False,
               *args, **kwargs):
     """Report (log) the changes in the shapes of the dataframe before and after an operation/s.
     
@@ -1341,9 +1345,13 @@ def log_apply(df, fun,
         df = fun(df,*args, **kwargs)
     d1['to']=df.shape
     log_shape_change(d1,fun=fun)
-    if validate_equal_length: assert d1['to'][0]==d1['from'][0]
-    if validate_equal_width: assert d1['to'][1]==d1['from'][1]
-    if validate_equal_shape: assert d1['to']==d1['from']
+    if validate_equal_length: assert d1["from"][0]==d1["to"][0], (d1["from"][0],d1["to"][0])
+    if validate_equal_width: assert d1["from"][1]==d1["to"][1], (d1["from"][1],d1["to"][1])
+    if validate_no_decrease_length: assert d1["from"][0]<=d1["to"][0], (d1["from"][0],d1["to"][0])
+    if validate_no_decrease_width: assert d1["from"][1]<=d1["to"][1], (d1["from"][1],d1["to"][1])
+    if validate_no_increase_length: assert d1["from"][0]>=d1["to"][0], (d1["from"][0],d1["to"][0])
+    if validate_no_increase_width: assert d1["from"][1]>=d1["to"][1], (d1["from"][1],d1["to"][1])
+    if validate_equal_shape: assert d1["from"]==d1["to"], (d1["from"],d1["to"])
     return df
 
 @pd.api.extensions.register_dataframe_accessor("log")

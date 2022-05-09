@@ -226,6 +226,7 @@ def get_step(
 
 def to_task(
     notebookp,
+    task=None,
     sep_step: str='## step',
     sep_step_end: str='## tests',
     notebook_suffix: str='_v',
@@ -254,9 +255,11 @@ def to_task(
         raise ValueError(f"{sep_step} should start with '## '")
     # from roux.lib.str import removesuffix
     if notebook_suffix!='':
-        pyp=f"{dirname(notebookp)}/lib/task{basenamenoext(notebookp).split(notebook_suffix)[0]}.py"
+        pyp=f"{dirname(notebookp)}/lib/task{basenamenoext(notebookp).split(notebook_suffix)[0] if task is None else task}.py"
     else:
-        pyp=f"{dirname(notebookp)}/lib/task{basenamenoext(notebookp)}.py"        
+        pyp=f"{dirname(notebookp)}/lib/task{basenamenoext(notebookp) if task is None else task}.py"
+    # info(notebookp,pyp)
+    # brk
     if exists(pyp) and not force and not test: return 
     if verbose: info(basename(notebookp))
     from roux.workflow.io import to_py, get_lines

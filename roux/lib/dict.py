@@ -147,10 +147,10 @@ def read_dict(p,fmt='',**kws):
             print(logging.error(p))
 #         return read_json(p,**kws)    
     elif p.endswith('.pickle'):
-        d = read_pickle(p,**kws)
+        return read_pickle(p,**kws)
     elif p.endswith('.joblib'):
         import joblib
-        d=joblib.load(p,**kws)
+        return joblib.load(p,**kws)
     else:
         logging.error(f'supported extensions: .yml .yaml .json .pickle .joblib')
         

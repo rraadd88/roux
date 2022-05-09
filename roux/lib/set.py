@@ -25,6 +25,21 @@ def to_list(l1,p):
         f.write('\n'.join(l1))
     return p
 
+def read_list(p):
+    """Read the lines in the file.
+
+    Args:
+        p (str): path.
+
+    Returns:
+        l (list): list.
+    """
+    with open(p,'r') as f:
+        s=f.readlines()
+    return s
+# alias to be deprecated
+read_lines=read_list
+
 from functools import reduce
 def union(l):
     """Union of lists.

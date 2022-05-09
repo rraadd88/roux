@@ -246,3 +246,33 @@ def to_workflow(
                 +'\n'.join(df2['rule code'].dropna().tolist())\
                )
     return workflowp
+
+def create_workflow_report(
+    workflowp: str,
+    env: str,
+    ) -> int:
+    """
+    Create report for the workflow run.
+
+    Parameters:
+        workflowp (str): path of the workflow file (`snakemake`).
+        env (str): name of the conda virtual environment where required the workflow dependency is available i.e. `snakemake`.
+    """
+    from pathlib import Path
+    workflowdp=str(Path(workflowp).absolute().with_suffix(''))+'/'
+    ## create a template file for the report
+    report_templatep=Path(f"{workflowdp}/report_template.rst")
+    if not report_templatep.exists():
+        report_templatep.parents[0].mkdir(parents=True, exist_ok=True)
+        report_templatep.touch()
+
+    from roux.lib.sys import runbash
+    runbash(f"snakemake --snakefile {workflowp} --rulegraph > {workflowdp}/workflow.dot;sed -i '/digraph/,$!d' {workflowdp}/workflow.dot",env=env)
+    
+    ## format the flow chart
+    from roux.lib.set import read_list,to_list
+    to_list([s.replace('task','').replace('_step','\n') for s in read_list(f'{workflowdp}/workflow.dot')],
+            f'{workflowdp}/workflow.dot')
+    
+    runbash(f"dot -Tpng {workflowdp}/workflow.dot > {workflowdp}/workflow.png",env=env)
+    runbash(f"snakemake -s workflow.py --report {workflowdp}/report.html",env=env)

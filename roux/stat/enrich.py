@@ -51,7 +51,7 @@ def get_enrichment(df1: pd.DataFrame,
                          description=name,
                          gene_sets=df2.rd.to_dict([colref,colid]),
                          background=background, # or the number of genes, e.g 20000
-                         outdir=f'{outd}/{name}',
+                         outdir=get_path(f'{outd}/{name}'),
                          cutoff=cutoff, # only used for plotting.
                          verbose=verbose,
                          no_plot=no_plot,
@@ -77,7 +77,7 @@ def get_enrichment(df1: pd.DataFrame,
         logging.error("df3[f'{colid}s overlap'].max()<2 # can not run prerank")
         return df3
     with tempfile.TemporaryDirectory() as p:
-        outd=outd if not outd is None else p    
+        outd=outd if not outd is None else p
         o2 = gp.prerank(rnk=df1.loc[:,[colid,colrank]],
                          gene_sets=df2.rd.to_dict([colref,colid]),
                          min_size=2,
@@ -85,7 +85,7 @@ def get_enrichment(df1: pd.DataFrame,
                          processes=1,
                          permutation_num=permutation_num, # reduce number to speed up testing
                          ascending=False, # look for high number 
-                         outdir=f'{outd}/{name}',
+                         outdir=get_path(f'{outd}/{name}'),
                          pheno_pos='high',
                          pheno_neg='low',
                          format='png',
@@ -94,18 +94,21 @@ def get_enrichment(df1: pd.DataFrame,
                         graph_num=1,
                         **kws_prerank,
                        )
+        to_dict({'prerank':o2},
+               f'{outd}/{name}/prerank.joblib')
         df4=o2.res2d.reset_index()
 #     es	nes	pval	fdr	geneset_size	matched_size	genes	ledge_genes
-    df4=df4.rename(columns={'Term':colref,
-                            'es':'enrichment score',
-                            'nes':'normalized enrichment score', 
-                             'pval':'P (GSEA test)',
-                            'fdr':'FDR (GSEA test)',
-                            'matched_size':f"{colid}s overlap",
-                            'geneset_size':f"{colid}s per {colref}",
-                             'ledge_genes':f'{colid}s leading edge',
-                           },
-                   errors='raise')
+    df4=df4.rename(columns={
+        'Term':colref,
+        'es':'enrichment score',
+        'nes':'normalized enrichment score', 
+        'pval':'P (GSEA test)',
+        'fdr':'FDR (GSEA test)',
+        'matched_size':f"{colid}s overlap",
+        'geneset_size':f"{colid}s per {colref}",
+        'ledge_genes':f'{colid}s leading edge',
+        },
+        errors='raise')
     df4['overlap %']=df4.apply(lambda x: (x[f"{colid}s overlap"]/x[f"{colid}s per {colref}"])*100,axis=1)
     df4=df4.drop(['genes',],axis=1)
     info('preraked: '+perc_label(sum(df4['P (GSEA test)']<=0.05),len(df4)))

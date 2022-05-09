@@ -377,6 +377,7 @@ def read_table(p,
         return read_tables(ps,params=params,
                                filterby_time=filterby_time,
                                tables=len(ps),
+                               verbose=verbose,
                                **kws_read_tables)
     elif isinstance(p,str):
         ## read paths
@@ -462,6 +463,7 @@ def apply_on_paths(ps,func,
 #                    log=True,
                    dbug=False,
                    test1=False,
+                   verbose=True,
                    kws_read_table={},
                    **kws,
                   ):
@@ -507,6 +509,7 @@ def apply_on_paths(ps,func,
                     replaces_outp=None,
                     params={},
                     dbug=False,
+                    verbose=True,
                     **kws_read_table,
                    ):
         p=df.iloc[0,:]['path']
@@ -523,7 +526,7 @@ def apply_on_paths(ps,func,
             else:
                 return p,
         else:
-            df=read_table(p,params=params,**kws_read_table)
+            df=read_table(p,params=params,verbose=verbose,**kws_read_table)
             if not filter_rows is None:
                 df=df.rd.filter_rows(filter_rows)            
             return df,
@@ -531,7 +534,7 @@ def apply_on_paths(ps,func,
     read_path=inspect.getfullargspec(func).args[0]=='p'
     save_table=(not replaces_outp is None) and ('outp' in inspect.getfullargspec(func).args)
     if not replaces_index is None: drop_index=False
-    ps=read_ps(ps)
+    ps=read_ps(ps,test=verbose)
     if len(ps)==0:
         logging.error('no paths found')
         return
@@ -564,6 +567,7 @@ def apply_on_paths(ps,func,
                                                  filter_rows=filter_rows,
                                                  params=params,
                                                  dbug=dbug,
+                                               verbose=verbose,
                                               **kws_read_table,)),
                                  **kws))
     if isinstance(df2,pd.Series):
