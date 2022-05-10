@@ -1,4 +1,5 @@
-from roux.global_imports import *
+import logging
+import pandas as pd
 
 ## metadata to process the data
 def exclude_items(
@@ -17,5 +18,6 @@ def exclude_items(
     for c in df1:
         if c in metadata['exclude']:
             info(c)
-            df1=df1.loc[~(df1[c].isin(metadata['exclude'][c])),:].log(c)
+            df1=df1.loc[~(df1[c].isin(metadata['exclude'][c])),:]
+            logging.info(f"c:{df1[c].nunique()}")
     return df1

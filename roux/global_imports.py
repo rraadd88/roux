@@ -83,21 +83,21 @@ plt.rc('axes', unicode_minus=False)
 plt.rcParams['axes.labelcolor'] = 'k'
 sns.set_context('notebook') # paper < notebook < talk < poster
 from roux.viz.figure import *
-from roux.viz.io import *
+from roux.viz.io import log_code,get_plot_inputs#*
 from roux.viz.ax_ import *
 
 from tqdm import tqdm#,notebook
 # from roux.lib.sys import is_interactive_notebook
 if not is_interactive_notebook:
     from IPython import get_ipython
-    ## display vector graphics in jupyter
-    if not get_ipython() is None:
-        get_ipython().run_line_magic('config', "InlineBackend.figure_formats = ['svg']")
     logging.info("log_notebookp=f'log_notebook.log';open(log_notebookp, 'w').close();get_ipython().run_line_magic('logstart','{log_notebookp} over')")
     tqdm.pandas()
 else:
     from tqdm import notebook
     notebook.tqdm().pandas()
+    ## display vector graphics in jupyter
+    if not get_ipython() is None:
+        get_ipython().run_line_magic('config', "InlineBackend.figure_formats = ['svg']")
 # from tqdm.autonotebook import tqdm
 # tqdm.pandas()
 

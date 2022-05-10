@@ -10,7 +10,7 @@
 # reference_assemblies={
 #     'R64-1-1': (92, 92),
 # }),release=92)
-from roux.global_imports import *
+from roux.lib.df import *
 import numpy as np
 import pandas as pd
 import logging
