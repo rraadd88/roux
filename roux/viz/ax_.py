@@ -379,7 +379,7 @@ def append_legends(
     h1, l1 = ax.get_legend_handles_labels()
     ax.legend(handles=h1+handles,
               labels=l1+labels,
-              **params_legend)
+              **kws)
     return ax
 
 ## legend related stuff: also includes colormaps

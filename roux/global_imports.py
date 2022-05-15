@@ -98,8 +98,8 @@ if not is_interactive_notebook:
 else:
     from tqdm import notebook
     notebook.tqdm().pandas()
-# from tqdm.autonotebook import tqdm
-# tqdm.pandas()
+#from tqdm.autonotebook import tqdm
+#tqdm.pandas()
 
 from pandarallel import pandarallel
 pandarallel.initialize(nb_workers=6,progress_bar=True)

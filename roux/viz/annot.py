@@ -184,8 +184,45 @@ def annot_side(
             )
     return ax
 
-# variance
+def annot_corners(
+    ax : plt.Axes,
+    df1 : pd.DataFrame,
+    colx : str,
+    coly : str,
+    coltext : str,
+    off : float=0.1,
+    **kws,
+    ) -> plt.Axes:
+    """
+    Annotate points above and below the diagonal.
+    """
+    df1['diff']=df1[coly]-df1[colx]
+    # above diagonal
+    df1['loc']=df1['diff'].apply(lambda x: 'above' if x>0 else 'below')
+    from roux.viz.ax_ import get_axlims
+    axlims=get_axlims(ax=ax)
+    for loc,df1_ in df1.groupby('loc'):
+        df1_=df1_.sort_values([colx,coly])        
+        offx=axlims['x']['len']*off
+        offy=axlims['y']['len']*off
+        # upper
+        df1_['x text' if loc=='above' else 'y text']=np.linspace(axlims['x' if loc=='above' else 'y']['min']+offx,
+                                (axlims['x' if loc=='above' else 'y']['min']+axlims['x' if loc=='above' else 'y']['len']*0.5)-offx,
+                                len(df1_))
+        df1_['y text' if loc=='above' else 'x text']=np.linspace(
+                                (axlims['y' if loc=='above' else 'x']['min']+axlims['y' if loc=='above' else 'x']['len']*0.5)+offy,
+                                axlims['y' if loc=='above' else 'x']['max']-offy,
+                                len(df1_))
+        df1_.apply(lambda x: ax.annotate(s=x[coltext], 
+                                        xytext=(x['x text'],x['y text']), 
+                                        xy=(x[colx],x[coly]), 
+                                        va='center',
+                                        ha='center',
+                                         **kws,
+                                        ),axis=1)
+    return ax
 
+# variance
 from matplotlib.patches import Ellipse
 import matplotlib.transforms as transforms
 def confidence_ellipse(x, y, ax, n_std=3.0, facecolor='none', **kwargs):

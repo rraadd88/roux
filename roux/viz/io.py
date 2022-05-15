@@ -285,6 +285,16 @@ def to_script(
 
     Returns:
         str: path of the script.
+        
+    TODOs:
+        1. Compatible with names of the input dataframes other that `df1`.
+            1. Get the variable name of the dataframe
+            
+            def get_df_name(df):
+                name =[x for x in globals() if globals()[x] is df and not x.startswith('-')][0]
+                return name
+            
+            2. Replace `df1` with the variable name of the dataframe.
     """
     lines=get_lines(**kws)
     if lines is None: return
