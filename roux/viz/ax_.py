@@ -278,9 +278,20 @@ def get_axlimsby_data(
 
 def split_ticklabels(
     ax: plt.Axes,
-    sep: str=' '
+    axis='x',
+    grouped=False,
+    group_prefix=None,
+    group_loc='left',
+    group_pad=0.02,
+    group_colors=None,
+    group_alpha=0.5,
+    show_group_line=True,
+    show_group_span=True,
+    sep: str='-',
+    pad_major=6,
+    **kws,
     ) -> plt.Axes:
-    """Split ticklabels.
+    """Split ticklabels into major and minor. Two minor ticks are created per major tick. 
 
     Args:
         ax (plt.Axes): `plt.Axes` object.
@@ -289,30 +300,72 @@ def split_ticklabels(
     Returns:
         plt.Axes: `plt.Axes` object.
     """
-    xticklabels=ax.get_xticklabels()
-    xticklabels_major=np.unique([s.get_text().split(sep)[0] for s in ax.get_xticklabels()])
-    xticklabels_minor=[s.get_text().split(sep)[1] for s in ax.get_xticklabels()]
+    ticklabels=getattr(ax,f'get_{axis}ticklabels')()
+    import pandas as pd
+    if not grouped:
+        if axis=='y':logging.warning(f'axis={axis} is not tested.')        
+        ticklabels_major=pd.unique(['\u2014\n'+s.get_text().split(sep)[0] for s in ticklabels])
+        ticklabels_minor=[s.get_text().split(sep)[1] for s in ticklabels]
 
-    xticks_minor=ax.get_xticks()
-    xticks_major=xticks_minor.reshape(int(len(xticks_minor)/2),2).mean(axis=1)
-    _=ax.set_xticks( xticks_major, minor=False )
-    _=ax.set_xticks( xticks_minor, minor=True )
-    ax.set_xticklabels(xticklabels_minor,minor=True,rotation=90)
-    ax.set_xticklabels(xticklabels_major,minor=False,rotation=90)
-
-    yticklabels=ax.get_yticklabels()
-    yticklabels_major=np.unique([s.get_text().split(sep)[0] for s in ax.get_yticklabels()])
-    yticklabels_minor=[s.get_text().split(sep)[1] for s in ax.get_yticklabels()]
-
-    yticks_minor=ax.get_yticks()
-    yticks_major=yticks_minor.reshape(int(len(yticks_minor)/2),2).mean(axis=1)
-    _=ax.set_yticks( yticks_major, minor=False )
-    _=ax.set_yticks( yticks_minor, minor=True )
-    ax.set_yticklabels(yticklabels_minor,minor=True,rotation=0)
-    ax.set_yticklabels(yticklabels_major,minor=False,rotation=0)
-
-    ax.tick_params(axis='both', which='minor', pad=0)
-    ax.tick_params(axis='both', which='major', pad=15)
+        ticks_minor=getattr(ax,f'get_{axis}ticks')()
+        ticks_major=ticks_minor.reshape(int(len(ticks_minor)/2),2).mean(axis=1)
+        _=getattr(ax,f'set_{axis}ticks')(ticks_major, minor=False)
+        getattr(ax,f'set_{axis}ticklabels')(ticklabels_major,minor=False,**kws,)
+        _=ax.set_xticks( ticks_minor, minor=True )
+        getattr(ax,f'set_{axis}ticklabels')(ticklabels_minor,minor=True,**kws,)
+        ax.tick_params(axis=axis, which='minor', bottom=True,pad=0)
+        ax.tick_params(axis=axis, which='major', bottom=False,pad=pad_major)
+    else:
+        if axis=='x':logging.warning(f'axis={axis} is not tested.')
+        from roux.lib.df import dict2df
+        df0_=dict2df(get_ticklabel2position(ax=ax,axis=axis),
+                   colkey=axis+'ticklabel',colvalue=axis)
+        df0_[axis+'ticklabel major']=df0_[axis+'ticklabel'].str.split('-',1,expand=True)[0]
+        df0_[axis+'ticklabel minor']=df0_[axis+'ticklabel'].str.split('-',1,expand=True)[1]
+        df_=(df0_
+        .groupby(axis+'ticklabel major')
+        .agg({axis:[min,max,len],})
+        .rd.flatten_columns()
+        )
+        axlims=get_axlims(ax)
+        if group_loc=='left':
+            group_x=axlims[axis]['min']-(axlims[axis]['len']*group_pad)
+            group_xlabel=axlims[axis]['min']-(axlims[axis]['len']*group_pad+0.1)
+        elif group_loc=='right':
+            group_x=axlims[axis]['max']+(axlims[axis]['len']*group_pad)
+            group_xlabel=axlims[axis]['max']+(axlims[axis]['len']*group_pad+0.1)
+        if show_group_span:
+            df_.apply(lambda x: ax.axhspan(
+                       xmin=(group_x/axlims[axis]['len'])*0.5,
+                       xmax=axlims[axis]['min'], 
+                       ymin=x[axis+' min']-0.5,
+                       ymax=x[axis+' max']+0.5, 
+                       transform="axes",
+                       clip_on=False,
+                       zorder=0,
+                       color=None if group_colors is None else group_colors[x.name],
+                       alpha=group_alpha,
+                      ),
+                      axis=1)
+        if show_group_line:
+            df_.apply(lambda x: ax.plot([group_x,group_x],
+                                        [x[axis+' min']-0.2,x[axis+' max']+0.2],
+                                        clip_on=False,
+                                        lw=0.5,
+                                        color='k',
+                                        # transform="axes",
+                                       ),axis=1)
+        from roux.lib.set import get_alt
+        df_.apply(lambda x: ax.text(group_xlabel,
+                                    np.mean([x[axis+' min'],x[axis+' max']]),
+                                   (group_prefix+'\n' if not group_prefix is None else '')+f"{x.name}".replace(' ','\n')+'\n'+f"(n={int(x[axis+' len'])})",
+                                    color='k',
+                                    ha=get_alt(['left','right'],group_loc),
+                                    va='center',
+                                    # transform="axes",
+                                   ),axis=1)
+        getattr(ax,f'set_{axis}ticklabels')([s.get_text().split(sep,1)[1] for s in ticklabels],
+                                            **kws,)        
     return ax
 
 def set_grids(
@@ -592,7 +645,7 @@ def set_colorbar(
                  label=label,orientation=orientation,)
     return fig
 
-def set_label_colorbar(
+def set_colorbar_label(
     ax: plt.Axes,
     label: str
     ) -> plt.Axes:

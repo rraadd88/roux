@@ -242,7 +242,7 @@ def clean_columns(df):
 def clean(df,cols=[],
           drop_constants=False,
           drop_unnamed=True,
-          verb=True,
+          verb=False,
          ):
     """Deletes potentially temporary columns.
 
