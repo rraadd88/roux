@@ -16,5 +16,26 @@ docs
 deps
 var
 _*
+## testing
 test/*
 !test/test_*.py
+.tox/
+## examples files
+examples/workflow/*
+examples/.lib/*
+examples/.pybiomart.sqlite
+examples/.snakemake/*
+examples/.workflow/*
+examples/data/*
+examples/lib/*
+examples/log_notebook.log
+examples/old/*
+examples/plot/*
+examples/test/*
+examples/tests/*
+examples/workflow.py
+examples/workflow/report.html
+examples/workflow/report_template.rst
+examples/workflow/workflow.dot
+log_notebook.log
+tests/output/*

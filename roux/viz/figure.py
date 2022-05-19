@@ -1,4 +1,4 @@
-from roux.global_imports import *
+import matplotlib.pyplot as plt
 
 ## set subplots
 def get_subplots(
