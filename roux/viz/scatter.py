@@ -178,9 +178,9 @@ def plot_scatter(
             leg=ax.legend(loc=loc,bbox_to_anchor=bbox_to_anchor,title=colz if title is None else title)
             if '\n' in title:
                 leg._legend_box.align = "center"
-    from roux.viz.ax_ import set_label_colorbar
+    from roux.viz.ax_ import set_colorbar_label
 #     print(colz)
-    ax=set_label_colorbar(ax,colz if label_colorbar is None else label_colorbar)
+    ax=set_colorbar_label(ax,colz if label_colorbar is None else label_colorbar)
     from roux.viz.ax_ import set_label
     if 'mlr' in stat_method:
         from roux.lib.stat.poly import get_mlr_2_str
@@ -230,28 +230,43 @@ def plot_qq(
     ax=set_equallim(ax)
     return ax
 
-# def plot_ranking(
-#     dplot: pd.DataFrame,
-#     x: str,
-#     y: str,
-#     colgroup: str,
-#     estimator: str='min',
-#     ax: plt.Axes=None,
-#     **kws_ax
-#     ) -> plt.Axes:
-#     """Plot rankings.
+def plot_ranks(
+    df1: pd.DataFrame,
+    colid: str,
+    colx: str,
+    coly: str='rank',
+    ascending: bool=True,
+    # line: bool=False,
+    ax=None,
+    **kws,
+    ) -> plt.Axes:
+    """Plot rankings.
 
-#     Args:
-#         dplot (pd.DataFrame): input data.
-#         x (str): x column.
-#         y (str): y column.
-#         colgroup (str): column with groups.
-#         estimator (str, optional): estimator. Defaults to 'min'.
-#         ax (plt.Axes, optional): `plt.Axes` object. Defaults to None.
+    Args:
+        dplot (pd.DataFrame): input data.
+        colx (str): x column.
+        coly (str): y column.
+        colid (str): column with unique ids.
+        ax (plt.Axes, optional): `plt.Axes` object. Defaults to None.
 
-#     Keyword Args:
-#         kws: parameters provided to the `seaborn` function. 
+    Keyword Args:
+        kws: parameters provided to the `seaborn.scatterplot` function. 
 
-#     Returns:
-#         plt.Axes: `plt.Axes` object.
-#     """
+    Returns:
+        plt.Axes: `plt.Axes` object.
+    """    
+    assert not df1[colid].duplicated().any()
+    df1[coly]=df1[colx].rank(ascending=ascending)
+    if ax is None:
+        fig,ax=plt.subplots(figsize=[2,2])
+    ax=sns.scatterplot(data=df1,
+                   x=colx,y=coly,
+                       **kws,
+                   ax=ax)
+    # if line:
+    ax.set(
+        yticks=[int(i) for i in np.linspace(1,len(df1),4)], ## start with 1
+            )
+    if ascending:
+        ax.invert_yaxis()
+    return ax

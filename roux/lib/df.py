@@ -1381,10 +1381,10 @@ class log:
         return log_apply(self._obj,fun='drop',**kws)    
     def query(self,**kws):
         from roux.lib.df import log_apply
-        return log_apply(self._obj,fun='filter',**kws)    
+        return log_apply(self._obj,fun='query',**kws)    
     def filter_(self,**kws):
         from roux.lib.df import log_apply
-        return log_apply(self._obj,fun='query',**kws)    
+        return log_apply(self._obj,fun='filter',**kws)    
     def pivot(self,**kws):
         from roux.lib.df import log_apply
         return log_apply(self._obj,fun='pivot',**kws)

@@ -36,6 +36,7 @@ requirements = {
             argh
             icecream""".split('\n'),
 'stat':['statsmodels',
+        'networkx',
         # 'pingouin',
         ],
 'viz':['seaborn>=0.8',

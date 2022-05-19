@@ -157,7 +157,23 @@ def compare_classes(x,y,method=None):
         return stat,pval
     else:
         return np.nan,np.nan
-
+    
+def compare_classes_many(
+    df1: pd.DataFrame,
+    cols_y: list,
+    cols_x: list,
+    ) -> pd.DataFrame:
+    df0=pd.DataFrame(itertools.product(cols_y,cols_x,)).rename(columns={0:'colx',1:'coly'},errors='raise')
+    # df0.head(1)
+    # from roux.lib.stat.diff import compare_classes
+    return (df0
+            .join(df0.apply(lambda x: compare_classes(df1[x['colx']],
+                                                      df1[x['coly']]),
+                      axis=1)
+            .apply(pd.Series)
+            .rename(columns={0:'stat',1:'P'},errors='raise'))
+           )
+    
 def get_pval(df: pd.DataFrame,
              colvalue='value',
              colsubset='subset',
@@ -214,14 +230,15 @@ def get_pval(df: pd.DataFrame,
     else:
         assert(not colindex is None)
         df1=df.pivot(index=colindex,columns=colsubset,values=colvalue)
-        ct=pd.crosstab(df1[subsets[0]],df1[subsets[1]])
-        if ct.shape==(2,2):
-            ct=ct.sort_index(axis=0,ascending=False).sort_index(axis=1,ascending=False)
-            if test:
-                print(ct)
-            return sc.stats.fisher_exact(ct)
-        else:
-            return np.nan,np.nan      
+        return compare_classes(df1[subsets[0]],df1[subsets[1]],method=None)
+        # ct=pd.crosstab(df1[subsets[0]],df1[subsets[1]])
+        # if ct.shape==(2,2):
+        #     ct=ct.sort_index(axis=0,ascending=False).sort_index(axis=1,ascending=False)
+        #     if test:
+        #         print(ct)
+        #     return sc.stats.fisher_exact(ct)
+        # else:
+        #     return np.nan,np.nan      
         
 def get_stat(df1: pd.DataFrame,
               colsubset: str,
@@ -510,7 +527,47 @@ def get_stats_groupby(df1: pd.DataFrame,cols: list,
     """
     df2=getattr(df1.groupby(cols),f"{'progress' if not fast else 'parallel'}_apply")(lambda df: get_stats(df1=df,**kws)).reset_index().rd.clean()
     return get_significant_changes(df1=df2,alpha=alpha,coff_p=coff_p,coff_q=coff_q,)
+
+def get_diff(
+    df1,
+    cols_x,
+    cols_y,
+    cols_index,
+    test=True,
+    **kws
+    )-> pd.DataFrame:
+    """
+    Wrapper around the `get_stats_groupby`
     
+    
+    """
+    ## filter the significant 
+    d_={}
+    for colx in cols_x:
+        assert df1[colx].nunique()==2,colx
+        d_[colx]=(df1
+        .melt(id_vars=cols_index+[colx],
+                 value_vars=cols_y,
+                 var_name='variable y',
+                 value_name='value y')
+        .rename(columns={colx:'value x'},errors='raise')
+        )
+    df2=pd.concat(d_,names=['variable x']).reset_index().rd.clean().log.dropna()
+    if test:
+        info(df2.iloc[0,:])
+    from roux.lib.stat.diff import get_stats_groupby
+    df3=get_stats_groupby(df1=df2,
+                      cols=['variable x','variable y'],
+                      coff_p=0.05,
+                      coff_q=0.01,
+
+                      colindex=['gene symbol','genes id'],
+                      colsubset='value x',
+                      cols_value= ['value y'],
+                          **kws,
+                     )
+    return df3.loc[(df3['P (MWU test)']<0.05),:].sort_values('P (MWU test)')
+
 def binby_pvalue_coffs(df1: pd.DataFrame,
                     coffs=[0.01,0.05,0.25],
                     color=False,

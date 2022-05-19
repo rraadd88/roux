@@ -492,3 +492,17 @@ def color_ax(
         plt.setp(ax.spines.values(), linewidth=linewidth)
     plt.setp([ax.get_xticklines(), ax.get_yticklines()], color=c)
     return ax
+
+## stats
+def annot_n_legend(
+    ax,
+    df1: pd.DataFrame,
+    colid: str,
+    colgroup: str,
+    **kws,
+    ):
+    from roux.viz.ax_ import rename_legends
+    replaces={str(k):str(k)+'\n'+f'(n={v})' for k,v in df1.groupby(colgroup)[colid].nunique().items()}
+    return rename_legends(ax,
+                  replaces=replaces,
+                  **kws)

@@ -415,12 +415,14 @@ def rename_legends(
         plt.Axes: `plt.Axes` object.
     """
     handles, labels = ax.get_legend_handles_labels()
+    labels=[str(s) for s in labels]
     if len(set(labels) - set(replaces.keys()))==0:
         labels=[replaces[s] for s in labels]
     else:
-        labels=[replacemany(str(s),replaces) for s in labels]
+        labels=[replacemany(s,replaces) for s in labels]
     return ax.legend(handles=handles,labels=labels,
-              **kws_legend)
+                     title=ax.get_legend().get_title().get_text(),
+                     **kws_legend)
 
 def append_legends(
     ax: plt.Axes,
