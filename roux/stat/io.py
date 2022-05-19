@@ -8,8 +8,9 @@ def perc_label(a,b=None,bracket=True):
     return f"{(a/b)*100:.0f}%"+(f" ({num2str(a)}/{num2str(b)})" if bracket else "")
 
 def pval2annot(pval,
-               alternative=None,alpha=None,
-               fmt='*',#swarm=False
+               alternative=None,
+               alpha=None,
+               fmt='*',
                power=True,
                linebreak=False,
                prefix='P',
@@ -50,8 +51,12 @@ def pval2annot(pval,
         f"P={pval:.1g}"
     else:
         annot= "ns" if fmt=='*' else \
-        f"P=\n{pval:.0e}" if fmt=='<' else f"P={pval:.1g}" if len(f"P={pval:.1g}")<6 else f"P=\n{pval:.1g}" if not linebreak else f"P={pval:.1g}"
+        f"P={pval:.1g}" if len(f"P={pval:.1g}")<6 else \
+        f"P=\n{pval:.1g}" if not linebreak else \
+        f"P={pval:.1g}"
     annot=annot if linebreak else annot.replace('\n','')
     if prefix!='P':
         annot=annot.replace('P',prefix if not q else 'q')
+    if power and 'e' in annot:
+        annot=annot.replace('e-0','e-').replace('e','x$10^{')+'}$'
     return annot 

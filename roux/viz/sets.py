@@ -9,14 +9,23 @@ def plot_venn(
     """Plot Venn diagram.
 
     Args:
-        ds1 (pd.Series): input vector.
+        ds1 (pd.Series): input vector. Subsets in the index levels, mapped to counts. 
         ax (plt.Axes, optional): `plt.Axes` object. Defaults to None.
         figsize (tuple, optional): figure size. Defaults to [2.5,2.5].
         show_n (bool, optional): show sample sizes. Defaults to True.
 
     Returns:
         plt.Axes: `plt.Axes` object.
+        
+    Notes:
+        1. Create the input pd.Series from dict.
+        
+            df_=to_map_binary(dict2df(d_).explode('value'),colgroupby='key',colvalue='value')
+            ds_=df_.groupby(df_.columns.tolist()).size()
     """
+    assert isinstance(ds1,pd.Series)
+    assert ds1.dtypes=='int'
+    assert len(ds1.index.names)>=2
     if ax is None:
         fig,ax=plt.subplots(figsize=figsize)
     if show_n:
