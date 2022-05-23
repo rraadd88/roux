@@ -107,7 +107,7 @@ def drop_constants(df):
     return df.drop(cols_del,axis=1)
 
 @to_rd
-def dropby_patterns(df1,l1,test=False):
+def dropby_patterns(df1,l1=None,test=False):
     """Deletes columns containing substrings i.e. patterns.
 
     Parameters:
@@ -117,7 +117,9 @@ def dropby_patterns(df1,l1,test=False):
         
     Returns:
         df1 (DataFrame): output dataframe.
-    """    
+    """
+    if l1 is None or l1==[]:
+        return df1
     if isinstance(l1,str):
         l1=[l1]
     s0='|'.join(l1).replace('(','\(').replace(')','\)')

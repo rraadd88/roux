@@ -1,4 +1,5 @@
 from roux.global_imports import *
+from roux.viz.ax_ import *
 
 def plot_table(
     df1: pd.DataFrame,

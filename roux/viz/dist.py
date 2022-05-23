@@ -194,6 +194,7 @@ def plot_dists(
     show_p: bool=True,
     show_n: bool=True,
     show_n_prefix: str='',
+    show_n_ha='right',
     alternative: str='two-sided',
     offx_n: float=0,
     xlim: tuple=None,
@@ -239,6 +240,9 @@ def plot_dists(
         2. Change alpha of the boxplot rather than changing saturation of the swarmplot. 
 
     """
+    if isinstance(colindex,str):
+        colindex=[colindex]
+    df1=df1.log.dropna(subset=colindex+[x,y])
     df1[y]=df1[y].astype(str)
     if order is None:
         order=df1[y].unique().tolist()
@@ -307,7 +311,7 @@ def plot_dists(
     ax.set(xlabel=x)
     d2=get_ticklabel2position(ax,'y')
     ax.set(
-          ylabel=None if hue is None else y,
+          # ylabel=None if hue is None else y,
           xlim=xlim,
           )
     d3=get_axlims(ax)
@@ -331,8 +335,8 @@ def plot_dists(
         df1_=df1.groupby(y).apply(lambda df: df.groupby(colindex).ngroups).to_frame('n').reset_index()
         df1_['y']=df1_[y].map(d2)
         import matplotlib.transforms as transforms
-        df1_.apply(lambda x: ax.text(x=1.15+offx_n,y=x['y'],
-                                   s=show_n_prefix+str(x['n']),va='center',ha='right',
+        df1_.apply(lambda x: ax.text(x=1.1+offx_n,y=x['y'],
+                                   s=show_n_prefix+str(x['n']),va='center',ha=show_n_ha,
                                      transform=transforms.blended_transform_factory(ax.transAxes,ax.transData),
                                    ),axis=1)
     ax.tick_params(axis='y', colors='k')

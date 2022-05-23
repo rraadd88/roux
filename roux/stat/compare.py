@@ -1,4 +1,5 @@
 from roux.lib.df import *
+import logging
 
 def get_cols_x_for_comparison(
     df1: pd.DataFrame,
@@ -24,7 +25,7 @@ def get_cols_x_for_comparison(
     
     ## make the dictionary with column names
     d0=dict(cols_y={
-                'cont':df1.loc[:,cols_y].select_dtypes((int,float)).columns.tolist(),
+            'cont':df1.loc[:,cols_y].select_dtypes((int,float)).columns.tolist(),
             },
             cols_index=cols_index,
         )
@@ -53,17 +54,19 @@ def get_cols_x_for_comparison(
     ## get descrete x columns
     ds_=df1.rd.check_nunique().sort_values()
     l1=ds_.loc[lambda x: (x==2)].index.tolist()
-    info(l1)
+    logging.info(l1)
     ds_=df1.select_dtypes((int,float)).nunique().sort_values()
     l2=ds_.loc[lambda x: (x==2)].index.tolist()
-    info(l2)
+    logging.info(l2)
     d0['cols_x']['desc']=sorted(list(set(l1+l2) - set(d0['cols_y']['desc'])))
     return d0
 
 def get_comparison(
     df1: pd.DataFrame,
-    d1: dict,   
+    cols_y: list,
+    cols_index,
     coff_p: float=0.05,
+    **kws,
     ):
     """
     Compare the x and y columns.
@@ -78,6 +81,15 @@ def get_comparison(
             2. decrete vs continuous -> difference
             3. decrete vs decrete -> FE or chi square
     """
+    ## 
+    d1=get_cols_x_for_comparison(
+    df1,
+    cols_y,
+    cols_index,
+    **kws
+    )
+    from roux.lib.set import get_alt
+    
     ## gather stats in a dictionary
     d2={}
     
@@ -91,7 +103,8 @@ def get_comparison(
                   coff_inflation_min=50,
              )
     if isinstance(coff_p,float):
-        d2['correlations x vs y']=d2['correlations x vs y'].loc[(d2['correlations x vs y']['P']<0.05),:]
+        print(d2.keys())
+        d2['correlation x vs y']=d2['correlation x vs y'].loc[(d2['correlation x vs y']['P']<0.05),:]
     
     ## 2. difference 
     from roux.stat.diff import get_diff
@@ -120,4 +133,30 @@ def get_comparison(
         )
     if isinstance(coff_p,float):
         d2['association x vs y']=d2['association x vs y'].loc[(d2['association x vs y']['P']<coff_p),:].sort_values('P')
-    return d2
+        
+    ## rename to uniform column names
+    d2['correlation x vs y']=(d2['correlation x vs y']
+                            .rename(columns={'variable1':'variable x',
+                                'variable2':'variable y',
+                                '$r_s$':'stat',},
+                                errors='raise')
+                             .assign(**{'stat type':'$r_s$'})
+                             )
+    for k in ['x vs y','y vs x']:
+        d2[f'difference {k}']=(d2[f'difference {k}']
+                                .rename(columns={
+                                    'P (MWU test)':'P',
+                                    'stat (MWU test)':'stat',},
+                                    errors='raise')
+                                 .assign(**{'stat type':'MWU'})
+                                 )
+    d2['association x vs y']=(d2['association x vs y']
+                            .rename(columns={'colx':'variable x',
+                                'coly':'variable y',
+                                            },
+                                errors='raise')
+                             .assign(**{'stat type':'FE'})
+                             )
+    ## gather
+    return pd.concat(d2,axis=0,names=['comparison type'],
+             ).reset_index(0)    
