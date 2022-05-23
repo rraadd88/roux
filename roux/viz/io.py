@@ -408,6 +408,7 @@ def read_plot(
 def to_concat(
     ps: list,
     how: str='h',
+    use_imagemagick: bool= False,
     test: bool=False,
     **kws_outp,
     ) -> str:
@@ -422,12 +423,29 @@ def to_concat(
         str: path of the output.
     """
     outp=to_outp(ps,**kws_outp)
-    env=get_env('imagemagick')
-    runbash(
-        f"{env['PATH'].split(':')[0]}/convert {'+' if how=='h' else '-'}append {' '.join(ps)} {outp}",
-        env=env,
-        test=test,
-       )
+    if use_imagemagick:
+        env=get_env('imagemagick')
+        runbash(
+            f"{env['PATH'].split(':')[0]}/convert {'+' if how=='h' else '-'}append {' '.join(ps)} {outp}",
+            env=env,
+            test=test,
+           )
+    else:
+        import sys
+        from PIL import Image
+        images = [Image.open(x) for x in ps]
+    #     widths, heights = zip(*(i.size for i in images))
+    #     total_width = sum(widths)
+    #     max_height = max(heights)
+        if how=='h':
+            imgs_comb = Image.fromarray( images)
+            # for a vertical stacking it is simple: use vstack
+        elif how=='v':
+            min_shape = sorted( [(np.sum(i.size), i.size ) for i in images])[0][1]
+            imgs_comb = Image.fromarray( np.vstack( (np.asarray( i.resize(min_shape) ) for i in images ) ))
+        else:
+            raise ValueError(how)
+        imgs_comb.save(outp) 
     return outp
 
 def to_montage(

@@ -119,11 +119,13 @@ def runbash(s1,env,test=False,**kws):
         2. error ignoring
     """
     if test:logging.info(s1)
-    return subprocess.call(s1, shell=True,
+    response=subprocess.call(s1, shell=True,
                            env=get_env(env) if isinstance(env,str) else env,
                stderr=subprocess.DEVNULL if not test else None, 
                stdout=subprocess.DEVNULL if not test else None,
                **kws)
+    assert response==0, f"Error: {s1}"+('\nset `test=True` for more verbose.' if not test else '')
+    return response
 
 def runbash_tmp(s1: str,
             env: str,
@@ -174,9 +176,9 @@ def runbash_tmp(s1: str,
             elif input_type=='list':
                 from roux.lib.set import to_list
                 to_list(df1,replace_many(inp,{'INPUT':tmp_inp}))
-        runbash(s1,env=env,
+        response=runbash(s1,env=env,
             test=test,
-            **kws)
+            **kws) 
         if exists(tmp_outp):
             if output_type=='path':
                 makedirs(outp)

@@ -443,7 +443,9 @@ def validate_no_dups(df,subset=None,):
         subset (list): list of columns.
     """
     if subset is None: subset=df.columns.tolist()
-    return not df.duplicated(subset=subset).any()
+    out=not df.duplicated(subset=subset).any()
+    if not out: logging.warning('duplicate rows found')
+    return out
 
 @to_rd
 def validate_no_duplicates(df,subset=None,):
