@@ -104,36 +104,41 @@ def to_path(s,replacewith='_'):
 # alias to be deprecated in the future
 make_pathable_string=to_path
 
-def linebreaker(i,break_pt=16,sep=' '):
+def linebreaker(text, width,
+                sep='\n',
+                **kws,
+               ):
     """Insert `newline`s within a string. 
     
     Parameters:
-        i (str): string.
-        break_pt (int): insert `newline` at this interval. 
-        sep (string): separator to split the string with.
+        text (str): string.
+        width (int): insert `newline` at this interval. 
+        sep (string): separator to split the sub-strings.
         
     Returns:
         s (string): output string.
         
-    TODOs:
-        1. Use `textwrap`: https://docs.python.org/3/library/textwrap.html
+    References:
+        1. `textwrap`: https://docs.python.org/3/library/textwrap.html
     """
-    if len(i)>break_pt:
-        i_words=i.split(sep)
-        i_out=''
-        line_len=0
-        for w in i_words:
-            line_len+=len(w)+1
-            if i_words.index(w)==0:
-                i_out=w
-            elif line_len>break_pt:
-                line_len=0
-                i_out="%s\n%s" % (i_out,w)
-            else:
-                i_out="%s %s" % (i_out,w)    
-        return i_out    
-    else:
-        return i
+    import textwrap
+    return sep.join(textwrap.wrap(text, width,**kws,))
+    # if len(i)>break_pt:
+    #     i_words=i.split(sep)
+    #     i_out=''
+    #     line_len=0
+    #     for w in i_words:
+    #         line_len+=len(w)+1
+    #         if i_words.index(w)==0:
+    #             i_out=w
+    #         elif line_len>break_pt:
+    #             line_len=0
+    #             i_out="%s\n%s" % (i_out,w)
+    #         else:
+    #             i_out="%s %s" % (i_out,w)    
+    #     return i_out    
+    # else:
+    #     return i
 
 # find
 def findall(s,ss,outends=False,outstrs=False,

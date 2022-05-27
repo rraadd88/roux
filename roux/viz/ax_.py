@@ -280,9 +280,10 @@ def split_ticklabels(
     ax: plt.Axes,
     axis='x',
     grouped=False,
+    group_x=0.01,
     group_prefix=None,
     group_loc='left',
-    group_pad=0.02,
+    # group_pad=0.02,
     group_colors=None,
     group_alpha=0.2,
     show_group_line=True,
@@ -328,18 +329,21 @@ def split_ticklabels(
         .rd.flatten_columns()
         )
         axlims=get_axlims(ax)
-        if group_loc=='left':
-            group_x=axlims[axis]['min']-(axlims[axis]['len']*group_pad)
-            group_xlabel=axlims[axis]['min']-(axlims[axis]['len']*group_pad-0.1)
-        elif group_loc=='right':
-            group_x=axlims[axis]['max']+(axlims[axis]['len']*group_pad)
-            group_xlabel=axlims[axis]['max']+(axlims[axis]['len']*group_pad+0.1)
+        # if group_loc=='left':
+        #     group_x=group_x
+        #     group_x=axlims[axis]['min']-(axlims[axis]['len']*group_pad)
+        #     group_xlabel=axlims[axis]['min']-(axlims[axis]['len']*group_pad-0.1)
+        # elif group_loc=='right':
+        #     group_x=axlims[axis]['max']+(axlims[axis]['len']*group_pad)
+        #     group_xlabel=axlims[axis]['max']+(axlims[axis]['len']*group_pad+0.1)
+        # print(axlims[axis]['min']-(group_pad*5.5))
         if show_group_span:
-            print(axlims[axis]['min']-(group_pad*5.5))
-            print(group_x)
+            # print(axlims[axis]['min']-(group_pad*5.5))
+            # print(group_x)
             df_.apply(lambda x: ax.axhspan(
             # xmin=(group_x/axlims[axis]['len'])*0.5,
-            xmin=axlims[axis]['min']-(group_pad*5.5),
+            # xmin=axlims[axis]['min']-(group_pad*5.5),
+            xmin=group_x,
             xmax=axlims[axis]['min'], 
             ymin=x[axis+' min']-0.5,
             ymax=x[axis+' max']+0.5, 
@@ -362,15 +366,16 @@ def split_ticklabels(
                 ),
                 axis=1)
         from roux.lib.set import get_alt
+        import matplotlib.transforms as transforms
         df_.apply(lambda x: ax.text(
-                                    x=group_xlabel,
-                                    # x=(group_x/axlims[axis]['len'])*0.5,
+                                    x=group_x,#label,
                                     y=np.mean([x[axis+' min'],x[axis+' max']]),
-                                   s=(group_prefix+'\n' if not group_prefix is None else '')+f"{x.name}".replace(' ','\n')+'\n'+f"(n={int(x[axis+' len'])})",
+                                    s=(group_prefix+'\n' if not group_prefix is None else '')+f"{x.name}".replace(' ','\n')+'\n'+f"(n={int(x[axis+' len'])})",
                                     color='k',
                                     # ha=get_alt(['left','right'],group_loc),
                                     ha=group_loc,
                                     va='center',
+                                    transform=transforms.blended_transform_factory(ax.transAxes,ax.transData),
                                     # transform=ax.transAxes,
                                    ),axis=1)
         getattr(ax,f'set_{axis}ticklabels')([s.get_text().split(sep,1)[1] for s in ticklabels],

@@ -323,7 +323,7 @@ def to_plot(
     sep: str='# plot',
     validate: bool=False,
     show_path: bool=False,
-    show_path_offy: float=0,
+    show_path_offy: float=-0.2,
     force: bool=True,
     test: bool=False,
     quiet:bool=True,

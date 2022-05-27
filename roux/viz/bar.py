@@ -297,3 +297,83 @@ def plot_barh_stacked_percentage_intersections(
 
 # redirections, to be deprecated in the future
 from roux.viz.sets import plot_intersections
+
+## plotly
+def to_input_data_sankey(df0,cols_groupby,colid,width=20):    
+    df0=df0.dropna(subset=df0.filter(like='group').columns.tolist(),how='all')
+    df0['all']='all'
+    ## map labels
+    df0=df0.applymap(lambda x : linebreaker(d0[x],width,sep='<br>') if x in d0 else x)
+    # df0
+
+    df1=pd.concat([
+        df0.groupby(list(cols))[colid].nunique() for cols in np.lib.stride_tricks.sliding_window_view(cols_groupby[1:],2)
+    ],
+             axis=0
+             ).to_frame('count').rename_axis(['source','target'],axis=0).reset_index().drop_duplicates()
+    df1
+
+    df2=pd.concat([df0.groupby(list(cols))[colid].nunique() for cols in itertools.product(['all'],cols_groupby[1:])
+    ],
+    axis=0
+    ).to_frame('total').rename_axis(['source','target'],axis=0).reset_index().drop_duplicates()
+    # df2
+
+    df3=(
+    df2
+    .merge(df1.groupby('target')['count'].sum().to_frame('substract').reset_index(),
+              on=['target'],
+             how='left',
+             )
+    .assign(**{
+        'substract':lambda x: x['substract'].fillna(0),    
+        'count':lambda x: x['total']-x['substract']})
+    .append(df1)
+    )
+    # map ids
+    labels=list(pd.unique(df3['source'].unique().tolist()+df3['target'].unique().tolist()))
+    d_={s:i for i,s in enumerate(labels)}
+    for c in ['source','target']:
+        df3[c+' id']=df3[c].map(d_)
+    return df3,labels
+
+def plot_sankey(
+    df0,
+    cols_groupby,
+    colcount,
+    node_color=None,
+    link_color=None,
+    outp=None,
+    test=False,
+    **kws,
+    ):
+    df1,labels=to_input_data_sankey(df0,cols_groupby)
+    import plotly.io as pio
+    pio.renderers.default = 'iframe'
+    import plotly.graph_objects as go
+    fig = go.Figure(data=[go.Sankey(
+        arrangement='fixed',
+        node = dict(
+            pad = 10,
+            thickness = 20,
+            line = dict(
+                color = '#FFFFFF',
+                width = 0.1,
+                ),
+            label =labels,
+            color=node_color,
+            ),
+        link = dict(
+            source = df1['source id'],
+            target = df1['target id'],
+            value = df1['count'],
+            color=link_color,
+            )
+      )])
+    fig.update_layout(
+                    **kws,
+                     )
+    # fig.show()
+    if not outp is None:
+        fig.write_image(outp,format=Path(outp).suffix[1:], engine="kaleido")
+    return fig

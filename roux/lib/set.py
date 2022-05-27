@@ -336,4 +336,31 @@ def list2ranges(l):
 #         df.loc[interval[0]:interval[1],f'{colbool} interval within index']=range(interval[1]-interval[0]+1)    
 #     df[f'{colbool} interval index']=df.index    
 #     return df
+
+def get_pairs(items,
+              items_with=None,
+              size=2,
+              # with_self=False, # itertools.combination does not pair self
+             ):
+    """
+    Creates a dataframe with the paired items.
+    
+    Notes:
+        1. the ids of the items are sorted e.g. 'a'-'b' not 'b'-'a'.
+    """
+    ## get lists
+    items=list(set(items)) ## unique, sorted
+    if items_with is None:
+        items_with=[]
+    else:
+        items_with=list(set(items_with))
+    ## arrage
+    if len(items_with)==0:
+        o1=itertools.combinations(items,size)
+    else:
+        assert len(set(items) & set(items_with))!=0, 'two lists should be non-overlapping, otherwise pairs with self would be created.'
+        o1=itertools.product(items,items_with)
+    # create dataframe
+    df0=pd.DataFrame(o1,columns=range(1,size+1))
+    return df0
     

@@ -144,8 +144,9 @@ def get_corrs(df1,
         DataFrame: output dataframe.
         
     TODOs:
-        2. Provide 2D array to `scipy.stats.spearmanr`?
-        1. Add parallel processing through `fast` parameter.
+        0. use `lib.set.get_pairs` to get the combinations.
+        1. Provide 2D array to `scipy.stats.spearmanr`?
+        2. Add parallel processing through `fast` parameter.
     """
     import itertools
     from roux.stat.diff import get_q
@@ -275,6 +276,9 @@ def pairwise_chi2(df1: pd.DataFrame,cols_values: list) -> pd.DataFrame:
 
     Returns:
         DataFrame: output dataframe.
+        
+    TODOs:
+        0. use `lib.set.get_pairs` to get the combinations.
     """
     import itertools
     d1={}

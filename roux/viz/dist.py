@@ -292,13 +292,17 @@ def plot_dists(
     elif isinstance(kind,list):
         kind={k:{} for k in kind}
     for k in kind:
+        kws_=kws.copy()
         # print(kws['palette'],kind)
         # if 'palette' in kws and any([k_ in kind for k_ in ['swarm','strip']]):
         #     from roux.viz.colors import saturate_color
         #     kws['palette']=[saturate_color(color=c, alpha=saturate_color_alpha-1) for c in kws['palette']]            
-        if 'palette' in kws and k in ['swarm','strip']:
-            from roux.viz.colors import saturate_color
-            kws['palette']=[saturate_color(color=c, alpha=saturate_color_alpha+0.5) for c in kws['palette']]
+        # if 'palette' in kws and k in ['swarm','strip']:
+            # from roux.viz.colors import saturate_color
+            # kws['palette']=[saturate_color(color=c, alpha=saturate_color_alpha+0.5) for c in kws['palette']]
+        if k=='box' and (('swarm' in kind) or ('strip' in kind)):
+            kws_['boxprops']=dict(alpha=.3)
+            # print(kws_,kws)
             # print(kws['palette'])
         getattr(sns,k+"plot")(data=df1,
                     x=x,y=y,
@@ -306,12 +310,12 @@ def plot_dists(
                     order=order,
                     hue_order=hue_order,
                     **kind[k],
-                    **kws,
+                    **kws_,
                      ax=ax)
     ax.set(xlabel=x)
     d2=get_ticklabel2position(ax,'y')
     ax.set(
-          # ylabel=None if hue is None else y,
+          ylabel=None if hue is None else y,
           xlim=xlim,
           )
     d3=get_axlims(ax)

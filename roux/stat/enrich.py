@@ -39,6 +39,9 @@ def get_enrichment(df1: pd.DataFrame,
 
     Returns:
         pd.DataFrame: if rank -> high rank first within the leading edge gene ids.
+        
+    Notes:
+        1. Unique ids are provided as inputs.
     """
     import gseapy as gp
     name=get_name(df2,colreftype)
@@ -61,27 +64,27 @@ def get_enrichment(df1: pd.DataFrame,
     df3=df3.rename(columns={'Term':colref,
                              'P-value':'P (FE test)',
                              'Adjusted P-value':'P (FE test, FDR corrected)',
-                             'Genes':f'{colid}s'},errors='raise')
-    df_=df3['Overlap'].str.split('/',expand=True).rename(columns={0:f"{colid}s overlap",
+                             'Genes':f'{colid}s overlap'},errors='raise')
+    df_=df3['Overlap'].str.split('/',expand=True).rename(columns={0:f"{colid}s overlap size",
                                                          1:f"{colid}s per {colref}"}).applymap(int)
     df3=df3.join(df_)
 #     df3['overlap %']=df3['Overlap'].apply(eval)*100    
-    df3['overlap %']=df3.apply(lambda x: (x[f"{colid}s overlap"]/x[f"{colid}s per {colref}"])*100,axis=1)
+    df3['overlap %']=df3.apply(lambda x: (x[f"{colid}s overlap size"]/x[f"{colid}s per {colref}"])*100,axis=1)
     df3=df3.drop(['Gene_set','Overlap',],axis=1)
     info('enrichr: '+perc_label(sum(df3['P (FE test, FDR corrected)']<=0.05),len(df3)))
     if not colrank in df1:
         if colrefname in df2:
             df3[colrefname]=df3[colref].map(df2.set_index(colref)[colrefname].drop_duplicates())
         return df3
-    if df3[f"{colid}s overlap"].max()<2:
-        logging.error("df3[f'{colid}s overlap'].max()<2 # can not run prerank")
+    if df3[f"{colid}s overlap size"].max()<2:
+        logging.error("df3[f'{colid}s overlap size'].max()<2 # can not run prerank")
         return df3
     with tempfile.TemporaryDirectory() as p:
         outd=outd if not outd is None else p
         o2 = gp.prerank(rnk=df1.loc[:,[colid,colrank]],
                          gene_sets=df2.rd.to_dict([colref,colid]),
                          min_size=2,
-                         max_size=df3[f"{colid}s overlap"].max(),
+                         max_size=df3[f"{colid}s overlap size"].max(),
                          processes=1,
                          permutation_num=permutation_num, # reduce number to speed up testing
                          ascending=False, # look for high number 
@@ -104,12 +107,12 @@ def get_enrichment(df1: pd.DataFrame,
         'nes':'normalized enrichment score', 
         'pval':'P (GSEA test)',
         'fdr':'FDR (GSEA test)',
-        'matched_size':f"{colid}s overlap",
+        'matched_size':f"{colid}s overlap size",
         'geneset_size':f"{colid}s per {colref}",
         'ledge_genes':f'{colid}s leading edge',
         },
         errors='raise')
-    df4['overlap %']=df4.apply(lambda x: (x[f"{colid}s overlap"]/x[f"{colid}s per {colref}"])*100,axis=1)
+    df4['overlap %']=df4.apply(lambda x: (x[f"{colid}s overlap size"]/x[f"{colid}s per {colref}"])*100,axis=1)
     df4=df4.drop(['genes',],axis=1)
     info('preraked: '+perc_label(sum(df4['P (GSEA test)']<=0.05),len(df4)))
     
@@ -120,7 +123,7 @@ def get_enrichment(df1: pd.DataFrame,
                  suffixes=['',' (prerank)'])
     df5=df5.drop([
 #                 f'{colid}s',
-                  f'{colid}s per {colref} (prerank)',f'{colid}s overlap (prerank)','overlap % (prerank)'],axis=1)
+                  f'{colid}s per {colref} (prerank)',f'{colid}s overlap size (prerank)','overlap % (prerank)'],axis=1)
     return df5
 
 def get_enrichments(df1: pd.DataFrame,
