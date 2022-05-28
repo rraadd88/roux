@@ -77,9 +77,9 @@ def get_val2color(
         dict: output.
     """
     if vmin is None:
-        vmin=ds.min()
+        vmin=min(ds)
     if vmax is None:
-        vmax=ds.max()
+        vmax=max(ds)
     colors = [(plt.get_cmap(cmap) if isinstance(cmap,str) else cmap)((i-vmin)/(vmax-vmin)) for i in ds]
     legend2color = {i:(plt.get_cmap(cmap) if isinstance(cmap,str) else cmap)((i-vmin)/(vmax-vmin)) for i in [vmin,np.mean([vmin,vmax]),vmax]}
     return dict(zip(ds,colors)),legend2color

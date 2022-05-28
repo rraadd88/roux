@@ -50,7 +50,6 @@ from functools import partialmethod
 # stats    
 import scipy as sc
 from roux.stat.binary import perc
-from roux.viz.annot import *
 
 # paths
 pwd=abspath('.')
@@ -85,6 +84,7 @@ sns.set_context('notebook') # paper < notebook < talk < poster
 from roux.viz.figure import *
 from roux.viz.io import log_code,get_plot_inputs#*
 from roux.viz.ax_ import *
+from roux.viz.annot import *
 
 from tqdm import tqdm#,notebook
 # from roux.lib.sys import is_interactive_notebook

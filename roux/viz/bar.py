@@ -299,21 +299,26 @@ def plot_barh_stacked_percentage_intersections(
 from roux.viz.sets import plot_intersections
 
 ## plotly
-def to_input_data_sankey(df0,cols_groupby,colid,width=20):    
-    df0=df0.dropna(subset=df0.filter(like='group').columns.tolist(),how='all')
+def to_input_data_sankey(df0,colid,cols_groupby=None,width=20):
+    """
+    """
+    if cols_groupby is None:
+        cols_groupby=['all']+list(set(df0.columns.tolist())-set([colid]))
+    df0=df0.log.dropna(subset=list(set(cols_groupby) - set(['all'])),
+                       how='all')
     df0['all']='all'
-    ## map labels
-    df0=df0.applymap(lambda x : linebreaker(d0[x],width,sep='<br>') if x in d0 else x)
+    ## map labels    
     # df0
-
+    # return df0
     df1=pd.concat([
         df0.groupby(list(cols))[colid].nunique() for cols in np.lib.stride_tricks.sliding_window_view(cols_groupby[1:],2)
     ],
-             axis=0
-             ).to_frame('count').rename_axis(['source','target'],axis=0).reset_index().drop_duplicates()
-    df1
+    axis=0
+    ).to_frame('count').rename_axis(['source','target'],axis=0).reset_index().drop_duplicates()
+    # df1
 
-    df2=pd.concat([df0.groupby(list(cols))[colid].nunique() for cols in itertools.product(['all'],cols_groupby[1:])
+    df2=pd.concat([
+        df0.groupby(list(cols))[colid].nunique() for cols in itertools.product(['all'],cols_groupby[1:])
     ],
     axis=0
     ).to_frame('total').rename_axis(['source','target'],axis=0).reset_index().drop_duplicates()
@@ -335,19 +340,35 @@ def to_input_data_sankey(df0,cols_groupby,colid,width=20):
     d_={s:i for i,s in enumerate(labels)}
     for c in ['source','target']:
         df3[c+' id']=df3[c].map(d_)
-    return df3,labels
+    return df3#,labels
 
 def plot_sankey(
-    df0,
-    cols_groupby,
-    colcount,
+    df1,
+    hue=None, # dict
     node_color=None,
     link_color=None,
+    info=None,
+    hovertemplate=None,
+    convert=True,
     outp=None,
     test=False,
     **kws,
     ):
-    df1,labels=to_input_data_sankey(df0,cols_groupby)
+    if convert:
+        df2=to_input_data_sankey(df1,**kws)
+        id2n_=df1.apply(lambda x: len(df1)-x.isnull().sum())
+    id2n=df2.groupby(['target'])['count'].sum().astype(int)#.to_dict()
+    if convert:    
+        assert all(id2n_.loc[id2n.index]==id2n), 'sizes of the sets changed after `to_input_data_sankey`?'
+    labels=list(pd.unique(df2['source'].unique().tolist()+df2['target'].unique().tolist()))
+    from roux.viz.colors import get_val2color,to_hex
+    val2color,legend2color=get_val2color(pd.Series(hue))
+    # df2[f"{col} color"]=df2[col].map(hue)
+    colors=[to_hex(val2color[hue[k]]) if k in hue else "#888888" for k in labels]
+    if not info is None:
+        customdata=[info[k] if k in info else k for k in labels]
+    labels=[linebreaker(x +(f" (n={id2n[x]})" if x in id2n else ''),20,sep='<br>') for x in labels]
+    
     import plotly.io as pio
     pio.renderers.default = 'iframe'
     import plotly.graph_objects as go
@@ -361,19 +382,19 @@ def plot_sankey(
                 width = 0.1,
                 ),
             label =labels,
-            color=node_color,
+            color=colors,
+            customdata=customdata,
+            hovertemplate=hovertemplate,#'%{customdata} value %{value}<extra></extra>',
             ),
         link = dict(
-            source = df1['source id'],
-            target = df1['target id'],
-            value = df1['count'],
-            color=link_color,
+            source = df2['source id'],
+            target = df2['target id'],
+            value = df2['count'],
+            # color=link_color,
             )
       )])
-    fig.update_layout(
-                    **kws,
-                     )
-    # fig.show()
+    fig.show()    
+    
     if not outp is None:
         fig.write_image(outp,format=Path(outp).suffix[1:], engine="kaleido")
     return fig
