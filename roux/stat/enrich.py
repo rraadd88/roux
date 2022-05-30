@@ -1,25 +1,26 @@
 from roux.global_imports import *
 
 # set enrichment
-def get_enrichment(df1: pd.DataFrame,
-                   df2: pd.DataFrame,
-                   background: int,
-           colid: str='gene id',
-           colref: str='gene set id',
-           colrefname: str='gene set name',
-           colreftype: str='gene set type',
-           colrank: str='rank',
-           outd: str=None,
-           name: str=None,
-            # enrichr
-           cutoff: float=0.05, # only used for plotting. 
-            # prerank
-           permutation_num: int=1000,
-            # etc
-            verbose: bool=False,
-            no_plot: bool=True,
-           **kws_prerank,
-                  ):
+def get_enrichment(
+    df1: pd.DataFrame,
+    df2: pd.DataFrame,
+    background: int,
+    colid: str='gene id',
+    colref: str='gene set id',
+    colrefname: str='gene set name',
+    colreftype: str='gene set type',
+    colrank: str='rank',
+    outd: str=None,
+    name: str=None,
+    # enrichr
+    cutoff: float=0.05, # only used for plotting. 
+    # prerank
+    permutation_num: int=1000,
+    # etc
+    verbose: bool=False,
+    no_plot: bool=True,
+    **kws_prerank,
+    ):
     """Get enrichments between sets.
 
     Args:
@@ -49,18 +50,22 @@ def get_enrichment(df1: pd.DataFrame,
     import tempfile
     with tempfile.TemporaryDirectory() as p:
         outd=outd if not outd is None else p
-        o1 = gp.enrichr(gene_list=df1[colid].unique().tolist(),
-                         # or gene_list=glist
-                         description=name,
-                         gene_sets=df2.rd.to_dict([colref,colid]),
-                         background=background, # or the number of genes, e.g 20000
-                         outdir=get_path(f'{outd}/{name}'),
-                         cutoff=cutoff, # only used for plotting.
-                         verbose=verbose,
-                         no_plot=no_plot,
-    #                      **kws,
-                         )
+        o1 = gp.enrichr(
+            gene_list=df1[colid].unique().tolist(),
+             # or gene_list=glist
+             description=name,
+             gene_sets=df2.rd.to_dict([colref,colid]),
+             background=background, # or the number of genes, e.g 20000
+             outdir=get_path(f'{outd}/{name}'),
+             cutoff=cutoff, # only used for plotting.
+             verbose=verbose,
+             no_plot=no_plot,
+             # **kws,
+             )
         df3=o1.results
+    if len(df3)==0:
+        logging.error('aborting because no enrichments found.')
+        return
     df3=df3.rename(columns={'Term':colref,
                              'P-value':'P (FE test)',
                              'Adjusted P-value':'P (FE test, FDR corrected)',

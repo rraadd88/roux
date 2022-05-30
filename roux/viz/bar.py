@@ -311,7 +311,7 @@ def to_input_data_sankey(df0,colid,cols_groupby=None,width=20):
     # df0
     # return df0
     df1=pd.concat([
-        df0.groupby(list(cols))[colid].nunique() for cols in np.lib.stride_tricks.sliding_window_view(cols_groupby[1:],2)
+        df0.groupby(list(cols))[colid].nunique() for cols in np.lib.stride_tricks.sliding_window_view(cols_groupby[1:],2) #itertools.combinations(cols_groupby[1:],2)
     ],
     axis=0
     ).to_frame('count').rename_axis(['source','target'],axis=0).reset_index().drop_duplicates()
