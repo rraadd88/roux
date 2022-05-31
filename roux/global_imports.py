@@ -82,7 +82,7 @@ plt.rc('axes', unicode_minus=False)
 plt.rcParams['axes.labelcolor'] = 'k'
 sns.set_context('notebook') # paper < notebook < talk < poster
 from roux.viz.figure import *
-from roux.viz.io import log_code,get_plot_inputs#*
+from roux.viz.io import log_code,get_plot_inputs,to_plot,read_plot#*
 from roux.viz.ax_ import *
 from roux.viz.annot import *
 
@@ -96,8 +96,8 @@ else:
     from tqdm import notebook
     notebook.tqdm().pandas()
     ## display vector graphics in jupyter
-    if not get_ipython() is None:
-        get_ipython().run_line_magic('config', "InlineBackend.figure_formats = ['svg']")
+    # if not get_ipython() is None:
+    #     get_ipython().run_line_magic('config', "InlineBackend.figure_formats = ['svg']")
 
 from pandarallel import pandarallel
 pandarallel.initialize(nb_workers=6,progress_bar=True)

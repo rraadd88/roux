@@ -134,7 +134,7 @@ def format_ticklabels(
     axes: tuple=['x','y'],
     n: int=None,
     fmt: str=None,
-    font: str='DejaVu Sans Mono',#"Monospace"
+    font: str=None,#'DejaVu Sans Mono',#"Monospace"
     ) -> plt.Axes:
     """format_ticklabels _summary_
 
@@ -162,8 +162,9 @@ def format_ticklabels(
             getattr(ax,axis+'axis').set_major_locator(plt.MaxNLocator(n[axis]))
         if not fmt is None:
             getattr(ax,axis+'axis').set_major_formatter(plt.FormatStrFormatter(fmt[axis]))
-        for tick in getattr(ax,f'get_{axis}ticklabels')():
-            tick.set_fontname(font)
+        if not font is None:
+            for tick in getattr(ax,f'get_{axis}ticklabels')():
+                tick.set_fontname(font)
     return ax
 
 ## lims
@@ -190,10 +191,11 @@ def set_equallim(
         off=np.sqrt(difference**2+difference**2)
         ax.plot([min_+off ,max_+off],[min_,max_],':',color='gray',zorder=5)        
         ax.plot([min_-off ,max_-off],[min_,max_],':',color='gray',zorder=5)        
-    ax=format_ticklabels(ax,**kws_format_ticklabels)
+    ax=format_ticklabels(ax,n=len(ax.get_xticklabels()),**kws_format_ticklabels)
     ax.set_xlim(min_,max_)
     ax.set_ylim(min_,max_)
 #     ax.set_xticks(ax.get_yticks())
+    ax.set_aspect('equal', 'box')
     return ax
 
 def get_axlims(ax: plt.Axes
@@ -446,6 +448,7 @@ def append_legends(
         plt.Axes: `plt.Axes` object.
     """
     h1, l1 = ax.get_legend_handles_labels()
+    print(l1)
     ax.legend(handles=h1+handles,
               labels=l1+labels,
               **kws)
@@ -458,7 +461,7 @@ def sort_legends(
     sort_order: list=None,
     **kws
     ) -> plt.Axes:
-    """Sort legends.
+    """Sort or filter legends.
 
     Args:
         ax (plt.Axes): `plt.Axes` object.
@@ -466,6 +469,9 @@ def sort_legends(
 
     Returns:
         plt.Axes: `plt.Axes` object.
+        
+    Notes:
+        1. Filter the legends by providing the indices of the legends to keep.
     """
     handles, labels = ax.get_legend_handles_labels()
     # sort both labels and handles by labels
@@ -475,9 +481,9 @@ def sort_legends(
         if all([isinstance(i,str) for i in sort_order]):
             sort_order=[labels.index(s) for s in sort_order]
         if not all([isinstance(i,int) for i in sort_order]):
-            logging.error("sort_order should contain all integers")
-            return
+            raise ValueError("sort_order should contain all integers")
         handles,labels =[handles[idx] for idx in sort_order],[labels[idx] for idx in sort_order]
+        # print(handles,labels)
     return ax.legend(handles, labels,**kws)
 
 def drop_duplicate_legend(ax,**kws): return sort_legends(ax=ax,sort_order=None,**kws)

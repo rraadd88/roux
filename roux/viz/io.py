@@ -190,14 +190,20 @@ def get_plot_inputs(
     if exists(plotp):
         plotp=abspath(plotp)
     else:
-        plotp=f"{outd}/{plotp}"
+        if not outd is None:
+            plotp=f"{outd}/{plotp}"
+            assert exists(plotp), f"not found {plotp}"
     if not outd is None:
         outd=abspath(outd)
         if not outd in plotp:
             plotp=f"{outd}/{plotp}"
+            assert exists(plotp), f"not found {plotp}"
+    else:
+        ## remove suffixes
+        outd=remove_exts(plotp)+'/'
     if df1 is None:
-        df1=read_table(f"{splitext(plotp)[0]}/df1.tsv");
-    kws_plot=update_kws_plot(kws_plot,kws_plotp=f"{splitext(plotp)[0]}/kws_plot.json")
+        df1=read_table(f"{outd}/df1.tsv");
+    kws_plot=update_kws_plot(kws_plot,kws_plotp=f"{outd}/kws_plot.json")
     return plotp,df1,kws_plot
 
 def log_code():
@@ -357,7 +363,7 @@ def to_plot(
             logging.warning("no data provided to_plot")
         return plotp
     outd=plotp
-    outd=remove_extension(outd,('.png', '.pdf','.jpg','.jpeg','.svg'))
+    outd=remove_exts(outd)
     if test:
         info(outd)
     df1p=f"{outd}/df1.tsv"
@@ -393,11 +399,12 @@ def read_plot(
     """
     if not safe:
         if not p.endswith('.py'):
-            p=f"{abspath(dirname(p))}/{basenamenoext(p)}/plot.py"
+            ## remove suffixes
+            p=f"{remove_exts(p)}/plot.py"
             if test:info(p)
-            # p=f"{splitext(p)[0]}.py"
         from roux.workflow.io import import_from_file
-        return import_from_file(p).plot_(**kws)
+        ax=import_from_file(p).plot_(**kws)
+        return ax
     else:
         from roux.lib.plot.schem import plot_image
         if p.endswith('.py'):

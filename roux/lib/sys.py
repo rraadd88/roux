@@ -3,7 +3,8 @@ io_sys -> io_files
 """
 import subprocess
 import sys
-from os.path import exists,dirname,basename,abspath,isdir,realpath,splitext
+from os.path import exists,dirname,basename,abspath,isdir,realpath,splitext ## prefer `pathlib` over `os.path`
+from pathlib import Path
 from glob import glob,iglob
 import logging
 # from roux.lib.io import makedirs
@@ -45,9 +46,9 @@ def basenamenoext(p):
     """
     return splitext(basename(p))[0]
 
-def remove_extension(
+def remove_exts(
     p: str,
-    exts: tuple,
+    exts: tuple= None,
     ):
     """Filename without the extension.
 
@@ -58,9 +59,7 @@ def remove_extension(
     Returns:
         s (str): output.
     """
-    while p.endswith(exts):
-        p=splitext(p)[0]
-    return p
+    return str(p).rstrip(''.join(Path(p).suffixes) if exts is None else exts)
 
 def makedirs(p: str,exist_ok=True,**kws):
     """Make directories recursively.
