@@ -303,12 +303,12 @@ def get_excecution_location(depth=1):
 def get_time():
     """Gets current time in a form of a formated string. Used in logger function.
     """
+    from roux.lib.io import to_path # potential circular import
     import datetime
-    time=make_pathable_string('%s' % datetime.datetime.now())
+    time=to_path('%s' % datetime.datetime.now())
     return time.replace('-','_').replace(':','_').replace('.','_')
 
 ## logging system
-from roux.lib.str import make_pathable_string
 def get_datetime(outstr=True):
     """Get the date and time.
 
@@ -318,10 +318,11 @@ def get_datetime(outstr=True):
     Returns:
         s : date and time.
     """
+    from roux.lib.io import to_path # potential circular import
     import datetime
     time=datetime.datetime.now()
     if outstr:
-        return make_pathable_string(str(time)).replace('-','_')
+        return to_path(str(time)).replace('-','_')
     else:
         return time
 

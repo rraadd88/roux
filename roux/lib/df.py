@@ -665,12 +665,14 @@ def to_map_binary(df,colgroupby=None,colvalue=None):
     """
     colgroupby=[colgroupby] if isinstance(colgroupby,str) else colgroupby
     colvalue=[colvalue] if isinstance(colvalue,str) else colvalue
-    if df.rd.check_duplicated(colgroupby+colvalue).shape[0]!=0:
+    if not df.rd.validate_no_dups(colgroupby+colvalue):
         logging.warning('duplicates found')
         df=df.log.drop_duplicates(subset=colgroupby+colvalue)
-    df['_value']=True
-    df1=df.pivot(index=colvalue,columns=colgroupby,values='_value').fillna(False)
-    return df1
+    return (df
+            .assign(_value=True)
+            .pivot(index=colvalue,columns=colgroupby,values='_value')
+            .fillna(False)
+            )
 
 ## intersections 
 @to_rd        
@@ -1276,9 +1278,10 @@ def split_ids(df1,col,sep='--',prefix=None):
     Return:
         df1 (DataFrame): output dataframe.
     """
+    # assert not df1._is_view, "input series should be a copy not a view"
     df=df1[col].str.split(sep,expand=True)
     for i in range(len(df.columns)):
-        df1[f"{col} {i+1}"]=df[i]
+        df1[f"{col} {i+1}"]=df[i].copy()
     if not prefix is None:
         df1=df1.rd.renameby_replace(replaces={f"{col} ":prefix})
     return df1

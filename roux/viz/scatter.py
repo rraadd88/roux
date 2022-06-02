@@ -1,5 +1,4 @@
 from roux.global_imports import *
-from roux.lib.str import make_pathable_string
 
 # stats
 # def annot_stats(dplot: pd.DataFrame,

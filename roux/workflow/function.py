@@ -1,5 +1,6 @@
 from roux.lib.sys import isdir,exists,dirname,basename,makedirs,basenamenoext,info,logging
-from roux.lib.str import replace_many,make_pathable_string
+from roux.lib.str import replace_many
+from roux.lib.io import to_path
 from roux.lib.set import unique
 import pandas as pd
 
@@ -127,7 +128,7 @@ def get_name(
     """
     assert s.startswith(f'# {sep_step}')
     assert s.count(sep_step)==1
-    s1=make_pathable_string(s.replace(f'# {sep_step}',f'step{i:02}')).lower().replace('/','_')
+    s1=to_path(s.replace(f'# {sep_step}',f'step{i:02}')).lower().replace('/','_')
     s1=s1 if len(s1)>=80 else s1[:80]
     s1=replace_many(s1,{' ':'_','.':'_'},ignore=True)
     return s1

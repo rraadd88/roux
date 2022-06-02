@@ -56,7 +56,7 @@ def get_enrichment(
              description=name,
              gene_sets=df2.rd.to_dict([colref,colid]),
              background=background, # or the number of genes, e.g 20000
-             outdir=get_path(f'{outd}/{name}'),
+             outdir=to_path(f'{outd}/{name}'),
              cutoff=cutoff, # only used for plotting.
              verbose=verbose,
              no_plot=no_plot,
@@ -93,7 +93,7 @@ def get_enrichment(
                          processes=1,
                          permutation_num=permutation_num, # reduce number to speed up testing
                          ascending=False, # look for high number 
-                         outdir=get_path(f'{outd}/{name}'),
+                         outdir=to_path(f'{outd}/{name}'),
                          pheno_pos='high',
                          pheno_neg='low',
                          format='png',

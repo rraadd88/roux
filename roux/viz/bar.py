@@ -304,9 +304,14 @@ def to_input_data_sankey(df0,colid,cols_groupby=None,width=20):
     """
     if cols_groupby is None:
         cols_groupby=['all']+list(set(df0.columns.tolist())-set([colid]))
-    df0=df0.log.dropna(subset=list(set(cols_groupby) - set(['all'])),
+    df0=(df0
+        .log.dropna(subset=list(set(cols_groupby) - set(['all'])),
                        how='all')
-    df0['all']='all'
+        .assign(all='all')
+        )
+    for col in cols_groupby:
+        if df0[col].dtype=='bool':
+            df0[col]=df0[col].map({True:col,False:np.nan}) 
     ## map labels    
     # df0
     # return df0
@@ -318,7 +323,7 @@ def to_input_data_sankey(df0,colid,cols_groupby=None,width=20):
     # df1
 
     df2=pd.concat([
-        df0.groupby(list(cols))[colid].nunique() for cols in itertools.product(['all'],cols_groupby[1:])
+        df0.groupby(list(cols))[colid].nunique() for cols in itertools.product(['all'],[cols_groupby[1]])
     ],
     axis=0
     ).to_frame('total').rename_axis(['source','target'],axis=0).reset_index().drop_duplicates()
@@ -351,6 +356,7 @@ def plot_sankey(
     hovertemplate=None,
     convert=True,
     outp=None,
+    validate=True,
     test=False,
     **kws,
     ):
@@ -358,15 +364,23 @@ def plot_sankey(
         df2=to_input_data_sankey(df1,**kws)
         id2n_=df1.apply(lambda x: len(df1)-x.isnull().sum())
     id2n=df2.groupby(['target'])['count'].sum().astype(int)#.to_dict()
-    if convert:    
+    print(id2n)
+    print(id2n_)
+    if convert and validate:    
         assert all(id2n_.loc[id2n.index]==id2n), 'sizes of the sets changed after `to_input_data_sankey`?'
     labels=list(pd.unique(df2['source'].unique().tolist()+df2['target'].unique().tolist()))
-    from roux.viz.colors import get_val2color,to_hex
-    val2color,legend2color=get_val2color(pd.Series(hue))
-    # df2[f"{col} color"]=df2[col].map(hue)
-    colors=[to_hex(val2color[hue[k]]) if k in hue else "#888888" for k in labels]
+    if not hue is None:
+        from roux.viz.colors import get_val2color,to_hex
+        val2color,legend2color=get_val2color(pd.Series(hue))
+        # df2[f"{col} color"]=df2[col].map(hue)
+        colors=[to_hex(val2color[hue[k]]) if k in hue else "#888888" for k in labels]
+    else:
+        colors=None
     if not info is None:
         customdata=[info[k] if k in info else k for k in labels]
+    else:
+        customdata=None
+    from roux.lib.str import linebreaker
     labels=[linebreaker(x +(f" (n={id2n[x]})" if x in id2n else ''),20,sep='<br>') for x in labels]
     
     import plotly.io as pio

@@ -37,6 +37,30 @@ def read_ps(ps,test=True):
             logging.warning('paths do not exist.')
     return ps
 
+def to_path(s,replacewith='_'):
+    """Normalise a string to be used as a path of file.
+    
+    Parameters:
+        s (string): input string.
+        replacewith (str): replace the whitespaces or incompatible characters with.
+        
+    Returns:
+        s (string): output string.
+    """
+    import re
+    s=(re.sub(r'[^\w+/.+-]',replacewith, s)
+       .replace('+','_') 
+       .strip(replacewith)
+       )
+    s=re.sub(r'(/)\1+',r'\1',s) # remove multiple _'s
+    s=re.sub(r'(_)\1+',r'\1',s) # remove multiple /'s
+    return s.replace(f'/My{replacewith}Drive/','/My Drive/') # google drive
+#     return re.sub('\W+',replacewith, s.lower() )
+
+# alias to be deprecated in the future
+make_pathable_string=to_path
+# get_path=to_path
+
 def to_outp(ps,outd=None,outp=None,suffix=''):
     """Infer output path based on the list of paths.
     
@@ -643,20 +667,6 @@ def read_tables(ps,
     else:
         return {p:read_table(p,
                              params=params) for p in read_ps(ps)}
-def get_path(p):
-    """Preprocess the path.
-    
-    Parameters:
-        p (str): path.
-        
-    Returns:
-        p (str): processed path.
-    """
-    if not 'My Drive' in p:
-        p=p.replace(' ','_')
-    else:
-        logging.warning('probably working on google drive; space/s left in the path.')
-    return p
 
 ## save table
 def to_table(df,p,
@@ -678,7 +688,7 @@ def to_table(df,p,
         p (str): path of the output.    
     """
     if is_interactive_notebook(): test=True
-    p=get_path(p)
+    p=to_path(p)
     if df is None:
         df=pd.DataFrame()
         logging.warning(f"empty dataframe saved: {p}")
@@ -746,7 +756,7 @@ def to_manytables(df,p,colgroupby,
             names=[names]
         d1=dict(zip(colgroupby,names))
         s1='/'.join([(f"{k}{fmt}" if fmt!='' else fmt)+f"{str(v)}" for k,v in d1.items()])
-        return get_path(f"{outd}/{s1}{ext}")                
+        return to_path(f"{outd}/{s1}{ext}")                
     df2=df.groupby(colgroupby).progress_apply(lambda x: to_table(x,to_outp(x.name,outd,colgroupby,fmt))).to_frame('path').reset_index()
     to_table(df2,p)
     
@@ -828,7 +838,7 @@ def to_excel(sheetname2df,outp,append=False,**kws):
 #     if not 'xlrd' in sys.modules:
 #         logging.error('need xlrd to work with excel; pip install xlrd')
     makedirs(outp)
-    outp=get_path(outp)
+    outp=to_path(outp)
     writer = pd.ExcelWriter(outp)
     startrow=0
     for sn in sheetname2df:
@@ -840,8 +850,12 @@ def to_excel(sheetname2df,outp,append=False,**kws):
     writer.save()
     return outp
 
-def to_excel_commented(p: str,d1: dict,
-                       outp: str=None,author: str='Author'):
+def to_excel_commented(
+    p: str,
+    d1: dict,
+    outp: str=None,
+    author: str='Author'
+    ):
     """Add comments to the columns of excel file and save.
 
     Args:
@@ -853,6 +867,9 @@ def to_excel_commented(p: str,d1: dict,
     TODOs:
         1. Increase the limit on comments can be added to number of columns. Currently it is 26 i.e. upto Z1.
     """
+    if outp is None:
+        outp=p
+        logging.warning('overwritting the input file')
     from openpyxl import load_workbook
     from openpyxl.comments import Comment
     from string import ascii_uppercase

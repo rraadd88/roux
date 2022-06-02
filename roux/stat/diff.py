@@ -649,7 +649,7 @@ def binby_pvalue_coffs(df1: pd.DataFrame,
 #     info(df1.shape,df1.shape)
     return df1,df2
 
-# from roux.lib.plot.diff import plot_stats_diff
+# from roux.viz.diff import plot_stats_diff
 ## confounding effects
 def get_stats_regression(df_: pd.DataFrame,
                         d0={},

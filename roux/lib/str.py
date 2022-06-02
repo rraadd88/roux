@@ -73,36 +73,19 @@ def tuple2str(tup,sep=' '):
         logging.error("tup is not str either")
     return tup
 
-def normalisestr(s):
-    """Normalise string.
+# def normalisestr(s,):
+#     """Normalise string.
     
-    Parameters:
-        s (string): input string.
+#     Parameters:
+#         s (string): input string.
     
-    Returns:
-        s (string): output string.
-    """
-    if not isinstance(s,str):
-        s=s.decode("utf-8")
-    import re
-    return re.sub('\W+','', s.lower()).replace('_','')
-
-def to_path(s,replacewith='_'):
-    """Normalise a string to be used as a path of file.
-    
-    Parameters:
-        s (string): input string.
-        replacewith (str): replace the whitespaces or incompatible characters with.
-        
-    Returns:
-        s (string): output string.
-    """
-    import re
-    return re.sub(r'[^\w+/.]',replacewith, s).replace('+','_').replace('/My_Drive/','/My Drive/')
-#     return re.sub('\W+',replacewith, s.lower() )
-
-# alias to be deprecated in the future
-make_pathable_string=to_path
+#     Returns:
+#         s (string): output string.
+#     """
+#     if not isinstance(s,str):
+#         s=s.decode("utf-8")
+#     import re
+#     return re.sub('\W+','', s.lower()).replace('_','')
 
 def linebreaker(text, width,
                 sep='\n',

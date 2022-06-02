@@ -7,7 +7,7 @@ venv
 htmlcov
 .coverage
 *.sh
-*.ipynb
+# *.ipynb
 *.pyc
 *.ipynb_checkpoints
 build

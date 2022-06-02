@@ -24,14 +24,16 @@ def get_subplots(
 
 def labelplots(
     fig,
-    axes: list,
+    axes: list=None,
+    labels: list=None,
     xoff: float=0,
     yoff: float=0,
     params_alignment: dict={},
-    params_text: dict={'size':20,'va':'bottom',
-    'ha':'right'
-    },
+    size:float = 20,
+    va:str = 'bottom',
+    ha:str = 'right',
     test: bool=False,
+    **kws,
     ):
     """Label (sub)plots.
 
@@ -44,8 +46,14 @@ def labelplots(
         params_text (dict, optional): parameters provided to `plt.text`. Defaults to {'size':20,'va':'bottom', 'ha':'right' }.
         test (bool, optional): test mode. Defaults to False.
     """
-    import string
-    label2ax=dict(zip(string.ascii_uppercase[:len(axes)],axes))
+    if axes is None:
+        axes=fig.axes
+    if labels is None:
+        import string
+        labels=string.ascii_uppercase[:len(axes)]
+    else:
+        assert len(axes)==len(labels) 
+    label2ax=dict(zip(labels,axes))
     axi2xy={}
     for axi,label in enumerate(label2ax.keys()):
         ax=label2ax[label]
@@ -55,6 +63,9 @@ def labelplots(
                          axi2xy[pair[0 if 'y' in params_alignment[pair] else 1]][1]]
     for axi,label in enumerate(label2ax.keys()):
         label2ax[label].text(*axi2xy[axi],f"{label}",
+                             size=size,
+                             ha=ha,
+                             va=va,
                              transform=fig.transFigure,
-                             **params_text)    
+                             **kws)    
 

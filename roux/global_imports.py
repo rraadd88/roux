@@ -33,7 +33,7 @@ class LoggingContext:
 
 # recepies
 from pathlib import Path
-from roux.lib.str import get_bracket, replace_many, make_pathable_string,get_suffix,get_prefix
+from roux.lib.str import get_bracket, replace_many,get_suffix,get_prefix
 from roux.lib.dict import *
 from roux.lib.set import *
 from roux.lib.text import read,read_lines

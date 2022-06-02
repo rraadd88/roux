@@ -32,8 +32,8 @@ def plot_image(
 #             from roux.lib.figs.convert import svg2png
 #             pngp=svg2png(imp,force=force,**kwarg)
 #         else:
-        from roux.lib.figs.convert import vector2raster
-        pngp=vector2raster(imp,force=force,**kwarg)
+        from roux.viz.io import to_raster
+        pngp=to_raster(imp,force=force,**kwarg)
     ax=plt.subplot() if ax is None else ax
     im=plt.imread(pngp)
     ax.imshow(im,interpolation='catrom')

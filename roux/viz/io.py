@@ -83,7 +83,7 @@ def savefig(
         logging.error(f"more than one '.' not allowed in the path {plotp}")
         return 
     if normalise_path:
-        plotp=abspath(make_pathable_string(plotp))
+        plotp=abspath(to_path(plotp))
     plotp=f"{dirname(plotp)}/{basenamenoext(plotp).replace('.','_')}{splitext(plotp)[1]}"    
     makedirs(plotp,exist_ok=True)
     if len(fmts)==0:
@@ -406,7 +406,7 @@ def read_plot(
         ax=import_from_file(p).plot_(**kws)
         return ax
     else:
-        from roux.lib.plot.schem import plot_image
+        from roux.viz.image import plot_image
         if p.endswith('.py'):
             p=(read_ps(f"{dirname(p)}.*png")+read_ps(f"{dirname(p)}.*pdf"))[0]
         return plot_image(p,**kws)
