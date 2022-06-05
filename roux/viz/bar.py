@@ -299,31 +299,40 @@ def plot_barh_stacked_percentage_intersections(
 from roux.viz.sets import plot_intersections
 
 ## plotly
-def to_input_data_sankey(df0,colid,cols_groupby=None,width=20):
+def to_input_data_sankey(df0,
+                         colid,
+                         cols_groupby=None,
+                        colall='all',
+                         remove_all=False,
+                        ):
     """
     """
     if cols_groupby is None:
-        cols_groupby=['all']+list(set(df0.columns.tolist())-set([colid]))
+        cols_groupby=list(set(df0.columns.tolist())-set([colid]))
     df0=(df0
-        .log.dropna(subset=list(set(cols_groupby) - set(['all'])),
-                       how='all')
-        .assign(all='all')
+        .log.dropna(subset=cols_groupby,
+                       how='all',
+                   )
         )
+    if not colall in cols_groupby:
+        df0=df0.assign(**{colall:colall})
+        cols_groupby=[colall]+cols_groupby
     for col in cols_groupby:
         if df0[col].dtype=='bool':
             df0[col]=df0[col].map({True:col,False:np.nan}) 
     ## map labels    
-    # df0
-    # return df0
+    # print(cols_groupby)
+    # print(np.lib.stride_tricks.sliding_window_view(cols_groupby[1:],2))
     df1=pd.concat([
-        df0.groupby(list(cols))[colid].nunique() for cols in np.lib.stride_tricks.sliding_window_view(cols_groupby[1:],2) #itertools.combinations(cols_groupby[1:],2)
+        df0.groupby(list(cols))[colid].nunique() for cols in np.lib.stride_tricks.sliding_window_view(cols_groupby[1:],2) # if the counts do not reduce serially: itertools.combinations(cols_groupby[1:],2)
     ],
     axis=0
     ).to_frame('count').rename_axis(['source','target'],axis=0).reset_index().drop_duplicates()
     # df1
 
+    # to set the correct number of count for the 1st subset bar in case where the counts decrease
     df2=pd.concat([
-        df0.groupby(list(cols))[colid].nunique() for cols in itertools.product(['all'],[cols_groupby[1]])
+        df0.groupby(list(cols))[colid].nunique() for cols in itertools.product([colall],[cols_groupby[1]])
     ],
     axis=0
     ).to_frame('total').rename_axis(['source','target'],axis=0).reset_index().drop_duplicates()
@@ -340,6 +349,10 @@ def to_input_data_sankey(df0,colid,cols_groupby=None,width=20):
         'count':lambda x: x['total']-x['substract']})
     .append(df1)
     )
+    if remove_all:
+        # to set the correct number of count for the 1st subset bar in case where the counts decrease
+        assert len(set(df0.loc[:,cols_groupby].replace(False,np.nan).apply(lambda x: x.notnull().sum())[1:3].tolist()))==1
+        df3=df3.loc[(df3['source']!=colall) & (df3['target']!=colall),:]
     # map ids
     labels=list(pd.unique(df3['source'].unique().tolist()+df3['target'].unique().tolist()))
     d_={s:i for i,s in enumerate(labels)}
@@ -349,11 +362,16 @@ def to_input_data_sankey(df0,colid,cols_groupby=None,width=20):
 
 def plot_sankey(
     df1,
-    hue=None, # dict
+    cols_groupby=None,
+    hues=None, # dict
     node_color=None,
     link_color=None,
     info=None,
+    x=None,
+    y=None,
+    colors=None,
     hovertemplate=None,
+    text_width=20,
     convert=True,
     outp=None,
     validate=True,
@@ -361,40 +379,45 @@ def plot_sankey(
     **kws,
     ):
     if convert:
-        df2=to_input_data_sankey(df1,**kws)
+        df2=to_input_data_sankey(df1,
+                                 cols_groupby=cols_groupby,
+                                 **kws)
         id2n_=df1.apply(lambda x: len(df1)-x.isnull().sum())
     id2n=df2.groupby(['target'])['count'].sum().astype(int)#.to_dict()
-    print(id2n)
-    print(id2n_)
+    # print(id2n)
+    # print(id2n_)
     if convert and validate:    
         assert all(id2n_.loc[id2n.index]==id2n), 'sizes of the sets changed after `to_input_data_sankey`?'
     labels=list(pd.unique(df2['source'].unique().tolist()+df2['target'].unique().tolist()))
-    if not hue is None:
+    if not hues is None:
         from roux.viz.colors import get_val2color,to_hex
-        val2color,legend2color=get_val2color(pd.Series(hue))
-        # df2[f"{col} color"]=df2[col].map(hue)
-        colors=[to_hex(val2color[hue[k]]) if k in hue else "#888888" for k in labels]
-    else:
-        colors=None
+        val2color,legend2color=get_val2color(pd.Series(hues))
+        # df2[f"{col} color"]=df2[col].map(hues)
+        colors=[to_hex(val2color[hues[k]]) if k in hues else "#888888" for k in labels]
     if not info is None:
         customdata=[info[k] if k in info else k for k in labels]
     else:
         customdata=None
     from roux.lib.str import linebreaker
-    labels=[linebreaker(x +(f" (n={id2n[x]})" if x in id2n else ''),20,sep='<br>') for x in labels]
-    
+    labels=[linebreaker(x +(f" ({id2n[x]})" if x in id2n else ''),text_width,sep='<br>') for x in labels]
+    ## get x and y values    
     import plotly.io as pio
     pio.renderers.default = 'iframe'
     import plotly.graph_objects as go
     fig = go.Figure(data=[go.Sankey(
-        arrangement='fixed',
+        arrangement='freeform',
+        # arrangement='fixed',
         node = dict(
-            pad = 10,
-            thickness = 20,
+            pad = 0,
+            thickness = 7,
             line = dict(
                 color = '#FFFFFF',
                 width = 0.1,
                 ),
+            x=x,
+            y=y,
+            # x=np.repeat(1,len(labels)),
+            # y=np.repeat(1,len(labels)),
             label =labels,
             color=colors,
             customdata=customdata,
@@ -405,10 +428,30 @@ def plot_sankey(
             target = df2['target id'],
             value = df2['count'],
             # color=link_color,
-            )
+            ),
       )])
-    fig.show()    
+    # fig.for_each_annotation(lambda a: a.update(x=a.x-1))
+    # fig.for_each_annotation(lambda a: a.update(text=a.text.split("n")[-1]))
+    # fig.update_annotations(align='left')
+    # #x axis
+    # fig.update_xaxes(visible=True)
+    # #y axis    
+    # fig.update_yaxes(visible=True)    
+    fig.update_layout(
+                  font_size=10,
+                  autosize=False,
+                  width=400,
+                  height=400,
+                    # xaxis= {
+                    #     'range': [0.2, 1],
+                    #     'showgrid': True, # thin lines in the background
+                    #     'zeroline': False, # thick line at x=0
+                    #     'visible': True,  # numbers below
+                    # }, # the same for yaxis
+                 )
     
     if not outp is None:
         fig.write_image(outp,format=Path(outp).suffix[1:], engine="kaleido")
+    else:
+        fig.show()
     return fig
