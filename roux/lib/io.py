@@ -37,7 +37,12 @@ def read_ps(ps,test=True):
             logging.warning('paths do not exist.')
     return ps
 
-def to_path(s,replacewith='_'):
+def to_path(
+    s,
+    replacewith='_',
+    verbose=False,
+    coff_len_escape_replacement=100,
+    ):
     """Normalise a string to be used as a path of file.
     
     Parameters:
@@ -48,12 +53,16 @@ def to_path(s,replacewith='_'):
         s (string): output string.
     """
     import re
-    s=(re.sub(r'[^\w+/.+-]',replacewith, s)
-       .replace('+','_') 
-       .strip(replacewith)
-       )
-    s=re.sub(r'(/)\1+',r'\1',s) # remove multiple _'s
-    s=re.sub(r'(_)\1+',r'\1',s) # remove multiple /'s
+    s=re.sub(r'(/)\1+',r'\1',s) # remove multiple /'s
+    if max([len(s_) for s_ in s.split('/')])<coff_len_escape_replacement:
+        s=(re.sub(r'[^\w+/.+-=]',replacewith, s)
+           .replace('+',replacewith) 
+           .strip(replacewith)
+           )
+        s=re.sub(r'(_)\1+',r'\1',s) # remove multiple _'s
+    else:
+        if verbose:
+            logging.info("replacements not done; possible long IDs in the path.")
     return s.replace(f'/My{replacewith}Drive/','/My Drive/') # google drive
 #     return re.sub('\W+',replacewith, s.lower() )
 
@@ -669,10 +678,13 @@ def read_tables(ps,
                              params=params) for p in read_ps(ps)}
 
 ## save table
-def to_table(df,p,
-             colgroupby=None,
-             test=False,
-             **kws):
+def to_table(
+    df,
+    p,
+    colgroupby=None,
+    test=False,
+    **kws
+    ):
     """Save table.
     
     Parameters:

@@ -220,3 +220,32 @@ def plot_kinetics(
                      **kws_legend)
     ax.set(**kws_set)
     return ax
+
+
+## plot data shape changes
+def plot_steps(df1,
+               coln='n',
+               ax=None,
+               test=False):
+    """
+    changes in numbers
+    """
+    df1=df1.sort_values(coln,ascending=False)
+    df1['% change']=df1[coln].pct_change() * 100
+    df1['y']=range(len(df1))
+    if ax is None:
+        fig,ax=plt.subplots(figsize=[4,len(df1)])
+    kws_line=dict( marker='o',mfc='w',color='gray',ms=17)
+    df1.iloc[:-1,:].apply(lambda x: ax.plot([0,0],[x['y'],x['y']+1],**kws_line),axis=1)
+    df1.apply(lambda x: ax.text(0.005,x['y'],s=x.name,ha='left',va='center'),axis=1)
+    df1.apply(lambda x: ax.text(0,x['y'],s=f"{x['y']:.0f}",ha='center',va='center'),axis=1)
+    df1.apply(lambda x: ax.text(0.005,x['y']+0.33,s=f"n={x[coln]:.0f}",ha='left',va='center',
+                               alpha=0.75),axis=1)
+    from rohan.lib.plot.colors import saturate_color
+    df1.apply(lambda x: ax.text(0.005,x['y']+0.66,s=f"{x['% change']:.1f}%" if not pd.isnull(x['% change']) else '',ha='left',va='center',
+                               color=saturate_color("#FF0000",0.5+(x['% change']/-100)) if x['% change']<0 else 'g',
+                               alpha=0.75),axis=1)
+    ax.set(xlim=[-0.005,0.1],
+          ylim=[len(df1)+0.5,-1.5])
+    if not test:ax.axis('off')
+    return ax

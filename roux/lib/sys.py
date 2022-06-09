@@ -102,7 +102,7 @@ def get_env(env_name: str):
         env["PATH"]=path.replace('/bin/python','/bin')+':'+env["PATH"]
     return env
 
-def runbash(s1,env,test=False,**kws):
+def runbash(s1,env=None,test=False,**kws):
     """Run a bash command. 
 
     Args:
@@ -118,8 +118,10 @@ def runbash(s1,env,test=False,**kws):
         2. error ignoring
     """
     if test:logging.info(s1)
+    if env is None:
+        logging.warning('env is not set.')
     response=subprocess.call(s1, shell=True,
-                           env=get_env(env) if isinstance(env,str) else env,
+                           env=get_env(env) if isinstance(env,str) else env if not env is None else env,
                stderr=subprocess.DEVNULL if not test else None, 
                stdout=subprocess.DEVNULL if not test else None,
                **kws)
