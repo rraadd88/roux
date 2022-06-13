@@ -373,6 +373,8 @@ def plot_sankey(
     hovertemplate=None,
     text_width=20,
     convert=True,
+    width=400,
+    height=400,
     outp=None,
     validate=True,
     test=False,
@@ -440,8 +442,8 @@ def plot_sankey(
     fig.update_layout(
                   font_size=10,
                   autosize=False,
-                  width=400,
-                  height=400,
+                  width=width,
+                  height=height,
                     # xaxis= {
                     #     'range': [0.2, 1],
                     #     'showgrid': True, # thin lines in the background
