@@ -122,13 +122,15 @@ def get_corr(
         else:
             return corr_to_str(method,r,p,n=n, ci=None,ci_type=None, magnitide=magnitide),r
 
-def get_corrs(df1,
-              method,
-              cols,
-              cols_with=[],
-              coff_inflation_min=None,
-              test=False,
-              **kws):
+def get_corrs(
+    df1,
+    method,
+    cols,
+    cols_with=[],
+    coff_inflation_min=None,
+    test=False,
+    **kws
+    ):
     """Correlate columns of a dataframes.
 
     Args:
@@ -183,7 +185,13 @@ def get_corrs(df1,
     return df2
 
 ## partial 
-def get_partial_corrs(df: pd.DataFrame,xs: list,ys: list, method='spearman',splits=5) -> pd.DataFrame:
+def get_partial_corrs(
+    df: pd.DataFrame,
+    xs: list,
+    ys: list, 
+    method='spearman',
+    splits=5
+    ) -> pd.DataFrame:
     """Get partial correlations.
 
     Args:
@@ -267,7 +275,10 @@ def check_collinearity(
             .sort_values(ascending=False)
            )    
 
-def pairwise_chi2(df1: pd.DataFrame,cols_values: list) -> pd.DataFrame:
+def pairwise_chi2(
+    df1: pd.DataFrame,
+    cols_values: list
+    ) -> pd.DataFrame:
     """Pairwise chi2 test.
 
     Args:

@@ -26,7 +26,7 @@ from roux.global_imports import *
 #         plt.Axes: `plt.Axes` object.
 #     """
 #     stat_method = [stat_method] if isinstance(stat_method,str) else stat_method
-#     from roux.viz.ax_ import set_label
+#     from roux.viz.annot import set_label
 #     if 'mlr' in stat_method:
 #         from roux.lib.stat.poly import get_mlr_2_str
 #         ax=set_label(ax,label=get_mlr_2_str(dplot,colz,[colx,coly]),
@@ -180,7 +180,7 @@ def plot_scatter(
     from roux.viz.ax_ import set_colorbar_label
 #     print(colz)
     ax=set_colorbar_label(ax,colz if label_colorbar is None else label_colorbar)
-    from roux.viz.ax_ import set_label
+    from roux.viz.annot import set_label
     if 'mlr' in stat_method:
         from roux.lib.stat.poly import get_mlr_2_str
         ax=set_label(ax,label=get_mlr_2_str(dplot,colz,[colx,coly]),
@@ -192,10 +192,11 @@ def plot_scatter(
                                        outstr=True,
                                       # n=True
                                      )
-        if r>=0:
-            params_set_label['loc']=2
-        elif r<0:
-            params_set_label['loc']=1
+        if not 'loc' in params_set_label:
+            if r>=0:
+                params_set_label['loc']=2
+            elif r<0:
+                params_set_label['loc']=1
         ax=set_label(ax=ax,s=label,**params_set_label)
     from roux.viz.colors import saturate_color
     plot_trendline(dplot,colx,coly,

@@ -87,7 +87,9 @@ def tuple2str(tup,sep=' '):
 #     import re
 #     return re.sub('\W+','', s.lower()).replace('_','')
 
-def linebreaker(text, width,
+def linebreaker(text, 
+                width=None,
+                break_pt=None,
                 sep='\n',
                 **kws,
                ):
@@ -104,6 +106,8 @@ def linebreaker(text, width,
     References:
         1. `textwrap`: https://docs.python.org/3/library/textwrap.html
     """
+    if width is None and not break_pt is None:
+        width=break_pt
     import textwrap
     return sep.join(textwrap.wrap(text, width,**kws,))
     # if len(i)>break_pt:

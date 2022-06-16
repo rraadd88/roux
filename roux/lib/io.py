@@ -216,6 +216,7 @@ def backup(p,outd,
            versioned=False,
            suffix='',
            zipped=False,
+           move_only=False,
            test=True,
           no_test=False
           ):
@@ -242,8 +243,7 @@ def backup(p,outd,
             "find -regex .*/_.*"
             "find -regex .*/test.*"
     """
-    print(p)
-    print(outd)    
+    info(p,outd)
     if no_test:
         test=False
     logging.warning(f"test={test}")
@@ -259,9 +259,9 @@ def backup(p,outd,
     # create directoried in outd
     outds=unique([dirname(dirname(p)) if isdir(p) else dirname(p) for p in ps])
 #     if test:print(outds)
-    outds=[replacemany(p,{outd:outd2})+'/' for p in outds]
+    outds=[replacemany(p,{outd:outd2})+'/' if not move_only else outd2+p for p in outds]
 #     if test:print(outds)
-    l1=[(p,replacemany(p,{outd:outd2})) for p in ps]
+    l1=[(p,replacemany(p,{outd:outd2})) if not move_only else (p,outd2+p) for p in ps]
 #     if test:print(l1)
     l1=[(p1,dirname(dirname(p2)) if p2.endswith('/') else p2) for p1,p2 in l1]    
     if test:
