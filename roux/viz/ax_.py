@@ -136,7 +136,7 @@ def format_ticklabels(
     fmt: str=None,
     font: str=None,#'DejaVu Sans Mono',#"Monospace"
     ) -> plt.Axes:
-    """format_ticklabels _summary_
+    """format_ticklabels
 
     Args:
         ax (plt.Axes): `plt.Axes` object.
@@ -172,6 +172,7 @@ def set_equallim(
     ax: plt.Axes,
     diagonal: bool=False,
     difference: float=None,
+    format_ticks : bool=True,
     **kws_format_ticklabels,
     ) -> plt.Axes:
     """Set equal axis limits.
@@ -190,8 +191,10 @@ def set_equallim(
     if not difference is None:
         off=np.sqrt(difference**2+difference**2)
         ax.plot([min_+off ,max_+off],[min_,max_],':',color='gray',zorder=5)        
-        ax.plot([min_-off ,max_-off],[min_,max_],':',color='gray',zorder=5)        
-    ax=format_ticklabels(ax,n=len(ax.get_xticklabels()),**kws_format_ticklabels)
+        ax.plot([min_-off ,max_-off],[min_,max_],':',color='gray',zorder=5)      
+    if format_ticks and len(ax.get_xticklabels())!=0:
+        ax=format_ticklabels(ax,n=len(ax.get_xticklabels()),**kws_format_ticklabels)
+        # logging.warning('format_ticklabels failed possibly because of shared axes (?).')
     ax.set_xlim(min_,max_)
     ax.set_ylim(min_,max_)
 #     ax.set_xticks(ax.get_yticks())

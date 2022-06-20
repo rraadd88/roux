@@ -372,7 +372,7 @@ def assert_no_na(df,subset=None):
 
 ## nunique:
 @to_rd
-def check_nunique(df,subset=None,perc=False):
+def check_nunique(df,subset=None,groupby=None,perc=False):
     """Number/percentage of unique values in columns.
     
     Parameters:
@@ -385,11 +385,16 @@ def check_nunique(df,subset=None,perc=False):
     """
     if subset is None:
         subset=df.select_dtypes((object,bool)).columns.tolist()
-    if not perc:
-        return df.loc[:,subset].nunique()
+    if isinstance(subset,str):
+        subset=[subset]
+    if groupby is None:
+        if not perc:
+            return df.loc[:,subset].nunique()
+        else:
+            return (df.loc[:,subset].nunique()/df.loc[:,subset].agg(len))*100
     else:
-        return (df.loc[:,subset].nunique()/df.loc[:,subset].agg(len))*100
-
+        from roux.lib.set import list2str
+        return df.groupby(groupby)[list2str(subset)].nunique()
 
 ## nunique:
 @to_rd
@@ -1429,3 +1434,16 @@ class log:
     def melt_paired(self,**kws):
         from roux.lib.df import log_apply
         return log_apply(self._obj,fun=melt_paired,**kws)
+    ## rd/logging-only
+    def check_nunique(self,**kws):
+        logging.info(f'unique {kws}')
+        logging.info(check_nunique(self._obj,**kws))
+        return self._obj    
+    def check_na(self,**kws):
+        logging.info(f'na {kws}')
+        logging.info(check_na(self._obj,**kws))
+        return self._obj    
+    def check_dups(self,**kws):
+        logging.info(f'dups {kws}')
+        logging.info(check_dups(self._obj,**kws))
+        return self._obj        

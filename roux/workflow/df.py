@@ -18,7 +18,9 @@ def exclude_items(
     """
     for c in df1:
         if c in metadata['exclude']:
-            info(c)
+            # info(c)
+            shape0=df1.shape
             df1=df1.loc[~(df1[c].isin(metadata['exclude'][c])),:]
-            logging.info(f"c:{df1[c].nunique()}")
+            if shape0!=df1.shape:
+                logging.info(f"{c}:{df1[c].nunique()}")
     return df1

@@ -358,7 +358,7 @@ def get_pairs(items,
     if len(items_with)==0:
         o1=itertools.combinations(items,size)
     else:
-        assert len(set(items) & set(items_with))!=0, 'two lists should be non-overlapping, otherwise pairs with self would be created.'
+        assert len(set(items) & set(items_with))==0, f'two lists should be non-overlapping, otherwise pairs with self would be created. {set(items) & set(items_with)}'
         o1=itertools.product(items,items_with)
     # create dataframe
     df0=pd.DataFrame(o1,columns=range(1,size+1))
