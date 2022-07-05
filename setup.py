@@ -34,7 +34,8 @@ requirements = {
             xlrd
             openpyxl
             argh
-            icecream""".split('\n'),
+            icecream
+            watermark""".split('\n'),
 'stat':['statsmodels',
         'networkx',
         # 'pingouin',
