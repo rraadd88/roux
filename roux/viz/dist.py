@@ -154,7 +154,7 @@ def plot_gmm(
     if not out_coff:
         return ax
     else:
-        return ax,coff        
+        return ax,coff
 
 def plot_normal(
     x: pd.Series,

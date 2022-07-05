@@ -27,7 +27,10 @@ def get_name(df1,cols=None,coff=2,out=None):
         name=df1.iloc[0,:][cols]
     else:
         l1=get_constants(df1.select_dtypes(object))
-        if len(l1)<=coff:
+        if len(l1)==1:
+            from roux.lib.set import list2str
+            name=list2str(df1[l1[0]].unique())
+        elif len(l1)<=coff:
             name=sorted(l1)
         elif len(l1)==0:
             return

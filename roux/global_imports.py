@@ -58,6 +58,8 @@ prjs=['00_metaanalysis']
 import matplotlib.pyplot as plt
 import seaborn as sns
 plt.style.use('ggplot')
+plt.rcParams['pdf.fonttype'] = 42
+plt.rcParams['ps.fonttype'] = 42
 plt.rcParams['font.family'] = 'Myriad Pro'
 plt.rcParams['figure.figsize'] = (3, 3)
 plt.rcParams['axes.facecolor']='none'
@@ -99,6 +101,11 @@ else:
     # if not get_ipython() is None:
     #     get_ipython().run_line_magic('config', "InlineBackend.figure_formats = ['svg']")
 
+## session info
+import watermark.watermark as watermark
+logging.info(watermark(python=True)+watermark(iversions=True,globals_=globals()))
+
+## parallel processing
 from pandarallel import pandarallel
 pandarallel.initialize(nb_workers=6,progress_bar=True)
 logging.info("pandarallel.initialize(nb_workers=4,progress_bar=True)")

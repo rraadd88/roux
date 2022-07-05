@@ -887,7 +887,7 @@ def to_excel_commented(
     from string import ascii_uppercase
     wb = load_workbook(filename = outp)
     for sh in wb:
-        for k in [s+'1' for s in ascii_uppercase]:
+        for k in [s+'1' for s in list(ascii_uppercase)+['A'+s_ for s_ in ascii_uppercase]]:
             if (not sh[k].value is None):
                 if (sh[k].value in d1):
                     sh[k].comment = Comment(d1[sh[k].value],author=author)
