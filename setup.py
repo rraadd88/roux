@@ -71,7 +71,7 @@ extras_require['all']=list(set(extras_require['all']))
 
 setuptools.setup(
     name='roux',
-    version='0.0.4',
+    version='0.0.5',
     description='Your project description here',
     long_description=long_description,
     long_description_content_type="text/markdown",
