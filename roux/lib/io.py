@@ -85,7 +85,7 @@ def to_outp(ps,outd=None,outp=None,suffix=''):
     if not outp is None:
         return outp
     from roux.lib.str import get_prefix
-    makedirs(outd)
+    # makedirs(outd)
     ps=read_ps(ps)
     pre=get_prefix(ps[0],ps[-1], common=True)
     if not outd is None:

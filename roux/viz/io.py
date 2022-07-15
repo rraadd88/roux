@@ -416,6 +416,7 @@ def to_concat(
     ps: list,
     how: str='h',
     use_imagemagick: bool= False,
+    use_conda_env: bool= False,
     test: bool=False,
     **kws_outp,
     ) -> str:
@@ -431,12 +432,19 @@ def to_concat(
     """
     outp=to_outp(ps,**kws_outp)
     if use_imagemagick:
-        env=get_env('imagemagick')
-        runbash(
-            f"{env['PATH'].split(':')[0]}/convert {'+' if how=='h' else '-'}append {' '.join(ps)} {outp}",
-            env=env,
-            test=test,
-           )
+        com=f"convert {'+' if how=='h' else '-'}append {' '.join(ps)} {outp}"
+        if use_conda_env:
+            env=get_env('imagemagick')
+            runbash(
+                f"{env['PATH'].split(':')[0]}/{com}",
+                env=env,
+                test=test,
+               )
+        else:
+            if test:
+                logging.info(com)
+            response=subprocess.call(com,shell=True)
+            assert response==0 and exists(outp)
     else:
         import sys
         from PIL import Image

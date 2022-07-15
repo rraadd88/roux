@@ -20,7 +20,7 @@ def get_name(df1,cols=None,coff=2,out=None):
     Returns:
         name (tuple|str|list): name of the dataframe. 
     """    
-    if hasattr(df1,'name'):
+    if hasattr(df1,'name') and cols is None:
         name=df1.name
         name=name if isinstance(name,str) else list(name)
     elif not cols is None:
