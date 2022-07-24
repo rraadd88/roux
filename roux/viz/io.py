@@ -30,10 +30,10 @@ def to_plotp(
     for k in ['get_xlabel','get_ylabel','get_title','legend_']: 
         if hasattr(ax,k):
             if k!='legend_':
-                plotp=f"{plotp}_"+getattr(ax,k)()
+                plotp=f"{plotp}_"+(getattr(ax,k)()).replace('.','_')
             else:
                 if not ax.legend_ is None:
-                    plotp=f"{plotp}_"+ax.legend_.get_title().get_text()
+                    plotp=f"{plotp}_"+(ax.legend_.get_title().get_text()).replace('.','_')
     plotp=f"{plotp} {suffix}"+(f".{fmts[0]}" if len(fmts)==1 else '')
     return plotp
 
@@ -80,8 +80,10 @@ def savefig(
     if exists(plotp):
         logging.warning(f"overwritting: {plotp}")
     if plotp.count('.')>1:
-        logging.error(f"more than one '.' not allowed in the path {plotp}")
-        return 
+        plotp=abspath(plotp)        
+        if plotp.count('.')>1:
+            logging.error(f"more than one '.' not allowed in the path {plotp}")
+            return 
     if normalise_path:
         plotp=abspath(to_path(plotp))
     plotp=f"{dirname(plotp)}/{basenamenoext(plotp).replace('.','_')}{splitext(plotp)[1]}"    
