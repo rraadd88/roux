@@ -276,3 +276,25 @@ def create_workflow_report(
     
     runbash(f"dot -Tpng {workflowdp}/workflow.dot > {workflowdp}/workflow.png",env=env)
     runbash(f"snakemake -s workflow.py --report {workflowdp}/report.html",env=env)
+
+def to_diff_notebooks(
+    output_notebook_paths,
+    url_prefix="https://localhost:8888/nbdime/difftool?",
+    remove_prefix='file://', # for bash
+    verbose=True,
+    ) -> list:
+    """
+    "Diff" notebooks using `nbdiff` (https://nbdime.readthedocs.io/en/latest/)
+    
+    Todos:
+        1. Deprecate if functionality added to `nbdiff-web`.
+    """
+    logging.warning('to_diff is under development.')
+    urls_input=[Path(p).absolute().as_uri() for p in output_notebook_paths]
+    urls_output=[]
+    for url_base,url_remote in list(itertools.product(urls_input[:1],urls_input[1:])):
+        urls_output.append(f"{url_prefix}base={url_base.replace('file://','')}&remote={url_remote.replace('file://','')}")
+    if verbose:
+        logging.info('Differences between notebooks:')
+        logging.info('\n'.join(urls_output))
+    return urls_output

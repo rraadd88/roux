@@ -7,27 +7,27 @@ logger = logging.getLogger()
 logger.setLevel(logging.INFO)
 # temporary change for a context
 # ref: https://docs.python.org/3/howto/logging-cookbook.html#using-a-context-manager-for-selective-logging
-class LoggingContext:
-    def __init__(self, logger, level=None, handler=None, close=True):
-        self.logger = logger
-        self.level = level
-        self.handler = handler
-        self.close = close
+# class LoggingContext:
+#     def __init__(self, logger, level=None, handler=None, close=True):
+#         self.logger = logger
+#         self.level = level
+#         self.handler = handler
+#         self.close = close
 
-    def __enter__(self):
-        if self.level is not None:
-            self.old_level = self.logger.level
-            self.logger.setLevel(self.level)
-        if self.handler:
-            self.logger.addHandler(self.handler)
+#     def __enter__(self):
+#         if self.level is not None:
+#             self.old_level = self.logger.level
+#             self.logger.setLevel(self.level)
+#         if self.handler:
+#             self.logger.addHandler(self.handler)
 
-    def __exit__(self, et, ev, tb):
-        if self.level is not None:
-            self.logger.setLevel(self.old_level)
-        if self.handler:
-            self.logger.removeHandler(self.handler)
-        if self.handler and self.close:
-            self.handler.close()
+#     def __exit__(self, et, ev, tb):
+#         if self.level is not None:
+#             self.logger.setLevel(self.old_level)
+#         if self.handler:
+#             self.logger.removeHandler(self.handler)
+#         if self.handler and self.close:
+#             self.handler.close()
 # with LoggingContext(logger, level=logging.ERROR):
 #     logger.debug('3. This should appear once on stderr.')
 
@@ -39,13 +39,13 @@ from roux.lib.set import *
 from roux.lib.text import read,read_lines
 from roux.lib.io import * #io_df -> io_dfs -> io_files
 from roux.lib.dict import to_dict # to replace io_df to_dict
-from roux.workflow.io import read_metadata
+from roux.workflow.io import read_metadata, to_diff_notebooks
 from roux.workflow.df import *
 
 # defaults
-from functools import partialmethod
+# from functools import partialmethod
 # pd.DataFrame.head = partialmethod(pd.DataFrame.head, n=1)
-#pd.set_option('display.max_rows', 2)
+# pd.set_option('display.max_rows', 2)
 
 # stats    
 import scipy as sc
@@ -53,7 +53,7 @@ from roux.stat.binary import perc
 
 # paths
 pwd=abspath('.')
-prjs=['00_metaanalysis']
+
 # plots
 import matplotlib.pyplot as plt
 import seaborn as sns
@@ -108,7 +108,7 @@ logging.info(watermark(python=True)+watermark(iversions=True,globals_=globals())
 ## parallel processing
 from pandarallel import pandarallel
 pandarallel.initialize(nb_workers=6,progress_bar=True)
-logging.info("pandarallel.initialize(nb_workers=4,progress_bar=True)")
+# logging.info("pandarallel.initialize(nb_workers=4,progress_bar=True)")
 
 # metadata
 metadata=read_metadata()

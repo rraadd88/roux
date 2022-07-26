@@ -584,8 +584,8 @@ def apply_on_paths(ps,func,
             ps=[p for p in p2outp if (not exists(p2outp[p])) or isdir(p2outp[p])]
             d_['  to']=len(ps)
             if d_['from']!=d_['  to']:
-                logging.info(f"force=False, so len(ps) reduced from: {d_['from']}")
-                logging.info(f"                                  to: {d_['  to']}")
+                logging.info(f"force=False, so paths reduced from: {d_['from']}")
+                logging.info(f"                                to: {d_['  to']}")
     if dbug: info(ps)
     df1=pd.DataFrame({'path':ps})
     if len(df1)==0:
