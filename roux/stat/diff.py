@@ -539,7 +539,11 @@ def get_diff(
     """
     Wrapper around the `get_stats_groupby`
     
-    
+    Keyword parameters:
+          cols=['variable x','variable y'],
+          coff_p=0.05,
+          coff_q=0.01,
+          colindex=['id'],    
     """
     ## filter the significant 
     d_={}
@@ -555,15 +559,10 @@ def get_diff(
     df2=pd.concat(d_,names=['variable x']).reset_index().rd.clean().log.dropna()
     if test:
         info(df2.iloc[0,:])
-    from roux.lib.stat.diff import get_stats_groupby
     df3=get_stats_groupby(df1=df2,
-                      cols=['variable x','variable y'],
-                      coff_p=0.05,
-                      coff_q=0.01,
-
-                      colindex=['gene symbol','genes id'],
                       colsubset='value x',
                       cols_value= ['value y'],
+                          colindex=cols_index,
                           **kws,
                      )
     return df3.loc[(df3['P (MWU test)']<0.05),:].sort_values('P (MWU test)')

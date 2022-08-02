@@ -270,7 +270,8 @@ def plot_dists(
             d1=df2.rd.to_dict(['subset2','P (MWU test)'])
     elif (not hue is None) and (isinstance(show_p,bool) and show_p):
         from roux.stat.diff import get_stats_groupby
-        df2=get_stats_groupby(df1,cols=[y],
+        df2=get_stats_groupby(df1.loc[df1[hue].isin(hue_order),:],
+                          cols=[y],
                           colsubset=hue,
                           cols_value=[x],
                           colindex=colindex,
@@ -282,7 +283,8 @@ def plot_dists(
         if test:
             print(df2['subset1'])
         # df2=df2.loc[(df2['subset1']==hue_order[1]),:]
-        d1=df2.rd.to_dict([y,'P (MWU test)'])
+        # d1=df2.rd.to_dict([y,'P (MWU test)'])
+        d1=df2.set_index(y)['P (MWU test)'].to_dict()
         if test:
             print(d1)
     if ax is None:

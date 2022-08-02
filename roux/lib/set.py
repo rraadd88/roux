@@ -337,14 +337,24 @@ def list2ranges(l):
 #     df[f'{colbool} interval index']=df.index    
 #     return df
 
-def get_pairs(items,
-              items_with=None,
-              size=2,
-              # with_self=False, # itertools.combination does not pair self
-             ):
+def get_pairs(
+    items: list,
+    items_with: list = None,
+    size: int = 2,
+    with_self: bool =False, # itertools.combinations does not pair self
+    ) -> pd.DataFrame:
     """
     Creates a dataframe with the paired items.
-    
+
+    Parameters:
+        items: the list of items to pair.
+	items_with: list of items to pair with.
+	size: size of the combinations.
+	with_self: pair with self or not.
+
+    Returns:
+	table with pairs of items.
+
     Notes:
         1. the ids of the items are sorted e.g. 'a'-'b' not 'b'-'a'.
     """
@@ -358,9 +368,10 @@ def get_pairs(items,
     if len(items_with)==0:
         o1=itertools.combinations(items,size)
     else:
-        assert len(set(items) & set(items_with))==0, f'two lists should be non-overlapping, otherwise pairs with self would be created. {set(items) & set(items_with)}'
+        # assert len(set(items) & set(items_with))==0, f'two lists should be non-overlapping, otherwise pairs with self would be created. {set(items) & set(items_with)}'
         o1=itertools.product(items,items_with)
+        if not with_self and len(set(items) & set(items_with))!=0:
+            o1=[(k1,k2) for k1,k2 in o1 if k1!=k2]
     # create dataframe
     df0=pd.DataFrame(o1,columns=range(1,size+1))
     return df0
-    

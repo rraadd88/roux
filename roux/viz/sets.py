@@ -166,13 +166,17 @@ def plot_intersections(
 
 
 def plot_enrichment(
-    dplot: pd.DataFrame,
+    data: pd.DataFrame,
     x: str,
     y: str,
     s: str,
+    hue='Q',
+    xlabel=None,
+    ylabel='significance\n(-log10(Q))',
     size: int=None,
     color: str=None,
     annots_side: int=5,
+    annots_side_labels=None,
     coff_fdr: float=None,
     xlim: tuple=None,
     xlim_off: float=0.2,
@@ -185,12 +189,13 @@ def plot_enrichment(
                     # annot_count_max=5,
                     offx3=0.15,
                     ),
+    returns='ax',
     **kwargs
     ) -> plt.Axes:
     """Plot enrichment stats.
 
     Args:
-        dplot (pd.DataFrame): input data.
+        data (pd.DataFrame): input data.
         x (str): x column.
         y (str): y column.
         s (str): size column.
@@ -214,31 +219,34 @@ def plot_enrichment(
     """
     if coff_fdr is None: 
         coff_fdr=1
+    if any(data[y]==0):
+        logging.warning(f"found {sum(data[y]==0)} zeros in among y values; replaced them with the next minimum which is {data[y].replace(0,np.nan).min()}.")
+        data[y]=data[y].replace(0,data[y].replace(0,np.nan).min())
     from roux.stat.transform import log_pval
     # if y.startswith('P '):
-    dplot['significance\n(-log10(Q))']=dplot[y].apply(log_pval)
-    dplot['Q']=pd.cut(x=dplot[y],
+    data[ylabel]=data[y].apply(log_pval)
+    data[hue]=pd.cut(x=data[y],
                         bins=[
-                            # dplot['P (FE test, FDR corrected)'].min(),
+                            # data['P (FE test, FDR corrected)'].min(),
                             0,0.01,0.05,coff_fdr],
                         right=False,
                       )
-    y='significance\n(-log10(Q))'
+    y=ylabel
     if not size is None:
-        if not dplot[size].dtype == 'category':
-            dplot[size]=pd.qcut(dplot[size],
+        if not data[size].dtype == 'category':
+            data[size]=pd.qcut(data[size],
                             q=3,
                             duplicates='drop')
-        dplot=dplot.sort_values(size,ascending=False)
-        dplot[size]=dplot[size].apply(lambda x: f"({x.left:.0f}, {x.right:.0f}]")
+        data=data.sort_values(size,ascending=False)
+        data[size]=data[size].apply(lambda x: f"({x.left:.0f}, {x.right:.0f}]")
     if ax is None:
         fig,ax=plt.subplots()#(figsize=[1.5,4])
     sns.scatterplot(
-                    data=dplot,
+                    data=data,
                     x=x,y=y,
                     size=size if not size is None else None,
-                    size_order=dplot[size].unique() if not size is None else None,
-                    hue='Q',
+                    size_order=data[size].unique() if not size is None else None,
+                    hue=hue,
                     # color=color,
                     zorder=2,
                     ax=ax,
@@ -257,7 +265,7 @@ def plot_enrichment(
         ax.set(xlim=xlim)
     # if ylim is None:
     #     ax.set(ylim=(log_pval(coff_fdr),ax.get_ylim()[1]),
-    # #               xlim=(dplot[x].min(),dplot[x].max()),
+    # #               xlim=(data[x].min(),data[x].max()),
     #           )
     # else:
     #     ax.set(ylim=ylim)        
@@ -276,14 +284,15 @@ def plot_enrichment(
     from roux.viz.annot import annot_side
     ax=annot_side(
         ax=ax,
-        df1=dplot.sort_values(y,ascending=False).head(annots_side),
+        df1=data.sort_values(y,ascending=False).head(annots_side) if annots_side_labels is None else \
+            data.loc[data[s].isin(annots_side_labels),:],
         colx=x,
         coly=y,
         cols=s,
         break_pt=break_pt,
-        offymin=0.1 if not size is None else 0,
+        # offymin=kws_annot['offymin'] if 'offymin' in kws_annot else if not size is None else 0,
         zorder=3,
         **kws_annot,
         )
-    return ax
+    return locals()[returns]
 

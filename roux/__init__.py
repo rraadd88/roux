@@ -1,6 +1,6 @@
 # maintain back-compatibility using aliases
-import sys
-import logging
+# import sys
+# import logging
 
 # d1={'roux.lib.cloud.google': 'roux.lib.google', 'roux.lib.code.df': 'roux.workflow.df', 'roux.lib.code.function': 'roux.workflow.function', 'roux.lib.code.io': 'roux.workflow.io', 'roux.lib.code.knit': 'roux.workflow.knit', 
 #     # 'roux.lib.code.monitor': 'roux.workflow.monitor', 

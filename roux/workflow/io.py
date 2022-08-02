@@ -4,6 +4,28 @@ from roux.lib.io import read_ps
 from roux.lib.set import flatten
 from roux.lib.dict import read_dict,is_dict
 
+def clear_variables(
+    dtype=None,
+    variables=None,
+    # globals_dict=None,
+    ):
+    """Clear dataframes from the workspace."""
+    assert (dtype is None or variables is None) and (not (dtype is None and variables is None))
+    import gc
+    if variables is None:
+        variables=[k for k in globals() if isinstance(globals()[k], dtype) and not k.startswith('_')]
+    if len(variables)==0: return
+    for k in variables:
+        del globals()[k]
+    gc.collect()
+    logging.info(f"cleared {len(variables)} variables: {variables}.")
+
+def clear_dataframes():
+    return clear_variables(
+    dtype=pd.DataFrame,
+    variables=None,
+    )
+
 def get_lines(
     p: str,
     keep_comments: bool=True
@@ -278,7 +300,7 @@ def create_workflow_report(
     runbash(f"snakemake -s workflow.py --report {workflowdp}/report.html",env=env)
 
 def to_diff_notebooks(
-    output_notebook_paths,
+    notebook_paths,
     url_prefix="https://localhost:8888/nbdime/difftool?",
     remove_prefix='file://', # for bash
     verbose=True,
@@ -289,8 +311,9 @@ def to_diff_notebooks(
     Todos:
         1. Deprecate if functionality added to `nbdiff-web`.
     """
-    logging.warning('to_diff is under development.')
-    urls_input=[Path(p).absolute().as_uri() for p in output_notebook_paths]
+    import itertools
+    logging.warning('to_diff_notebooks is under development.')
+    urls_input=[Path(p).absolute().as_uri() for p in notebook_paths]
     urls_output=[]
     for url_base,url_remote in list(itertools.product(urls_input[:1],urls_input[1:])):
         urls_output.append(f"{url_prefix}base={url_base.replace('file://','')}&remote={url_remote.replace('file://','')}")
