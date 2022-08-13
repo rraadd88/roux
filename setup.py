@@ -71,8 +71,8 @@ extras_require['all']=list(set(extras_require['all']))
 
 setuptools.setup(
     name='roux',
-    version='0.0.5',
-    description='Your project description here',
+    version='0.0.6',
+    description='helper functions',
     long_description=long_description,
     long_description_content_type="text/markdown",
     url='http://github.com/rraadd88/roux',
@@ -93,6 +93,6 @@ setuptools.setup(
     extras_require=extras_require,
     entry_points={
     'console_scripts': ['roux = roux.run:parser.dispatch',],
-    },    
+    },
     python_requires='>=3.7, <4',
 )
