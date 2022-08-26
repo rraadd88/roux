@@ -835,14 +835,61 @@ def read_excel(p,sheet_name=None,to_dict=False,kws_cloud={},**kws):
         for sheet_name in xl.sheet_names:
             sheetname2df[sheet_name]=xl.parse(sheet_name) 
         return sheetname2df
+
+def to_excel_commented(
+    p: str,
+    comments: dict,
+    outp: str=None,
+    author: str=None,
+    ):
+    """Add comments to the columns of excel file and save.
+
+    Args:
+        p (str): input path of excel file.
+        comments (dict): map between column names and comment e.g. description of the column.
+        outp (str): output path of excel file. Defaults to None.
+        author (str): author of the comments. Defaults to 'Author'.
         
-def to_excel(sheetname2df,outp,append=False,**kws):
+    TODOs:
+        1. Increase the limit on comments can be added to number of columns. Currently it is 26 i.e. upto Z1.
+    """
+    if author is None:
+        author='Author'
+    if outp is None:
+        outp=p
+        logging.warning('overwritting the input file')
+    from openpyxl import load_workbook
+    from openpyxl.comments import Comment
+    from string import ascii_uppercase
+    wb = load_workbook(filename = outp)
+    for sh in wb:
+        for k in [s+'1' for s in list(ascii_uppercase)+['A'+s_ for s_ in ascii_uppercase]]:
+            if (not sh[k].value is None):
+                if (sh[k].value in comments):
+                    sh[k].comment = Comment(comments[sh[k].value],author=author)
+                else:
+                    logging.warning(f"no comment for column: '{sh[k].value}'")
+            else:
+                break
+    wb.save(outp)
+    wb.close()
+    return outp
+    
+def to_excel(
+    sheetname2df: dict,
+    outp: str,
+    append: bool=False,
+    comments: dict=None
+    author: str=None,
+    **kws,
+    ):
     """Save excel file.
     
     Parameters:
         sheetname2df (dict): dictionary mapping the sheetname to the dataframe.
         outp (str): output path. 
         append (bool): append the dataframes (default:False).
+        comments (dict): map between column names and comment e.g. description of the column.
 
     Keyword parameters: 
         kws: parameters provided to the excel writer.
@@ -860,43 +907,14 @@ def to_excel(sheetname2df,outp,append=False,**kws):
             sheetname2df[sn].to_excel(writer,startrow=startrow,index=False,**kws)  
             startrow+=len(sheetname2df[sn])+2
     writer.save()
+    if not comments is None:
+        to_excel_commented(
+            outp,
+            comments=comments,
+            outp=outp,
+            author=author,
+            )
     return outp
-
-def to_excel_commented(
-    p: str,
-    d1: dict,
-    outp: str=None,
-    author: str='Author'
-    ):
-    """Add comments to the columns of excel file and save.
-
-    Args:
-        p (str): input path of excel file.
-        d1 (dict): map between column names and comment e.g. description of the column.
-        outp (str): output path of excel file. Defaults to None.
-        author (str): author of the comments. Defaults to 'Author'.
-        
-    TODOs:
-        1. Increase the limit on comments can be added to number of columns. Currently it is 26 i.e. upto Z1.
-    """
-    if outp is None:
-        outp=p
-        logging.warning('overwritting the input file')
-    from openpyxl import load_workbook
-    from openpyxl.comments import Comment
-    from string import ascii_uppercase
-    wb = load_workbook(filename = outp)
-    for sh in wb:
-        for k in [s+'1' for s in list(ascii_uppercase)+['A'+s_ for s_ in ascii_uppercase]]:
-            if (not sh[k].value is None):
-                if (sh[k].value in d1):
-                    sh[k].comment = Comment(d1[sh[k].value],author=author)
-                else:
-                    logging.warning(f"no comment for column: '{sh[k].value}'")
-            else:
-                break
-    wb.save(outp)
-    wb.close()
     
 ## to table: validate
 def check_chunks(outd,col,plot=True):

@@ -67,7 +67,7 @@ plt.rcParams['axes.edgecolor']='k'
 # plt.rcParams['axes.formatter.use_mathtext'] = True
 plt.rcParams['axes.formatter.limits'] = -3, 3
 plt.rcParams['axes.formatter.min_exponent'] = 3
-plt.rcParams['legend.frameon']=True
+# plt.rcParams['legend.frameon']=True
 from cycler import cycler
 plt.rcParams['axes.prop_cycle']= cycler('color',[
     '#50AADC',#blue
@@ -78,7 +78,8 @@ plt.rcParams['axes.prop_cycle']= cycler('color',[
     "#00A08A", "#F2AD00", "#F98400", "#5BBCD6", "#ECCBAE", "#D69C4E", "#ABDDDE", "#000000"])
 from roux.viz.colors import get_colors_default
 # plt.rcParams['xtick.color']=[0.95,0.95,0.95]
-plt.rc('grid', lw=0.2,linestyle="-", color=[0.98,0.98,0.98])
+# plt.rc('grid', lw=0.2,linestyle="-", color=[0.98,0.98,0.98])
+plt.rcParams['axes.grid']=False
 plt.rc('axes', axisbelow=True)
 plt.rc('axes', unicode_minus=False)
 plt.rcParams['axes.labelcolor'] = 'k'
