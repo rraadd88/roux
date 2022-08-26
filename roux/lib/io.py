@@ -878,9 +878,9 @@ def to_excel_commented(
 def to_excel(
     sheetname2df: dict,
     outp: str,
-    append: bool=False,
-    comments: dict=None
+    comments: dict=None,
     author: str=None,
+    append: bool=False,
     **kws,
     ):
     """Save excel file.
@@ -896,7 +896,17 @@ def to_excel(
     """
 #     if not 'xlrd' in sys.modules:
 #         logging.error('need xlrd to work with excel; pip install xlrd')
-    makedirs(outp)
+    # makedirs(outp)
+    if not comments is None:
+        ## order the columns
+        for k1 in sheetname2df:
+            sheetname2df[k1]=sheetname2df[k1].loc[:,[k for k in comments if k in sheetname2df[k1]]+[k for k in sheetname2df[k1] if not k in comments]]
+
+        ## insert a table with the description
+        items = list(sheetname2df.items())
+        items.insert(0, ('description', dict2df(comments,colkey='column name',colvalue='description')))
+        sheetname2df = dict(items)
+    
     outp=to_path(outp)
     writer = pd.ExcelWriter(outp)
     startrow=0
