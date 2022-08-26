@@ -7,6 +7,7 @@ def plot_venn(
     ax: plt.Axes=None,
     figsize: tuple=[2.5,2.5],
     show_n: bool=True
+    **kws,
     ) -> plt.Axes:
     """Plot Venn diagram.
 
@@ -42,7 +43,8 @@ def plot_venn(
     import matplotlib_venn as mv
     _=getattr(mv,f"venn{len(set_labels)}")(subsets=ds1.to_dict(),
                                             set_labels=set_labels,
-                                            ax=ax
+                                            ax=ax,
+                                            **kws,
          )
     return ax
 
