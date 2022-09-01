@@ -6,7 +6,7 @@ def plot_venn(
     ds1: pd.Series,
     ax: plt.Axes=None,
     figsize: tuple=[2.5,2.5],
-    show_n: bool=True
+    show_n: bool=True,
     **kws,
     ) -> plt.Axes:
     """Plot Venn diagram.
@@ -27,6 +27,7 @@ def plot_venn(
             ds_=df_.groupby(df_.columns.tolist()).size()
     """
     assert isinstance(ds1,pd.Series)
+    assert not ds1._is_view, "input series should be a copy not a view"    
     assert ds1.dtypes=='int'
     assert len(ds1.index.names)>=2
     if ax is None:
