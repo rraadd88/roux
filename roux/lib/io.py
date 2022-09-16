@@ -381,8 +381,8 @@ def read_table(p,
                 
     Keyword parameters:
         kws_read_tables (dict): parameters provided to `read_tables` function. For example:
-            replaces_index (object|dict|list|str): for example, 'basenamenoext' if path to basename.
             drop_index (bool): whether to drop the index column e.g. `path` (default: True).
+            replaces_index (object|dict|list|str): for example, 'basenamenoext' if path to basename.
             colindex (str): the name of the column containing the paths (default: 'path')
     
     Returns:
@@ -390,15 +390,21 @@ def read_table(p,
         
     Examples:
         1. For reading specific columns only set `params=dict(columns=list)`.
-
-        2. Reading a vcf file.
-            p='*.vcf|vcf.gz'
-            read_table(p,
-                       params_read_csv=dict(
-                       #compression='gzip',
-                       sep='\t',comment='#',header=None,
-                       names=replacemany(get_header(path,comment='#',lineno=-1),['#','\n'],'').split('\t'))
-                       )
+        
+        2. While reading many files, convert paths to a column with corresponding values:
+        
+                drop_index=False,
+                colindex='parameter',   
+                replaces_index=lambda x: Path(x).parent
+        
+        3. Reading a vcf file.
+                p='*.vcf|vcf.gz'
+                read_table(p,
+                           params_read_csv=dict(
+                           #compression='gzip',
+                           sep='\t',comment='#',header=None,
+                           names=replacemany(get_header(path,comment='#',lineno=-1),['#','\n'],'').split('\t'))
+                           )
     """
     if isinstance(p,list) or (isinstance(p,str) and ('*' in p)):
         if (isinstance(p,str) and ('*' in p)):

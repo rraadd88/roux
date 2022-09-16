@@ -247,9 +247,13 @@ def cluster_1d(ds: pd.Series,
     return d
 
 ## umap
-def get_pos_umap(df1,spread=100,
-                 test=False,k='',
-                 **kws):
+def get_pos_umap(
+    df1,
+    spread=100,
+    test=False,
+    k='',
+    **kws
+    )-> pd.DataFrame:
     """Get positions of the umap points.
 
     Args:
@@ -261,7 +265,11 @@ def get_pos_umap(df1,spread=100,
     Returns:
         DataFrame: output dataframe.
     """
-    import umap
+    try:
+        import umap
+    except ImportError as error:
+        logging.error(f'umap package not installed. Installation command: pip install umap-learn')
+    
     reducer = umap.UMAP(spread=spread,*kws)
     embedding = reducer.fit_transform(df1)
     if test:

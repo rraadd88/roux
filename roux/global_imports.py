@@ -108,7 +108,7 @@ logging.info(watermark(python=True)+watermark(iversions=True,globals_=globals())
 
 ## parallel processing
 from pandarallel import pandarallel
-pandarallel.initialize(nb_workers=6,progress_bar=True)
+pandarallel.initialize(nb_workers=6,progress_bar=True,use_memory_fs=False)
 # logging.info("pandarallel.initialize(nb_workers=4,progress_bar=True)")
 
 # metadata
