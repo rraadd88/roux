@@ -64,7 +64,7 @@ def plot_table(
         tick.set_verticalalignment("center")
     ax.patch.set_edgecolor('k')
     ax.patch.set_linewidth(1) 
-    set_ylabel(ax=ax,s=df1.index.name if ylabel is None else ylabel,xoff=0.05,yoff=0.01)
+    # set_ylabel(ax=ax,s=df1.index.name if ylabel is None else ylabel,xoff=0.05,yoff=0.01)
     return ax
 
 def plot_crosstab(
@@ -74,7 +74,7 @@ def plot_crosstab(
     method: str=None,#'chi2'|fe
     confusion: bool=False,
     rename_cols: bool=False,
-    sort_cols: tuple=(True,True),    
+    sort_cols: tuple=[True,True],    
     annot_pval: str='bottom',
     cmap: str='Reds',
     ax: plt.Axes=None,
@@ -100,11 +100,20 @@ def plot_crosstab(
 
     TODOs:
         1. Use `compare_classes` to get the stats.
-    """
+    """                
     if not cols is None:
+        for i,c in enumerate(cols):
+            df1=(df1
+                .assign(**{c: lambda df: df[c].astype(str)})
+                )        
+            for l in [['True','False'],['yes','no']]:
+                if df1[c].isin(l).all():
+                    sort_cols[i]=False
+                    break        
         dplot=pd.crosstab(df1[cols[0]],df1[cols[1]])
     else:
         dplot=df1.copy()
+        
     dplot=(dplot
         .sort_index(axis=0,ascending=sort_cols[0])
         .sort_index(axis=1,ascending=sort_cols[1])

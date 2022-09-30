@@ -26,6 +26,7 @@ requirements = {
             pyyaml>=5.1
             numpy>=1.17.3
             matplotlib>=2.2
+            seaborn>=0.8
             requests>=2.19.1
             scipy>=1.1.0
             tqdm>=4.38.0
@@ -40,8 +41,8 @@ requirements = {
         'networkx',
         # 'pingouin',
         ],
-'viz':['seaborn>=0.8',
-      ],
+# 'viz':['',
+#       ],
 'query':['pyensembl',
          'pybiomart'],
 'workflow':['snakemake',

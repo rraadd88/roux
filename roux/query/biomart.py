@@ -11,7 +11,7 @@ def get_ensembl_dataset_name(x: str) -> str:
         str: output.
     """
     l=x.lower().split(' ')
-    assert(len(l)==2)
+    assert len(l)==2, l
     return f"{l[0][0]}{l[1]}_gene_ensembl"
 
 def query(

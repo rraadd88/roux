@@ -23,8 +23,12 @@ def substitution(s,i,replaceby):
 # alias
 replacebyposition=substitution
 
-def replace_many(s,replaces,replacewith='',
-               ignore=False):
+def replace_many(
+    s: str,
+    replaces: dict,
+    replacewith: str='',
+    ignore: bool=False,
+    ):
     """Rename by replacing sub-strings.
 
     Parameters:
@@ -48,7 +52,8 @@ def replace_many(s,replaces,replacewith='',
             s=replaces(s_)
         else:
             raise ValueError(replaces)
-    if not ignore: assert(s!=s_)
+    if not ignore: 
+        assert s!=s_ , (s,s_) 
     return s
 # alias
 replacemany=replace_many
@@ -407,6 +412,7 @@ def num2str(num,magnitude=False,
             return ('%.1f%s' % (num, ['', 'K', 'M', 'G', 'T', 'P'][magnitude])).replace('.0','')
 
 ## ids
+    
 def encode(data,**kws):
     """Encode the data as a string.
     

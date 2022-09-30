@@ -1,49 +1,6 @@
 from roux.lib.df import *
 
-def log_likelihood(y_true: list, y_pred: list) -> float:
-    """Log likelihood.
-
-    Args:
-        y_true (list): True
-        y_pred (list): Predicted.
-
-    Returns:
-        float: log likelihood
-
-    Reference: 
-        1. https://github.com/saezlab/protein_attenuation/blob/6c1e81af37d72ef09835ee287f63b000c7c6663c/src/protein_attenuation/utils.py
-    """
-    n = len(y_true)
-    ssr = np.power(y_true - y_pred, 2).sum()
-    var = ssr / n
-
-    l = np.longfloat(1 / (np.sqrt(2 * np.pi * var))) ** n * np.exp(-(np.power(y_true - y_pred, 2) / (2 * var)).sum())
-    ln_l = np.log(l)
-
-    return ln_l
-
-def f_statistic(y_true, y_pred, n, p):
-    """F-statistic.
-
-    Args:
-        y_true (list): True
-        y_pred (list): Predicted.
-
-    Returns:
-        float: F-statistic
-
-    Reference: 
-        1. https://github.com/saezlab/protein_attenuation/blob/6c1e81af37d72ef09835ee287f63b000c7c6663c/src/protein_attenuation/utils.py
-    """
-    msm = np.power(y_pred - y_true.mean(), 2).sum() / p
-    mse = np.power(y_true - y_pred, 2).sum() / (n - p - 1)
-
-    f = msm / mse
-
-    f_pval = stats.f.sf(f, p, n - p - 1)
-
-    return f, f_pval
-    
+## overlap
 def compare_bools_jaccard(x,y):
     """Compare bools in terms of the jaccard index.
 
@@ -92,7 +49,7 @@ def classify_bools(l: list) -> str:
     """
     return 'both' if all(l) else 'either' if any(l) else 'neither'
 
-## agg
+## aggregate
 def frac(x: list) -> float:
     """Fraction.
 
@@ -103,6 +60,7 @@ def frac(x: list) -> float:
         float: fraction of True values.
     """
     return (sum(x)/len(x))
+
 def perc(x: list) -> float:
     """Percentage.
 
@@ -149,3 +107,139 @@ def get_stats_confusion_matrix(df_: pd.DataFrame) -> pd.DataFrame:
     df1.index.name='variable'
     df1=df1.reset_index()
     return df1
+
+## thresholding 
+def get_cutoff(
+    y_true,
+    y_score,
+    method,#'roc','pr'
+    show_diagonal=True,
+    show_area=True,
+    show_cutoff=True,
+    color='k',
+    returns=['ax'],
+    ax=None,
+    ):
+    """
+    Obtain threshold based on ROC or PR curve.
+    
+    Returns:
+        Table:
+            columns: values
+                method: ROC, PR
+                variable: threshold (index), TPR, FPR, TP counts, precision, recall
+                values: 
+        Plots:
+            AUC ROC,
+            TPR vs TP counts
+            PR
+            Specificity vs TP counts
+        Dictionary:
+            Thresholds from AUC, PR
+            
+
+    """
+    if all((y_score)<=0):
+        negative_values=True
+    elif any((y_score)<0):
+        raise ValueError(f"y_score should be all >=0 or <=0")
+    else:
+        negative_values=False
+    if method.lower().startswith('roc'):
+        columns_value=['FPR (1-specificity)','TPR (sensitivity)']
+        method='roc_curve'
+    elif method.lower().startswith('pr'):
+        columns_value=['precision','recall']
+        method='precision_recall_curve'
+    else:
+        raise ValueError(method)
+    from sklearn import metrics
+    df1=pd.DataFrame(
+        getattr(metrics,method)( 
+            list(y_true),
+            y_score * (1 if not negative_values else -1),
+            ),
+        index=columns_value+['threshold'],
+        ).T
+    
+    if df1['threshold'].nunique()>100:
+        df1['threshold']=pd.cut(x=df1['threshold'],bins=100).apply(lambda x: x.mid).astype(float)
+        logging.warning(f"number of thresholds reduced from {df1['threshold'].nunique()} to 100")
+    df1['count TP']=df1['threshold'].map({i:sum(y_score>i) for i in df1['threshold'].unique()})
+    if show_cutoff!=False:
+        df1=df1.reset_index(drop=True)
+        if method=='roc_curve':
+            show_cutoff= {} if show_cutoff==True else show_cutoff
+
+            ratios=(df1[columns_value[1]]/(df1[columns_value[0]]+0.01))
+            if show_cutoff['maximize'].lower() in ['specificity','tpr']:
+                ratio=ratios.max()
+                cutoff_index=np.where(ratios == ratio)[0][0]
+            else:
+                # TODOs: test for sensitivity
+                raise ValueError(maximize)
+            cutoff=df1.iloc[cutoff_index,:]#.iloc[0,:]
+        else:
+            df1=df1.loc[(df1['recall']!=0),:]
+            # max pr
+            cutoff=df1.loc[(df1[columns_value[0]]==df1[columns_value[0]].max()),:].iloc[0,:]
+            columns_value=columns_value[::-1]
+    for xaxis in [columns_value[0],'count TP']:
+        # if ax is None:
+        import matplotlib.pyplot as plt
+        fig,ax=plt.subplots(figsize=[2,2])
+        ax.plot(
+            df1[xaxis],
+            df1[columns_value[1]],
+            color=color,
+            zorder=2,
+            solid_capstyle='butt',
+        )
+        if show_area!=False and xaxis==columns_value[0] and method=='roc_curve':
+            ax.fill_between(
+                df1[xaxis],
+                df1[columns_value[1]],
+                zorder=1,
+            )
+            auc = metrics.roc_auc_score(
+                y_true=list(y_true),
+                y_score=y_score,
+            )            
+            ax.text(x=1,y=0,s="AUC="+f"{auc:.2f}",ha='right',va='bottom')
+            if show_diagonal!=False and xaxis==columns_value[0]:
+                ax.plot([0,1],[0,1],':',color='gray',
+                        zorder=1,
+                       )
+                ax.set(
+                xticks=[0,1],yticks=[0,1],
+                )
+        if show_cutoff!=False:
+            ax.scatter(
+                [cutoff[xaxis]],
+                [cutoff[columns_value[1]]],
+                ec='k',fc='none',
+                zorder=2,
+            )
+            ax.annotate(
+                text=f"threshold={cutoff['threshold']:.2f}",
+                xy=[cutoff[xaxis],
+                    cutoff[columns_value[1]]],
+                xytext=[0.5,1.1],ha='center',
+                arrowprops=dict(
+                    arrowstyle='->',
+                    color='k',
+                    # relpos=(0,0.5),
+                    shrinkA=0,
+                    connectionstyle="arc3,rad=0.3",
+                ),
+                xycoords='data',
+                textcoords='axes fraction',
+                )
+        ax.set(
+            xlabel=xaxis, #
+            ylabel=columns_value[1],
+        )
+    d_={}
+    for k in returns:
+        d_[k]=locals()[k if k!='data' else 'df1']
+    return d_

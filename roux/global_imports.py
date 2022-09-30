@@ -57,13 +57,14 @@ pwd=abspath('.')
 # plots
 import matplotlib.pyplot as plt
 import seaborn as sns
+plt.set_loglevel('error')
 plt.style.use('ggplot')
 plt.rcParams['pdf.fonttype'] = 42
 plt.rcParams['ps.fonttype'] = 42
 plt.rcParams['font.family'] = 'Myriad Pro'
 plt.rcParams['figure.figsize'] = (3, 3)
 plt.rcParams['axes.facecolor']='none'
-plt.rcParams['axes.edgecolor']='k'
+plt.rcParams['axes.edgecolor']='#6B6B6B'
 # plt.rcParams['axes.formatter.use_mathtext'] = True
 plt.rcParams['axes.formatter.limits'] = -3, 3
 plt.rcParams['axes.formatter.min_exponent'] = 3

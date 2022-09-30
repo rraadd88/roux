@@ -81,6 +81,8 @@ def annot_side(
     offx3: float=0.15,
     offymin: float=0.1,
     offymax: float=0.9,
+    offx_text: float=0,
+    offy_text: float=0,
     break_pt: int=25,
     length_axhline: float=3,
     va: str='bottom',
@@ -141,27 +143,38 @@ def annot_side(
     # line#1
     # print(df1.loc[:,[colx,coly,'y']].iloc[0,:])
     if lines:
-        df1.apply(lambda x: ax.plot([x[colx],x2] if loc!='top' else [x[colx], x['y']],
-                                   [x[coly],x['y']] if loc!='top' else [x[coly], x2],
-                                   color=color,lw=1,**kws_line,
-                                   zorder=zorder,
-                                   ),axis=1)
+        df1.apply(lambda x: ax.plot(
+            [x[colx],x2] if loc!='top' else [x[colx], x['y']],
+            [x[coly],x['y']] if loc!='top' else [x[coly], x2],
+            color=color,lw=1,**kws_line,
+            zorder=zorder,
+            ),
+                  axis=1)
     if scatter:
-        df1.plot.scatter(x=colx,y=coly,ax=ax,
-                        **kws_scatter)
-        
+        df1.plot.scatter(
+            x=colx,
+            y=coly,
+            ax=ax,
+            **kws_scatter,
+            )
     ## text
     if text:
-        df1.apply(lambda x: ax.text(x3 if loc!='top' else x['y'],
-                                    x['y'] if loc!='top' else x3,
-                                    linebreaker(x[cols],break_pt=break_pt,),
-                                    ha='right' if loc=='left' else 'center' if loc=='top' else 'left',
-                                    va=va,
-                                    color=x[hue] if not hue is None else 'k',
-                                    # **{k:v for k,v in kws_text.items() if not (k==color and not hue is None)},
-                                    rotation=0  if loc!='top' else 90,
-                                    **kws_text,
-                                  zorder=2),axis=1)
+        if not 'ha' in kws_text:
+            kws_text['ha']='right' if loc=='left' else 'center' if loc=='top' else 'left'
+        if not 'rotation' in kws_text:
+            kws_text['rotation']=0  if loc!='top' else 90
+        else:
+            kws_text['ha']='left'
+        df1.apply(lambda x: ax.text(
+            (x3 if loc!='top' else x['y'])+offx_text,
+            (x['y'] if loc!='top' else x3)+offy_text,
+            linebreaker(x[cols],break_pt=break_pt,),
+            va=va,
+            color=x[hue] if not hue is None else 'k',
+            # **{k:v for k,v in kws_text.items() if not (k==color and not hue is None)},
+            **kws_text,
+            zorder=2),
+            axis=1)
     # line #2
     if lines:
         if loc!='top':

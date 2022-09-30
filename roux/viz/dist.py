@@ -194,10 +194,11 @@ def plot_dists(
     show_p: bool=True,
     show_n: bool=True,
     show_n_prefix: str='',
-    show_n_ha='right',
+    show_n_ha='left',
     alternative: str='two-sided',
     offx_n: float=0,
     xlim: tuple=None,
+    xscale: str='linear',
     offx_pval: float=0.05,
     offy_pval: float=None,
     saturate_color_alpha: float=1.5,
@@ -242,10 +243,16 @@ def plot_dists(
     """
     if isinstance(colindex,str):
         colindex=[colindex]
-    df1=df1.log.dropna(subset=colindex+[x,y])
-    df1[y]=df1[y].astype(str)
+    df1=(df1
+    .log.dropna(subset=colindex+[x,y])
+    .assign(**{y: lambda df: df[y].astype(str)})
+        )
     if order is None:
         order=df1[y].unique().tolist()
+        for l in [['True','False'],['yes','no']]:
+            if df1[y].isin(l).all():
+                order=l
+                break
     if not hue is None and hue_order is None:
         hue_order=df1[hue].unique().tolist()
     if (hue is None) and (isinstance(show_p,bool) and show_p):
@@ -314,7 +321,10 @@ def plot_dists(
                     **kind[k],
                     **kws_,
                      ax=ax)
-    ax.set(xlabel=x)
+    ax.set(
+        xlabel=x,
+        xscale=xscale,
+    )
     d2=get_ticklabel2position(ax,'y')
     ax.set(
           ylabel=None if hue is None else y,

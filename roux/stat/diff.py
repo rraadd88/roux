@@ -8,7 +8,11 @@ from icecream import ic as info
 from roux.lib.set import *
 
 # difference between values
-def get_ratio_sorted(a: float,b: float,increase=True) -> float:
+def get_ratio_sorted(
+    a: float,
+    b: float,
+    increase=True
+    ) -> float:
     """Get ratio sorted.
 
     Args:
@@ -143,20 +147,28 @@ def get_demo_data():
     df1['bool']=df1['value']>df1['value'].quantile(0.5)
     return df1
 
-def compare_classes(x,y,method=None):
+def compare_classes(
+    x,
+    y,
+    method=None
+    ):
     """
     """
     if len(x)!=0 and len(y)!=0:# and (nunique(x+y)!=1):
         dplot=pd.crosstab(x,y)
-        if (dplot.shape!=(2,2) and len(dplot)!=0) or method=='chi2':
-            stat,pval,_,_=sc.stats.chi2_contingency(dplot)
-            # stat_label='${\chi}^2$'
-        else:
-            stat,pval=sc.stats.fisher_exact(dplot)
-            # stat_label='OR'
-        return stat,pval
     else:
         return np.nan,np.nan
+    if len(dplot)==0:
+        return np.nan,np.nan
+    if dplot.shape!=(2,2) or method=='chi2':
+        stat,pval,_,_=sc.stats.chi2_contingency(dplot)
+        # stat_label='${\chi}^2$'
+    elif dplot.shape==(2,2):
+        stat,pval=sc.stats.fisher_exact(dplot)
+        # stat_label='OR'
+    else:
+          raise ValueError(dplot)
+    return stat,pval
     
 def compare_classes_many(
     df1: pd.DataFrame,
@@ -533,7 +545,7 @@ def get_diff(
     cols_x,
     cols_y,
     cols_index,
-    test=True,
+    test=False,
     **kws
     )-> pd.DataFrame:
     """
@@ -548,7 +560,7 @@ def get_diff(
     ## filter the significant 
     d_={}
     for colx in cols_x:
-        assert df1[colx].nunique()==2,colx
+        assert df1[colx].nunique()==2, f"df1[{colx}].nunique() = {df1[colx].nunique()}"
         d_[colx]=(df1
         .melt(id_vars=cols_index+[colx],
                  value_vars=cols_y,
@@ -559,12 +571,13 @@ def get_diff(
     df2=pd.concat(d_,names=['variable x']).reset_index().rd.clean().log.dropna()
     if test:
         info(df2.iloc[0,:])
-    df3=get_stats_groupby(df1=df2,
-                      colsubset='value x',
-                      cols_value= ['value y'],
-                          colindex=cols_index,
-                          **kws,
-                     )
+    df3=get_stats_groupby(
+        df1=df2,
+        colsubset='value x',
+        cols_value= ['value y'],
+        colindex=cols_index,
+        **kws,
+        )
     return df3.loc[(df3['P (MWU test)']<0.05),:].sort_values('P (MWU test)')
 
 def binby_pvalue_coffs(df1: pd.DataFrame,

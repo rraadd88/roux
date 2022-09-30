@@ -3,9 +3,12 @@ import numpy as np
 import scipy as sc
 import logging
 from roux.lib.sys import info
-
 from scipy.stats import spearmanr,pearsonr
-def get_spearmanr(x: np.array,y: np.array) -> tuple:
+
+def get_spearmanr(
+    x: np.array,
+    y: np.array,
+    ) -> tuple:
     """Get Spearman correlation coefficient.
 
     Args:
@@ -15,6 +18,9 @@ def get_spearmanr(x: np.array,y: np.array) -> tuple:
     Returns:
         tuple: rs, p-value
     """
+    assert x.dtype in [int,float]
+    assert y.dtype in [int,float]
+    
     t=sc.stats.spearmanr(x,y,nan_policy='omit')
     return t.correlation,float(t.pvalue)
 
@@ -30,14 +36,15 @@ def get_pearsonr(x: np.array,y: np.array) -> tuple:
     """
     return sc.stats.pearsonr(x,y)
 
-def get_corr_bootstrapped(x: np.array,
-                          y: np.array,
-                          method='spearman',
-                          ci_type='max',
-                          cv:int=5,
-                          random_state=1,
-                          verbose=False,
-                         ) -> tuple:
+def get_corr_bootstrapped(
+    x: np.array,
+    y: np.array,
+    method='spearman',
+    ci_type='max',
+    cv:int=5,
+    random_state=1,
+    verbose=False,
+    ) -> tuple:
     """Get correlations after bootstraping.
 
     Args:
@@ -58,9 +65,16 @@ def get_corr_bootstrapped(x: np.array,
     if verbose: info(cv,ci_type)
     return np.mean(rs), get_ci(rs,ci_type=ci_type)
 
-def corr_to_str(method: str,
-                r: float,p: float,
-                fmt='<',n=True, ci=None,ci_type=None, magnitide=True) -> str:
+def corr_to_str(
+    method: str,
+    r: float,
+    p: float,
+    fmt='<',
+    n=True, 
+    ci=None,
+    ci_type=None, 
+    magnitide=True,
+    ) -> str:
     """Correlation to string
 
     Args:
@@ -91,7 +105,8 @@ def get_corr(
     ci_type='max',
     magnitide=True,
     outstr=False,
-    **kws):
+    **kws,
+    ):
     """Correlation between vectors (wrapper).
 
     Args:
@@ -123,12 +138,12 @@ def get_corr(
             return corr_to_str(method,r,p,n=n, ci=None,ci_type=None, magnitide=magnitide),r
 
 def get_corrs(
-    df1,
-    method,
-    cols,
-    cols_with=[],
-    coff_inflation_min=None,
-    test=False,
+    df1: pd.DataFrame,
+    method: str,
+    cols: list,
+    cols_with: list=[],
+    coff_inflation_min: float=None,
+    test: bool=False,
     **kws
     ):
     """Correlate columns of a dataframes.
@@ -171,15 +186,22 @@ def get_corrs(
     df0=df0.loc[(df0['variable1']!=df0['variable2']),:]
     if test:
         info(df0)
-    df2=df0.groupby(['variable1','variable2']).progress_apply(lambda df: get_corr(x=df1[df.name[0]],
-                                                                                  y=df1[df.name[1]],
-                                                                                  method=method,
-                                                                                  **kws)).apply(pd.Series)
+    df2=(df0
+        .groupby(['variable1','variable2'])
+        .progress_apply(lambda df: get_corr(
+            x=df1[df.name[0]],
+            y=df1[df.name[1]],
+            method=method,
+            **kws))
+        .apply(pd.Series)
+        )
     df2.columns=[f"$r_{method[0]}$",'P','n']
     df2=(df2
         .reset_index()
         .log.dropna(subset=['P'])
-        .groupby(['variable1']+(['variable2'] if len(cols_with)==0 else []),as_index=False).apply(lambda df: get_q(df,'P')).reset_index(drop=True)
+        .groupby(['variable1']+(['variable2'] if len(cols_with)==0 else []),
+                 as_index=False,
+                ).apply(lambda df: get_q(df,'P')).reset_index(drop=True)
         .sort_values(['Q',f"$r_{method[0]}$"],ascending=[True,False])
         )
     return df2
