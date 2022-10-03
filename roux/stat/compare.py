@@ -7,6 +7,7 @@ def get_cols_x_for_comparison(
     cols_index: list,
     cols_drop=[],
     cols_dropby_patterns=[],
+    test=False,
     ) -> dict:
     """
     Identify X columns.
@@ -54,10 +55,12 @@ def get_cols_x_for_comparison(
     ## get descrete x columns
     ds_=df1.rd.check_nunique().sort_values()
     l1=ds_.loc[lambda x: (x==2)].index.tolist()
-    logging.info(l1)
+    if test: print('l1',l1)
+    
     ds_=df1.select_dtypes((int,float)).nunique().sort_values()
     l2=ds_.loc[lambda x: (x==2)].index.tolist()
-    logging.info(l2)
+    if test: print('l2',l2)
+    
     d0['cols_x']['desc']=sorted(list(set(l1+l2) - set(d0['cols_y']['desc'])))
     return d0
 
