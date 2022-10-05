@@ -91,10 +91,10 @@ def get_comparison(
     # ## 
     if d1 is None:
         d1=get_cols_x_for_comparison(
-                df1,
-                cols_y,
-                cols_index,
-                **kws,
+            df1,
+            cols_y,
+            cols_index,
+            **kws,
             )
     
     ## gather stats in a dictionary
@@ -107,11 +107,10 @@ def get_comparison(
     ## 1. correlations 
     if len(d1['cols_y']['cont'])!=0 and len(d1['cols_x']['cont'])!=0:
         from roux.stat.corr import get_corrs
-        d2['correlation x vs y']=get_corrs(df1=df1,#.drop(['loci distance'],axis=1),
+        d2['correlation x vs y']=get_corrs(df1=df1,
             method='spearman',
             cols=d1['cols_y']['cont'],
-            cols_with=d1['cols_x']['cont'],#list(set(df1.columns.tolist())-set(['protein abundance difference (DELTA-WT)','responsiveness'])),
-            # cols_with=['loci distance'],
+            cols_with=d1['cols_x']['cont'],
             coff_inflation_min=50,
                  )
     
@@ -120,22 +119,22 @@ def get_comparison(
     for k in ['x','y']:
         if len(d1[f"cols_{k}"]['desc'])!=0 and len(d1[f"cols_{get_alt(['x','y'],k)}"]['cont'])!=0:
             d2[f"difference {k} vs {get_alt(['x','y'],k)}"]=get_diff(df1,
-                 cols_x=d1[f"cols_{k}"]['desc'],
-                 cols_y=d1[f"cols_{get_alt(['x','y'],k)}"]['cont'],
-                 cols_index=d1['cols_index'],
-                 cols=['variable x','variable y'],
-                )    
+                                                                     cols_x=d1[f"cols_{k}"]['desc'],
+                                                                     cols_y=d1[f"cols_{get_alt(['x','y'],k)}"]['cont'],
+                                                                     cols_index=d1['cols_index'],
+                                                                     cols=['variable x','variable y'],
+                                                                     coff_p=coff_p,
+                                                                )
+        else:
+            logging.warning(f"not len(d1[f'cols_{k}']['desc'])!=0 and len(d1[f'cols_{get_alt(['x','y'],k)}']['cont'])!=0")
     ## 3. association
-    # df0=pd.DataFrame(itertools.product(d1['cols_y']['desc'],d1['cols_x']['desc'],)).rename(columns={0:'colx',1:'coly'},errors='raise')
-    # df0.head(1)
-    # from roux.stat.diff import compare_classes
-    # d2['association x vs y']=df0.join(df0.apply(lambda x: compare_classes(df1[x['colx']], df1[x['coly']]),axis=1).apply(pd.Series).rename(columns={0:'stat',1:'P'},errors='raise'))
-    from roux.stat.diff import compare_classes_many
-    d2['association x vs y']=compare_classes_many(
-        df1=df1,
-        cols_y=d1['cols_y']['desc'],
-        cols_x=d1['cols_x']['desc'],
-        )
+    if len(d1["cols_x"]['desc'])!=0 and len(d1["cols_y"]['desc'])!=0:
+        from roux.stat.diff import compare_classes_many
+        d2['association x vs y']=compare_classes_many(
+            df1=df1,
+            cols_y=d1['cols_y']['desc'],
+            cols_x=d1['cols_x']['desc'],
+            )
         
     ## rename to uniform column names
     if 'correlation x vs y' in d2:
@@ -155,13 +154,14 @@ def get_comparison(
                                         errors='raise')
                                      .assign(**{'stat type':'MWU'})
                                      )
-    d2['association x vs y']=(d2['association x vs y']
-                            .rename(columns={'colx':'variable x',
-                                'coly':'variable y',
-                                            },
-                                errors='raise')
-                             .assign(**{'stat type':'FE'})
-                             )
+    if 'association x vs y' in d2:
+        d2['association x vs y']=(d2['association x vs y']
+                                .rename(columns={'colx':'variable x',
+                                    'coly':'variable y',
+                                                },
+                                    errors='raise')
+                                 .assign(**{'stat type':'FE'})
+                                 )
     if not coff_p is None:
         for k in d2:
             d2[k]=(d2[k]

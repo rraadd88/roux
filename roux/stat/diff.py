@@ -7,136 +7,6 @@ import logging
 from icecream import ic as info
 from roux.lib.set import *
 
-# difference between values
-def get_ratio_sorted(
-    a: float,
-    b: float,
-    increase=True
-    ) -> float:
-    """Get ratio sorted.
-
-    Args:
-        a (float): value #1.
-        b (float): value #2.
-        increase (bool, optional): check for increase. Defaults to True.
-
-    Returns:
-        float: output.
-    """
-    l=sorted([a,b])
-    if not increase:
-        l=l[::-1]
-    if l[0]!=0 and l[1]!=0:
-        return l[1]/l[0]
-
-def diff(a: float,b: float,absolute=True) -> float:
-    """Get difference
-
-    Args:
-        a (float): value #1.
-        b (float): value #2.
-        absolute (bool, optional): get absolute difference. Defaults to True.
-
-    Returns:
-        float: output.
-    """
-    diff=a-b
-    if absolute:
-        return abs(diff)
-    else:
-        return diff
-
-def get_diff_sorted(a: float,b: float) -> float:
-    """Difference sorted/absolute.
-
-    Args:
-        a (float): value #1.
-        b (float): value #2.
-
-    Returns:
-        float: output.
-    """
-    return diff(a,b,absolute=True)
-
-def balance(a: float,b: float,absolute=True) -> float:
-    """Balance.
-
-    Args:
-        a (float): value #1.
-        b (float): value #2.
-        absolute (bool, optional): absolute difference. Defaults to True.
-
-    Returns:
-        float: output.
-    """
-    sum_=a+b
-    if sum_!=0:
-        return 1-(diff(a,b,absolute=absolute)/(sum_))
-    else:
-        return np.nan
-
-# differnece by groups
-def get_col2metrics(df,
-                    colxs: list,
-                    coly: str,
-                    method='mannwhitneyu',
-                    alternative='two-sided') -> dict:
-    """Get column-wise metrics.
-
-    Args:
-        df (DataFrame): input dataframe.
-        colxs (list): columns.
-        coly (str): y column, contains 2 values.
-        method (str, optional): method name. Defaults to 'mannwhitneyu'.
-        alternative (str, optional): alternative for the statistical test. Defaults to 'two-sided'.
-
-    Returns:
-        dict: output.
-    """
-    from scipy import stats
-    class1,class2=df[coly].unique()
-    d={}
-    for colx in colxs:
-        _,d[colx]=getattr(stats,method)(df.loc[(df[coly]==class1),colx],
-                                       df.loc[(df[coly]==class2),colx],
-                                       alternative=alternative)
-    return d    
-
-def get_subset2metrics(df: pd.DataFrame,colvalue: str,colsubset: str,colindex: str,outstr=False,subset_control=None) -> dict:
-    """Get subset-wise metrics.
-
-    Args:
-        df (DataFrame): input dataframe
-        colvalue (str): column with values.
-        colsubset (str): column with subsets.
-        colindex (str): column with index.
-        outstr (bool, optional): if output string. Defaults to False.
-        subset_control (str, optional): control/reference subset. Defaults to None.
-
-    Returns:
-        dict: subset-wise metrics
-    """
-    if subset_control is None:
-        subset_control=df[colsubset].unique().tolist()[-1]
-    from scipy.stats import mannwhitneyu    
-    df1=df.merge(df.loc[(df[colsubset]==subset_control),:],on=colindex, 
-                 how='left',
-                 suffixes=['',' reference'],
-                )
-    subset2metrics=df1.groupby(colsubset).apply(lambda df : mannwhitneyu(df[colvalue],df[f"{colvalue} reference"],
-                                                     alternative='two-sided')).apply(pd.Series)[1].to_dict()
-    if subset2metrics[subset_control]<0.9:
-        logging.warning(f"pval for reference condition vs reference condition = {subset2metrics[subset_control]}. shouldn't be. check colindex")
-    subset2metrics={k:subset2metrics[k] for k in subset2metrics if k!=subset_control}
-    if outstr:
-        from roux.viz.annot import pval2annot
-        subset2metrics={k: pval2annot(subset2metrics[k],
-                                      fmt='<',
-                                      alternative='two-sided',
-                                      linebreak=False) for k in subset2metrics}
-    return subset2metrics
-
-    
 ## for linear dfs
 def get_demo_data():
     """Demo data to test the differences."""
@@ -186,14 +56,16 @@ def compare_classes_many(
             .rename(columns={0:'stat',1:'P'},errors='raise'))
            )
     
-def get_pval(df: pd.DataFrame,
-             colvalue='value',
-             colsubset='subset',
-             colvalue_bool=False,
-             colindex=None,
-             subsets=None,
-            test=False,
-            fun=None) -> tuple:
+def get_pval(
+    df: pd.DataFrame,
+    colvalue='value',
+    colsubset='subset',
+    colvalue_bool=False,
+    colindex=None,
+    subsets=None,
+    test=False,
+    fun=None,
+    ) -> tuple:
     """Get p-value.
 
     Args:
@@ -252,19 +124,19 @@ def get_pval(df: pd.DataFrame,
         # else:
         #     return np.nan,np.nan      
         
-def get_stat(df1: pd.DataFrame,
-              colsubset: str,
-              colvalue: str,
-              colindex: str,
-              subsets=None,
-              cols_subsets=['subset1', 'subset2'],
-              df2=None,
-              stats=[np.mean,np.median,np.var]+[len],
-             coff_samples_min=None,
-#               debug=False,
-             verb=False,
-             **kws,
-             ) -> pd.DataFrame:
+def get_stat(
+    df1: pd.DataFrame,
+    colsubset: str,
+    colvalue: str,
+    colindex: str,
+    subsets=None,
+    cols_subsets=['subset1', 'subset2'],
+    df2=None,
+    stats=[np.mean,np.median,np.var]+[len],
+    coff_samples_min=None,
+    verb=False,
+    **kws,
+    ) -> pd.DataFrame:
     """Get statistics.
 
     Args:
@@ -347,17 +219,19 @@ def get_stat(df1: pd.DataFrame,
                 df3.filter(like="P (").columns.tolist()]=np.nan
     return df3
 
-def get_stats(df1: pd.DataFrame,
-              colsubset: str,
-              cols_value: list,
-              colindex: str,
-              subsets=None,
-              df2=None,
-              cols_subsets=['subset1', 'subset2'],
-              stats=[np.mean,np.median,np.var,len],
-              axis=0, # concat 
-              test=False,
-              **kws) -> pd.DataFrame:
+def get_stats(
+    df1: pd.DataFrame,
+    colsubset: str,
+    cols_value: list,
+    colindex: str,
+    subsets=None,
+    df2=None,
+    cols_subsets=['subset1', 'subset2'],
+    stats=[np.mean,np.median,np.var,len],
+    axis=0, # concat 
+    test=False,
+    **kws,
+    ) -> pd.DataFrame:
     """Get statistics by iterating over columns wuth values.
 
     Args:
@@ -418,7 +292,12 @@ def get_stats(df1: pd.DataFrame,
         df3=df3.reset_index().rd.flatten_columns()
     return df3
 
-def get_q(ds1,col=None,verb=True,test_coff=0.1):
+def get_q(
+    ds1: pd.Series,
+    col: str=None,
+    verb: bool=True,
+    test_coff: float=0.1,
+    ):
     if not col is None:
         df1=ds1.copy()
         ds1=ds1[col]
@@ -435,14 +314,15 @@ def get_q(ds1,col=None,verb=True,test_coff=0.1):
         df1['Q']=ds4
         return df1
 
-def get_significant_changes(df1: pd.DataFrame,
-                            coff_p=0.025,
-                            coff_q=0.1,
-                            alpha=None,
-                            changeby="mean",
-                            # fdr=True,
-                            value_aggs=['mean','median'],
-                           ) -> pd.DataFrame:
+def get_significant_changes(
+    df1: pd.DataFrame,
+    coff_p=0.025,
+    coff_q=0.1,
+    alpha=None,
+    changeby="mean",
+    # fdr=True,
+    value_aggs=['mean','median'],
+    ) -> pd.DataFrame:
     """Get significant changes.
 
     Args:
@@ -484,12 +364,14 @@ def get_significant_changes(df1: pd.DataFrame,
             # df1[f"significant change, Q ({test} test) < {coff_q}"]=df1[f"significant change, Q ({test} test) < {coff_q}"].fillna('ns')
     return df1
 
-def apply_get_significant_changes(df1: pd.DataFrame,cols_value: list,
-                                    cols_groupby: list, # e.g. genes id
-                                    cols_grouped: list, # e.g. tissue
-                                    fast=False,
-                                    **kws,
-                                    ) -> pd.DataFrame:
+def apply_get_significant_changes(
+    df1: pd.DataFrame,
+    cols_value: list,
+    cols_groupby: list, # e.g. genes id
+    cols_grouped: list, # e.g. tissue
+    fast=False,
+    **kws,
+    ) -> pd.DataFrame:
     """Apply on dataframe to get significant changes.
 
     Args:
@@ -518,12 +400,15 @@ def apply_get_significant_changes(df1: pd.DataFrame,cols_value: list,
     assert(not df2.columns.duplicated().any())
     return df2
 
-def get_stats_groupby(df1: pd.DataFrame,cols: list,
-                      coff_p: float=0.05,
-                      coff_q: float=0.1,
-                      alpha=None,
-                      fast=False,
-                      **kws) -> pd.DataFrame:
+def get_stats_groupby(
+    df1: pd.DataFrame,
+    cols: list,
+    coff_p: float=0.05,
+    coff_q: float=0.1,
+    alpha=None,
+    fast=False,
+    **kws,
+    ) -> pd.DataFrame:
     """Iterate over groups, to get the differences.
 
     Args:
@@ -541,12 +426,13 @@ def get_stats_groupby(df1: pd.DataFrame,cols: list,
     return get_significant_changes(df1=df2,alpha=alpha,coff_p=coff_p,coff_q=coff_q,)
 
 def get_diff(
-    df1,
-    cols_x,
-    cols_y,
-    cols_index,
-    test=False,
-    **kws
+    df1: pd.DataFrame,
+    cols_x: list,
+    cols_y: list,
+    cols_index: list,
+    coff_p: float=None, 
+    test: bool=False,
+    **kws,
     )-> pd.DataFrame:
     """
     Wrapper around the `get_stats_groupby`
@@ -562,13 +448,15 @@ def get_diff(
     for colx in cols_x:
         assert df1[colx].nunique()==2, f"df1[{colx}].nunique() = {df1[colx].nunique()}"
         d_[colx]=(df1
-        .melt(id_vars=cols_index+[colx],
-                 value_vars=cols_y,
-                 var_name='variable y',
-                 value_name='value y')
-        .rename(columns={colx:'value x'},errors='raise')
-        )
-    df2=pd.concat(d_,names=['variable x']).reset_index().rd.clean().log.dropna()
+                .melt(id_vars=cols_index+[colx],
+                         value_vars=cols_y,
+                         var_name='variable y',
+                         value_name='value y')
+                .rename(columns={colx:'value x'},errors='raise')
+                 )
+    df2=pd.concat(d_,
+                  names=['variable x'],
+                 ).reset_index().rd.clean().log.dropna()
     if test:
         info(df2.iloc[0,:])
     df3=get_stats_groupby(
@@ -578,18 +466,23 @@ def get_diff(
         colindex=cols_index,
         **kws,
         )
-    return df3.loc[(df3['P (MWU test)']<0.05),:].sort_values('P (MWU test)')
+    if not coff_p is None:
+        df3=df3.loc[(df3['P (MWU test)']<coff_p),:]
+    else:
+        logging.warning('not filtered by P-value cutoff')
+    return df3.sort_values('P (MWU test)')
 
-def binby_pvalue_coffs(df1: pd.DataFrame,
-                    coffs=[0.01,0.05,0.25],
-                    color=False,
-                    testn='MWU test, FDR corrected',
-                    colindex='genes id',
-                    colgroup='tissue',
-                    preffix='',
-                    colns=None, # plot as ns, not counted
-                    palette=None,#['#f55f5f','#ababab','#046C9A',],
-                      ) -> tuple:
+def binby_pvalue_coffs(
+    df1: pd.DataFrame,
+    coffs=[0.01,0.05,0.25],
+    color=False,
+    testn='MWU test, FDR corrected',
+    colindex='genes id',
+    colgroup='tissue',
+    preffix='',
+    colns=None, # plot as ns, not counted
+    palette=None,#['#f55f5f','#ababab','#046C9A',],
+    ) -> tuple:
     """Bin data by pvalue cutoffs.
 
     Args:
@@ -663,16 +556,17 @@ def binby_pvalue_coffs(df1: pd.DataFrame,
 
 # from roux.viz.diff import plot_stats_diff
 ## confounding effects
-def get_stats_regression(df_: pd.DataFrame,
-                        d0={},
-                        variable=None,
-                        covariates=None,
-                        converged_only=False,
-                         out='df',
-                        verb=False,
-                        test=False,
-                        **kws,
-                        ) -> pd.DataFrame:
+def get_stats_regression(
+    df_: pd.DataFrame,
+    d0={},
+    variable=None,
+    covariates=None,
+    converged_only=False,
+    out='df',
+    verb=False,
+    test=False,
+    **kws,
+    ) -> pd.DataFrame:
     """Get stats from regression models.
 
     Args:
@@ -761,13 +655,15 @@ def get_stats_regression(df_: pd.DataFrame,
             else:
                 return pd.concat(d1,axis=0,names=['model type']).reset_index(0)
     
-def filter_regressions(df1: pd.DataFrame,
-                       variable: str,
-                       colindex: str,
-                       coff_q : float=0.1,
-                       by_covariates: bool=True,
-                       coff_p_covariates: float=0.05,
-                       test: bool=False) -> pd.DataFrame:
+def filter_regressions(
+    df1: pd.DataFrame,
+    variable: str,
+    colindex: str,
+    coff_q : float=0.1,
+    by_covariates: bool=True,
+    coff_p_covariates: float=0.05,
+    test: bool=False,
+    ) -> pd.DataFrame:
     """Filter regression statistics.
 
     Args:
@@ -825,7 +721,9 @@ def filter_regressions(df1: pd.DataFrame,
 import statsmodels.api as sm
 import statsmodels.formula.api as smf
 
-def get_model_summary(model: object) -> pd.DataFrame:
+def get_model_summary(
+    model: object,
+    ) -> pd.DataFrame:
     """Get model summary.
 
     Args:
@@ -837,12 +735,13 @@ def get_model_summary(model: object) -> pd.DataFrame:
     df_=model.summary().tables[0]
     return df_.loc[:,[0,1]].append(df_.loc[:,[2,3]].rename(columns={2:0,3:1})).rename(columns={0:'index',1:'value'}).append(dmap2lin(model.summary().tables[1]),sort=True)
 
-def run_lr_test(data: pd.DataFrame,
-                formula: str,
-                covariate: str,
-                col_group: str,
-                params_model: dict ={'reml':False}
-                ) -> tuple:
+def run_lr_test(
+    data: pd.DataFrame,
+    formula: str,
+    covariate: str,
+    col_group: str,
+    params_model: dict ={'reml':False}
+    ) -> tuple:
     """Run LR test.
 
     Args:
@@ -881,7 +780,9 @@ def run_lr_test(data: pd.DataFrame,
     True:get_model_summary(modelf_covariate)},axis=0,names=['covariate included','Unnamed']).reset_index())
     return stat, pval,dres
 
-def plot_residuals_versus_fitted(model: object) -> plt.Axes:
+def plot_residuals_versus_fitted(
+    model: object,
+    ) -> plt.Axes:
     """plot Residuals Versus Fitted (RVF).
 
     Args:
@@ -898,7 +799,9 @@ def plot_residuals_versus_fitted(model: object) -> plt.Axes:
     ax.set_title("LM test "+pval2annot(l[1],alpha=0.05,fmt='<',linebreak=False)+", FE test "+pval2annot(l[3],alpha=0.05,fmt='<',linebreak=False))    
     return ax
 
-def plot_residuals_versus_groups(model: object) -> plt.Axes:
+def plot_residuals_versus_groups(
+    model: object,
+    ) -> plt.Axes:
     """plot Residuals Versus groups.
 
     Args:
@@ -916,7 +819,9 @@ def plot_residuals_versus_groups(model: object) -> plt.Axes:
     ax.set_xlabel("groups")
     return ax
 
-def plot_model_sanity(model: object):
+def plot_model_sanity(
+    model: object,
+    ):
     """Plot sanity stats.
 
     Args:

@@ -1,6 +1,74 @@
 # import pandas as pd
 from roux.global_imports import *
 
+# difference between values
+def get_ratio_sorted(
+    a: float,
+    b: float,
+    increase=True
+    ) -> float:
+    """Get ratio sorted.
+
+    Args:
+        a (float): value #1.
+        b (float): value #2.
+        increase (bool, optional): check for increase. Defaults to True.
+
+    Returns:
+        float: output.
+    """
+    l=sorted([a,b])
+    if not increase:
+        l=l[::-1]
+    if l[0]!=0 and l[1]!=0:
+        return l[1]/l[0]
+
+def diff(a: float,b: float,absolute=True) -> float:
+    """Get difference
+
+    Args:
+        a (float): value #1.
+        b (float): value #2.
+        absolute (bool, optional): get absolute difference. Defaults to True.
+
+    Returns:
+        float: output.
+    """
+    diff=a-b
+    if absolute:
+        return abs(diff)
+    else:
+        return diff
+
+def get_diff_sorted(a: float,b: float) -> float:
+    """Difference sorted/absolute.
+
+    Args:
+        a (float): value #1.
+        b (float): value #2.
+
+    Returns:
+        float: output.
+    """
+    return diff(a,b,absolute=True)
+
+def balance(a: float,b: float,absolute=True) -> float:
+    """Balance.
+
+    Args:
+        a (float): value #1.
+        b (float): value #2.
+        absolute (bool, optional): absolute difference. Defaults to True.
+
+    Returns:
+        float: output.
+    """
+    sum_=a+b
+    if sum_!=0:
+        return 1-(diff(a,b,absolute=absolute)/(sum_))
+    else:
+        return np.nan
+
 def get_paired_sets_stats(l1: list,l2: list,test: bool=False) -> list:
     """Paired stats comparing two sets.
 
@@ -15,17 +83,19 @@ def get_paired_sets_stats(l1: list,l2: list,test: bool=False) -> list:
     if all([isinstance(l, list) for l  in [l1,l2]]):
         if test: print(l1,l2)
         l=list(jaccard_index(l1,l2))
-        from roux.stat.diff import get_ratio_sorted
+        # from roux.stat.diff import get_ratio_sorted
         l.append(get_ratio_sorted(len(l1),len(l2)))
         return l
 
-def get_stats_paired(df1: pd.DataFrame,
-                    cols: list,
-                    input_logscale: bool,
-                     prefix: str=None,
-                     drop_cols: bool=False,
-                     unidirectional_stats: list=['min','max'],
-                     fast: bool=False) -> pd.DataFrame:
+def get_stats_paired(
+    df1: pd.DataFrame,
+    cols: list,
+    input_logscale: bool,
+    prefix: str=None,
+    drop_cols: bool=False,
+    unidirectional_stats: list=['min','max'],
+    fast: bool=False,
+    ) -> pd.DataFrame:
     """Paired stats, row-wise.
 
     Args:
@@ -44,7 +114,7 @@ def get_stats_paired(df1: pd.DataFrame,
     if prefix is None:
         prefix=get_fix(*cols,common=True,clean=True)
         info(prefix)
-    from roux.stat.diff import get_ratio_sorted,get_diff_sorted
+    # from roux.stat.diff import get_ratio_sorted,get_diff_sorted
     df1[f"{prefix} {'ratio' if not input_logscale else 'diff'}"]=getattr(
         df1,'parallel_apply' if fast else "apply"
         )(lambda x: (

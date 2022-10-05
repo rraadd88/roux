@@ -467,9 +467,12 @@ def to_concat(
 
 def to_montage(
     ps: list,
-    layout: list,
+    layout: str,
+    source_path: str= None,
+    env_name: str=None,
     hspace: float=0,
     vspace: float=0,
+    output_path: str=None,
     test: bool=False,
     **kws_outp
     ) -> str:
@@ -485,14 +488,19 @@ def to_montage(
     Returns:
         str: path of the output.
     """
-    outp=to_outp(ps,**kws_outp)
-    env=get_env('imagemagick')
+    assert not (source_path is None and env_name is None)
+    assert isinstance(layout, str)
+    if output_path is None:
+        output_path=to_outp(ps,**kws_outp)
+    if not env_name is None:
+        env=get_env(env_name)
+        source_path=env['PATH'].split(':')[0]
     runbash(
-        f"{env['PATH'].split(':')[0]}/montage -geometry +{hspace}+{vspace} -tile {layout} {' '.join(ps)} {outp}",
+        f"{source_path}/montage -geometry +{hspace}+{vspace} -tile {layout} {' '.join(ps)} {output_path}",
         env=env,
         test=test,
        )
-    return outp
+    return output_path
 
 def to_gif(
     ps: list,

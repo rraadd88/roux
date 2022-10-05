@@ -333,7 +333,11 @@ def plot_dists(
     d3=get_axlims(ax)
     if isinstance(show_p,(bool,dict)):
         if isinstance(show_p,bool) and show_p:
-            d1={k:pval2annot(d1[k],alternative=alternative,fmt='<',linebreak=False) for k in d1}
+            d1={k:pval2annot(d1[k],
+                             alternative=alternative,
+                             fmt='<',
+                             linebreak=False,
+                            ) for k in d1}
         else:
             d1=show_p
         if offy_pval is None and hue is None:
@@ -351,15 +355,18 @@ def plot_dists(
         df1_=df1.groupby(y).apply(lambda df: df.groupby(colindex).ngroups).to_frame('n').reset_index()
         df1_['y']=df1_[y].map(d2)
         import matplotlib.transforms as transforms
-        df1_.apply(lambda x: ax.text(x=1.1+offx_n,y=x['y'],
-                                   s=show_n_prefix+str(x['n']),va='center',ha=show_n_ha,
-                                     transform=transforms.blended_transform_factory(ax.transAxes,ax.transData),
-                                   ),axis=1)
+        df1_.apply(lambda x: ax.text(
+            x=1.1+offx_n,
+            y=x['y'],
+            s=show_n_prefix+str(x['n']),
+            va='center',ha=show_n_ha,
+            transform=transforms.blended_transform_factory(ax.transAxes,ax.transData),
+            ),axis=1)
     ax.tick_params(axis='y', colors='k')
     if not hue is None:
         o1=ax.legend(
-                  loc='upper left', 
-                  bbox_to_anchor=(1, 0),
+            loc='upper left', 
+            bbox_to_anchor=(1, 0),
             frameon=True,
             title=hue,
             )

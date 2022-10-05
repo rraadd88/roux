@@ -10,7 +10,7 @@ def perc_label(a,b=None,bracket=True):
 def pval2annot(
     pval:float,
     alternative:str=None,
-    alpha:float=None,
+    alpha:float=0.05,
     fmt:str='*',
     power:bool=True,
     linebreak:bool=False,
@@ -25,8 +25,6 @@ def pval2annot(
     """
     if alternative is None and alpha is None:
         raise ValueError('both alternative and alpha are None')
-    if alpha is None:
-        alpha=0.025 if alternative=='two-sided' else 0.05
     if pd.isnull(pval):
         annot= ''
     elif pval < 0.0001:
