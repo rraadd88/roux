@@ -38,7 +38,7 @@ def plot_table(
     Returns:
         plt.Axes: `plt.Axes` object.
     """
-    print(df1.index.name,df1.columns.name)
+    # print(df1.index.name,df1.columns.name)
     if xlabel is None and not df1.index.name is None:
         ylabel=df1.index.name
     if ylabel is None and not df1.columns.name is None:
@@ -104,7 +104,8 @@ def plot_crosstab(
     if not cols is None:
         for i,c in enumerate(cols):
             df1=(df1
-                .assign(**{c: lambda df: df[c].astype(str)})
+                 .log.dropna(subset=cols)
+                 .assign(**{c: lambda df: df[c].astype(str)})
                 )        
             for l in [['True','False'],['yes','no']]:
                 if df1[c].isin(l).all():

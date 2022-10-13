@@ -554,13 +554,12 @@ def binby_pvalue_coffs(
 #     info(df1.shape,df1.shape)
     return df1,df2
 
-# from roux.viz.diff import plot_stats_diff
-## confounding effects
+## Correcting confounding effects
 def get_stats_regression(
-    df_: pd.DataFrame,
-    d0={},
-    variable=None,
-    covariates=None,
+    data: pd.DataFrame,
+    formulas:dict={},
+    variable:str=None,
+    covariates:list=None,
     converged_only=False,
     out='df',
     verb=False,
@@ -570,10 +569,10 @@ def get_stats_regression(
     """Get stats from regression models.
 
     Args:
-        df_ (DataFrame): input dataframe.
-        d0 (dict, optional): model name to base equation e.g. 'y ~ x'. Defaults to {}.
-        variable (_type_, optional): to get params of e.g. 'C(variable)[T.True]'. Defaults to None.
-        covariates (_type_, optional): variables. Defaults to None.
+        data (DataFrame): input dataframe.
+        formulas (dict, optional): model name to base equation e.g. 'y ~ x'. Defaults to {}.
+        variable (str, optional): variable name e.g. 'C(variable)[T.True]', used to retrieve the stats for. Defaults to None.
+        covariates (list, optional): variables. Defaults to None.
         converged_only (bool, optional): get the stats from the converged models only. Defaults to False.
         out (str, optional): output format. Defaults to 'df'.
         verb (bool, optional): verbose. Defaults to False.
@@ -582,8 +581,9 @@ def get_stats_regression(
     Returns:
         DataFrame: output.
     """
-    if test and hasattr(df_,'name'):
-        info(df_.name)
+    if test and hasattr(data,'name'):
+        info(data.name)
+    ## functions
     def to_df(res):
         if isinstance(res.summary().tables[1],pd.DataFrame):
             df1=res.summary().tables[1]
@@ -601,24 +601,37 @@ def get_stats_regression(
                         ], 
                         index=['P', 'coefficient',
                         ]).to_frame('value')
+    ## set verbose
     if not (verb or test):
         import warnings
         from statsmodels.tools.sm_exceptions import ConvergenceWarning
         warnings.simplefilter('ignore', ConvergenceWarning)
         warnings.simplefilter('ignore', RuntimeWarning)
         warnings.simplefilter('ignore', UserWarning)
-    import statsmodels.formula.api as smf
-    from statsmodels.tools.sm_exceptions import PerfectSeparationError
-    from numpy.linalg import LinAlgError
+            
+    ## add covariates to the equation
     if not covariates is None:
         #formats
-        d1=df_.dtypes.to_dict()
+        d1=data.dtypes.to_dict()
         formula_covariates=' + '+' + '.join([k if ((d1[k]==int) or (d1[k]==float)) else f"C({k})" for k in covariates if k in d1])
     else:
         formula_covariates=''
-    # info(formula_covariates)
-    d1={}
-    for k,formula_base in d0.items():
+    
+    ## set additional parameters
+    if 'groups' in kws:
+        ## get the data from the list of columns
+        kws['groups']=data[kws["groups"]]
+    
+    ## iterate over the models and equations
+    ### import required modules
+    import statsmodels.formula.api as smf
+    from statsmodels.tools.sm_exceptions import PerfectSeparationError
+    from numpy.linalg import LinAlgError
+    
+    d1={} ## collects the stats
+    for k,formula_base in formulas.items():
+        
+        ## get the model
         if isinstance(k,str):
             model=getattr(smf,k)
         elif isinstance(k,object) and hasattr(k,'from_formula'):
@@ -628,22 +641,23 @@ def get_stats_regression(
         else:
             logging.error(model)
             return
-        # print(str(model))
-        formula=formula_base+formula_covariates
-        if test: info(formula)
+        if verb or test: info(str(model))
+        ### label for the model
         modeln=str(model).split('.')[-1].split("'")[0]
-        if not 'groups' in kws:
-            try:
-                d1[modeln]=model(data=df_,formula=formula).fit(disp=False)
-            except (PerfectSeparationError,LinAlgError) as e:
-                if verb or test: logging.error('PerfectSeparationError/LinAlgError')
-        else:
-            try:
-                d1[modeln]=model(data=df_,formula=formula,
-                                groups=df_[kws["groups"]],
-                                ).fit(disp=False)
-            except (PerfectSeparationError,LinAlgError) as e:
-                if verb or test: logging.error('PerfectSeparationError/LinAlgError')
+        
+        ## construct full formula
+        formula=formula_base+formula_covariates
+        if verb or test: info(formula)
+        try:
+            d1[modeln]=model(
+                data=data,
+                formula=formula,
+                **kws,
+                ).fit(disp=False)
+        except (PerfectSeparationError,LinAlgError) as e:
+            if verb or test: logging.error('PerfectSeparationError/LinAlgError')
+    
+    ## output
     if out=='model':
         return d1
     elif out=='df':
@@ -717,23 +731,6 @@ def filter_regressions(
         logging.warning("not filtered by_covariates")
     info(df3[colindex].nunique())
     return df3
-    
-import statsmodels.api as sm
-import statsmodels.formula.api as smf
-
-def get_model_summary(
-    model: object,
-    ) -> pd.DataFrame:
-    """Get model summary.
-
-    Args:
-        model (object): model.
-
-    Returns:
-        pd.DataFrame: output.
-    """
-    df_=model.summary().tables[0]
-    return df_.loc[:,[0,1]].append(df_.loc[:,[2,3]].rename(columns={2:0,3:1})).rename(columns={0:'index',1:'value'}).append(dmap2lin(model.summary().tables[1]),sort=True)
 
 def run_lr_test(
     data: pd.DataFrame,
@@ -754,6 +751,7 @@ def run_lr_test(
     Returns:
         tuple: output tupe (stat, pval,dres).
     """
+    import statsmodels.formula.api as smf
 
     sc.stats.chisqprob = lambda chisq, df: sc.stats.chi2.sf(chisq, df)
     def get_lrtest(llmin, llmax):
@@ -762,12 +760,20 @@ def run_lr_test(
         return stat, pval        
     data=data.dropna()
     # without covariate
-    model = smf.mixedlm(formula, data,groups=data[col_group])
+    model = smf.mixedlm(
+        formula, 
+        data,
+        groups=data[col_group],
+        )
     modelf = model.fit(**params_model)
     llf = modelf.llf
 
     # with covariate
-    model_covariate = smf.mixedlm(f"{formula}+ {covariate}", data,groups=data[col_group])
+    model_covariate = smf.mixedlm(
+        f"{formula}+ {covariate}",
+        data,
+        groups=data[col_group],
+        )
     modelf_covariate = model_covariate.fit(**params_model)
     llf_covariate = modelf_covariate.llf
 
@@ -776,8 +782,12 @@ def run_lr_test(
     print(f'stat {stat:.2e} pval {pval:.2e}')
     
     # results
-    dres=delunnamedcol(pd.concat({False:get_model_summary(modelf),
-    True:get_model_summary(modelf_covariate)},axis=0,names=['covariate included','Unnamed']).reset_index())
+    dres=delunnamedcol(pd.concat({
+        False:get_model_summary(modelf),
+        True:get_model_summary(modelf_covariate)},
+        axis=0,
+        names=['covariate included','Unnamed'],
+        ).reset_index())
     return stat, pval,dres
 
 def plot_residuals_versus_fitted(
@@ -795,6 +805,7 @@ def plot_residuals_versus_fitted(
     ax = sns.scatterplot(y = model.resid, x = model.fittedvalues,alpha=0.2)
     ax.set_xlabel("fitted")
     ax.set_ylabel("residuals")
+    import statsmodels.api as sm
     l = sm.stats.diagnostic.het_white(model.resid, model.model.exog)
     ax.set_title("LM test "+pval2annot(l[1],alpha=0.05,fmt='<',linebreak=False)+", FE test "+pval2annot(l[3],alpha=0.05,fmt='<',linebreak=False))    
     return ax
@@ -819,10 +830,10 @@ def plot_residuals_versus_groups(
     ax.set_xlabel("groups")
     return ax
 
-def plot_model_sanity(
+def plot_model_qcs(
     model: object,
     ):
-    """Plot sanity stats.
+    """Plot Quality Checks.
 
     Args:
         model (object): model.

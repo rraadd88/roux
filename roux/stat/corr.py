@@ -254,11 +254,13 @@ def get_partial_corrs(
     return df1.reset_index()
 
 def check_collinearity(
-    df1,
-    threshold=0.7,
-    colvalue='$r_s$',
-    cols_variable=['variable1','variable2'],
-    coff_pval=0.05,
+    df1: pd.DataFrame,
+    threshold: float=0.7,
+    colvalue: str='$r_s$',
+    cols_variable: list=['variable1','variable2'],
+    coff_pval: float=0.05,
+    method: str='spearman',
+    coff_inflation_min: int=50,
     )-> pd.Series:
     """Check collinearity.
 
@@ -274,12 +276,12 @@ def check_collinearity(
     """
     cols=df1.columns.tolist()
     df2=get_corrs(df1=df1,
-        method='spearman',
+        method=method,
         cols=cols,
         cols_with=cols,
-        coff_inflation_min=50,
+        coff_inflation_min=coff_inflation_min,
         )
-    df2=df2.loc[(df2['P']<0.05),:]
+    df2=df2.loc[(df2['P']<coff_pval),:]
 
     df2['is collinear']=df2[colvalue].abs().apply(lambda x: x>=threshold)
     perc=(df2['is collinear'].sum()/len(df2))*100

@@ -57,16 +57,20 @@ def norm_by_gaussian_kde(values: np.array) -> np.array:
 
 ## z-scores
 
-def zscore(df,cols: list=None):
+def zscore(
+    df: pd.DataFrame,
+    cols: list=None,
+    ) -> pd.DataFrame:
     """Z-score.
 
     Args:
-        ds (pd.Series): input vector.
+        df (pd.DataFrame): input table.
 
     Returns:
-        pd.Series: output vector.
+        pd.DataFrame: output table.
     """
     if isinstance(df, pd.Series):
+        logging.warning('isinstance(df, pd.Series)==True')
         return (df - df.mean())/df.std()
     else:
         if cols is None:
