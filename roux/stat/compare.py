@@ -27,7 +27,10 @@ def get_cols_x_for_comparison(
 
     ## drop single value columns
     drop_cols=df1.rd.check_nunique().loc[lambda x: x==1].index.tolist()#+df1.filter(like='coexp').columns.tolist()
-    df1=df1.drop(drop_cols,axis=1)
+    df1=df1.log.drop(
+            labels=drop_cols,
+            axis=1,
+            )
     
     ## make the dictionary with column names
     columns=dict(cols_y={
@@ -61,7 +64,8 @@ def get_cols_x_for_comparison(
             threshold=0.7,
             colvalue='$r_s$',
             cols_variable=['variable1','variable2'],
-            coff_pval=0.05,)
+            coff_pval=0.05,
+        )
         if verbose:
             info(ds1_)
     

@@ -557,18 +557,22 @@ def binby_pvalue_coffs(
 
 
 ## Correcting confounding effects
-def to_input_data_regression(
+def to_columns_renamed_for_regression(
     df1:pd.DataFrame,
     columns:dict,
     ) -> pd.DataFrame:
+    """
+    """
     import re
+    from roux.lib.str import replace_many
     ## Rename columns to be comparible with the formula
     columns['rename']={}
     rename_columns=[]
     for var_type in ['cols_x','cols_y']:
         columns['rename'][var_type]={}
         for dtype in columns[var_type]:
-            columns['rename'][var_type][dtype]={c:re.sub('[^0-9a-zA-Z]+', '_', c) for c in columns[var_type][dtype]}
+            # columns['rename'][var_type][dtype]={c:re.sub('[^0-9a-zA-Z]+', '_', replace_many(c,[':','(',')','=','%'],'_',ignore=True)) for c in columns[var_type][dtype]}
+            columns['rename'][var_type][dtype]={c:re.sub('[^0-9a-zA-Z%]+', '_', c.replace('%','perc')) for c in columns[var_type][dtype]}
             ## for renaming dataframe
             rename_columns.append(columns['rename'][var_type][dtype])
             ## desc values to integers
@@ -579,14 +583,55 @@ def to_input_data_regression(
                             **{c:lambda df: (df[c]==columns['desc_test_values'][c]).astype(int)}
                         )
                         info(df1[c].value_counts())
+                        
     from roux.lib.dict import merge_dicts
+    rename_columns=merge_dicts(rename_columns)                       
+    assert len(rename_columns.keys())==len(rename_columns.values())                    
     df2=(df1
     .rename(
-        columns=merge_dicts(rename_columns),
+        columns=rename_columns,
         errors='raise',
         )
     )
     return df2,columns
+
+def to_input_data_for_regression(
+    df1: pd.DataFrame,
+    cols_y: list,
+    cols_index: list,
+    desc_test_values:dict,
+    verbose: bool=False,
+    test: bool=False,        
+    ) -> tuple:
+    """
+    
+    """
+    ## get columns dictionary
+    from roux.stat.compare import get_cols_x_for_comparison,to_preprocessed_data
+    columns=get_cols_x_for_comparison(
+        df1=df1,
+        cols_y=cols_y,
+        cols_index=cols_index,
+    )
+    
+    ## pre-process data
+    df2=to_preprocessed_data(
+        df1=df1,
+        columns=columns,
+        fill_missing_desc_value='-',
+        fill_missing_cont_value=0,
+        normby_zscore=True,
+        verbose=verbose,
+        test=test,    
+    )
+
+    columns['desc_test_values']=desc_test_values
+    
+    ## rename columns
+    return to_columns_renamed_for_regression(
+        df1=df2,
+        columns=columns,
+        )
 
 def get_stats_regression(
     data: pd.DataFrame,

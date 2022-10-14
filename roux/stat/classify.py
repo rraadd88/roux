@@ -8,6 +8,7 @@ def drop_low_complexity(
     cols: list=None,
     cols_keep: list=[],
     test: bool=False,
+    verbose: bool=False,
     ) -> pd.DataFrame:
     """Remove low-complexity columns from the data. 
 
@@ -44,18 +45,19 @@ def drop_low_complexity(
         cols_kept=[c for c in l1 if c in cols_keep]
         info(cols_kept)
         l1=[c for c in l1 if not c in cols_keep]
-    if not test:
-        return df1.log.drop(labels=l1,axis=1)
-    else:
-        return df1
+        
+    return df1.log.drop(labels=l1,axis=1)
 
-def get_Xy_for_classification(df1: pd.DataFrame,coly: str,qcut: float=None,
-                              # low_complexity filters
-                              drop_xs_low_complexity: bool=False,
-                              min_nunique: int=5,
-                              max_inflation: float=0.5,
-                              **kws,
-                             ) -> dict:
+def get_Xy_for_classification(
+    df1: pd.DataFrame,
+    coly: str,
+    qcut: float=None,
+    # low_complexity filters
+    drop_xs_low_complexity: bool=False,
+    min_nunique: int=5,
+    max_inflation: float=0.5,
+    **kws,
+    ) -> dict:
     """Get X matrix and y vector. 
     
     Args:
@@ -87,12 +89,14 @@ def get_Xy_for_classification(df1: pd.DataFrame,coly: str,qcut: float=None,
     X=df1.loc[:,cols_X]
     # remove low complexity features
     X=X.rd.clean(drop_constants=True)
-    X=drop_low_complexity(X,cols=None,
-                          min_nunique=min_nunique,
-                          max_inflation=max_inflation,
-                          test=False if drop_xs_low_complexity else True,
-                          **kws,
-                         )
+    X=drop_low_complexity(
+        X,
+        cols=None,
+        min_nunique=min_nunique,
+        max_inflation=max_inflation,
+        test=False if drop_xs_low_complexity else True,
+        **kws,
+        )
     return {'X':X,'y':y}
 
 def get_cvsplits(
