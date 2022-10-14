@@ -286,7 +286,7 @@ def check_collinearity(
     df2['is collinear']=df2[colvalue].abs().apply(lambda x: x>=threshold)
     perc=(df2['is collinear'].sum()/len(df2))*100
     logging.info(f"% collinear vars: {perc} ({df2['is collinear'].sum()}/{len(df1.columns)})")
-    if perc==0:
+    if df2['is collinear'].sum()==0:
         logging.info(f"max corr={df2[colvalue].max()}")
         return
     df2=df2.loc[(df2['is collinear']),:]
@@ -295,7 +295,10 @@ def check_collinearity(
     df3=df3.groupby('subnetwork name').agg({'node name':list}).reset_index()
     return (df3
             .groupby('subnetwork name')
-            .progress_apply(lambda df: df2.apply(lambda x: x[colvalue] if len(set([x[cols_variable[0]],x[cols_variable[1]]]) - set(df['node name'].tolist()[0]))==0 else np.nan,axis=1).min())
+            .progress_apply(lambda df: df2.apply(lambda x: \
+                                                 x[colvalue] if len(set([x[cols_variable[0]],x[cols_variable[1]]]) - set(df['node name'].tolist()[0]))==0 else \
+                                                 np.nan,
+                                                 axis=1).min())
             .sort_values(ascending=False)
            )    
 

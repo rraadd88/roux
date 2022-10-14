@@ -6,11 +6,16 @@ def get_cols_x_for_comparison(
     cols_y: list,
     cols_index: list,
     cols_drop=[],
-    cols_dropby_patterns=[],
-    test=False,
+    cols_dropby_patterns=[],    
+    verbose: bool=False,
+    test: bool=False,
     ) -> dict:
     """
     Identify X columns.
+    
+    Parameters:
+        df1 (pd.DataFrame): input table.
+        cols_y (list): y columns.
     
     """
     ## drop columns
@@ -25,44 +30,83 @@ def get_cols_x_for_comparison(
     df1=df1.drop(drop_cols,axis=1)
     
     ## make the dictionary with column names
-    d0=dict(cols_y={
+    columns=dict(cols_y={
             'cont':df1.loc[:,cols_y].select_dtypes((int,float)).columns.tolist(),
             },
             cols_index=cols_index,
         )
-    d0['cols_y']['desc']=list(set(cols_y) - set(d0['cols_y']['cont']))
-    d0['cols_x']={}
-    
+    columns['cols_y']['desc']=list(set(cols_y) - set(columns['cols_y']['cont']))
+    columns['cols_x']={}
+        
     ## get continuous cols_x
     from roux.stat.classify import drop_low_complexity
-    df_=drop_low_complexity(df1=df1,
-                        min_nunique=5,
-                        max_inflation=50,
-                        cols=df1.select_dtypes((int,float)).columns.tolist(),
-                        cols_keep=d0['cols_y']['cont'],
-                       )
-    d0['cols_x']['cont']=df_.drop(d0['cols_y']['cont'],axis=1).select_dtypes((int,float)).columns.tolist()
+    df_=drop_low_complexity(
+        df1=df1,
+        min_nunique=5,
+        max_inflation=50,
+        cols=list(set(df1.select_dtypes((int,float)).columns.tolist()) - set(columns['cols_y']['cont'])),
+        cols_keep=columns['cols_y']['cont'],
+        )
+    # except:
+    #     logging.warning('skipped `drop_low_complexity`, possibly because of a single x variable')
+    #     df_=df1.copy()
+        
+    columns['cols_x']['cont']=df_.drop(columns['cols_y']['cont'],axis=1).select_dtypes((int,float)).columns.tolist()
     
-    ## get non-colinear ones 
-    from roux.stat.corr import check_collinearity
-    check_collinearity(
-        df1=df1.loc[:,d0['cols_x']['cont']],
-        threshold=0.7,
-        colvalue='$r_s$',
-        cols_variable=['variable1','variable2'],
-        coff_pval=0.05,)
+    if len(columns['cols_x']['cont'])>1: 
+        ## check collinearity 
+        from roux.stat.corr import check_collinearity
+        ds1_=check_collinearity(
+            df1=df1.loc[:,columns['cols_x']['cont']],
+            threshold=0.7,
+            colvalue='$r_s$',
+            cols_variable=['variable1','variable2'],
+            coff_pval=0.05,)
+        if verbose:
+            info(ds1_)
     
     ## get descrete x columns
-    ds_=df1.rd.check_nunique().sort_values()
-    l1=ds_.loc[lambda x: (x==2)].index.tolist()
+    ds2_=df1.rd.check_nunique().sort_values()
+    l1=ds2_.loc[lambda x: (x==2)].index.tolist()
     if test: print('l1',l1)
     
-    ds_=df1.select_dtypes((int,float)).nunique().sort_values()
-    l2=ds_.loc[lambda x: (x==2)].index.tolist()
+    ds2_=df1.select_dtypes((int,float)).nunique().sort_values()
+    l2=ds2_.loc[lambda x: (x==2)].index.tolist()
     if test: print('l2',l2)
     
-    d0['cols_x']['desc']=sorted(list(set(l1+l2) - set(d0['cols_y']['desc'])))
-    return d0
+    columns['cols_x']['desc']=sorted(list(set(l1+l2) - set(columns['cols_y']['desc'])))   
+    return columns
+
+def to_preprocessed_data(
+    df1: pd.DataFrame,
+    columns: dict,
+    fill_missing_desc_value: bool=False,
+    fill_missing_cont_value: bool=False,
+    normby_zscore: bool=False,
+    verbose: bool=False,
+    test: bool=False,    
+    ) -> pd.DataFrame:
+    if normby_zscore:
+        ## Normalise continuous variables by calculating Z-score
+        if len(columns['cols_x']['cont'])!=0:
+            import scipy as sc
+            for c in columns['cols_x']['cont']: 
+                df1[c]=sc.stats.zscore(df1[c],nan_policy='omit')
+            if verbose: info(df1.loc[:,columns['cols_x']['cont']].describe().loc[['mean','std'],:])
+
+    ## Fill missing values
+    if fill_missing_cont_value!=False:
+        for c in columns['cols_x']['cont']: 
+            if df1[c].isnull().any():
+                if verbose: info(df1[c].isnull().sum()) 
+                df1[c]=df1[c].fillna(fill_missing_cont_value)
+            
+    if fill_missing_desc_value!=False:
+        for c in columns['cols_x']['desc']: 
+            if df1[c].isnull().any():
+                if verbose: info(df1[c].isnull().sum()) 
+                df1[c]=df1[c].fillna(fill_missing_desc_value) 
+    return df1
 
 def get_comparison(
     df1: pd.DataFrame,

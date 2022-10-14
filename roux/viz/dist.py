@@ -244,8 +244,8 @@ def plot_dists(
     if isinstance(colindex,str):
         colindex=[colindex]
     df1=(df1
-    .log.dropna(subset=colindex+[x,y])
-    .assign(**{y: lambda df: df[y].astype(str)})
+        .log.dropna(subset=colindex+[x,y])
+        .assign(**{y: lambda df: df[y].astype(str)})
         )
     if order is None:
         order=df1[y].unique().tolist()

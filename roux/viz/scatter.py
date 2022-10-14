@@ -1,56 +1,18 @@
 from roux.global_imports import *
 
-# stats
-# def annot_stats(dplot: pd.DataFrame,
-#             colx: str,
-#             coly: str,
-#             colz: str,
-#             stat_method: list=[],
-#             bootstrapped: bool=False,
-#             params_set_label: dict={},
-#             ax: plt.Axes = None,
-#             ) -> plt.Axes:
-#     """Annotate stats on a scatter plot.
-
-#     Args:
-#         dplot (pd.DataFrame): input dataframe.
-#         colx (str): x column.
-#         coly (str): y column.
-#         colz (str): z column.
-#         stat_method (list, optional): names of stat methods to apply. Defaults to [].
-#         bootstrapped (bool, optional): to bootstrap the data or not. Defaults to False.
-#         params_set_label (dict, optional): parameters provided to the `set_label` function. Defaults to {}.
-#         ax (plt.Axes, optional): `plt.Axes` object. Defaults to None.
-
-#     Returns:
-#         plt.Axes: `plt.Axes` object.
-#     """
-#     stat_method = [stat_method] if isinstance(stat_method,str) else stat_method
-#     from roux.viz.annot import set_label
-#     if 'mlr' in stat_method:
-#         from roux.lib.stat.poly import get_mlr_2_str
-#         ax=set_label(ax,label=get_mlr_2_str(dplot,colz,[colx,coly]),
-#                     title=True,params={'loc':'left'})
-#     if 'spearman' in stat_method or 'pearson' in stat_method:
-#         from roux.stat.corr import get_corr
-#         ax=set_label(ax,label=get_corr(dplot[colx],dplot[coly],method=stat_method[0],
-#                                        bootstrapped=bootstrapped,
-#                                        outstr=True,n=True),
-#                     **params_set_label)
-#     return ax
-
-def plot_trendline(dplot: pd.DataFrame,
-                    colx: str,
-                    coly: str,
-                    params_plot: dict={'color':'r','lw':2},
-                    poly: bool=False,
-                    lowess: bool=True,
-                    linestyle: str= 'solid',
-                    params_poly: dict={'deg':1},
-                    params_lowess: dict={'frac':0.7,'it':5},
-                    ax: plt.Axes = None,
-                  **kws
-            ) -> plt.Axes:
+def plot_trendline(
+    dplot: pd.DataFrame,
+    colx: str,
+    coly: str,
+    params_plot: dict={'color':'r','lw':2},
+    poly: bool=False,
+    lowess: bool=True,
+    linestyle: str= 'solid',
+    params_poly: dict={'deg':1},
+    params_lowess: dict={'frac':0.7,'it':5},
+    ax: plt.Axes = None,
+    **kws
+    ) -> plt.Axes:
     """Plot a trendline.
 
     Args:

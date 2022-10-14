@@ -8,7 +8,8 @@ from icecream import ic as info
 from roux.lib.set import *
 
 ## for linear dfs
-def get_demo_data():
+def get_demo_data(
+    ) -> pd.DataFrame:
     """Demo data to test the differences."""
     subsets=list('abcd')
     np.random.seed(88)
@@ -554,7 +555,39 @@ def binby_pvalue_coffs(
 #     info(df1.shape,df1.shape)
     return df1,df2
 
+
 ## Correcting confounding effects
+def to_input_data_regression(
+    df1:pd.DataFrame,
+    columns:dict,
+    ) -> pd.DataFrame:
+    import re
+    ## Rename columns to be comparible with the formula
+    columns['rename']={}
+    rename_columns=[]
+    for var_type in ['cols_x','cols_y']:
+        columns['rename'][var_type]={}
+        for dtype in columns[var_type]:
+            columns['rename'][var_type][dtype]={c:re.sub('[^0-9a-zA-Z]+', '_', c) for c in columns[var_type][dtype]}
+            ## for renaming dataframe
+            rename_columns.append(columns['rename'][var_type][dtype])
+            ## desc values to integers
+            for c in columns[var_type][dtype]:
+                if var_type=='cols_y' and dtype=='desc':
+                    if df1[c].dtype!=float:
+                        df1=df1.assign(
+                            **{c:lambda df: (df[c]==columns['desc_test_values'][c]).astype(int)}
+                        )
+                        info(df1[c].value_counts())
+    from roux.lib.dict import merge_dicts
+    df2=(df1
+    .rename(
+        columns=merge_dicts(rename_columns),
+        errors='raise',
+        )
+    )
+    return df2,columns
+
 def get_stats_regression(
     data: pd.DataFrame,
     formulas:dict={},
@@ -570,7 +603,7 @@ def get_stats_regression(
 
     Args:
         data (DataFrame): input dataframe.
-        formulas (dict, optional): model name to base equation e.g. 'y ~ x'. Defaults to {}.
+        formulas (dict, optional): base formula e.g. 'y ~ x' to model name map. Defaults to {}.
         variable (str, optional): variable name e.g. 'C(variable)[T.True]', used to retrieve the stats for. Defaults to None.
         covariates (list, optional): variables. Defaults to None.
         converged_only (bool, optional): get the stats from the converged models only. Defaults to False.
@@ -581,6 +614,11 @@ def get_stats_regression(
     Returns:
         DataFrame: output.
     """
+    if not '~' in list(formulas.keys())[0]:
+        ## back-compatibility warning
+        formulas=flip_dict(formulas)
+        logging.warning('parameter `formulas` should contain formulas as keys (Opposite to the previous version where formulas were the values).')
+        
     if test and hasattr(data,'name'):
         info(data.name)
     ## functions
@@ -612,8 +650,8 @@ def get_stats_regression(
     ## add covariates to the equation
     if not covariates is None:
         #formats
-        d1=data.dtypes.to_dict()
-        formula_covariates=' + '+' + '.join([k if ((d1[k]==int) or (d1[k]==float)) else f"C({k})" for k in covariates if k in d1])
+        covariate_types=data.dtypes.to_dict()
+        formula_covariates=' + '+' + '.join([k if ((covariate_types[k]==int) or (covariate_types[k]==float)) else f"C({k})" for k in covariates if k in covariate_types])
     else:
         formula_covariates=''
     
@@ -628,8 +666,8 @@ def get_stats_regression(
     from statsmodels.tools.sm_exceptions import PerfectSeparationError
     from numpy.linalg import LinAlgError
     
-    d1={} ## collects the stats
-    for k,formula_base in formulas.items():
+    fitted_models={} ## collects the stats
+    for formula_base,k in formulas.items():
         
         ## get the model
         if isinstance(k,str):
@@ -649,7 +687,7 @@ def get_stats_regression(
         formula=formula_base+formula_covariates
         if verb or test: info(formula)
         try:
-            d1[modeln]=model(
+            fitted_models[(modeln,formula)]=model(
                 data=data,
                 formula=formula,
                 **kws,
@@ -659,15 +697,21 @@ def get_stats_regression(
     
     ## output
     if out=='model':
-        return d1
+        return fitted_models
     elif out=='df':
-        d1={k:to_df(v) for k,v in d1.items() if ((hasattr(v,'converged') and (v.converged)) or (not converged_only))}
-        if len(d1)!=0:
+        fitted_models={k:to_df(v) for k,v in fitted_models.items() if ((hasattr(v,'converged') and (v.converged)) or (not converged_only))}
+        if len(fitted_models)!=0:
             if not variable is None:
-                return pd.concat({k:get_stats(v,variable=variable) for k,v in d1.items()},
-                                 axis=0,names=['model type','variable']).reset_index()
+                ## return the stats for the selected variable
+                return pd.concat({k:get_stats(v,variable=variable) for k,v in fitted_models.items()},
+                                 axis=0,
+                                 names=['model type','formula','variable']
+                                ).reset_index()
             else:
-                return pd.concat(d1,axis=0,names=['model type']).reset_index(0)
+                return pd.concat(fitted_models,
+                                 axis=0,
+                                 names=['model type','formula'],
+                                ).reset_index([0,1])
     
 def filter_regressions(
     df1: pd.DataFrame,

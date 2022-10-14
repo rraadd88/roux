@@ -92,7 +92,7 @@ def rename_ticklabels(
         raise ValueError("either `rename` or `replace` should be provided.")
     return ax
 
-def get_ticklabel2position(
+def get_ticklabel_position(
     ax: plt.Axes,
     axis: str,
     ) -> plt.Axes:
@@ -107,6 +107,9 @@ def get_ticklabel2position(
     """
     return dict(zip([t.get_text() for t in getattr(ax,f'get_{axis}ticklabels')()],
                   getattr(ax,f"{axis}axis").get_ticklocs()))
+
+## alias to deprecate
+get_ticklabel2position=get_ticklabel_position
 
 def set_ticklabels_color(
     ax: plt.Axes,

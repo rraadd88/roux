@@ -1,12 +1,14 @@
 from roux.global_imports import *
 
 # curate data 
-def drop_low_complexity(df1: pd.DataFrame,
-                        min_nunique: int,
-                        max_inflation: int,
-                        cols: list=None,
-                        cols_keep: list=[],
-                        test: bool=False) -> pd.DataFrame:
+def drop_low_complexity(
+    df1: pd.DataFrame,
+    min_nunique: int,
+    max_inflation: int,
+    cols: list=None,
+    cols_keep: list=[],
+    test: bool=False,
+    ) -> pd.DataFrame:
     """Remove low-complexity columns from the data. 
 
     Args:
@@ -23,6 +25,9 @@ def drop_low_complexity(df1: pd.DataFrame,
 
     if cols is None:
         cols=df1.columns.tolist()
+    if len(cols)<2:
+        logging.warning('skipped `drop_low_complexity` because len(cols)<2.')
+        return df1
     df_=pd.concat([df1.rd.check_nunique(cols),df1.rd.check_inflation(cols)],axis=1,)
     df_.columns=['nunique','% inflation']
     df_=df_.sort_values(df_.columns.tolist(),ascending=False)

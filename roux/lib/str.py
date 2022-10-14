@@ -20,6 +20,7 @@ def substitution(s,i,replaceby):
     l=list(s)
     l[i]=replaceby
     return "".join(l)
+
 # alias
 replacebyposition=substitution
 
@@ -158,8 +159,13 @@ def findall(s,ss,outends=False,outstrs=False,
     else:
         return [a.start() for a in finds]
         
-def get_marked_substrings(s,leftmarker='{',rightmarker='}',
-                          leftoff=0,rightoff=0):
+def get_marked_substrings(
+    s,
+    leftmarker='{',
+    rightmarker='}',
+    leftoff=0,
+    rightoff=0,
+    ) -> list:
     """Get the substrings flanked with markers from a string.
     
     Parameters:
@@ -179,8 +185,12 @@ def get_marked_substrings(s,leftmarker='{',rightmarker='}',
 
 getall_fillers=get_marked_substrings
 ###
-def mark_substrings(s,ss,
-                  leftmarker='(',rightmarker=')'):
+def mark_substrings(
+    s,
+    ss,
+    leftmarker='(',
+    rightmarker=')',
+    ) -> str:
     """Mark sub-string/s in a string.
     
     Parameters:
@@ -195,7 +205,11 @@ def mark_substrings(s,ss,
     pos=s.find(ss)
     return f"{s[:pos]}{leftmarker}{s[pos:pos+len(ss)]}{rightmarker}"
 
-def get_bracket(s,leftmarker='(',righttmarker=')'):
+def get_bracket(
+    s,
+    leftmarker='(',
+    righttmarker=')',
+    ) -> str:
     """Get bracketed substrings.
     
     Parameters:
@@ -217,10 +231,13 @@ def get_bracket(s,leftmarker='(',righttmarker=')'):
         return '' 
     
 ## split
-def align(s1,s2,
-          prefix=False,
-          suffix=False,
-          common=True):
+def align(
+    s1: str,
+    s2: str,
+    prefix: bool=False,
+    suffix: bool=False,
+    common: bool=True,
+    ) -> list:
     """Align strings.
         
     Parameters:
@@ -251,7 +268,12 @@ def align(s1,s2,
         return [s1[:i+1],s2[:i+1]] if prefix else [s1[i:],s2[i:]] 
 
 from roux.lib.set import unique_str    
-def get_prefix(s1,s2,common=True,clean=True): 
+def get_prefix(
+    s1: str,
+    s2: str,
+    common: bool=True,
+    clean: bool=True,
+    ) -> str: 
     """Get the prefix of the strings
     
     Parameters:
@@ -271,8 +293,14 @@ def get_prefix(s1,s2,common=True,clean=True):
         if not clean:
             return s3
         else:
-            return s3.strip().rsplit(' ', 1)[0]    
-def get_suffix(s1,s2,common=True,clean=True):
+            return s3.strip().rsplit(' ', 1)[0]
+        
+def get_suffix(
+    s1: str,
+    s2: str,
+    common: bool=True,
+    clean: bool=True,
+    ) -> str:
     """Get the suffix of the strings
     
     Parameters:
@@ -297,7 +325,12 @@ def get_suffix(s1,s2,common=True,clean=True):
             return s3
         else:
             return s3.strip()#.rsplit(' ', 1)[0]
-def get_fix(s1,s2,**kws):
+        
+def get_fix(
+    s1: str,
+    s2: str,
+    **kws: dict,
+    ) -> str:
     """Infer common prefix or suffix.
     
     Parameters:
@@ -314,7 +347,10 @@ def get_fix(s1,s2,**kws):
     s4=get_suffix(s1,s2,**kws)
     return s3 if len(s3)>=len(s4) else s4
 
-def removesuffix(s1,suffix):
+def removesuffix(
+    s1: str,
+    suffix: str,
+    ) -> str:
     """Remove suffix.
     
     Paramters:
@@ -334,7 +370,11 @@ def removesuffix(s1,suffix):
 
 # dict
 # def str2dict(s): return dict(item.split("=") for item in s.split(";"))
-def str2dict(s,sep=';',sep_equal='='):
+def str2dict(
+    s: str,
+    sep: str=';',
+    sep_equal: str='=',
+    ) -> dict:
     """String to dictionary.
     
     Parameters:
@@ -350,7 +390,11 @@ def str2dict(s,sep=';',sep_equal='='):
     """
     return dict(item.split(sep_equal) for item in s.split(sep))
 
-def dict2str(d1,sep=';',sep_equal='='): 
+def dict2str(
+    d1: dict,
+    sep: str=';',
+    sep_equal: str='=',
+    ) -> str: 
     """Dictionary to string.
     
     Parameters:
@@ -363,7 +407,9 @@ def dict2str(d1,sep=';',sep_equal='='):
     """
     return sep.join([sep_equal.join([k,str(v)]) for k,v in d1.items()])
 
-def str2num(s):
+def str2num(
+    s: str
+    ) -> float:
     """String to number.
     
     Parameters:
@@ -380,8 +426,12 @@ def str2num(s):
     assert len(s)==len(s1)+len(i1), f"do not add up"
     return int(int(i1)*{'':1, 'K':1e3, 'M':1e6, 'G':1e9, 'T':1e12, 'P':1e15}[s1])
 
-def num2str(num,magnitude=False,
-           coff=10000,decimals=0):
+def num2str(
+    num: float,
+    magnitude: bool=False,
+    coff: float=10000,
+    decimals: int=0,
+    ) -> str:
     """Number to string.
     
     Parameters:

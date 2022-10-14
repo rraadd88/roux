@@ -2,7 +2,7 @@
 import pandas as pd
 import numpy as np
 import logging
-from icecream import ic
+from icecream import ic as info
 from roux.lib import to_rd
 
 @to_rd

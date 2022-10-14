@@ -20,7 +20,9 @@ def sort_dict(d1,by=1,ascending=True):
     """
     return dict(sorted(d1.items(), key=lambda item: item[1],reverse=not ascending))
 
-def merge_dicts(l):
+def merge_dicts(
+    l: list,
+    )-> dict:
     """Merge dictionaries.
     
     Parameters:
@@ -28,6 +30,9 @@ def merge_dicts(l):
         
     Returns:
         d (dict): output dictionary.
+        
+    TODOs:
+        in python>=3.9, `merged = d1 | d2`
     """    
     from collections import ChainMap
     return dict(ChainMap(*l))
