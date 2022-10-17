@@ -31,6 +31,8 @@ def drop_low_complexity(
         return df1
     df_=pd.concat([df1.rd.check_nunique(cols),df1.rd.check_inflation(cols)],axis=1,)
     df_.columns=['nunique','% inflation']
+    if verbose:
+        info(df_)
     df_=df_.sort_values(df_.columns.tolist(),ascending=False)
     df_=df_.loc[((df_['nunique']<=min_nunique) | (df_['% inflation']>=max_inflation)),:]
     l1=df_.index.tolist()

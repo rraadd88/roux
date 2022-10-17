@@ -285,7 +285,7 @@ def check_collinearity(
 
     df2['is collinear']=df2[colvalue].abs().apply(lambda x: x>=threshold)
     perc=(df2['is collinear'].sum()/len(df2))*100
-    logging.info(f"% collinear vars: {perc} ({df2['is collinear'].sum()}/{len(df1.columns)})")
+    logging.info(f"collinear vars: {perc:.1f}% ({df2['is collinear'].sum()}/{len(df1.columns)})")
     if df2['is collinear'].sum()==0:
         logging.info(f"max corr={df2[colvalue].max()}")
         return

@@ -5,7 +5,7 @@ from roux.lib.sys import is_interactive_notebook
 
 ## matplotlib plots
 def to_plotp(
-    ax: plt.Axes,
+    ax: plt.Axes=None,
     prefix: str='plot/plot_',
     suffix: str='',
     fmts: list=['png'],
@@ -21,6 +21,8 @@ def to_plotp(
     Returns:
         str: output path for the plot.
     """
+    if ax is None:
+        ax=plt.gca()
     if isinstance(ax,str):
         return ax
     if isinstance(suffix,(list,tuple)):

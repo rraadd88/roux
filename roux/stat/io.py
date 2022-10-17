@@ -5,7 +5,7 @@ def perc_label(a,b=None,bracket=True):
     if b is None:
         b=len(a)
         a=sum(a)
-    return f"{(a/b)*100:.0f}%"+(f" ({num2str(a)}/{num2str(b)})" if bracket else "")
+    return f"{(a/b)*100:.1f}%"+(f" ({num2str(a)}/{num2str(b)})" if bracket else "")
 
 def pval2annot(
     pval:float,

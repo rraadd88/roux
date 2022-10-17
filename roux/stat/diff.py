@@ -601,10 +601,19 @@ def to_input_data_for_regression(
     cols_index: list,
     desc_test_values:dict,
     verbose: bool=False,
-    test: bool=False,        
+    test: bool=False,
+    **kws,
     ) -> tuple:
     """
+    Input data for the regression.
     
+    Parameters:
+        df1 (pd.DataFrame): input data.
+        cols_y (list): y columns.
+        cols_index (list): index columns.
+        
+    Returns:
+        Output table.
     """
     ## get columns dictionary
     from roux.stat.compare import get_cols_x_for_comparison,to_preprocessed_data
@@ -612,6 +621,9 @@ def to_input_data_for_regression(
         df1=df1,
         cols_y=cols_y,
         cols_index=cols_index,
+        verbose=verbose,
+        test=test,        
+        **kws,
     )
     
     ## pre-process data

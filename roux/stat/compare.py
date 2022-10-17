@@ -5,8 +5,15 @@ def get_cols_x_for_comparison(
     df1: pd.DataFrame,
     cols_y: list,
     cols_index: list,
-    cols_drop=[],
-    cols_dropby_patterns=[],    
+    ## drop columns
+    cols_drop: list=[],
+    cols_dropby_patterns: list=[],    
+    ## collinearity
+    coff_rs: float=0.7,
+    ## complexity
+    min_nunique: int =5,
+    max_inflation: int =50,
+
     verbose: bool=False,
     test: bool=False,
     ) -> dict:
@@ -45,10 +52,11 @@ def get_cols_x_for_comparison(
     from roux.stat.classify import drop_low_complexity
     df_=drop_low_complexity(
         df1=df1,
-        min_nunique=5,
-        max_inflation=50,
+        min_nunique=min_nunique,
+        max_inflation=max_inflation,
         cols=list(set(df1.select_dtypes((int,float)).columns.tolist()) - set(columns['cols_y']['cont'])),
         cols_keep=columns['cols_y']['cont'],
+        verbose=verbose,
         )
     # except:
     #     logging.warning('skipped `drop_low_complexity`, possibly because of a single x variable')
@@ -61,7 +69,7 @@ def get_cols_x_for_comparison(
         from roux.stat.corr import check_collinearity
         ds1_=check_collinearity(
             df1=df1.loc[:,columns['cols_x']['cont']],
-            threshold=0.7,
+            threshold=coff_rs,
             colvalue='$r_s$',
             cols_variable=['variable1','variable2'],
             coff_pval=0.05,
