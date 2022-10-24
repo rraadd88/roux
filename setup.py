@@ -36,7 +36,8 @@ requirements = {
             openpyxl
             argh
             icecream
-            watermark""".split('\n'),
+            watermark
+            omegaconf""".split('\n'),
 'stat':['statsmodels',
         'networkx',
         # 'pingouin',

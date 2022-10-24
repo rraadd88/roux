@@ -221,7 +221,7 @@ def get_comparison(
     if not coff_p is None:
         for k in d2:
             d2[k]=(d2[k]
-                    .loc[(d2[k]['P']<0.05),:]
+                    .loc[(d2[k]['P']<coff_p),:]
                   )    
     ## gather
     df2=(pd.concat(

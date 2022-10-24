@@ -1,7 +1,9 @@
 from roux.lib.io import *
 from roux.query.ensembl import release2prefix
 
-def get_ensembl_dataset_name(x: str) -> str:
+def get_ensembl_dataset_name(
+    x: str,
+    ) -> str:
     """Get the name of the Ensembl dataset.
 
     Args:
@@ -15,14 +17,15 @@ def get_ensembl_dataset_name(x: str) -> str:
     return f"{l[0][0]}{l[1]}_gene_ensembl"
 
 def query(
-          species: str,
-          release: int,
-          attributes: list=None,
-          filters: list=None,
-          databasep: str='data/database',
-          dataset_name: str=None,
-          force: bool=False,
-          **kws_query,) -> pd.DataFrame:
+      species: str,
+      release: int,
+      attributes: list=None,
+      filters: list=None,
+      databasep: str='external/biomart/',
+      dataset_name: str=None,
+      force: bool=False,
+      **kws_query,
+    ) -> pd.DataFrame:
     """Query the biomart database.
 
     Args:
@@ -73,6 +76,19 @@ def query(
                          only_unique=True,
                          **kws_query)
         to_table(df1,outp)
+        logging.info(f"output path: {outp}")
     else:
         df1=read_table(outp)
+        
+    ## rename the columns
+    df1=(df1   
+    .rename(columns={
+        'Gene stable ID':'gene id',
+        'Protein stable ID':'protein id',
+        'UniProtKB/Swiss-Prot ID':'protein id (uniprot)',
+        'Peptide':'protein sequence',
+    },
+    errors='ignore',
+    )
+    )
     return df1

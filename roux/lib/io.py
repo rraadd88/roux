@@ -153,7 +153,12 @@ def to_zip(p, outp=None,fmt='zip'):
         _=[copyfile(p,f"{outd}/{basename(p)}") for p in ps]
         return _to_zip(outd+'/', destination=outp, fmt=fmt)
     
-def read_zip(p,file_open=None, fun_read=None):
+def read_zip(
+    p: str,
+    file_open: str=None,
+    fun_read=None,
+    test: bool=False,
+    ):
     """Read the contents of a zip file.
     
     Parameters:
@@ -163,12 +168,17 @@ def read_zip(p,file_open=None, fun_read=None):
 
     """
     from io import BytesIO
-    from zipfile import ZipFile
+    from zipfile import ZipFile,ZipExtFile
     from urllib.request import urlopen
-    if p.startswith('http') or p.startswith('ftp'):
-        p=BytesIO(urlopen(p).read())
-    file = ZipFile(p)
+    if isinstance(p,ZipExtFile):
+        file=p
+    else:
+        if isinstance(p,str):
+            if p.startswith('http') or p.startswith('ftp'):
+                p=BytesIO(urlopen(p).read())
+        file = ZipFile(p)
     if file_open is None:
+        logging.info(f"list of files within the zip file: {[f.filename for f in file.filelist]}")
         return file
     else:
         if fun_read is None:
@@ -795,7 +805,10 @@ def tsv2pqt(p):
         p (str): path of the output.
     """
     to_table_pqt(pd.read_csv(p,sep='\t',low_memory=False),f"{p}.pqt")
-def pqt2tsv(p):
+    
+def pqt2tsv(
+    p: str,
+    )->str:
     """Convert Apache parquet file to tab-separated. 
     
     Parameters:
@@ -806,41 +819,44 @@ def pqt2tsv(p):
     """    
     to_table(read_table(p),f"{p}.tsv")
     
-def read_excel(p,sheet_name=None,to_dict=False,kws_cloud={},**kws):
+def read_excel(
+    p: str,
+    sheet_name: str=None,
+    kws_cloud: dict={},
+    test: bool= False,
+    **kws,
+    ):
     """Read excel file
     
     Parameters:
         p (str): path of the file. 
         sheet_name (str|None): read 1st sheet if None (default:None)
-        to_dict (bool): return `dict` (default:False)
         kws_cloud (dict): parameters provided to read the file from the google drive (default:{})
-    
+        test (bool): if False and sheet_name not provided, return all sheets as a dictionary, else if True, print list of sheets.
+        
     Keyword parameters:
         kws: parameters provided to the excel reader.
     """
-#     if not 'xlrd' in sys.modules:
-#         logging.error('need xlrd to work with excel; pip install xlrd')
-    if p.startswith("https://docs.google.com/spreadsheets/"):
-        if not 'outd' in kws_cloud:
-            raise ValueError("outd not found in kws_cloud")
-        from roux.lib.google import download_file
-        return read_excel(download_file(p,**kws_cloud),**kws)
-    if not to_dict:
-        if sheet_name is None:
-            xl = pd.ExcelFile(p)
-#             xl.sheet_names  # see all sheet names
-            if sheet_name is None:
-                sheet_name=input(', '.join(xl.sheet_names))
-            return xl.parse(sheet_name) 
-        else:
-            return pd.read_excel(p, sheet_name, **kws)
-    else:
+    #if not 'xlrd' in sys.modules:
+    #   logging.error('need xlrd to work with excel; pip install xlrd')
+    if isinstance(p,str):
+        if p.startswith("https://docs.google.com/spreadsheets/"):
+            if not 'outd' in kws_cloud:
+                raise ValueError("outd not found in kws_cloud")
+            from roux.lib.google import download_file
+            return read_excel(download_file(p,**kws_cloud),**kws)
+    if sheet_name is None:
         xl = pd.ExcelFile(p)
-        # see all sheet names
+        if test: 
+            logging.info(f"`sheet_name`s (to select from) the excel file : {xl.sheet_names}")
+            return xl
+        ## return all sheets
         sheetname2df={}
         for sheet_name in xl.sheet_names:
             sheetname2df[sheet_name]=xl.parse(sheet_name) 
-        return sheetname2df
+        return sheetname2df            
+    else:
+        return pd.read_excel(p, sheet_name, **kws)
 
 def to_excel_commented(
     p: str,

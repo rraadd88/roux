@@ -130,14 +130,41 @@ def read_nb_md(
     l1+=[cell.source for cell in nb.cells if cell.cell_type == 'markdown']
     return l1
 
+def read_config(
+    p: str,
+    ):
+    """
+    Read configuration.
+
+    Parameters:
+        p (str): input path. 
+    """
+    from omegaconf import OmegaConf,listconfig,dictconfig
+    d1=OmegaConf.create(read_dict(p))
+    
+    ## convert data dypes
+    for k in d1:
+        if isinstance(d1[k],str):
+            pass
+        if isinstance(d1[k],listconfig.ListConfig):
+            d1[k]=list(d1[k])
+        elif isinstance(d1[k],dictconfig.DictConfig):
+            d1[k]=dict(d1[k])
+        else:
+            logging.info(f"type not detected: type({k})={type(k)}")
+    return d1
+
 ## metadata-related
 def read_metadata(
-    ind: str='metadata'
+    p: str='./metadata.yaml',
+    ind: str='./metadata/',
+    max_paths: int= 30,
     ) -> dict:
     """Read metadata.
 
     Args:
-        ind (str, optional): input directory. Defaults to 'metadata'.
+        p (str, optional): file containing metadata. Defaults to './metadata.yaml'.
+        ind (str, optional): directory containing specific setings and other data to be incorporated into metadata. Defaults to './metadata/'.
 
     Returns:
         dict: output.
@@ -145,29 +172,49 @@ def read_metadata(
     TODOs:
         1. Metadata files include colors.yaml, database.yaml, constants.yaml etc.
     """
-    p=f'{ind}/metadata.yaml'
+    if ind is None:
+        ind=dirname(p)+'/'
     for p_ in [ind,p]:
         if not exists(p_):
-            logging.warning(f'not found: {ind}')
+            logging.warning(f'not found: {p}')
             return 
-    d1=read_dict(p)
+
+    d1=read_config(p)
+    
     ## read dicts
-    for k in d1:
-        if isinstance(d1[k],list):
-            if len(d1[k])<10:
+    keys=d1.keys()
+    for k in keys:
+        if isinstance(d1[k],str):
+            ## merge configs
+            if d1[k].endswith('.yaml') and exists(d1[k]):
+                from omegaconf import OmegaConf
+                d1=OmegaConf.merge(
+                        ## parent
+                        d1,
+                        ## child
+                        read_config(d1[k]),
+                        )
+        elif isinstance(d1[k],list):
+            ## read list of files
+            ### check 1st path
+            if len(d1[k])<max_paths:
+                if not exists(d1[k][0]):
+                    logging.error(f"file not found: {p}; ignoring a list of `{k}`s.")
                 d_={}
-                for p in d1[k]:
-                    if isinstance(p,str):
-                        if is_dict(p) and exists(p):
-                            d_[basenamenoext(p)]=read_dict(p)
+                for p_ in d1[k]:
+                    if isinstance(p_,str):
+                        if is_dict(p_) and exists(p_):
+                            d_[basenamenoext(p_)]=read_dict(p_)
                         else:
-                            d_[basenamenoext(p)]=p
-                            logging.error(f"file not found: {p}")
+                            d_[basenamenoext(p_)]=p_
+                            logging.error(f"file not a dictionary or not found: {p_}")
                 if len(d_)!=0:
                     d1[k]=d_
+    ## read files from directory containing specific setings and other data to be incorporated into metadata
     for p_ in glob(f"{ind}/*"):
         if isdir(p_):
             if len(glob(f'{p_}/*.json'))!=0:
+                ## data e.g. stats etc
                 if not basename(p_) in d1 and len(glob(f'{p_}/*.json'))!=0:
                     d1[basename(p_)]=read_dict(f'{p_}/*.json')
                 elif isinstance(d1[basename(p_)],dict) and len(glob(f'{p_}/*.json'))!=0:
@@ -178,8 +225,9 @@ def read_metadata(
             if is_dict(p_) and exists(p_):
                 d1[basenamenoext(p_)]=read_dict(p_)
             else:
-                logging.error(f"file not found: {p_}")                
+                logging.error(f"file not found: {p_}")
     logging.info(f"metadata read from {p} (+"+str(len(glob(f'{ind}/*.json')))+" jsons)")
+    
     return d1
 
 ## create documentation

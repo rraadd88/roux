@@ -490,9 +490,12 @@ def validate_dense(df01,subset=None,duplicates=True,na=True,message=None,):
     """    
     if subset is None:
         subset=df01.columns.tolist()
-    if duplicates: df01.rd.validate_no_dups(subset=subset)#, 'duplicates found' if message is None else message
-    if na: df01.rd.validate_no_na(subset=subset)# if message is None else message
-    return True
+    validations=[]
+    if duplicates: 
+        validations.append(df01.rd.validate_no_dups(subset=subset))#, 'duplicates found' if message is None else message
+    if na: 
+        validations.append(df01.rd.validate_no_na(subset=subset))# if message is None else message
+    return all(validations)
 
 @to_rd
 def assert_dense(df01,subset=None,duplicates=True,na=True,message=None):

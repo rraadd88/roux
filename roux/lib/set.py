@@ -164,7 +164,7 @@ def flatten(l):
     Returns:
         l (list): output list.
     """    
-    return list(np.hstack(np.array(l,dtype=object)))
+    return list(np.hstack(np.array(l,dtype=object))) if len(l)!=0 else []
 
 def get_alt(l1,s,): 
     """Get alternate item between two.
