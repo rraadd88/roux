@@ -37,9 +37,9 @@ from roux.lib.str import get_bracket, replace_many,get_suffix,get_prefix
 from roux.lib.dict import *
 from roux.lib.set import *
 from roux.lib.text import read,read_lines
-from roux.lib.io import * #io_df -> io_dfs -> io_files
-from roux.lib.dict import to_dict # to replace io_df to_dict
-from roux.workflow.io import read_metadata, to_diff_notebooks, clear_variables, clear_dataframes
+from roux.lib.io import * #df -> dfs -> io
+from roux.lib.dict import to_dict # to replace df to_dict
+from roux.workflow.io import read_metadata, read_config, to_diff_notebooks
 from roux.workflow.df import *
 
 # defaults

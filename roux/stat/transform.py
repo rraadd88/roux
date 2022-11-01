@@ -47,6 +47,32 @@ def log_pval(x):
             logging.warning('zeros found, replaced with min pval')
     return -1*(np.log10(x))
 
+def get_q(
+    ds1: pd.Series,
+    col: str=None,
+    verb: bool=True,
+    test_coff: float=0.1,
+    ):
+    """
+    To FDR corrected P-value.
+    """
+    if not col is None:
+        df1=ds1.copy()
+        ds1=ds1[col]
+    ds2=ds1.dropna()
+    from statsmodels.stats.multitest import fdrcorrection
+    ds3=fdrcorrection(pvals=ds2, alpha=0.05, method='indep', is_sorted=False)[1]
+    ds4=ds1.map(pd.DataFrame({'P':ds2,'Q':ds3}).drop_duplicates().rd.to_dict(['P','Q']))
+    if verb:
+        from roux.viz.annot import perc_label        
+        logging.info(f"significant at Q<{test_coff}: {perc_label(ds4<test_coff)}")
+    if col is None:
+        return ds4
+    else:
+        df1['Q']=ds4
+        return df1
+
+
 def glog(x: float,l = 2):
     """Generalised logarithm.
 

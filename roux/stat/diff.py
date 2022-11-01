@@ -263,7 +263,6 @@ def get_stats(
     dn2df={}
     if subsets is None:
         subsets=sorted(df1[colsubset].unique())
-    from roux.stat.diff import get_stat ## remove?
     for colvalue in cols_value:
         df1_=df1.dropna(subset=[colsubset,colvalue])
         if len(df1_[colsubset].unique())>1:
@@ -292,28 +291,6 @@ def get_stats(
     if axis==1:
         df3=df3.reset_index().rd.flatten_columns()
     return df3
-
-def get_q(
-    ds1: pd.Series,
-    col: str=None,
-    verb: bool=True,
-    test_coff: float=0.1,
-    ):
-    if not col is None:
-        df1=ds1.copy()
-        ds1=ds1[col]
-    ds2=ds1.dropna()
-    from statsmodels.stats.multitest import fdrcorrection
-    ds3=fdrcorrection(pvals=ds2, alpha=0.05, method='indep', is_sorted=False)[1]
-    ds4=ds1.map(pd.DataFrame({'P':ds2,'Q':ds3}).drop_duplicates().rd.to_dict(['P','Q']))
-    if verb:
-        from roux.viz.annot import perc_label        
-        logging.info(f"significant at Q<{test_coff}: {perc_label(ds4<test_coff)}")
-    if col is None:
-        return ds4
-    else:
-        df1['Q']=ds4
-        return df1
 
 def get_significant_changes(
     df1: pd.DataFrame,
@@ -349,13 +326,13 @@ def get_significant_changes(
         df1.loc[(df1[f'difference between {changeby} (subset1-subset2)']>0),'change']='increase'
         df1.loc[(df1[f'difference between {changeby} (subset1-subset2)']<0),'change']='decrease'
         df1['change']=df1['change'].fillna('ns')
-    from statsmodels.stats.multitest import multipletests
     for test in ['MWU','FE']:
         if not f'P ({test} test)' in df1:
             continue
         # without fdr
         df1[f'change is significant, P ({test} test) < {coff_p}']=df1[f'P ({test} test)']<coff_p
         if not coff_q is None:
+            from roux.stat.transform import get_q
             df1[f'Q ({test} test)']=get_q(df1[f'P ({test} test)'])
             # df1[f'change is significant, Q ({test} test) < {coff_q}']=df1[f'Q ({test} test)']<coff_q
         #     info(f"corrected alpha alphacSidak={alphacSidak},alphacBonf={alphacBonf}")
@@ -403,7 +380,7 @@ def apply_get_significant_changes(
 
 def get_stats_groupby(
     df1: pd.DataFrame,
-    cols: list,
+    cols_group: list,
     coff_p: float=0.05,
     coff_q: float=0.1,
     alpha=None,
@@ -414,7 +391,7 @@ def get_stats_groupby(
 
     Args:
         df1 (DataFrame): input dataframe.
-        cols (list): columns to interate over.
+        cols_group (list): columns to interate over.
         coff_p (float, optional): cutoff on p-value. Defaults to 0.025.
         coff_q (float, optional): cutoff on q-value. Defaults to 0.1.
         alpha (float, optional): alias for `coff_p`. Defaults to None.
@@ -423,7 +400,7 @@ def get_stats_groupby(
     Returns:
         DataFrame: output dataframe.
     """
-    df2=getattr(df1.groupby(cols),f"{'progress' if not fast else 'parallel'}_apply")(lambda df: get_stats(df1=df,**kws)).reset_index().rd.clean()
+    df2=getattr(df1.groupby(cols_group),f"{'progress' if not fast else 'parallel'}_apply")(lambda df: get_stats(df1=df,**kws)).reset_index().rd.clean()
     return get_significant_changes(df1=df2,alpha=alpha,coff_p=coff_p,coff_q=coff_q,)
 
 def get_diff(
@@ -431,6 +408,7 @@ def get_diff(
     cols_x: list,
     cols_y: list,
     cols_index: list,
+    cols_group: list,
     coff_p: float=None, 
     test: bool=False,
     **kws,
@@ -444,12 +422,12 @@ def get_diff(
           coff_q=0.01,
           colindex=['id'],    
     """
-    ## filter the significant 
+    ## melt the table to make it linear
     d_={}
     for colx in cols_x:
         assert df1[colx].nunique()==2, f"df1[{colx}].nunique() = {df1[colx].nunique()}"
         d_[colx]=(df1
-                .melt(id_vars=cols_index+[colx],
+                .melt(id_vars=cols_index+[colx]+cols_group,
                          value_vars=cols_y,
                          var_name='variable y',
                          value_name='value y')
@@ -460,11 +438,13 @@ def get_diff(
                  ).reset_index().rd.clean().log.dropna()
     if test:
         info(df2.iloc[0,:])
+    ## calculate the differences
     df3=get_stats_groupby(
         df1=df2,
         colsubset='value x',
         cols_value= ['value y'],
         colindex=cols_index,
+        cols_group=cols_group,
         **kws,
         )
     if not coff_p is None:
@@ -475,7 +455,7 @@ def get_diff(
 
 def binby_pvalue_coffs(
     df1: pd.DataFrame,
-    coffs=[0.01,0.05,0.25],
+    coffs=[0.01,0.05,0.1],
     color=False,
     testn='MWU test, FDR corrected',
     colindex='genes id',
@@ -554,394 +534,3 @@ def binby_pvalue_coffs(
         df1.loc[df1[colns],'c']=palette[1]
 #     info(df1.shape,df1.shape)
     return df1,df2
-
-
-## Correcting confounding effects
-def to_columns_renamed_for_regression(
-    df1:pd.DataFrame,
-    columns:dict,
-    ) -> pd.DataFrame:
-    """
-    """
-    import re
-    from roux.lib.str import replace_many
-    ## Rename columns to be comparible with the formula
-    columns['rename']={}
-    rename_columns=[]
-    for var_type in ['cols_x','cols_y']:
-        columns['rename'][var_type]={}
-        for dtype in columns[var_type]:
-            # columns['rename'][var_type][dtype]={c:re.sub('[^0-9a-zA-Z]+', '_', replace_many(c,[':','(',')','=','%'],'_',ignore=True)) for c in columns[var_type][dtype]}
-            columns['rename'][var_type][dtype]={c:re.sub('[^0-9a-zA-Z%]+', '_', c.replace('%','perc')) for c in columns[var_type][dtype]}
-            ## for renaming dataframe
-            rename_columns.append(columns['rename'][var_type][dtype])
-            ## desc values to integers
-            for c in columns[var_type][dtype]:
-                if var_type=='cols_y' and dtype=='desc':
-                    if df1[c].dtype!=float:
-                        df1=df1.assign(
-                            **{c:lambda df: (df[c]==columns['desc_test_values'][c]).astype(int)}
-                        )
-                        info(df1[c].value_counts())
-                        
-    from roux.lib.dict import merge_dicts
-    rename_columns=merge_dicts(rename_columns)                       
-    assert len(rename_columns.keys())==len(rename_columns.values())                    
-    df2=(df1
-    .rename(
-        columns=rename_columns,
-        errors='raise',
-        )
-    )
-    return df2,columns
-
-def to_input_data_for_regression(
-    df1: pd.DataFrame,
-    cols_y: list,
-    cols_index: list,
-    desc_test_values:dict,
-    verbose: bool=False,
-    test: bool=False,
-    **kws,
-    ) -> tuple:
-    """
-    Input data for the regression.
-    
-    Parameters:
-        df1 (pd.DataFrame): input data.
-        cols_y (list): y columns.
-        cols_index (list): index columns.
-        
-    Returns:
-        Output table.
-    """
-    ## get columns dictionary
-    from roux.stat.compare import get_cols_x_for_comparison,to_preprocessed_data
-    columns=get_cols_x_for_comparison(
-        df1=df1,
-        cols_y=cols_y,
-        cols_index=cols_index,
-        verbose=verbose,
-        test=test,        
-        **kws,
-    )
-    
-    ## pre-process data
-    df2=to_preprocessed_data(
-        df1=df1,
-        columns=columns,
-        fill_missing_desc_value='-',
-        fill_missing_cont_value=0,
-        normby_zscore=True,
-        verbose=verbose,
-        test=test,    
-    )
-
-    columns['desc_test_values']=desc_test_values
-    
-    ## rename columns
-    return to_columns_renamed_for_regression(
-        df1=df2,
-        columns=columns,
-        )
-
-def get_stats_regression(
-    data: pd.DataFrame,
-    formulas:dict={},
-    variable:str=None,
-    covariates:list=None,
-    converged_only=False,
-    out='df',
-    verb=False,
-    test=False,
-    **kws,
-    ) -> pd.DataFrame:
-    """Get stats from regression models.
-
-    Args:
-        data (DataFrame): input dataframe.
-        formulas (dict, optional): base formula e.g. 'y ~ x' to model name map. Defaults to {}.
-        variable (str, optional): variable name e.g. 'C(variable)[T.True]', used to retrieve the stats for. Defaults to None.
-        covariates (list, optional): variables. Defaults to None.
-        converged_only (bool, optional): get the stats from the converged models only. Defaults to False.
-        out (str, optional): output format. Defaults to 'df'.
-        verb (bool, optional): verbose. Defaults to False.
-        test (bool, optional): test. Defaults to False.
-
-    Returns:
-        DataFrame: output.
-    """
-    if not '~' in list(formulas.keys())[0]:
-        ## back-compatibility warning
-        formulas=flip_dict(formulas)
-        logging.warning('parameter `formulas` should contain formulas as keys (Opposite to the previous version where formulas were the values).')
-        
-    if test and hasattr(data,'name'):
-        info(data.name)
-    ## functions
-    def to_df(res):
-        if isinstance(res.summary().tables[1],pd.DataFrame):
-            df1=res.summary().tables[1]
-        elif hasattr(res.summary().tables[1],'as_html'):
-            df1=pd.read_html(res.summary().tables[1].as_html(), header=0, index_col=0)[0]
-        else:
-            logging.error('dataframe not found')
-            return
-        df1.columns.name='stat'
-        df1.index.name='variable'
-        return df1.melt(ignore_index=False).reset_index()
-    def get_stats(res,variable):
-        return pd.Series([res.pvalues[variable], 
-                          res.params[variable], 
-                        ], 
-                        index=['P', 'coefficient',
-                        ]).to_frame('value')
-    ## set verbose
-    if not (verb or test):
-        import warnings
-        from statsmodels.tools.sm_exceptions import ConvergenceWarning
-        warnings.simplefilter('ignore', ConvergenceWarning)
-        warnings.simplefilter('ignore', RuntimeWarning)
-        warnings.simplefilter('ignore', UserWarning)
-            
-    ## add covariates to the equation
-    if not covariates is None:
-        #formats
-        covariate_types=data.dtypes.to_dict()
-        formula_covariates=' + '+' + '.join([k if ((covariate_types[k]==int) or (covariate_types[k]==float)) else f"C({k})" for k in covariates if k in covariate_types])
-    else:
-        formula_covariates=''
-    
-    ## set additional parameters
-    if 'groups' in kws:
-        ## get the data from the list of columns
-        kws['groups']=data[kws["groups"]]
-    
-    ## iterate over the models and equations
-    ### import required modules
-    import statsmodels.formula.api as smf
-    from statsmodels.tools.sm_exceptions import PerfectSeparationError
-    from numpy.linalg import LinAlgError
-    
-    fitted_models={} ## collects the stats
-    for formula_base,k in formulas.items():
-        
-        ## get the model
-        if isinstance(k,str):
-            model=getattr(smf,k)
-        elif isinstance(k,object) and hasattr(k,'from_formula'):
-            model=k.from_formula
-        elif isinstance(k,object):
-            model=k
-        else:
-            logging.error(model)
-            return
-        if verb or test: info(str(model))
-        ### label for the model
-        modeln=str(model).split('.')[-1].split("'")[0]
-        
-        ## construct full formula
-        formula=formula_base+formula_covariates
-        if verb or test: info(formula)
-        try:
-            fitted_models[(modeln,formula)]=model(
-                data=data,
-                formula=formula,
-                **kws,
-                ).fit(disp=False)
-        except (PerfectSeparationError,LinAlgError) as e:
-            if verb or test: logging.error('PerfectSeparationError/LinAlgError')
-    
-    ## output
-    if out=='model':
-        return fitted_models
-    elif out=='df':
-        fitted_models={k:to_df(v) for k,v in fitted_models.items() if ((hasattr(v,'converged') and (v.converged)) or (not converged_only))}
-        if len(fitted_models)!=0:
-            if not variable is None:
-                ## return the stats for the selected variable
-                return pd.concat({k:get_stats(v,variable=variable) for k,v in fitted_models.items()},
-                                 axis=0,
-                                 names=['model type','formula','variable']
-                                ).reset_index()
-            else:
-                return pd.concat(fitted_models,
-                                 axis=0,
-                                 names=['model type','formula'],
-                                ).reset_index([0,1])
-    
-def filter_regressions(
-    df1: pd.DataFrame,
-    variable: str,
-    colindex: str,
-    coff_q : float=0.1,
-    by_covariates: bool=True,
-    coff_p_covariates: float=0.05,
-    test: bool=False,
-    ) -> pd.DataFrame:
-    """Filter regression statistics.
-
-    Args:
-        df1 (DataFrame): input dataframe.
-        variable (str): variable name to filter by.
-        colindex (str): columns with index.
-        coff_q (float, optional): cut-off on the q-value. Defaults to 0.1.
-        by_covariates (bool, optional): filter by these covaliates. Defaults to True.
-        coff_p_covariates (float, optional): cut-off on the p-value for the covariates. Defaults to 0.05.
-        test (bool, optional): test. Defaults to False.
-
-    Raises:
-        ValueError: pval.
-
-    Returns:
-        DataFrame: output.
-    """
-    pval='P>|t|' if 'P>|t|' in df1['stat'].tolist() else 'P>|z|' if 'P>|z|' in df1['stat'].tolist() else None
-    if pval is None:
-        raise ValueError(pval)
-    df1['stat']=df1['stat'].apply(lambda x: 'P' if x==pval else x )
-    df2=df1.loc[((df1['variable']==variable) & (df1['stat'].isin(['coef','P']))),:]
-#     print(df1['stat'].unique())
-    df3=df2.pivot(index=colindex,columns='stat',values='value').reset_index()
-#     print(df3.columns)
-    df3=df3.rename(columns={'coef':'score'},
-                   errors='raise')
-    df3=df3.log.dropna(subset=['P'])
-    if test:
-        df3['P'].hist()
-    from statsmodels.stats.multitest import fdrcorrection
-    df3['Q']=fdrcorrection(pvals=df3['P'], alpha=0.05, method='indep', is_sorted=False)[1]
-    if test:
-        df3['Q'].hist()
-    info(sum(df3['P']<coff_q))
-    info(sum(df3['Q']<coff_q))
-    df3=df3.loc[(df3['Q']<coff_q),:]
-    info(df3[colindex].nunique())
-    if by_covariates:
-        ## #2
-        ## all covariates (potential confounding effects) are non-sinificant
-        ## non-standardised regression 'P>|t|' or standardised 'P>|z|'
-        df5=df1.loc[(
-                (df1['variable']!='Intercept') \
-              & (df1['variable']!=variable) \
-              & (df1['stat']=='P')
-                ),:]
-        df6=df5.groupby(colindex).filter(lambda df: (df['value']>=coff_p_covariates).all()).loc[:,[colindex]]
-        df3=df3.log().loc[df3[colindex].isin(df6[colindex]),:].log()
-    else:
-        logging.warning("not filtered by_covariates")
-    info(df3[colindex].nunique())
-    return df3
-
-def run_lr_test(
-    data: pd.DataFrame,
-    formula: str,
-    covariate: str,
-    col_group: str,
-    params_model: dict ={'reml':False}
-    ) -> tuple:
-    """Run LR test.
-
-    Args:
-        data (pd.DataFrame): input data.
-        formula (str): formula.
-        covariate (str): covariate.
-        col_group (str): column with the group.
-        params_model (dict, optional): parameters of the model. Defaults to {'reml':False}.
-
-    Returns:
-        tuple: output tupe (stat, pval,dres).
-    """
-    import statsmodels.formula.api as smf
-
-    sc.stats.chisqprob = lambda chisq, df: sc.stats.chi2.sf(chisq, df)
-    def get_lrtest(llmin, llmax):
-        stat = 2 * (llmax - llmin)
-        pval = sc.stats.chisqprob(stat, 1)
-        return stat, pval        
-    data=data.dropna()
-    # without covariate
-    model = smf.mixedlm(
-        formula, 
-        data,
-        groups=data[col_group],
-        )
-    modelf = model.fit(**params_model)
-    llf = modelf.llf
-
-    # with covariate
-    model_covariate = smf.mixedlm(
-        f"{formula}+ {covariate}",
-        data,
-        groups=data[col_group],
-        )
-    modelf_covariate = model_covariate.fit(**params_model)
-    llf_covariate = modelf_covariate.llf
-
-    # compare
-    stat, pval = get_lrtest(llf, llf_covariate)
-    print(f'stat {stat:.2e} pval {pval:.2e}')
-    
-    # results
-    dres=delunnamedcol(pd.concat({
-        False:get_model_summary(modelf),
-        True:get_model_summary(modelf_covariate)},
-        axis=0,
-        names=['covariate included','Unnamed'],
-        ).reset_index())
-    return stat, pval,dres
-
-def plot_residuals_versus_fitted(
-    model: object,
-    ) -> plt.Axes:
-    """plot Residuals Versus Fitted (RVF).
-
-    Args:
-        model (object): model.
-
-    Returns:
-        plt.Axes: output.
-    """
-    fig = plt.figure(figsize = (5, 3))
-    ax = sns.scatterplot(y = model.resid, x = model.fittedvalues,alpha=0.2)
-    ax.set_xlabel("fitted")
-    ax.set_ylabel("residuals")
-    import statsmodels.api as sm
-    l = sm.stats.diagnostic.het_white(model.resid, model.model.exog)
-    ax.set_title("LM test "+pval2annot(l[1],alpha=0.05,fmt='<',linebreak=False)+", FE test "+pval2annot(l[3],alpha=0.05,fmt='<',linebreak=False))    
-    return ax
-
-def plot_residuals_versus_groups(
-    model: object,
-    ) -> plt.Axes:
-    """plot Residuals Versus groups.
-
-    Args:
-        model (object): model.
-
-    Returns:
-        plt.Axes: output.
-    """
-    fig = plt.figure(figsize = (5, 3))
-    ax = sns.pointplot(x = model.model.groups, 
-                       y = model.resid,
-                      ci='sd',
-                      join=False)
-    ax.set_ylabel("residuals")
-    ax.set_xlabel("groups")
-    return ax
-
-def plot_model_qcs(
-    model: object,
-    ):
-    """Plot Quality Checks.
-
-    Args:
-        model (object): model.
-    """
-    from roux.viz.scatter import plot_qq 
-    from roux.viz.dist import plot_normal 
-    plot_normal(x=model.resid)
-    plot_qq(x=model.resid)
-    plot_residuals_versus_fitted(model)
-    plot_residuals_versus_groups(model)

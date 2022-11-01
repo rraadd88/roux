@@ -267,7 +267,8 @@ def align(
     else:
         return [s1[:i+1],s2[:i+1]] if prefix else [s1[i:],s2[i:]] 
 
-from roux.lib.set import unique_str    
+from roux.lib.set import unique_str
+
 def get_prefix(
     s1: str,
     s2: str,

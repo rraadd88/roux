@@ -132,6 +132,8 @@ def read_nb_md(
 
 def read_config(
     p: str,
+    config_base=None,
+    convert_dtype:bool=True,
     ):
     """
     Read configuration.
@@ -140,18 +142,21 @@ def read_config(
         p (str): input path. 
     """
     from omegaconf import OmegaConf,listconfig,dictconfig
+    ## read config
     d1=OmegaConf.create(read_dict(p))
     
+    ## merge
+    if not config_base is None:
+        d1=OmegaConf.merge(
+                ## parent
+                config_base,
+                ## child
+                d1,
+                )
+        
     ## convert data dypes
-    for k in d1:
-        if isinstance(d1[k],str):
-            pass
-        if isinstance(d1[k],listconfig.ListConfig):
-            d1[k]=list(d1[k])
-        elif isinstance(d1[k],dictconfig.DictConfig):
-            d1[k]=dict(d1[k])
-        else:
-            logging.info(f"type not detected: type({k})={type(k)}")
+    if convert_dtype:
+        d1=OmegaConf.to_object(d1)
     return d1
 
 ## metadata-related
@@ -159,6 +164,7 @@ def read_metadata(
     p: str='./metadata.yaml',
     ind: str='./metadata/',
     max_paths: int= 30,
+    **kws_read_config,
     ) -> dict:
     """Read metadata.
 
@@ -174,26 +180,25 @@ def read_metadata(
     """
     if ind is None:
         ind=dirname(p)+'/'
-    for p_ in [ind,p]:
-        if not exists(p_):
-            logging.warning(f'not found: {p}')
-            return 
+    # for p_ in [ind,p]:
+    #     if not exists(p_):
+    #         logging.warning(f'not found: {p_}')
+    #         return 
+    if not exists(p):
+        logging.warning(f'not found: {p}')
 
-    d1=read_config(p)
+    d1=read_config(p,**kws_read_config)
     
     ## read dicts
     keys=d1.keys()
     for k in keys:
         if isinstance(d1[k],str):
             ## merge configs
-            if d1[k].endswith('.yaml') and exists(d1[k]):
-                from omegaconf import OmegaConf
-                d1=OmegaConf.merge(
-                        ## parent
-                        d1,
-                        ## child
-                        read_config(d1[k]),
-                        )
+            if d1[k].endswith('.yaml'):
+                d1=read_config(
+                    d1[k],
+                    config_base=d1,
+                    )
         elif isinstance(d1[k],list):
             ## read list of files
             ### check 1st path
@@ -203,11 +208,11 @@ def read_metadata(
                 d_={}
                 for p_ in d1[k]:
                     if isinstance(p_,str):
-                        if is_dict(p_) and exists(p_):
+                        if is_dict(p_):
                             d_[basenamenoext(p_)]=read_dict(p_)
                         else:
                             d_[basenamenoext(p_)]=p_
-                            logging.error(f"file not a dictionary or not found: {p_}")
+                            logging.error(f"file not found: {p_}")
                 if len(d_)!=0:
                     d1[k]=d_
     ## read files from directory containing specific setings and other data to be incorporated into metadata
@@ -222,7 +227,7 @@ def read_metadata(
                 else:
                     logging.warning(f"entry collision, could not include '{p_}/*.json'")
         else:
-            if is_dict(p_) and exists(p_):
+            if is_dict(p_):
                 d1[basenamenoext(p_)]=read_dict(p_)
             else:
                 logging.error(f"file not found: {p_}")

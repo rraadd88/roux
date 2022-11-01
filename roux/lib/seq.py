@@ -93,46 +93,14 @@ def to_bed(df, col_genomeocoord):
         return dbed[bed_colns]
     else:
         return pd.DataFrame(columns=['chromosome', 'start', 'end','strand','id','NM'])
-
-def to_seq(s : str,prt=False) -> Seq:
-    """String to Seq object.
-
-    Args:
-        s (str): input string.
-        prt (bool, optional): format. Defaults to False.
-
-    Returns:
-        Seq: Seq object.
-    """
-    if prt:
-        alpha=Alphabet.ProteinAlphabet
-    else:
-        alpha=Alphabet.generic_dna
-    return Seq.Seq(s,alpha)
-    
-def translate(dnaseq: str,fmtout=str,tax_id=None) -> str:
-    """Translates a DNA sequence
-    Args:
-        dnaseq (str): DNA sequence
-        fmtout (_type_, optional): format of output sequence. Defaults to str.
-        tax_id (_type_, optional): _description_. Defaults to None.
-
-    Returns:
-        str: protein sequence.
-    """
-    if isinstance(dnaseq,str): 
-        dnaseq=Seq.Seq(dnaseq)
-    if tax_id is None:
-        tax_id=1 # standard codon table. ref http://biopython.org/DIST/docs/tutorial/Tutorial.html#htoc25
-    prtseq=dnaseq.translate(table=tax_id)
-    if fmtout is str:
-        return str(prtseq)
-    else:
-        return prtseq
     
 ## io file
 ### multiple seq fasta
-def read_fasta(fap: str,key_type='id',duplicates=False) -> dict:
+def read_fasta(
+    fap: str,
+    key_type: str='id',
+    duplicates: bool=False,
+    ) -> dict:
     """Read fasta
 
     Args:
@@ -143,8 +111,8 @@ def read_fasta(fap: str,key_type='id',duplicates=False) -> dict:
     Returns:
         dict: data.
 
-    TODOs:
-        1. Check for duplicate keys.
+    Notes:
+        1. If `duplicates` key_type is set to `description` instead of `id`.
     """
     if (not duplicates) or key_type=='id':
         try:
@@ -159,33 +127,30 @@ def read_fasta(fap: str,key_type='id',duplicates=False) -> dict:
             id2seq[getattr(seq_record,key_type)]=str(seq_record.seq)
         return id2seq
 
-def to_fasta(ids2seqs: dict,fastap: str,) -> str:
+def to_fasta(
+    sequences: dict,
+    output_path: str,
+    molecule_type: str,
+    force: bool=False,
+    **kws_SeqRecord,
+    ) -> str:
     """Save fasta file.
 
     Args:
-        ids2seqs (dict): dictionary mapping the sequence name to the sequence.
-        fastap (str): path of the fasta file
-
+        sequences (dict): dictionary mapping the sequence name to the sequence.
+        output_path (str): path of the fasta file.
+        force (bool): overwrite if file exists.
+        
     Returns:
-        fastap (str): path of the fasta file
+        output_path (str): path of the fasta file
     """
+    assert len(sequences)!=0
     from roux.lib.sys import makedirs,exists
-    # if exists(fastap) and not force: return
-    makedirs(fastap)
-    seqs = (SeqRecord.SeqRecord(Seq.Seq(ids2seqs[id]), id) for id in ids2seqs)
-    SeqIO.write(seqs, fastap, "fasta")
-    return fastap
-
-def dedup_fasta(fap: str,faoutp=None) -> str:
-    """Deduplicate fasta file.
-
-    Args:
-        fap (str): path
-        faoutp (_type_, optional): output path. Defaults to None.
-
-    Returns:
-        str: output path.
-    """
-    return to_fasta(read_fasta(fap,key_type='description'),
-             fastap=f"{splitext(fap)[0]}_dedup.fasta" if faoutp is None else faoutp)    
-    
+    if exists(output_path) and not force: 
+        logging.warning('file exists.')
+        return
+    makedirs(output_path)
+    assert molecule_type in ['Protein','RNA','DNA']
+    seqs = (SeqRecord.SeqRecord(Seq.Seq(sequences[k]), id=k,annotations=dict(molecule_type=molecule_type),**kws_SeqRecord) for k in sequences)
+    SeqIO.write(seqs, output_path, "fasta")
+    return output_path

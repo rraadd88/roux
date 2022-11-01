@@ -249,11 +249,13 @@ def clean_columns(df):
     return df
 
 @to_rd
-def clean(df,cols=[],
-          drop_constants=False,
-          drop_unnamed=True,
-          verb=False,
-         ):
+def clean(
+    df: pd.DataFrame,
+    cols: list=[],
+    drop_constants: bool=False,
+    drop_unnamed: bool=True,
+    verb: bool=False,
+    ) -> pd.DataFrame:
     """Deletes potentially temporary columns.
 
     Steps:
@@ -269,7 +271,7 @@ def clean(df,cols=[],
     Returns:
         df (DataFrame): output dataframe.
     """
-    cols_del=df.filter(regex="^(?:index|level|Unnamed|chunk|_).*$").columns.tolist()+df.filter(regex="^.*(?:\.1)$").columns.tolist()+cols
+    cols_del=df.filter(regex="^(?:index|level|temporary|Unnamed|chunk|_).*$").columns.tolist()+df.filter(regex="^.*(?:\.1)$").columns.tolist()+cols
     # exceptions 
     cols_del=[c for c in cols_del if not c.endswith('0.1')]
     if drop_constants:
@@ -477,7 +479,13 @@ def assert_no_dups(df,subset=None):
 
 ## asserts        
 @to_rd
-def validate_dense(df01,subset=None,duplicates=True,na=True,message=None,):
+def validate_dense(
+    df01: pd.DataFrame,
+    subset: list=None,
+    duplicates: bool=True,
+    na: bool=True,
+    message=None,
+    )-> pd.DataFrame:
     """Validate no missing values and no duplicates in the dataframe.
     
     Parameters:
@@ -498,7 +506,13 @@ def validate_dense(df01,subset=None,duplicates=True,na=True,message=None,):
     return all(validations)
 
 @to_rd
-def assert_dense(df01,subset=None,duplicates=True,na=True,message=None):
+def assert_dense(
+    df01: pd.DataFrame,
+    subset: list=None,
+    duplicates: bool=True,
+    na: bool=True,
+    message=None,
+    ) -> pd.DataFrame:
     """Alias of `validate_dense`.
     
     Notes:
@@ -537,10 +551,11 @@ def classify_mappings(
     return df1
 
 @to_rd        
-def check_mappings(df,
-                   subset=None,
-                   out='full',
-                  ):
+def check_mappings(
+    df: pd.DataFrame,
+    subset: list=None,
+    out: str='full',
+    ) -> pd.DataFrame:
     """Mapping between items in two columns.
     
     Parameters:
@@ -563,9 +578,10 @@ def check_mappings(df,
         return df2.loc[tuple(subset),:]#'map to'].item()
 
 @to_rd        
-def validate_1_1_mappings(df,
-                   subset=None,
-                  ):
+def validate_1_1_mappings(
+    df: pd.DataFrame,
+    subset: list=None,
+    ) -> pd.DataFrame:
     """Validate that the papping between items in two columns is 1:1.
     
     Parameters:
@@ -580,12 +596,13 @@ def validate_1_1_mappings(df,
     assert all(df1['map to']==1), df1
     
 @to_rd
-def get_mappings(df1,
-                 subset=None,
-                 keep='1:1',
-                 clean=False,
-                 cols=None,
-                ):
+def get_mappings(
+    df1: pd.DataFrame,
+    subset=None,
+    keep='1:1',
+    clean=False,
+    cols=None,
+    ) -> pd.DataFrame:
     """Classify the mapapping between items in two columns.
     
     Parameters:
@@ -643,12 +660,19 @@ def get_mappings(df1,
 
 
 @to_rd
-def groupby_filter_fast(df1,col,fun,how,coff):
+def groupby_filter_fast(
+    df1 : pd.DataFrame,
+    col_groupby,
+    fun_agg,
+    expr,
+    col_agg: str='temporary',
+    **kws_query,
+    ) -> pd.DataFrame:
     """Groupby and filter fast.
     
     Parameters:
         df1 (DataFrame): input dataframe.
-        col (str): column name.
+        by (str|list): column name/s to groupby with.
         fun (object): function to filter with.
         how (str): greater or less than `coff` (>|<).  
         coff (float): cut-off.    
@@ -659,16 +683,16 @@ def groupby_filter_fast(df1,col,fun,how,coff):
     Todo:
         Deprecation if `pandas.core.groupby.DataFrameGroupBy.filter` is faster.
     """
-    ds1=df1.groupby(col).transform(fun)
-    if how=='<':
-        return df1.loc[(ds1<coff),:]
-    elif how=='>':
-        return df1.loc[(ds1>coff),:]
-    else:
-        raise ValueError(how)
+    assert col_agg in expr, f"{col_agg} not found in {expr}"
+    df1[col_agg]=df1.groupby(col_groupby).transform(fun_agg)
+    return df1.log.query(expr=expr,**kws_query)
         
 @to_rd
-def to_map_binary(df,colgroupby=None,colvalue=None):
+def to_map_binary(
+    df: pd.DataFrame,
+    colgroupby=None,
+    colvalue=None
+    )-> pd.DataFrame:
     """Convert linear mappings to a binary map
     
     Parameters:
@@ -692,11 +716,13 @@ def to_map_binary(df,colgroupby=None,colvalue=None):
 
 ## intersections 
 @to_rd        
-def check_intersections(df,
-                        colindex=None, # 'samples'
-                        colgroupby=None, # 'yticklabels'
-                        plot=False,
-                        **kws_plot):
+def check_intersections(
+    df: pd.DataFrame,
+    colindex=None, # 'samples'
+    colgroupby=None, # 'yticklabels'
+    plot=False,
+    **kws_plot,
+    ) -> pd.DataFrame:
     """Check intersections.
     Linear dataframe to is converted to a binary map and then to a series using `groupby`.
 
@@ -1193,10 +1219,12 @@ def swap_paired_cols(df_,suffixes=['gene1', 'gene2']):
     return df_.rename(columns=rename,errors='raise')
 
 @to_rd
-def sort_columns_by_values(df,cols_sortby=['mutation gene1','mutation gene2'],
-                            suffixes=['gene1','gene2'], # no spaces
-                           clean=False,
-                            ):
+def sort_columns_by_values(
+    df: pd.DataFrame,
+    cols_sortby=['mutation gene1','mutation gene2'],
+    suffixes=['gene1','gene2'], # no spaces
+    clean=False,
+    ) -> pd.DataFrame:
     """Sort the values in columns in ascending order.
     
     Parameters:

@@ -79,7 +79,10 @@ def makedirs(p: str,exist_ok=True,**kws):
     makedirs(p,exist_ok=exist_ok,**kws)
     return p_
 
-def get_env(env_name: str):
+def get_env(
+    env_name: str,
+    return_path: bool=False,
+    ):
     """Get the virtual environment as a dictionary.
 
     Args:
@@ -92,6 +95,8 @@ def get_env(env_name: str):
     env = os.environ.copy()
     env_name_current=sys.executable.split('anaconda3/envs/')[1].split('/')[0]
     path=sys.executable.replace(env_name_current,env_name)
+    if return_path:
+        return dirname(path)+'/'
     env['CONDA_PYTHON_EXE']=path
     if 'anaconda3/envs' in env["PATH"]:
         env["PATH"]=env["PATH"].replace(env_name_current,env_name)
@@ -100,6 +105,7 @@ def get_env(env_name: str):
                                         f"{sys.executable.split('/anaconda3')[0]}/anaconda3/envs/{env_name}/bin")
     else:
         env["PATH"]=path.replace('/bin/python','/bin')+':'+env["PATH"]
+        
     return env
 
 def runbash(s1,env=None,test=False,**kws):

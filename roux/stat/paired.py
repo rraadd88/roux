@@ -169,4 +169,48 @@ def get_stats_paired_agg(x: np.array,y: np.array,ignore: bool=False,verb: bool=T
         d[f'{k} peak1 weight'],d[f'{k} peak2 weight'] = d2['clf'].weights_.flatten()
         d[f'{k} peak1 mean'],d[f'{k} peak2 mean'] = d2['clf'].means_.flatten()
         d[f'{k} peak1 std'],d[f'{k} peak2 std']=np.sqrt(d2['clf'].covariances_).ravel().reshape(2,1).flatten()    
-    return pd.Series(d)    
+    return pd.Series(d)
+
+def classify_sharing(
+    df1: pd.DataFrame,
+    column_value: str,
+    bins: list=[0,25,75,100],
+    labels: list=['low','medium','high'],
+    prefix: str='',
+    verbose: bool= False,
+    ) -> pd.DataFrame:
+    """
+    Classify sharing % calculated from Jaccard index.
+    
+    Parameters:
+        df1 (pd.DataFrame): input table.
+        column_value (str): column with values.
+        bins (list): bins. Defaults to [0,25,75,100].
+        labels (list): bin labels. Defaults to ['low','medium','high'],
+        prefix (str): prefix of the columns.
+        verbose (bool): verbose. Defaults to False.
+    
+    """
+    df1=df1.assign(**{
+    f'{prefix}shared (>=1)': lambda df: df[column_value]!=0,
+    f'{prefix}shared (>=50%)': lambda df: (df[column_value]>=50),
+    f'{prefix}shared (==100%)': lambda df: (df[column_value]==100),
+    f'{prefix}sharing type': lambda df: df[column_value].apply(lambda x: 'same' if x==100 else 'distinct' if x==0 else 'shared'),
+    f'{prefix}sharing bin': lambda df: (
+        pd.cut(
+            df[column_value],
+            include_lowest=True,
+            bins=bins,
+            labels=labels,
+          )
+        # .apply(lambda x: pd.Interval(left=int(round(x.left)), right=int(round(x.right))))
+        ),
+      }
+    )
+    if verbose:
+        info(df1[f'{prefix}shared (>=1)'].value_counts())
+        info(df1[f'{prefix}shared (>=50%)'].value_counts())
+        info(df1[f'{prefix}shared (==100%)'].value_counts())
+        info(df1[f'{prefix}sharing type'].value_counts())
+        info(df1[f'{prefix}sharing bin'].value_counts())
+    return df1
