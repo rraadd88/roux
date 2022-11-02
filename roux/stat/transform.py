@@ -32,19 +32,32 @@ def anti_plog(x, p: float, base: int):
     """
     return (base**x)-p
     
-def log_pval(x):
+def log_pval(
+    x,
+    errors: str='raise',
+    replace_zero_with: float=None,
+    ):
     """Transform p-values to Log10.
 
     Paramters: 
         x: input.
-
+        errors (str): Defaults to 'raise'.
     Returns:
         output.
     """ 
-    if not isinstance(x,(int,float)): 
+    if isinstance(x,pd.Series): 
         if any(x==0):
-            x=x.replace(0,x.replace(0,np.nan).min())
-            logging.warning('zeros found, replaced with min pval')
+            if errors=='raise':
+                raise ValueError('zeros found in x')
+            else:
+                ## for visualisation purpose e.g. volcano plot.
+                if replace_zero_with is None:
+                    p_min=x.replace(0,np.nan).min()
+                    for replace_zero_with in [0.1,0.05,0.01,0.001,0.0001,0]:
+                        if p_min>replace_zero_with:
+                            break
+                x=x.replace(0,replace_zero_with)
+                logging.warning(f'zeros found, replaced with min {replace_zero_with}')
     return -1*(np.log10(x))
 
 def get_q(

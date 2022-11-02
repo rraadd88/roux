@@ -105,7 +105,7 @@ def get_stats_regression(
     out='df',
     verb=False,
     test=False,
-    **kws,
+    **kws_model,
     ) -> pd.DataFrame:
     """Get stats from regression models.
 
@@ -164,9 +164,9 @@ def get_stats_regression(
         formula_covariates=''
     
     ## set additional parameters
-    if 'groups' in kws:
+    if 'groups' in kws_model:
         ## get the data from the list of columns
-        kws['groups']=data[kws["groups"]]
+        kws_model['groups']=data[kws_model["groups"]]
     
     ## iterate over the models and equations
     ### import required modules
@@ -198,7 +198,7 @@ def get_stats_regression(
             fitted_models[(modeln,formula)]=model(
                 data=data,
                 formula=formula,
-                **kws,
+                **kws_model,
                 ).fit(disp=False)
         except (PerfectSeparationError,LinAlgError) as e:
             if verb or test: logging.error('PerfectSeparationError/LinAlgError')
@@ -227,8 +227,7 @@ def to_filteredby_variable(
     variable: str,
     colindex: str,
     coff_q : float=0.1,
-    by_covariates: bool=True,
-    coff_p_covariates: float=0.05,
+    coff_p_covariates: float=0.05,    
     test: bool=False,
     # pval: str='P',
     ) -> pd.DataFrame:
@@ -257,89 +256,106 @@ def to_filteredby_variable(
     """
     ## filter by variable of interest
     if not 'score' in df1:
+        ## non-standardised regression 'P>|t|' or standardised 'P>|z|'
         pval='P>|t|' if 'P>|t|' in df1['stat'].tolist() else 'P>|z|' if 'P>|z|' in df1['stat'].tolist() else None
         if pval is None:
             raise ValueError(pval)
-        df1['stat']=df1['stat'].apply(lambda x: 'P' if x==pval else x )
+        score='coef' if 'coef' in df1['stat'].tolist() else 'Coef.' if 'Coef.' in df1['stat'].tolist() else None
+        if score is None:
+            raise ValueError(score)
+        df1['stat']=df1['stat'].apply(lambda x: 'P' if x==pval else x ).apply(lambda x: 'score' if x==score else x )
 
-        df2=df1.loc[((df1['variable']==variable) & (df1['stat'].isin(['coef','P']))),:]
+        df2=df1.loc[((df1['variable']==variable) & (df1['stat'].isin(['score','P']))),:]
         df3=df2.pivot(index=colindex,columns='stat',values='value').reset_index()
-        df3=df3.rename(columns={'coef':'score'},
-                       errors='raise')
-        info(df3.columns.tolist())
+        # info(df3.columns.tolist())
     else:
         logging.warning("not filtered by variable of interest")
       
     ## calculate q value
-    df3=df3.log.dropna(subset=['P'])
+    df3=(df3
+        .log.dropna(subset=['P'])
+        .astype({'P':float}) ## LMM specific
+        )
     if test:
         df3['P'].hist()
     # from statsmodels.stats.multitest import fdrcorrection
     # df3['Q']=fdrcorrection(pvals=df3['P'], alpha=0.05, method='indep', is_sorted=False)[1]
     from roux.stat.transform import get_q
-    df3['Q']=get_q(df3['P'])    
+    df3['Q']=get_q(df3['P'])
     if test:
         df3['Q'].hist()
-    return df3
-
-def to_filteredby_stats(
-    df3: pd.DataFrame,
-    variable: str,
-    colindex: str,
-    coff_q : float=0.1,
-    by_covariates: bool=True,
-    df1: pd.DataFrame=None,
-    coff_p_covariates: float=0.05,
-    test: bool=False,
-    # pval: str='P',
-    ) -> pd.DataFrame:
-    """Filter regression statistics.
-
-    Args:
-        df1 (DataFrame): input dataframe.
-        variable (str): variable name to filter by.
-        colindex (str): columns with index.
-        coff_q (float, optional): cut-off on the q-value. Defaults to 0.1.
-        by_covariates (bool, optional): filter by these covaliates. Defaults to True.
-        coff_p_covariates (float, optional): cut-off on the p-value for the covariates. Defaults to 0.05.
-        test (bool, optional): test. Defaults to False.
-
-    Raises:
-        ValueError: pval.
-
-    Returns:
-        DataFrame: output.
-    
-    Notes:
-        Filtering steps:
-            1. By variable of interest.
-            2. By statistical significance.
-            3. By statistical significance of co-variates.
-    """
-    ## filter by statistical significance
+        
     if not coff_q is None:
-        info(sum(df3['P']<coff_q),sum(df3['Q']<coff_q))    
-        df3=df3.loc[(df3['Q']<coff_q),:]
-        info(df3[colindex].nunique())
+        df3[f"Q<{coff_q}"]=df3['Q']<coff_q
+        info(sum(df3['P']<coff_q),sum(df3['Q']<coff_q)) 
     else:
-        logging.warning("not filtered by statistical significance")
-    
-    ## filter by statistical significance of co-variates
-    if by_covariates:
-        ## #2
-        ## all covariates (potential confounding effects) are non-sinificant
-        ## non-standardised regression 'P>|t|' or standardised 'P>|z|'
-        df5=df1.loc[(
-                (df1['variable']!='Intercept') \
-              & (df1['variable']!=variable) \
-              & (df1['stat']=='P')
-                ),:]
-        df6=df5.groupby(colindex).filter(lambda df: (df['value']>=coff_p_covariates).all()).loc[:,[colindex]]
-        df3=df3.log().loc[df3[colindex].isin(df6[colindex]),:].log()
+        logging.warning(f"coff_q={coff_q}")
+    if not coff_p_covariates is None:
+        ##
+        ### get the p-values of the covariates
+        df5=(df1
+            .log.query(expr="variable not in [variable,'Intercept','Group Var']")
+            .log.query(expr="stat == 'P'")
+            )
+        
+        ### all covariates are ns
+        df6=(df5
+            .astype({'value':float}) ## LMM specific
+            .groupby(colindex)
+            .filter(lambda df: (df['value']>=coff_p_covariates).all())
+            .loc[:,[colindex]]
+            )
+        df3[f'no covariate significant (P<{coff_p_covariates})']=df3[colindex].isin(df6[colindex])
+        info(sum(df3[f'no covariate significant (P<{coff_p_covariates})']))
     else:
-        logging.warning("not filtered by_covariates")
-    info(df3[colindex].nunique())
+        logging.warning(f"coff_p_covariates={coff_p_covariates}")
     return df3
+
+# def to_filteredby_stats(
+#     df3: pd.DataFrame,
+#     coff_q : float=0.1,
+#     by_covariates: bool=True,
+#     coff_p_covariates: float=0.05,
+#     test: bool=False,
+#     # pval: str='P',
+#     ) -> pd.DataFrame:
+#     """Filter regression statistics.
+
+#     Args:
+#         df1 (DataFrame): input dataframe.
+#         variable (str): variable name to filter by.
+#         colindex (str): columns with index.
+#         coff_q (float, optional): cut-off on the q-value. Defaults to 0.1.
+#         by_covariates (bool, optional): filter by these covaliates. Defaults to True.
+#         coff_p_covariates (float, optional): cut-off on the p-value for the covariates. Defaults to 0.05.
+#         test (bool, optional): test. Defaults to False.
+
+#     Raises:
+#         ValueError: pval.
+
+#     Returns:
+#         DataFrame: output.
+    
+#     Notes:
+#         Filtering steps:
+#             1. By variable of interest.
+#             2. By statistical significance.
+#             3. By statistical significance of co-variates.
+#     """
+#     ## filter by statistical significance
+#     if not coff_q is None:
+#         info(sum(df3['P']<coff_q),sum(df3['Q']<coff_q)) 
+#         df3=df3.log.query(expr=f"Q < {coff_q}") #[(df3['Q']<coff_q),:]
+#     else:
+#         logging.warning("not filtered by statistical significance")
+    
+#     ## filter by statistical significance of co-variates
+#     if by_covariates:
+        
+#         df3=df3.log.query(expr=f"`any covariate significant (P<{coff_p_covariates})` == True")
+#     else:
+#         logging.warning("not filtered by_covariates")
+#     return df3
 
 ## model comparisons
 def run_lr_test(

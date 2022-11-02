@@ -89,6 +89,44 @@ def get_cols_x_for_comparison(
     columns['cols_x']['desc']=sorted(list(set(l1+l2) - set(columns['cols_y']['desc'])))   
     return columns
 
+def to_filteredby_samples(
+    df1: pd.DataFrame,
+    colindex: str,
+    colsample: str,
+    coff_samples_min: int,
+    colsubset: str, 
+    coff_subsets_min: int=2,
+    ) -> pd.DataFrame:
+    """Filter table before calculating differences.
+    (1) Retain minimum number of samples per item representing a subset and
+    (2) Retain minimum number of subsets per item.
+    
+    Parameters:        
+        df1 (pd.DataFrame): input table.
+        colindex (str): column containing items.
+        colsample (str): column containing samples.
+        coff_samples_min (int): minimum number of samples.
+        colsubset (str): column containing subsets.
+        coff_subsets_min (int): minimum number of subsets. Defaults to 2.
+        
+    Returns:
+        pd.DataFrame
+        
+    Examples:
+        Parameters:
+            colindex='genes id',
+            colsample='sample id',
+            coff_samples_min=3,
+            colsubset= 'pLOF or WT' 
+            coff_subsets_min=2,  
+    """
+    
+    df1=df1.reset_index(drop=True)
+    df1=df1.loc[(df1.groupby([colindex,colsubset])[colsample].transform('nunique')>=coff_samples_min),:].log(colindex)
+    df1=df1.loc[(df1.groupby(colindex)[colsubset].transform('nunique')==coff_subsets_min),:].log(colindex)
+    assert df1.groupby([colindex,colsubset])[colsample].nunique().min()>=coff_samples_min
+    return df1
+
 def to_preprocessed_data(
     df1: pd.DataFrame,
     columns: dict,
@@ -119,6 +157,7 @@ def to_preprocessed_data(
                 if verbose: info(df1[c].isnull().sum()) 
                 df1[c]=df1[c].fillna(fill_missing_desc_value) 
     return df1
+
 
 def get_comparison(
     df1: pd.DataFrame,
