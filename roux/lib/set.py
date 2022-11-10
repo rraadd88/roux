@@ -4,42 +4,6 @@ import numpy as np
 import pandas as pd
 import logging
 
-## io
-def to_list(l1,p):
-    """Save list.
-    
-    Parameters:
-        l1 (list): input list.
-        p (str): path.
-    
-    Returns:
-        p (str): path.        
-    """
-    from roux.lib.sys import makedirs
-    if not 'My Drive' in p:
-        p=p.replace(' ','_')
-    else:
-        logging.warning('probably working on google drive; space/s left in the path.')
-    makedirs(p)    
-    with open(p,'w') as f:
-        f.write('\n'.join(l1))
-    return p
-
-def read_list(p):
-    """Read the lines in the file.
-
-    Args:
-        p (str): path.
-
-    Returns:
-        l (list): list.
-    """
-    with open(p,'r') as f:
-        s=f.readlines()
-    return s
-# alias to be deprecated
-read_lines=read_list
-
 from functools import reduce
 def union(l):
     """Union of lists.

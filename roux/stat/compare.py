@@ -273,3 +273,32 @@ def get_comparison(
          .log.query(expr="`variable x` != `variable y`")
         )
     return df2
+
+def compare_strings(
+    l0: list,
+    l1: list,
+    cutoff: float=0.50,
+    ) -> pd.DataFrame:
+    """
+    Compare two lists of strings.
+    
+    Parameters:
+        l0 (list): list of strings. 
+        l1 (list): list of strings to compare with. 
+        cutoff (float): threshold to filter the comparisons.
+        
+    Returns:
+        table with the similarity scores.
+    
+    TODOs: 
+        1. Add option for semantic similarity.
+    """
+    from difflib import SequenceMatcher
+    return (get_pairs(l0,l1)
+        .add_prefix('string')
+        .assign(
+            **{'similarity':lambda df: df.apply(lambda x: SequenceMatcher(None, x['string1'], x['string2']).ratio() ,axis=1)}
+        )
+        .log.query(expr=f"`similarity` > {cutoff}")
+        .sort_values('similarity',ascending=False)
+        )

@@ -278,7 +278,7 @@ def plot_dists(
     elif (not hue is None) and (isinstance(show_p,bool) and show_p):
         from roux.stat.diff import get_stats_groupby
         df2=get_stats_groupby(df1.loc[df1[hue].isin(hue_order),:],
-                          cols=[y],
+                          cols_group=[y],
                           colsubset=hue,
                           cols_value=[x],
                           colindex=colindex,

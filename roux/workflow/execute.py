@@ -19,6 +19,8 @@ def run_notebooks(
         1. Integrate with apply_on_paths for parallel processing etc.
         2. Reporting by quarto?
     """
+    assert not ('output_table_path' in parameters or 'input_table_path' in parameters)
+    
     if test:
         verbose=True
     output_notebook_paths=[]
@@ -36,12 +38,10 @@ def run_notebooks(
             continue
         if exists(output_table_path) and not force:
             continue
-            
         ## set parameters
         d1=dict(
             input_table_path=input_table_path,
             output_table_path=output_table_path,
-            output_path_replace=output_path_replace,
             )
         d1.update(parameters)
         to_dict(d1,f"{splitext(output_notebook_path)[0]}/parameters.yaml")

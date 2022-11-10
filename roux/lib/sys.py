@@ -308,14 +308,6 @@ def get_excecution_location(depth=1):
     return caller.filename,caller.lineno
 
 ## time
-def get_time():
-    """Gets current time in a form of a formated string. Used in logger function.
-    """
-    from roux.lib.io import to_path # potential circular import
-    import datetime
-    time=to_path('%s' % datetime.datetime.now())
-    return time.replace('-','_').replace(':','_').replace('.','_')
-
 ## logging system
 def get_datetime(outstr=True):
     """Get the date and time.

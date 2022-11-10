@@ -1,8 +1,7 @@
 import pandas as pd
 from roux.lib.sys import *
-from roux.lib.io import read_ps
+from roux.lib.io import read_ps,read_dict,is_dict
 from roux.lib.set import flatten
-from roux.lib.dict import read_dict,is_dict
 
 def clear_variables(
     dtype=None,
@@ -310,7 +309,7 @@ def to_workflow(
     from roux.lib.set import list2str
     with open(workflowp,'w') as f:
         ## add rule all
-        f.write("from roux.lib.dict import read_dict\nfrom roux.workflow.io import read_metadata\nmetadata=read_metadata()\n"
+        f.write("from roux.lib.io import read_dict\nfrom roux.workflow.io import read_metadata\nmetadata=read_metadata()\n"
                 +'report: "workflow/report_template.rst"\n'
                 +"\nrule all:\n"
                  f"{tab}input:\n"

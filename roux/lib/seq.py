@@ -4,6 +4,9 @@ from Bio import SeqIO,SeqRecord,Seq
 from roux.lib.dfs import *
 import logging
 
+## for back-compatibility
+from Bio.Seq import Seq as to_seq
+
 ##defs
 def reverse_complement(s): 
     """Reverse complement.
@@ -131,7 +134,7 @@ def to_fasta(
     sequences: dict,
     output_path: str,
     molecule_type: str,
-    force: bool=False,
+    force: bool=True,
     **kws_SeqRecord,
     ) -> str:
     """Save fasta file.

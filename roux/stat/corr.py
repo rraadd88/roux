@@ -166,7 +166,7 @@ def get_corrs(
         2. Add parallel processing through `fast` parameter.
     """
     import itertools
-    from roux.stat.diff import get_q
+    from roux.stat.transform import get_q
     # check inflation/over-representations
     from roux.lib.df import check_inflation
     ds_=check_inflation(df1,subset=cols+cols_with).loc[lambda x: x>=(50 if coff_inflation_min is None else coff_inflation_min)]

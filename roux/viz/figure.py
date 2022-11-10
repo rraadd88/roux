@@ -28,12 +28,12 @@ def labelplots(
     labels: list=None,
     xoff: float=0,
     yoff: float=0,
-    params_alignment: dict={},
+    custom_positions: dict={},
     size:float = 20,
     va:str = 'bottom',
     ha:str = 'right',
     test: bool=False,
-    **kws,
+    **kws_text,
     ):
     """Label (sub)plots.
 
@@ -58,14 +58,15 @@ def labelplots(
     for axi,label in enumerate(label2ax.keys()):
         ax=label2ax[label]
         axi2xy[axi]=ax.get_position(original=True).xmin+xoff,ax.get_position(original=False).ymax+yoff
-    for pair in params_alignment:
-        axi2xy[pair[1]]=[axi2xy[pair[0 if 'x' in params_alignment[pair] else 1]][0],
-                         axi2xy[pair[0 if 'y' in params_alignment[pair] else 1]][1]]
+    # for pair in params_alignment:
+    #     axi2xy[pair[1]]=[axi2xy[pair[0 if 'x' in params_alignment[pair] else 1]][0],
+    #                      axi2xy[pair[0 if 'y' in params_alignment[pair] else 1]][1]]
     for axi,label in enumerate(label2ax.keys()):
-        label2ax[label].text(*axi2xy[axi],f"{label}",
+        label2ax[label].text(*(axi2xy[axi] if not axi in custom_positions else custom_positions[axi]),
+                             f"{label}",
                              size=size,
                              ha=ha,
                              va=va,
                              transform=fig.transFigure,
-                             **kws)    
+                             **kws_text)    
 

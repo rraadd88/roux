@@ -3,7 +3,6 @@ io_df -> io_dfs -> io_files
 """
 # paths
 from roux.lib.dfs import *
-from roux.lib.dict import read_dict,to_dict # overwrite to_dict from df
 from roux.lib.sys import * #is_interactive_notebook,basenamenoext,makedirs,get_all_subpaths
 from roux.lib.str import replacemany
 from shutil import copyfile
@@ -195,7 +194,7 @@ def get_version(suffix=''):
     Returns:
         version (string): version.
     """
-    return 'v'+get_time().replace('_','')+'_'+suffix
+    return 'v'+get_datetime().replace('_','')+'_'+suffix
 
 def version(p,outd=None,
             **kws):
@@ -263,9 +262,9 @@ def backup(p,outd,
 #     if test:print(ps)
     ps=[ p+'/' if isdir(p) else p for p in ps]
 #     if test:print(ps)
-    from roux.lib.sys import get_time
+    from roux.lib.sys import get_datetime
 #     if timed:
-    outd2=outd+'/.'+get_version(suffix)#'/_v'+get_time()+'_'+(suffix+'_' if not suffix is None else '')
+    outd2=outd+'/.'+get_version(suffix)#'/_v'+get_datetime()+'_'+(suffix+'_' if not suffix is None else '')
     # create directoried in outd
     outds=unique([dirname(dirname(p)) if isdir(p) else dirname(p) for p in ps])
 #     if test:print(outds)
@@ -300,9 +299,13 @@ def read_url(url):
     myfile = f.read()
     return str(myfile)
 
-def download(url,path=None,outd='data/database',
-             force=False,
-             verbose=True):
+def download(
+    url: str,
+    outd:str,
+    path: str=None,
+    force: bool=False,
+    verbose: bool=True,
+    )->str:
     """Download a file.
     
     Parameters:
@@ -334,7 +337,195 @@ def download(url,path=None,outd='data/database',
         logging.info(f"downloaded on: {get_download_date(path)}")
     return path
 
-## dfs
+## text file
+def read_text(p):
+    """Read a file. 
+    To be called by other functions  
+
+    Args:
+        p (str): path.
+
+    Returns:
+        s (str): contents.
+    """
+    with open(p,'r') as f:
+        s=f.read()
+    return s
+
+## lists
+## io
+def to_list(l1,p):
+    """Save list.
+    
+    Parameters:
+        l1 (list): input list.
+        p (str): path.
+    
+    Returns:
+        p (str): path.        
+    """
+    from roux.lib.sys import makedirs
+    if not 'My Drive' in p:
+        p=p.replace(' ','_')
+    else:
+        logging.warning('probably working on google drive; space/s left in the path.')
+    makedirs(p)    
+    with open(p,'w') as f:
+        f.write('\n'.join(l1))
+    return p
+
+def read_list(p):
+    """Read the lines in the file.
+
+    Args:
+        p (str): path.
+
+    Returns:
+        l (list): list.
+    """
+    with open(p,'r') as f:
+        s=f.readlines()
+    return s
+# alias to be deprecated
+read_lines=read_list
+
+## dict
+def read_yaml(p):
+    """Read `.yaml` file.
+    
+    Parameters:
+        p (str): path.
+        
+    Returns:
+        d (dict): output dictionary.
+    """
+    with open(p,'r') as f:
+        return yaml.safe_load(f)
+def to_yaml(d,p,**kws): 
+    """Save `.yaml` file.
+    
+    Parameters:
+        d (dict): input dictionary.
+        p (str): path.
+        
+    Keyword Arguments:
+        kws (d): parameters provided to `yaml.safe_dump`.
+        
+    Returns:
+        p (str): path.
+    """
+    with open(p,'w') as f:
+        yaml.safe_dump(d,f,**kws)
+    return p        
+def read_json(path_to_file,encoding=None):    
+    """Read `.json` file.
+    
+    Parameters:
+        p (str): path.
+        
+    Returns:
+        d (dict): output dictionary.
+    """
+    with open(path_to_file,encoding=encoding) as p:
+        return json.load(p)
+def to_json(data,p):
+    """Save `.json` file.
+    
+    Parameters:
+        d (dict): input dictionary.
+        p (str): path.
+                
+    Returns:
+        p (str): path.
+    """
+    with open(p, 'w') as outfile:
+        json.dump(data, outfile)
+    return p
+
+def read_pickle(p):
+    """Read `.pickle` file.
+    
+    Parameters:
+        p (str): path.
+        
+    Returns:
+        d (dict): output dictionary.
+    """    
+    import pickle
+    return pickle.load(open(p,
+               'rb'))
+def is_dict(p):
+    return p.endswith(('.yml','.yaml','.json','.joblib','.pickle'))
+    
+def read_dict(p,fmt='',**kws):
+    """Read dictionary file.
+    
+    Parameters:
+        p (str): path.
+        fmt (str): format of the file.
+        
+    Keyword Arguments:
+        kws (d): parameters provided to reader function.
+        
+    Returns:
+        d (dict): output dictionary.
+    """    
+    if '*' in p:
+        from roux.lib.io import basenamenoext
+        from glob import glob
+        return {basenamenoext(p):read_dict(p) for p in glob(p)}
+    if p.endswith('.yml') or p.endswith('.yaml') or fmt=='yml' or fmt=='yaml':
+        return read_yaml(p,**kws)
+    elif p.endswith('.json') or fmt=='json':
+        return read_json(p,**kws)
+    elif p.startswith('https'):
+        from urllib.request import urlopen
+        try:
+            return json.load(urlopen(p))
+        except:
+            print(logging.error(p))
+#         return read_json(p,**kws)    
+    elif p.endswith('.pickle'):
+        return read_pickle(p,**kws)
+    elif p.endswith('.joblib'):
+        import joblib
+        return joblib.load(p,**kws)
+    else:
+        logging.error(f'supported extensions: .yml .yaml .json .pickle .joblib')
+        
+def to_dict(d,p,**kws):
+    """Save dictionary file.
+    
+    Parameters:
+        d (dict): input dictionary.
+        p (str): path.
+                
+    Keyword Arguments:
+        kws (d): parameters provided to export function.
+        
+    Returns:
+        p (str): path.
+    """
+    from roux.lib.sys import makedirs
+    if not 'My Drive' in p:
+        p=p.replace(' ','_')
+    else:
+        logging.warning('probably working on google drive; space/s left in the path.')
+    makedirs(p)
+    if p.endswith('.yml') or p.endswith('.yaml'):
+        return to_yaml(d,p,**kws)
+    elif p.endswith('.json'):
+        return to_json(d,p,**kws)
+    elif p.endswith('.pickle'):
+        import pickle
+        return pickle.dump(d, open(p, 'wb'),**kws)
+    elif p.endswith('.joblib'):
+        import joblib
+        return joblib.dump(d, p,**kws)     
+    else:
+        raise ValueError(f'supported extensions: .yml .yaml .json .pickle .joblib')
+        
+## tables
 def post_read_table(df1,clean,tables,
                     verbose=True,
                     **kws_clean):
@@ -499,23 +690,25 @@ def get_logp(ps):
         p=dirname(p)
     return f"{p}.log"
 
-def apply_on_paths(ps,func,
-                   replaces_outp=None,
-                   # path=None,
-                   replaces_index=None,
-                   drop_index=True, # keep path
-                   colindex='path',
-                   filter_rows=None,
-                   fast=False, 
-                   progress_bar=True,
-                   params={},
-#                    log=True,
-                   dbug=False,
-                   test1=False,
-                   verbose=True,
-                   kws_read_table={},
-                   **kws,
-                  ):
+def apply_on_paths(
+    ps,
+    func,
+    replaces_outp=None,
+    # path=None,
+    replaces_index=None,
+    drop_index=True, # keep path
+    colindex='path',
+    filter_rows=None,
+    fast=False, 
+    progress_bar=True,
+    params={},
+    #                    log=True,
+    dbug=False,
+    test1=False,
+    verbose=True,
+    kws_read_table={},
+    **kws,
+    ):
     """Apply a function on list of files.
     
     Parameters:
@@ -645,15 +838,16 @@ def apply_on_paths(ps,func,
         df2[colindex]=df2[colindex].apply(lambda x: replacemany(x, replaces=replaces_index, replacewith='', ignore=False))
     return df2
 
-def read_tables(ps,
-                    fast=False,
-                    filterby_time=None,
-                    drop_index=True,
-                    to_dict=False,
-                    params={},
-                    tables=None,
-                    **kws_apply_on_paths,
-                   ):
+def read_tables(
+    ps,
+    fast=False,
+    filterby_time=None,
+    drop_index=True,
+    to_dict=False,
+    params={},
+    tables=None,
+    **kws_apply_on_paths,
+    ):
     """Read multiple tables.
     
     Parameters:
@@ -818,7 +1012,8 @@ def pqt2tsv(
         p (str): path of the output.
     """    
     to_table(read_table(p),f"{p}.tsv")
-    
+
+## tables: excel
 def read_excel(
     p: str,
     sheet_name: str=None,

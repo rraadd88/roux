@@ -236,19 +236,18 @@ def get_lines(
     Returns:
         list: lines of code. 
     """
-    from roux.lib.text import read_lines 
     if not is_interactive_notebook():
         from roux.lib.sys import get_excecution_location
         p,i=get_excecution_location(depth=4)
         if test:print(p,i)
-        l1=read_lines(p)[:i]
+        l1=read_list(p)[:i]
         if test:print(l1)
     else:
         if not exists(logp):
             log_code()
             logging.error(f'rerun the cell, {logp} created');
             return
-        l1=read_lines(logp)
+        l1=read_list(logp)
         if test: print(l1)
         # open(logp, 'w').close()
         # logging.info(f'{logp} emptied')

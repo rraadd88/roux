@@ -1,6 +1,6 @@
 from pathlib import Path
 from roux.lib.sys import logging,exists,dirname,basename,makedirs,basenamenoext,info,abspath
-from roux.lib.io import read_ps
+from roux.lib.io import read_ps,read_dict,to_dict
 import pandas as pd
 import numpy as np
 
@@ -153,7 +153,6 @@ def to_scripts(
             make_all=True
         if test: info(len(ps))
         if exists(f'{notebooksdp}/.workflow/config.yaml'):
-            from roux.lib.dict import read_dict
             cfg=read_dict(f'{notebooksdp}/.workflow/config.yaml')
             if 'exclude' in cfg:
                 ps=[p for p in ps if not basename(p) in cfg['exclude']]
@@ -185,8 +184,8 @@ def to_scripts(
     if todos:
         from roux.workflow.io import to_info
         to_info(p=f'{packagescriptsp}/*{notebook_prefix}*{notebook_suffix}*.ipynb',outp=f'{packagescriptsp}/README.md')
-        from roux.lib.text import read_lines
-        [print(s) for s in '\n'.join(read_lines(f'{packagescriptsp}/README.md')).split(sep_step) if 'TODO' in s]
+        from roux.lib.io import read_list
+        [print(s) for s in '\n'.join(read_list(f'{packagescriptsp}/README.md')).split(sep_step) if 'TODO' in s]
     if git:
         from .version import git_commit
         git_commit(packagep,suffix_message='' if not validate else ' (not validated)')

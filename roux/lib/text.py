@@ -1,19 +1,3 @@
-# from roux.global_imports import *
-
-def read(p):
-    """Read a file.
-
-    Args:
-        p (str): path.
-
-    Returns:
-        s (str): contents.
-    """
-    with open(p,'r') as f:
-        s=f.read()
-    return s
-
-from roux.lib.set import read_lines
 
 def get_header(path: str,comment='#',lineno=None):
     """Get the header of a file.
