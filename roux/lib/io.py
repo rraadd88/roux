@@ -9,7 +9,10 @@ from shutil import copyfile
 import logging
 
 ## paths
-def read_ps(ps,test=True):
+def read_ps(
+    ps,
+    test=True,
+    ) -> list:
     """Read a list of paths.
     
     Parameters:
@@ -399,6 +402,7 @@ def read_yaml(p):
     Returns:
         d (dict): output dictionary.
     """
+    import yaml    
     with open(p,'r') as f:
         return yaml.safe_load(f)
 def to_yaml(d,p,**kws): 
@@ -414,6 +418,7 @@ def to_yaml(d,p,**kws):
     Returns:
         p (str): path.
     """
+    import yaml
     with open(p,'w') as f:
         yaml.safe_dump(d,f,**kws)
     return p        
@@ -426,6 +431,7 @@ def read_json(path_to_file,encoding=None):
     Returns:
         d (dict): output dictionary.
     """
+    import json    
     with open(path_to_file,encoding=encoding) as p:
         return json.load(p)
 def to_json(data,p):
@@ -438,6 +444,7 @@ def to_json(data,p):
     Returns:
         p (str): path.
     """
+    import json    
     with open(p, 'w') as outfile:
         json.dump(data, outfile)
     return p
@@ -1048,7 +1055,8 @@ def read_excel(
         ## return all sheets
         sheetname2df={}
         for sheet_name in xl.sheet_names:
-            sheetname2df[sheet_name]=xl.parse(sheet_name) 
+            sheetname2df[sheet_name]=xl.parse(sheet_name)
+            logging.info(f"'{sheet_name}':{sheetname2df[sheet_name].shape}")
         return sheetname2df            
     else:
         return pd.read_excel(p, sheet_name, **kws)

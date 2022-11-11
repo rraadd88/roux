@@ -1,7 +1,5 @@
 """Dictionary processing"""
 from roux.lib.set import *
-import yaml
-import json
 from roux.lib.str import dict2str,str2dict
 
 def head_dict(d, lines=5):

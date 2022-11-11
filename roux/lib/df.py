@@ -6,7 +6,12 @@ from icecream import ic as info
 from roux.lib import to_rd
 
 @to_rd
-def get_name(df1,cols=None,coff=2,out=None):
+def get_name(
+    df1: pd.DataFrame,
+    cols: list=None,
+    coff: float=2,
+    out=None,
+    ):
     """Gets the name of the dataframe. 
     
     Especially useful within `groupby`+`pandarellel` context.
@@ -139,11 +144,12 @@ def dropby_patterns(
     return df1.log.drop(labels=cols,axis=1)
 
 @to_rd
-def drop_inflates(df1,
-                    col,
-                    cols_index,
-                  test=False,
-                   ):
+def drop_inflates(
+    df1: pd.DataFrame,
+    col: str,
+    cols_index: list,
+    test: bool=False,
+    ) -> pd.DataFrame:
     """Deletes columns with high number of duplicates.
     
     Parameters:
@@ -182,12 +188,18 @@ def drop_inflates(df1,
     assert(all(df1.rd.check_inflation([col])<1))
     return df1
 
+## columns reformatting
 @to_rd
-def flatten_columns(df,**kws):
+def flatten_columns(
+    df: pd.DataFrame,
+    sep: str=' ',
+    **kws,
+    ) -> pd.DataFrame:
     """Multi-index columns to single-level.
 
     Parameters:
         df (DataFrame): input dataframe.
+        sep (str): separator within the joined tuples (' ').
         
     Returns:
         df (DataFrame): output dataframe.
@@ -195,7 +207,11 @@ def flatten_columns(df,**kws):
     Keyword Arguments:
         kws (dict): parameters provided to `coltuples2str` function.    
     """    
-    df.columns=coltuples2str(df.columns,**kws)
+    from roux.lib.str import tuple2str
+    cols_str=[]
+    for col in df.columns:
+        cols_str.append(tuple2str(col,sep=sep))
+    df.columns=cols_str
     return df
 
 @to_rd
@@ -212,7 +228,12 @@ def lower_columns(df):
     return df
 
 @to_rd
-def renameby_replace(df,replaces,ignore=True,**kws):
+def renameby_replace(
+    df: pd.DataFrame,
+    replaces: dict,
+    ignore: bool=True,
+    **kws,
+    ) -> pd.DataFrame:
     """Rename columns by replacing sub-strings.
 
     Parameters:
@@ -232,7 +253,9 @@ def renameby_replace(df,replaces,ignore=True,**kws):
 
 
 @to_rd
-def clean_columns(df):
+def clean_columns(
+    df: pd.DataFrame,
+    ) -> pd.DataFrame:
     """Standardise columns.
 
     Steps:
@@ -892,11 +915,12 @@ def agg_bools(df1,cols):
 
 ## paired dfs
 @to_rd
-def melt_paired(df,
-                cols_index=None, # paired
-                suffixes=None,
-                cols_value=None,
-                ):
+def melt_paired(
+    df: pd.DataFrame,
+    cols_index: list=None, # paired
+    suffixes: list=None,
+    cols_value: list=None,
+    ) -> pd.DataFrame:
     """Melt a paired dataframe.
     
     Parameters:
@@ -950,7 +974,13 @@ def melt_paired(df,
         return df2
 
 @to_rd
-def get_chunks(df1,colindex,colvalue,bins=None,value='right'):
+def get_chunks(
+    df1: pd.DataFrame,
+    colindex: str,
+    colvalue: str,
+    bins: int=None,
+    value: str='right',
+    ) -> pd.DataFrame:
     """Get chunks of a dataframe.
     
     Parameters:
@@ -986,7 +1016,11 @@ def get_chunks(df1,colindex,colvalue,bins=None,value='right'):
 
 ## GROUPBY
 # aggregate dataframes
-def get_group(groups,i=None,verbose=True):
+def get_group(
+    groups,
+    i: int=None,
+    verbose: bool=True,
+    ) -> pd.DataFrame:
     """Get a dataframe for a group out of the `groupby` object.
 
     Parameters:
@@ -1008,24 +1042,37 @@ def get_group(groups,i=None,verbose=True):
     df=groups.get_group(dn)
     df.name=dn
     return df
-        
-# multiindex
-def coltuples2str(cols,sep=' '):
-    """Convert list of tuples (e.g. MultiIndex) to list of strings
-    
-    Parameters:
-        cols (list): list of tuples.
-        sep (str): separator within the joined tuples (' ').
-        
-    Returns:
-        cols_str (list): list of strings.
-    """
-    from roux.lib.str import tuple2str
-    cols_str=[]
-    for col in cols:
-        cols_str.append(tuple2str(col,sep=sep))
-    return cols_str
 
+# index
+def infer_index(
+    data: pd.DataFrame,
+    cols_drop=[],
+    include=object,
+    exclude=None,
+    ) ->  list:
+    """
+    Infer the index (id) of the table.
+    
+    
+    """
+    cols=(data
+        .drop(cols_drop,axis=1)
+        .select_dtypes(
+            include=object,
+            exclude=None,
+            )
+        .nunique()
+        .sort_values(ascending=False)
+        )
+    assert not cols.duplicated(), cols
+    subset=[]
+    for col in cols.index:
+        subset=subset+[col]
+        if data.rd.validate_no_dups(subset=subset):
+            break
+    return subset
+
+## multiindex
 @to_rd
 def to_multiindex_columns(df,suffixes,test=False):
     """Single level columns to multiindex.

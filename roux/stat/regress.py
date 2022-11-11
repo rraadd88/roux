@@ -228,6 +228,7 @@ def to_filteredby_variable(
     colindex: str,
     coff_q : float=0.1,
     coff_p_covariates: float=0.05,    
+    plot: bool=False,
     test: bool=False,
     # pval: str='P',
     ) -> pd.DataFrame:
@@ -254,6 +255,8 @@ def to_filteredby_variable(
             2. By statistical significance.
             3. By statistical significance of co-variates.
     """
+    if test:
+        plot=True
     ## filter by variable of interest
     if not 'score' in df1:
         ## non-standardised regression 'P>|t|' or standardised 'P>|z|'
@@ -274,16 +277,20 @@ def to_filteredby_variable(
     ## calculate q value
     df3=(df3
         .log.dropna(subset=['P'])
-        .astype({'P':float}) ## LMM specific
+        .astype({
+            'P':float,
+            'score':float,
+                }) ## LMM specific
         )
-    if test:
-        df3['P'].hist()
+    if plot:
+        plt.figure();
+        df3['P'].hist(label='P')
     # from statsmodels.stats.multitest import fdrcorrection
     # df3['Q']=fdrcorrection(pvals=df3['P'], alpha=0.05, method='indep', is_sorted=False)[1]
     from roux.stat.transform import get_q
     df3['Q']=get_q(df3['P'])
-    if test:
-        df3['Q'].hist()
+    if plot:
+        df3['Q'].hist(label='Q')
         
     if not coff_q is None:
         df3[f"Q<{coff_q}"]=df3['Q']<coff_q
@@ -299,12 +306,16 @@ def to_filteredby_variable(
             )
         
         ### all covariates are ns
-        df6=(df5
-            .astype({'value':float}) ## LMM specific
-            .groupby(colindex)
-            .filter(lambda df: (df['value']>=coff_p_covariates).all())
-            .loc[:,[colindex]]
-            )
+        try:        
+            df6=(df5
+                .query(expr="`value`!=''")
+                .astype({'value':float}) ## LMM specific
+                .groupby(colindex)
+                     .filter(lambda df: (df['value']>=coff_p_covariates).all())
+                .loc[:,[colindex]]
+                )
+        except:
+            info(df5['value'].unique())
         df3[f'no covariate significant (P<{coff_p_covariates})']=df3[colindex].isin(df6[colindex])
         info(sum(df3[f'no covariate significant (P<{coff_p_covariates})']))
     else:

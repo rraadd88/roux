@@ -293,6 +293,7 @@ def compare_strings(
     TODOs: 
         1. Add option for semantic similarity.
     """
+    from roux.lib.set import get_pairs
     from difflib import SequenceMatcher
     return (get_pairs(l0,l1)
         .add_prefix('string')

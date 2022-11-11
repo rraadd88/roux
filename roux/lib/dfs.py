@@ -31,6 +31,78 @@ def filter_dfs(dfs,cols,how='inner'):
         dfs=apply_(dfs=dfs,col=c,how=how)
     return dfs
 
+def merge_with_many_columns(
+    df1: pd.DataFrame,
+    right: str,
+    left_on: str,
+    right_ons: list,
+    right_id: str,
+    how: str='inner',
+    validate: str="1:1",
+    test: bool=False,
+    verbose: bool=False,
+    **kws_merge,  
+    ) -> pd.DataFrame:
+    """
+    Merge with many columns.
+    For example, if ids in the left table can map to ids located in multiple columns of the right table.
+    
+    Parameters:
+        df1 (pd.DataFrame): left table.
+        right (pd.DataFrame): right table.
+        left_on (str): column in the left table to merge on.
+        right_ons (list): columns in the right table to merge on.
+        right_id (str): column in the right dataframe with for example the ids to be merged.
+    
+    Keyword parameters:
+        kws_merge: to be supplied to `pandas.DataFrame.merge`.
+    
+    Returns:
+        Merged table.
+    """
+    if test:
+        verbose=True
+    ## melt the right-side df  
+    df2=(right
+    .melt(
+        id_vars=right_id,
+        value_vars=right_ons,
+        value_name=left_on,
+    )
+    .log.dropna()      
+    )
+    if verbose:
+        logging.info(df2.head(1))
+
+    def log_overlap(df2):
+        ## overlap per column
+        df3=(df2
+        .assign(
+        **{
+            'overlap': lambda df: df.groupby('variable')[left_on].transform(lambda x: len(set(x.tolist()) & set(df1[left_on].tolist())) ),
+        }
+        )
+        .sort_values('overlap',ascending=False)
+        )
+        logging.info(df3.loc[:,['variable','overlap']].drop_duplicates().set_index('variable')['overlap'])
+
+    log_overlap(df2)
+
+    ## unique ids
+    df3=(df2
+    .log.drop_duplicates(subset=left_on,keep='first')
+    )
+    if verbose:
+        logging.info(df3.head(1))
+    log_overlap(df3)
+    return df1.log.merge(
+        right=df3.drop(['variable'],axis=1),
+        how=how,
+        on=left_on,
+        validate=validate,
+        **kws_merge,
+        )
+
 @to_rd
 def merge_paired(
     df1,df2,
