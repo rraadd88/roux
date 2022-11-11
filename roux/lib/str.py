@@ -373,6 +373,7 @@ def removesuffix(
 # def str2dict(s): return dict(item.split("=") for item in s.split(";"))
 def str2dict(
     s: str,
+    reversible: bool=True,
     sep: str=';',
     sep_equal: str='=',
     ) -> dict:
@@ -389,10 +390,16 @@ def str2dict(
     References:
         1. https://stackoverflow.com/a/186873/3521099
     """
-    return dict(item.split(sep_equal) for item in s.split(sep))
+    if reversible:
+        import json
+        return json.loads(s)
+    else:
+        ## for dictionaries containing strings only
+        return dict(item.split(sep_equal) for item in s.split(sep))
 
 def dict2str(
     d1: dict,
+    reversible: bool=True,
     sep: str=';',
     sep_equal: str='=',
     ) -> str: 
@@ -402,11 +409,16 @@ def dict2str(
         d (dict): dictionary.
         sep (str): separator between entries (default:';').
         sep_equal (str): separator between the keys and the values (default:'=').
-    
+        reversible (str): use json
     Returns:
         s (str): string.
     """
-    return sep.join([sep_equal.join([k,str(v)]) for k,v in d1.items()])
+    if reversible:
+        import json
+        return json.dumps(d1, sort_keys=True)
+    else:
+        ## used for encoding file paths
+        return sep.join([sep_equal.join([k,str(v)]) for k,v in d1.items()])
 
 def str2num(
     s: str
@@ -464,14 +476,21 @@ def num2str(
 
 ## ids
     
-def encode(data,**kws):
+def encode(
+    data,
+    short:bool=False,
+    method_short: str='sha256',
+    **kws,
+    ) -> str:
     """Encode the data as a string.
     
     Parameters:
-        data (dict|Series): input data. 
+        data (str|dict|Series): input data. 
+        short (bool): Outputs short string, compatible with paths but non-reversible. Defaults to False.
+        method_short (str): method used for encoding when short=True.
         
     Keyword parameters:
-        kws: parameters provided to `encode`.
+        kws: parameters provided to encoding function.
         
     Returns:
         s (string): output string. 
@@ -480,14 +499,23 @@ def encode(data,**kws):
     if isinstance(data,pd.Series):
         data=data.to_dict()
     if isinstance(data,dict):
-#         from roux.lib.str import dict2str
-        data=dict2str(dict(sorted(data.items())), sep=';', sep_equal='=')
+        from roux.lib.str import dict2str
+        data=dict2str(data,reversible=True)
+        
+    assert isinstance(data,str)
     if not isinstance(data,bytes):
         data=data.encode(encoding='utf8')
-    import zlib
-    from base64 import urlsafe_b64encode as b64e
-    return b64e(zlib.compress(data, 9)).decode("utf-8",**kws)
-
+    if not short:
+        import zlib
+        from base64 import urlsafe_b64encode as b64e
+        return b64e(zlib.compress(data, 
+                                  level=9, # level of compression 
+                                 )).decode("utf-8",**kws)
+    else:
+        import hashlib
+        return getattr(hashlib,method_short)(data,**kws).hexdigest()
+        
+        
 def decode(s,out=None,**kws):
     """Decode data from a string.
     
@@ -505,8 +533,8 @@ def decode(s,out=None,**kws):
     from base64 import urlsafe_b64decode as b64d
     s2=zlib.decompress(b64d(s)).decode("utf-8")
     if out in ['dict','df']:
-#         from roux.lib.str import str2dict
-        d1=str2dict(s2, sep=';', sep_equal='=')
+        from roux.lib.str import str2dict
+        d1=str2dict(s2, reversible=True)
         if out=='dict':
             return d1
         elif out=='df':

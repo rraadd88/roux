@@ -95,6 +95,8 @@ if not is_interactive_notebook:
     from IPython import get_ipython
     logging.info("log_notebookp=f'log_notebook.log';open(log_notebookp, 'w').close();get_ipython().run_line_magic('logstart','{log_notebookp} over')")
     tqdm.pandas()
+    ## markdown in jupyter containing variables
+    from IPython.display import Markdown as info_nb
 else:
     from tqdm import notebook
     notebook.tqdm().pandas()
