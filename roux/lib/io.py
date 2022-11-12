@@ -981,6 +981,9 @@ def to_manytables(df,p,colgroupby,
         fmt='='
         logging.warning('bool column detected, fmt changed to =')
     def to_outp(names,outd,colgroupby,fmt):
+        """
+        Get output path for each group.
+        """
         if isinstance(names, str):
             names=[names]
         d1=dict(zip(colgroupby,names))

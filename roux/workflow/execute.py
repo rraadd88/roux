@@ -1,6 +1,38 @@
 from roux.global_imports import *
 
 def run_notebooks(
+    input_path: list,
+    output_path: list,
+    input_notebook_path: str,
+    env_name: str,
+    parameters={},
+    force=True,
+    test=False,
+    verbose=False,
+    **kws_papermill,
+    ):
+    """
+    Execute a list of notebooks.
+    
+    TODOs: 
+        1. Integrate with apply_on_paths for parallel processing etc.
+        2. Reporting by quarto?
+    """
+
+    if verbose: info(d1)
+    import papermill as pm
+    pm.execute_notebook(
+        input_path=input_notebook_path,
+        output_path=output_notebook_path,
+        parameters=d1,
+        kernel=env_name,
+        report=True,
+        start_timeout=480,
+        **kws_papermill,
+    )
+    return output_notebook_path
+
+def run_notebooks(
     input_notebook_path: str,
     input_table_paths: list,
     input_path_replace: str,

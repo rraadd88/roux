@@ -37,5 +37,7 @@ examples/workflow.py
 examples/workflow/report.html
 examples/workflow/report_template.rst
 examples/workflow/workflow.dot
+examples/debug_*
+examples/test_*
 log_notebook.log
 tests/output/*
