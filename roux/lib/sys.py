@@ -6,35 +6,13 @@ import sys
 from os.path import exists,dirname,basename,abspath,isdir,realpath,splitext ## prefer `pathlib` over `os.path`
 from pathlib import Path
 from glob import glob,iglob
+import shutil
+
 import logging
 # from roux.lib.io import makedirs
 # from roux.global_imports import info
 
-# walker
-def get_all_subpaths(d='.',include_directories=False):
-    """Get all the subpaths.
-
-    Args:
-        d (str, optional): _description_. Defaults to '.'.
-        include_directories (bool, optional): to include the directories. Defaults to False.
-
-    Returns:
-        paths (list): sub-paths.
-    """
-    from glob import glob
-    import os
-    paths=[]
-    for root, dirs, files in os.walk(d):
-        if include_directories:
-            for d in dirs:
-                path=os.path.relpath(os.path.join(root, d), ".")
-                paths.append(path)
-        for f in files:
-            path=os.path.relpath(os.path.join(root, f), d)
-            paths.append(path)
-    paths=sorted(paths)
-    return paths
-
+## path
 def basenamenoext(p):
     """Basename without the extension.
 
@@ -61,23 +39,131 @@ def remove_exts(
     """
     return str(p).rstrip(''.join(Path(p).suffixes) if exts is None else exts)
 
-def makedirs(p: str,exist_ok=True,**kws):
-    """Make directories recursively.
-
-    Args:
-        p (str): path.
-        exist_ok (bool, optional): no error if the directory exists. Defaults to True.
+def read_ps(
+    ps,
+    test=True,
+    ) -> list:
+    """Read a list of paths.
+    
+    Parameters:
+        ps (list|str): list of paths or a string with wildcard/s.
+        test (bool): testing.
 
     Returns:
-        p_ (str): the path of the directory.
+        ps (list): list of paths.
     """
-    from os import makedirs
-    from os.path import isdir
-    p_=p
-    if not isdir(p):
-        p=dirname(p)
-    makedirs(p,exist_ok=exist_ok,**kws)
-    return p_
+    if isinstance(ps,str): 
+        if '*' in ps:
+            ps=glob(ps)
+        else:
+            ps=[ps]
+    ps=sorted(ps)
+    if test:
+        ds1=pd.Series({p:p2time(p) if exists(p) else np.nan for p in ps}).sort_values().dropna()
+        if len(ds1)>1:
+            from roux.lib.str import get_suffix
+            d0=ds1.iloc[[0,-1]].to_dict()
+            for k_,k,v  in zip(['oldest','latest'],get_suffix(*d0.keys(),common=False),d0.values()):
+                logging.info(f"{k_}: {k}\t{v}")
+        elif len(ds1)==0:
+            logging.warning('paths do not exist.')
+    return ps
+
+def to_path(
+    s,
+    replacewith='_',
+    verbose=False,
+    coff_len_escape_replacement=100,
+    ):
+    """Normalise a string to be used as a path of file.
+    
+    Parameters:
+        s (string): input string.
+        replacewith (str): replace the whitespaces or incompatible characters with.
+        
+    Returns:
+        s (string): output string.
+    """
+    import re
+    s=re.sub(r'(/)\1+',r'\1',s) # remove multiple /'s
+    if max([len(s_) for s_ in s.split('/')])<coff_len_escape_replacement:
+        s=(re.sub(r'[^\w+/.+-=]',replacewith, s)
+           .replace('+',replacewith) 
+           .strip(replacewith)
+           )
+        s=re.sub(r'(_)\1+',r'\1',s) # remove multiple _'s
+    else:
+        if verbose:
+            logging.info("replacements not done; possible long IDs in the path.")
+    return s.replace(f'/My{replacewith}Drive/','/My Drive/') # google drive
+#     return re.sub('\W+',replacewith, s.lower() )
+
+# alias to be deprecated in the future
+make_pathable_string=to_path
+# get_path=to_path
+
+def to_output_path(ps,outd=None,outp=None,suffix=''):
+    """Infer a single output path for a list of paths.
+    
+    Parameters:
+        ps (list): list of paths.
+        outd (str): path of the output directory.
+        outp (str): path of the output file.
+        suffix (str): suffix of the filename.
+    
+    Returns:
+        outp (str): path of the output file. 
+    """
+    if not outp is None:
+        return outp
+    from roux.lib.str import get_prefix
+    # makedirs(outd)
+    ps=read_ps(ps)
+    pre=get_prefix(ps[0],ps[-1], common=True)
+    if not outd is None:
+        pre=outd+(basename(pre) if basename(pre)!='' else basename(dirname(pre)))
+    outp=f"{pre}_{suffix}{splitext(ps[0])[1]}"
+    return outp
+
+def get_encoding(p):
+    """Get encoding of a file.
+    
+    Parameters:
+        p (str): file path
+        
+    Returns:
+        s (string): encoding.
+    """
+    import chardet
+    with open(p, 'rb') as f:
+        result = chardet.detect(f.read())
+    return result['encoding']                
+
+# ls
+def get_all_subpaths(d='.',include_directories=False):
+    """Get all the subpaths.
+
+    Args:
+        d (str, optional): _description_. Defaults to '.'.
+        include_directories (bool, optional): to include the directories. Defaults to False.
+
+    Returns:
+        paths (list): sub-paths.
+    """
+    from glob import glob
+    import os
+    paths=[]
+    for root, dirs, files in os.walk(d):
+        if include_directories:
+            for d in dirs:
+                path=os.path.relpath(os.path.join(root, d), ".")
+                paths.append(path)
+        for f in files:
+            path=os.path.relpath(os.path.join(root, f), d)
+            paths.append(path)
+    paths=sorted(paths)
+    return paths
+
 
 def get_env(
     env_name: str,
@@ -167,7 +253,6 @@ def runbash_tmp(s1: str,
     if exists(outp) and not force:
         return
     from roux.lib.str import replace_many
-    import shutil
     import tempfile
     with tempfile.TemporaryDirectory() as p:
         if test: p=abspath('test/')

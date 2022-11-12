@@ -4,112 +4,28 @@ io_df -> io_dfs -> io_files
 # paths
 from roux.lib.dfs import *
 from roux.lib.sys import * #is_interactive_notebook,basenamenoext,makedirs,get_all_subpaths
-from roux.lib.str import replacemany
-from shutil import copyfile
+from roux.lib.str import replace_many
 import logging
 
-## paths
-def read_ps(
-    ps,
-    test=True,
-    ) -> list:
-    """Read a list of paths.
-    
-    Parameters:
-        ps (list|str): list of paths or a string with wildcard/s.
-        test (bool): testing.
+## operate
+def makedirs(p: str,exist_ok=True,**kws):
+    """Make directories recursively.
+
+    Args:
+        p (str): path.
+        exist_ok (bool, optional): no error if the directory exists. Defaults to True.
 
     Returns:
-        ps (list): list of paths.
+        p_ (str): the path of the directory.
     """
-    if isinstance(ps,str): 
-        if '*' in ps:
-            ps=glob(ps)
-        else:
-            ps=[ps]
-    ps=sorted(ps)
-    if test:
-        ds1=pd.Series({p:p2time(p) if exists(p) else np.nan for p in ps}).sort_values().dropna()
-        if len(ds1)>1:
-            from roux.lib.str import get_suffix
-            d0=ds1.iloc[[0,-1]].to_dict()
-            for k_,k,v  in zip(['oldest','latest'],get_suffix(*d0.keys(),common=False),d0.values()):
-                logging.info(f"{k_}: {k}\t{v}")
-        elif len(ds1)==0:
-            logging.warning('paths do not exist.')
-    return ps
+    from os import makedirs
+    from os.path import isdir
+    p_=p
+    if not isdir(p):
+        p=dirname(p)
+    makedirs(p,exist_ok=exist_ok,**kws)
+    return p_
 
-def to_path(
-    s,
-    replacewith='_',
-    verbose=False,
-    coff_len_escape_replacement=100,
-    ):
-    """Normalise a string to be used as a path of file.
-    
-    Parameters:
-        s (string): input string.
-        replacewith (str): replace the whitespaces or incompatible characters with.
-        
-    Returns:
-        s (string): output string.
-    """
-    import re
-    s=re.sub(r'(/)\1+',r'\1',s) # remove multiple /'s
-    if max([len(s_) for s_ in s.split('/')])<coff_len_escape_replacement:
-        s=(re.sub(r'[^\w+/.+-=]',replacewith, s)
-           .replace('+',replacewith) 
-           .strip(replacewith)
-           )
-        s=re.sub(r'(_)\1+',r'\1',s) # remove multiple _'s
-    else:
-        if verbose:
-            logging.info("replacements not done; possible long IDs in the path.")
-    return s.replace(f'/My{replacewith}Drive/','/My Drive/') # google drive
-#     return re.sub('\W+',replacewith, s.lower() )
-
-# alias to be deprecated in the future
-make_pathable_string=to_path
-# get_path=to_path
-
-def to_outp(ps,outd=None,outp=None,suffix=''):
-    """Infer output path based on the list of paths.
-    
-    Parameters:
-        ps (list): list of paths.
-        outd (str): path of the output directory.
-        outp (str): path of the output file.
-        suffix (str): suffix of the filename.
-    
-    Returns:
-        outp (str): path of the output file. 
-    """
-    if not outp is None:
-        return outp
-    from roux.lib.str import get_prefix
-    # makedirs(outd)
-    ps=read_ps(ps)
-    pre=get_prefix(ps[0],ps[-1], common=True)
-    if not outd is None:
-        pre=outd+(basename(pre) if basename(pre)!='' else basename(dirname(pre)))
-    outp=f"{pre}_{suffix}{splitext(ps[0])[1]}"
-    return outp
-
-def get_encoding(p):
-    """Get encoding of a file.
-    
-    Parameters:
-        p (str): file path
-        
-    Returns:
-        s (string): encoding.
-    """
-    import chardet
-    with open(p, 'rb') as f:
-        result = chardet.detect(f.read())
-    return result['encoding']                
-
-import shutil
 def to_zip(p, outp=None,fmt='zip'):
     """Compress a file/directory.
     
@@ -152,7 +68,7 @@ def to_zip(p, outp=None,fmt='zip'):
     ps=read_ps(p)
     import tempfile
     with tempfile.TemporaryDirectory() as outd:
-        _=[copyfile(p,f"{outd}/{basename(p)}") for p in ps]
+        _=[shutil.copyfile(p,f"{outd}/{basename(p)}") for p in ps]
         return _to_zip(outd+'/', destination=outp, fmt=fmt)
     
 def read_zip(
@@ -271,9 +187,9 @@ def backup(p,outd,
     # create directoried in outd
     outds=unique([dirname(dirname(p)) if isdir(p) else dirname(p) for p in ps])
 #     if test:print(outds)
-    outds=[replacemany(p,{outd:outd2})+'/' if not move_only else outd2+p for p in outds]
+    outds=[replace_many(p,{outd:outd2})+'/' if not move_only else outd2+p for p in outds]
 #     if test:print(outds)
-    l1=[(p,replacemany(p,{outd:outd2})) if not move_only else (p,outd2+p) for p in ps]
+    l1=[(p,replace_many(p,{outd:outd2})) if not move_only else (p,outd2+p) for p in ps]
 #     if test:print(l1)
     l1=[(p1,dirname(dirname(p2)) if p2.endswith('/') else p2) for p1,p2 in l1]    
     if test:
@@ -327,7 +243,7 @@ def download(
         t = os.path.getctime(path)
         return str(datetime.datetime.fromtimestamp(t))
     if path is None:
-        path=replacemany(url,
+        path=replace_many(url,
                {'https://':'',
                 'http://':'',
                })
@@ -611,7 +527,7 @@ def read_table(p,
                            params_read_csv=dict(
                            #compression='gzip',
                            sep='\t',comment='#',header=None,
-                           names=replacemany(get_header(path,comment='#',lineno=-1),['#','\n'],'').split('\t'))
+                           names=replace_many(get_header(path,comment='#',lineno=-1),['#','\n'],'').split('\t'))
                            )
     """
     if isinstance(p,list) or (isinstance(p,str) and ('*' in p)):
@@ -664,11 +580,11 @@ def read_table(p,
         elif any([s==ext for s in ['csv']]):
             params['sep']=','            
         elif ext=='vcf':
-            from roux.lib.str import replacemany
+            from roux.lib.str import replace_many
             params.update(dict(sep='\t',
                                comment='#',
                                header=None,
-                               names=replacemany(get_header(path=p,comment='#',lineno=-1),['#','\n'],'').split('\t'),
+                               names=replace_many(get_header(path=p,comment='#',lineno=-1),['#','\n'],'').split('\t'),
                               ))
         elif ext=='gpad':
             params.update(dict(
@@ -764,7 +680,7 @@ def apply_on_paths(
         p=df.iloc[0,:]['path']
         if read_path:
             if save_table:
-                outp=replacemany(p, replaces=replaces_outp, replacewith='', ignore=False)
+                outp=replace_many(p, replaces=replaces_outp, replacewith='', ignore=False)
                 if dbug: ic(outp)
 #                 if exists(outp):
 #                     if 'force' in kws:
@@ -793,7 +709,7 @@ def apply_on_paths(
     if (not replaces_outp is None) and ('force' in kws):
         if not kws['force']:
             # p2outp
-            p2outp={p:replacemany(p, replaces=replaces_outp, replacewith='', ignore=False) for p in ps}
+            p2outp={p:replace_many(p, replaces=replaces_outp, replacewith='', ignore=False) for p in ps}
             if dbug: print(p2outp)
             d_={}
             d_['from']=len(ps)
@@ -842,7 +758,7 @@ def apply_on_paths(
         if isinstance(replaces_index,str):
             if replaces_index=='basenamenoext':
                 replaces_index=basenamenoext
-        df2[colindex]=df2[colindex].apply(lambda x: replacemany(x, replaces=replaces_index, replacewith='', ignore=False))
+        df2[colindex]=df2[colindex].apply(lambda x: replace_many(x, replaces=replaces_index, replacewith='', ignore=False))
     return df2
 
 def read_tables(
