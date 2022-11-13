@@ -1,3 +1,4 @@
+"""For workflow management."""
 from pathlib import Path
 from roux.lib.sys import logging,exists,dirname,basename,makedirs,basenamenoext,info,abspath
 from roux.lib.io import read_ps,read_dict,to_dict

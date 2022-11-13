@@ -1,3 +1,4 @@
+"""For access to a few functions from the terminal."""
 import argh
 from roux.lib.io import backup,version,to_zip
 

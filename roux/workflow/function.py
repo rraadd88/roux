@@ -1,3 +1,5 @@
+"""For function management."""
+
 from roux.lib.sys import isdir,exists,dirname,basename,makedirs,basenamenoext,info,logging
 from roux.lib.str import replace_many
 from roux.lib.io import to_path

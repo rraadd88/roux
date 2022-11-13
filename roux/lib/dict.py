@@ -1,4 +1,5 @@
-"""Dictionary processing"""
+"""For processing dictionaries."""
+
 from roux.lib.set import *
 from roux.lib.str import dict2str,str2dict
 

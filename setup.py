@@ -53,8 +53,8 @@ requirements = {
 'dev':[
     'pytest',
     'ipython','ipywidgets','jupyter',
-    'sphinx',
-    'recommonmark',
+    # 'sphinx','recommonmark',
+    'lazydocs',
     'black',
     'coveralls == 3.*',
     'flake8',

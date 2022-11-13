@@ -1,3 +1,5 @@
+"""For workflow monitors."""
+
 import pandas as pd
 import matplotlib.pyplot as plt
 ## TODOs: use ## stats

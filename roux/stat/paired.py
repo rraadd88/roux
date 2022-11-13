@@ -1,3 +1,4 @@
+"""For paired stats."""
 # import pandas as pd
 from roux.global_imports import *
 

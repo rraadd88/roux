@@ -1,18 +1,19 @@
-"""
-io_sys -> io_files
-"""
-import subprocess
-import sys
+"""For processing file paths for example."""
+#(str ->) sys -> io
+
+## for file paths
 from os.path import exists,dirname,basename,abspath,isdir,realpath,splitext ## prefer `pathlib` over `os.path`
 from pathlib import Path
 from glob import glob,iglob
+from roux.lib.str import replace_many, encode
+
+#
+import subprocess
+import sys
+import logging
 import shutil
 
-import logging
-# from roux.lib.io import makedirs
-# from roux.global_imports import info
-
-## path
+## for file paths
 def basenamenoext(p):
     """Basename without the extension.
 
@@ -125,6 +126,47 @@ def to_output_path(ps,outd=None,outp=None,suffix=''):
     outp=f"{pre}_{suffix}{splitext(ps[0])[1]}"
     return outp
 
+def to_output_paths(
+    input_paths:list=None,
+    inputs: list=None, ## does not contain paths
+    output_path: str=None,
+    encode_short: bool=True,
+    replaces_output_path=None,
+    force:bool=False,
+    ) -> dict:
+    """
+    Infer a single output path for a list of paths or inputs.
+    
+    Parameters:
+    
+    Returns:  
+        
+    """
+    output_paths={}
+    if isinstance(input_paths,list):
+        ## transform input path
+        l1={replace_many(p, replaces=replaces_output_path, replacewith='', ignore=False):p for p in input_paths}
+        ## test collisions
+        assert len(l1)==len(input_paths), 'possible duplicated output path'
+        output_paths.update(l1)
+        output_paths_exist=list(map(exists,output_paths))    
+    if isinstance(inputs,list):    
+        ## infer output_path
+        assert '{KEY}' in output_path, f"placeholder i.e. '{{KEY}}' not found in output_path: '{output_path}'"
+        l2={output_path.format(KEY=encode(d,short=encode_short)):d for d in inputs}
+        ## test collisions
+        assert len(l2)==len(inputs), 'possible duplicated inputs or collisions of the hashes'
+        ## check existing output paths 
+        output_paths.update(l2)
+        output_paths_exist=[s for s in glob(output_path.replace('{KEY}','*'))]
+    if force:
+        return output_paths
+    else:
+        output_paths_not_exist=list(set(output_paths) - set(output_paths_exist))
+        if len(output_paths_not_exist) < len(output_paths):
+            logging.info(f"size of output paths changed: {len(output_paths)}->{len(output_paths_not_exist)}, because {len(output_paths)-len(output_paths_not_exist)} paths exist, use force=True to override.")
+        return {k:output_paths[k] for k in output_paths_not_exist}
+    
 def get_encoding(p):
     """Get encoding of a file.
     
@@ -252,7 +294,6 @@ def runbash_tmp(s1: str,
     """
     if exists(outp) and not force:
         return
-    from roux.lib.str import replace_many
     import tempfile
     with tempfile.TemporaryDirectory() as p:
         if test: p=abspath('test/')

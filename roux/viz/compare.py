@@ -1,3 +1,5 @@
+"""For comparative plots."""
+
 from roux.global_imports import * # TODOs: import only the required packages
 
 def plot_comparisons(

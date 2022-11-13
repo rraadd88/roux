@@ -1,3 +1,5 @@
+"""For version control."""
+
 def git_commit(
     repop: str,
     suffix_message: str=''):

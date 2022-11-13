@@ -1,4 +1,4 @@
-
+"""For processing text files."""
 def get_header(path: str,comment='#',lineno=None):
     """Get the header of a file.
 

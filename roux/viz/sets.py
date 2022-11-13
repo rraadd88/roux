@@ -1,3 +1,5 @@
+"""For plotting sets."""
+
 from roux.global_imports import *
 from roux.viz.ax_ import *
 from roux.viz.annot import *

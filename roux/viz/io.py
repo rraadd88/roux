@@ -1,3 +1,5 @@
+"""For input/output of plots."""
+
 # from roux.global_imports import *
 import matplotlib.pyplot as plt
 from roux.lib.io import *#read_ps,to_outp

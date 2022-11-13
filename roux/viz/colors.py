@@ -1,3 +1,5 @@
+"""For setting up colors."""
+
 import matplotlib.pyplot as plt
 from matplotlib import colors,cm
 import numpy as np

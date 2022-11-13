@@ -1,3 +1,4 @@
+"""For querying BioMart database."""
 from roux.lib.io import *
 from roux.query.ensembl import release2prefix
 

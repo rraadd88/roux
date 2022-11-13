@@ -1,7 +1,4 @@
-"""
-End-point.
--> global_imports
-"""
+"""For the use in jupyter notebook for example."""
 import logging
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)

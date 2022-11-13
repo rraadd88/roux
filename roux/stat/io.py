@@ -1,3 +1,4 @@
+"""For input/output of stats."""
 import pandas as pd
 # stats 
 def perc_label(a,b=None,bracket=True): 

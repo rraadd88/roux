@@ -1,3 +1,5 @@
+"""For visualization of images."""
+
 import matplotlib.pyplot as plt
 from os.path import splitext
 

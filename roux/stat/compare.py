@@ -1,3 +1,4 @@
+"""For comparison related stats."""
 from roux.lib.df import *
 import logging
 

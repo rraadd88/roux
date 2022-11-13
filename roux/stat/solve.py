@@ -1,3 +1,4 @@
+"""For solving equations."""
 import numpy as np
 
 def get_intersection_locations(y1: np.array,y2: np.array,test: bool=False,x: np.array=None) -> list: 

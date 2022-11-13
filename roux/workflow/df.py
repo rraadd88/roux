@@ -1,3 +1,5 @@
+"""For management of tables."""
+
 import logging
 import pandas as pd
 from icecream import ic as info

@@ -1,6 +1,6 @@
-"""
-io_df -> io_dfs -> io_files
-"""
+"""For input/output of data files."""
+# io_df -> io_dfs -> io_files
+
 # paths
 from roux.lib.dfs import *
 from roux.lib.sys import * #is_interactive_notebook,basenamenoext,makedirs,get_all_subpaths
@@ -113,7 +113,7 @@ def get_version(suffix=''):
     Returns:
         version (string): version.
     """
-    return 'v'+get_datetime().replace('_','')+'_'+suffix
+    return 'v'+get_datetime()+'_'+suffix
 
 def version(p,outd=None,
             **kws):
@@ -321,6 +321,7 @@ def read_yaml(p):
     import yaml    
     with open(p,'r') as f:
         return yaml.safe_load(f)
+    
 def to_yaml(d,p,**kws): 
     """Save `.yaml` file.
     
@@ -337,7 +338,8 @@ def to_yaml(d,p,**kws):
     import yaml
     with open(p,'w') as f:
         yaml.safe_dump(d,f,**kws)
-    return p        
+    return p
+
 def read_json(path_to_file,encoding=None):    
     """Read `.json` file.
     
@@ -350,6 +352,7 @@ def read_json(path_to_file,encoding=None):
     import json    
     with open(path_to_file,encoding=encoding) as p:
         return json.load(p)
+    
 def to_json(data,p):
     """Save `.json` file.
     
@@ -667,6 +670,9 @@ def apply_on_paths(
                 fast=False,
                 read_path=True,
                 )
+                
+    TODOs:
+        Move out of io. 
     """
     def read_table_(df,read_path=False,
                     save_table=False,

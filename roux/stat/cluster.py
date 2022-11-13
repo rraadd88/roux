@@ -1,3 +1,4 @@
+"""For clustering data."""
 from roux.lib.dfs import *
 import matplotlib.pyplot as plt
 import scipy as sc

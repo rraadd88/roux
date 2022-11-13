@@ -1,3 +1,4 @@
+"""For classification."""
 from roux.global_imports import *
 
 # curate data 

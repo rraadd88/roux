@@ -1,3 +1,4 @@
+"""For querying Ensembl databases."""
 ### Ensembl
 # for human genome
 # release 77 uses human reference genome GRCh38

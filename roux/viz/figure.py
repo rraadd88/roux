@@ -1,3 +1,5 @@
+"""For setting up figures."""
+
 import matplotlib.pyplot as plt
 
 ## set subplots

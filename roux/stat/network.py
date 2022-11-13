@@ -1,3 +1,4 @@
+"""For network related stats."""
 import pandas as pd
 
 def get_subgraphs(df1: pd.DataFrame,

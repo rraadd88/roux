@@ -1,3 +1,5 @@
+"""For distribution plots."""
+
 from roux.global_imports import *
 from roux.viz.colors import *
 from roux.viz.annot import *

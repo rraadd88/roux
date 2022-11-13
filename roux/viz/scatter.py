@@ -1,3 +1,5 @@
+"""For scatter plots."""
+
 from roux.global_imports import *
 
 def plot_trendline(

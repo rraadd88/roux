@@ -1,4 +1,5 @@
-from roux.global_imports import *
+"""For fitting data."""
+from roux.global_imports import * ## todos: list imports
 
 def fit_curve_fit(func,
                   xdata: np.array = None,

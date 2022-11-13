@@ -1,3 +1,5 @@
+"""For setting up subplots."""
+
 from roux.global_imports import * 
 
 ## set

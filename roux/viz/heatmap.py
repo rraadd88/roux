@@ -1,3 +1,5 @@
+"""For heatmaps."""
+
 from roux.global_imports import *
 from roux.viz.ax_ import *
 

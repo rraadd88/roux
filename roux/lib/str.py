@@ -1,6 +1,4 @@
-#!usr/bin/python
-
-"""Strings."""
+"""For processing strings."""
 import re
 import logging
 import numpy as np

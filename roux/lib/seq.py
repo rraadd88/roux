@@ -1,3 +1,4 @@
+"""For processing biological sequence data."""
 import pandas as pd
 import numpy as np
 from Bio import SeqIO,SeqRecord,Seq

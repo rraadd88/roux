@@ -1,3 +1,4 @@
+"""For difference related stats."""
 from argparse import ArgumentError
 import pandas as pd
 import numpy as np

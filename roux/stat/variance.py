@@ -1,3 +1,4 @@
+"""For variance related stats."""
 import numpy as np
 
 def confidence_interval_95(x: np.array) -> float:

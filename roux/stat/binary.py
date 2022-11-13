@@ -1,3 +1,4 @@
+"""For processing binary data."""
 from roux.lib.df import *
 
 ## overlap

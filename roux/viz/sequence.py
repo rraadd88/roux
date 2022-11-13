@@ -1,3 +1,5 @@
+"""For plotting sequences."""
+
 from roux.global_imports import *   
 
 # sequence
