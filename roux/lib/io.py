@@ -8,23 +8,6 @@ from roux.lib.str import replace_many
 import logging
 
 ## operate
-def makedirs(p: str,exist_ok=True,**kws):
-    """Make directories recursively.
-
-    Args:
-        p (str): path.
-        exist_ok (bool, optional): no error if the directory exists. Defaults to True.
-
-    Returns:
-        p_ (str): the path of the directory.
-    """
-    from os import makedirs
-    from os.path import isdir
-    p_=p
-    if not isdir(p):
-        p=dirname(p)
-    makedirs(p,exist_ok=exist_ok,**kws)
-    return p_
 
 def to_zip(p, outp=None,fmt='zip'):
     """Compress a file/directory.

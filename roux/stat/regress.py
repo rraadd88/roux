@@ -97,11 +97,24 @@ def to_input_data_for_regression(
         columns=columns,
         )
 
+def to_formulas(
+    formula,
+    covariates,
+    data,
+    ):
+    ## add covariates to the equation
+    covariate_types=data.dtypes.to_dict()
+    formulas=[formula]
+    for i in enumerate(covariates):
+        #formats
+        formulas.append(' + '+' + '.join([k if ((covariate_types[k]==int) or (covariate_types[k]==float)) else f"C({k})" for k in covariates[:i+1] if k in covariate_types]))
+    return formulas
+    
 def get_stats_regression(
     data: pd.DataFrame,
     formulas:dict={},
     variable:str=None,
-    covariates:list=None,
+    # covariates:list=None,
     converged_only=False,
     out='df',
     verb=False,
@@ -114,7 +127,7 @@ def get_stats_regression(
         data (DataFrame): input dataframe.
         formulas (dict, optional): base formula e.g. 'y ~ x' to model name map. Defaults to {}.
         variable (str, optional): variable name e.g. 'C(variable)[T.True]', used to retrieve the stats for. Defaults to None.
-        covariates (list, optional): variables. Defaults to None.
+        # covariates (list, optional): variables. Defaults to None.
         converged_only (bool, optional): get the stats from the converged models only. Defaults to False.
         out (str, optional): output format. Defaults to 'df'.
         verb (bool, optional): verbose. Defaults to False.
@@ -155,20 +168,12 @@ def get_stats_regression(
         warnings.simplefilter('ignore', ConvergenceWarning)
         warnings.simplefilter('ignore', RuntimeWarning)
         warnings.simplefilter('ignore', UserWarning)
-            
-    ## add covariates to the equation
-    if not covariates is None:
-        #formats
-        covariate_types=data.dtypes.to_dict()
-        formula_covariates=' + '+' + '.join([k if ((covariate_types[k]==int) or (covariate_types[k]==float)) else f"C({k})" for k in covariates if k in covariate_types])
-    else:
-        formula_covariates=''
-    
+                
     ## set additional parameters
     if 'groups' in kws_model:
         ## get the data from the list of columns
         kws_model['groups']=data[kws_model["groups"]]
-    
+        assert len(set(list(formulas.values())))==1, f"should be only lmm. formulas.values()={formulas.values()}"
     ## iterate over the models and equations
     ### import required modules
     import statsmodels.formula.api as smf
@@ -176,7 +181,7 @@ def get_stats_regression(
     from numpy.linalg import LinAlgError
     
     fitted_models={} ## collects the stats
-    for formula_base,k in formulas.items():
+    for formula,k in formulas.items():
         
         ## get the model
         if isinstance(k,str):
@@ -193,7 +198,7 @@ def get_stats_regression(
         modeln=str(model).split('.')[-1].split("'")[0]
         
         ## construct full formula
-        formula=formula_base+formula_covariates
+        # formula=formula_base+formula_covariates
         if verb or test: info(formula)
         try:
             fitted_models[(modeln,formula)]=model(

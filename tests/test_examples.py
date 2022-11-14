@@ -34,3 +34,7 @@ def test_stdout(tb):
 @testbook('examples/roux_viz_io.ipynb', execute=True)
 def test_stdout(tb):
     assert "title={'center':'modified'}" in tb.cell_output_text('read_plot_modified')
+    
+@testbook('examples/roux_global_imports.ipynb', execute=True)
+def test_stdout(tb):
+    assert int(tb.cell_output_text('functions_from_roux').split('=')[1].replace('.','')) < 250

@@ -356,6 +356,14 @@ def to_plot(
         
     Returns:
         str: output path.
+        
+    Notes:
+        Requirement:
+            1. Start logging in the jupyter notebook.
+        
+            from IPython import get_ipython
+            log_notebookp=f'log_notebook.log';open(log_notebookp, 'w').close();get_ipython().run_line_magic('logstart','{log_notebookp} over')
+
     """
     #save plot
     plotp=savefig(plotp,force=force,**kws)

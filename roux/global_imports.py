@@ -1,35 +1,10 @@
 """For the use in jupyter notebook for example."""
+## logging
 import logging
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
-# temporary change for a context
-# ref: https://docs.python.org/3/howto/logging-cookbook.html#using-a-context-manager-for-selective-logging
-# class LoggingContext:
-#     def __init__(self, logger, level=None, handler=None, close=True):
-#         self.logger = logger
-#         self.level = level
-#         self.handler = handler
-#         self.close = close
 
-#     def __enter__(self):
-#         if self.level is not None:
-#             self.old_level = self.logger.level
-#             self.logger.setLevel(self.level)
-#         if self.handler:
-#             self.logger.addHandler(self.handler)
-
-#     def __exit__(self, et, ev, tb):
-#         if self.level is not None:
-#             self.logger.setLevel(self.old_level)
-#         if self.handler:
-#             self.logger.removeHandler(self.handler)
-#         if self.handler and self.close:
-#             self.handler.close()
-# with LoggingContext(logger, level=logging.ERROR):
-#     logger.debug('3. This should appear once on stderr.')
-
-# recepies
-from pathlib import Path
+# helper functions
 from roux.lib.str import get_bracket, replace_many,get_suffix,get_prefix
 from roux.lib.dict import *
 from roux.lib.set import *
@@ -38,21 +13,20 @@ from roux.lib.dict import * # to replace df to_dict
 from roux.workflow.io import read_metadata, read_config, to_diff_notebooks
 from roux.workflow.df import *
 
-# defaults
+# diplay tables
 # from functools import partialmethod
 # pd.DataFrame.head = partialmethod(pd.DataFrame.head, n=1)
 # pd.set_option('display.max_rows', 2)
 
-# stats    
+# commonly used stats functions
 import scipy as sc
 from roux.stat.binary import perc
-
-# paths
-pwd=abspath('.')
+from roux.stat.io import perc_label
 
 # plots
 import matplotlib.pyplot as plt
 import seaborn as sns
+## settings
 plt.set_loglevel('error')
 plt.style.use('ggplot')
 plt.rcParams['pdf.fonttype'] = 42
@@ -81,6 +55,7 @@ plt.rc('axes', axisbelow=True)
 plt.rc('axes', unicode_minus=False)
 plt.rcParams['axes.labelcolor'] = 'k'
 sns.set_context('notebook') # paper < notebook < talk < poster
+## helper functions
 from roux.viz.figure import *
 from roux.viz.io import log_code,get_plot_inputs,to_plot,read_plot#*
 from roux.viz.ax_ import *
@@ -88,15 +63,14 @@ from roux.viz.annot import *
 
 from tqdm import tqdm#,notebook
 # from roux.lib.sys import is_interactive_notebook
-if not is_interactive_notebook:
-    from IPython import get_ipython
-    logging.info("log_notebookp=f'log_notebook.log';open(log_notebookp, 'w').close();get_ipython().run_line_magic('logstart','{log_notebookp} over')")
+if not is_interactive_notebook():
+    ## progress bar
     tqdm.pandas()
-    ## markdown in jupyter containing variables
-    from IPython.display import Markdown as info_nb
 else:
     from tqdm import notebook
     notebook.tqdm().pandas()
+    ## markdown in jupyter containing variables
+    from IPython.display import Markdown as info_nb
     ## display vector graphics in jupyter
     # if not get_ipython() is None:
     #     get_ipython().run_line_magic('config', "InlineBackend.figure_formats = ['svg']")
@@ -111,5 +85,5 @@ pandarallel.initialize(nb_workers=6,progress_bar=True,use_memory_fs=False)
 # logging.info("pandarallel.initialize(nb_workers=4,progress_bar=True)")
 
 # metadata
-# if not 'metadata' in globals():
-#     metadata=read_metadata()
+if exists('metadata.yaml'):
+    metadata=read_metadata('metadata.yaml')

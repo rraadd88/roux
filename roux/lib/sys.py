@@ -1,10 +1,9 @@
 """For processing file paths for example."""
 #(str ->) sys -> io
-
 ## for file paths
 from os.path import exists,dirname,basename,abspath,isdir,realpath,splitext ## prefer `pathlib` over `os.path`
 from pathlib import Path
-from glob import glob,iglob
+from glob import glob
 from roux.lib.str import replace_many, encode
 
 #
@@ -12,6 +11,8 @@ import subprocess
 import sys
 import logging
 import shutil
+
+import pandas as pd
 
 ## for file paths
 def basenamenoext(p):
@@ -103,6 +104,24 @@ def to_path(
 make_pathable_string=to_path
 # get_path=to_path
 
+def makedirs(p: str,exist_ok=True,**kws):
+    """Make directories recursively.
+
+    Args:
+        p (str): path.
+        exist_ok (bool, optional): no error if the directory exists. Defaults to True.
+
+    Returns:
+        p_ (str): the path of the directory.
+    """
+    from os import makedirs
+    from os.path import isdir
+    p_=p
+    if not isdir(p):
+        p=dirname(p)
+    makedirs(p,exist_ok=exist_ok,**kws)
+    return p_
+
 def to_output_path(ps,outd=None,outp=None,suffix=''):
     """Infer a single output path for a list of paths.
     
@@ -128,19 +147,29 @@ def to_output_path(ps,outd=None,outp=None,suffix=''):
 
 def to_output_paths(
     input_paths:list=None,
-    inputs: list=None, ## does not contain paths
+    inputs: list=None,
     output_path: str=None,
     encode_short: bool=True,
     replaces_output_path=None,
+    key_output_path: str= None,
     force:bool=False,
+    verbose:bool=False,
     ) -> dict:
     """
-    Infer a single output path for a list of paths or inputs.
+    Infer a output path for each of the paths or inputs.
     
     Parameters:
-    
-    Returns:  
+        input_paths (list) : list of input paths. Defaults to None.
+        inputs (list) : list of inputs e.g. dictionaries. Defaults to None.
+        output_path (str) : output path with a placeholder '{KEY}' to be replaced. Defaults to None.
+        encode_short: (bool) : short encoded string, else long encoded string (reversible) is used. Defaults to True.
+        replaces_output_path : list, dictionary or function to replace the input paths. Defaults to None.
+        key_output_path (str) : key to be used to incorporate output_path variable among the inputs. Defaults to None.
+        force (bool): overwrite the outputs. Defaults to False.
+        verbose (bool) : show verbose. Defaults to False.
         
+    Returns:  
+        dictionary with the output path mapped to input paths or inputs.
     """
     output_paths={}
     if isinstance(input_paths,list):
@@ -149,22 +178,35 @@ def to_output_paths(
         ## test collisions
         assert len(l1)==len(input_paths), 'possible duplicated output path'
         output_paths.update(l1)
-        output_paths_exist=list(map(exists,output_paths))    
+        output_paths_exist=list(filter(exists,output_paths))
     if isinstance(inputs,list):    
         ## infer output_path
         assert '{KEY}' in output_path, f"placeholder i.e. '{{KEY}}' not found in output_path: '{output_path}'"
-        l2={output_path.format(KEY=encode(d,short=encode_short)):d for d in inputs}
+        l2={output_path.format(KEY=encode(d.copy(),short=encode_short)):d.copy() for d in inputs}
+        # if verbose:
+        #     logging.info(l2.keys())
         ## test collisions
         assert len(l2)==len(inputs), 'possible duplicated inputs or collisions of the hashes'
         ## check existing output paths 
         output_paths.update(l2)
-        output_paths_exist=[s for s in glob(output_path.replace('{KEY}','*'))]
+        output_paths_exist=glob(output_path.replace('{KEY}','*'))
+    if not key_output_path is None:
+        ## add output path in the dictionary
+        for k in output_paths:
+            output_paths[k][key_output_path]=k
     if force:
         return output_paths
     else:
-        output_paths_not_exist=list(set(output_paths) - set(output_paths_exist))
+        if verbose:
+            logging.info(f"output_paths: {list(output_paths.keys())}")
+            logging.info(f"output_paths_exist: {output_paths_exist}")
+        
+        # output_paths_not_exist=list(set(list(output_paths.keys())) - set(output_paths_exist))
+        output_paths_not_exist=list(filter(lambda x: not exists(x),output_paths))
+        if verbose:
+            logging.info(f"output_paths_not_exist: {output_paths_not_exist}")
         if len(output_paths_not_exist) < len(output_paths):
-            logging.info(f"size of output paths changed: {len(output_paths)}->{len(output_paths_not_exist)}, because {len(output_paths)-len(output_paths_not_exist)} paths exist, use force=True to override.")
+            logging.info(f"size of output paths changed: {len(output_paths)}->{len(output_paths_not_exist)}, because {len(output_paths)-len(output_paths_not_exist)}/{len(output_paths)} paths exist. Use force=True to overwrite.")
         return {k:output_paths[k] for k in output_paths_not_exist}
     
 def get_encoding(p):
@@ -372,7 +414,6 @@ def input_binary(q:str):
 def is_interactive():
     """Check if the UI is interactive e.g. jupyter or command line. 
     """
-    # thanks to https://stackoverflow.com/a/22424821/3521099
     import __main__ as main
     return not hasattr(main, '__file__')
 
@@ -380,43 +421,8 @@ def is_interactive_notebook():
     """Check if the UI is interactive e.g. jupyter or command line.     
     
     Notes:
-        1. Difference in sys.module of notebook and shell
-            'IPython.core.completerlib',
-            'IPython.core.payloadpage',
-            'IPython.utils.tokenutil',
-            '_sysconfigdata_m_linux_x86_64-linux-gnu',
-            'faulthandler',
-            'imp',
-            'ipykernel.codeutil',
-            'ipykernel.datapub',
-            'ipykernel.displayhook',
-            'ipykernel.heartbeat',
-            'ipykernel.iostream',
-            'ipykernel.ipkernel',
-            'ipykernel.kernelapp',
-            'ipykernel.parentpoller',
-            'ipykernel.pickleutil',
-            'ipykernel.pylab',
-            'ipykernel.pylab.backend_inline',
-            'ipykernel.pylab.config',
-            'ipykernel.serialize',
-            'ipykernel.zmqshell',
-            'storemagic'
-        
-        Code to find the difference:
-            from roux.global_imports import *
-            import sys
-            with open('notebook.txt','w') as f:
-                f.write('\n'.join(sys.modules))
-
-            from roux.global_imports import *
-            import sys
-            with open('shell.txt','w') as f:
-                f.write('\n'.join(sys.modules))
-            set(open('notebook.txt','r').read().split('\n')).difference(open('shell.txt','r').read().split('\n'))    
 
     Reference:
-        1. https://stackoverflow.com/a/22424821
     """
     return 'ipykernel.kernelapp' in sys.modules
 
