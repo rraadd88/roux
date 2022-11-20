@@ -189,6 +189,7 @@ def to_output_paths(
         output_paths_exist=list(filter(exists,output_paths))
     if isinstance(inputs,list):    
         ## infer output_path
+        assert not '*' in output_path, output_path
         assert '{KEY}' in output_path, f"placeholder i.e. '{{KEY}}' not found in output_path: '{output_path}'"
         l2={output_path.format(KEY=encode(d.copy(),short=encode_short)):d.copy() for d in inputs}
         # if verbose:

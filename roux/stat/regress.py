@@ -14,6 +14,8 @@ def to_columns_renamed_for_regression(
     columns:dict,
     ) -> pd.DataFrame:
     """
+    [UNDER DEVELOPMENT]
+    
     """
     import re
     from roux.lib.str import replace_many
@@ -60,16 +62,15 @@ def check_covariates(
         Support continuous value covariates using `from roux.stat.compare import get_comparison`.
     """
     df1=(df1
-    .loc[:,[colindex]+covariates]
-    .drop_duplicates()
-    # .rd.assert_no_dups(subset=[colindex])
-    )
+        .loc[:,[colindex]+covariates]
+        .drop_duplicates()
+        # .rd.assert_no_dups(subset=[colindex])
+        )
 
     for c in covariates:
         info(df1.groupby(c)[colindex].nunique())
 
     from roux.stat.classify import drop_low_complexity
-    # %run ../../../../code/roux/roux/stat/classify.py
     df2=drop_low_complexity(
         df1=df1,
         min_nunique=2,
@@ -86,7 +87,9 @@ def check_covariates(
     covariates_drop=list(set(covariates) - set(df2.columns))
     covariates= list(set(covariates) - set(covariates_drop))
     for c1,c2 in itertools.combinations([colindex]+covariates,2):
-        if df2.rd.check_mappings(subset=[c1,c2]).loc[(c1,c2),:]['map to'].sum()==1:
+        if df2.rd.check_mappings(subset=[c2 if colindex==c1 else c1,
+                                         c1 if colindex==c1 else c2]).loc[(c2 if colindex==c1 else c1,
+                                                                                                      c1 if colindex==c1 else c2),:]['map to'].sum()==1:
             logging.warning(f"1:1 mapping between '{c1}' and '{c2}'.")
             covariates_drop+=[c1,c2]
         if c1==colindex or c2==colindex:
@@ -516,13 +519,15 @@ def plot_residuals_versus_fitted(
     Returns:
         plt.Axes: output.
     """
+    import seaborn as sns
     fig = plt.figure(figsize = (5, 3))
-    ax = sns.scatterplot(y = model.resid, x = model.fittedvalues,alpha=0.2)
+    ax = sns.scatterplot(y = model.resid, x = model.fittedvalues,alpha=0.8)
     ax.set_xlabel("fitted")
     ax.set_ylabel("residuals")
     import statsmodels.api as sm
     l = sm.stats.diagnostic.het_white(model.resid, model.model.exog)
-    ax.set_title("LM test "+pval2annot(l[1],alpha=0.05,fmt='<',linebreak=False)+", FE test "+pval2annot(l[3],alpha=0.05,fmt='<',linebreak=False))    
+    from roux.stat.io import pval2annot
+    ax.set_title("LM test "+pval2annot(l[1],alpha=0.05,fmt='<',linebreak=False)+", F-stat test "+pval2annot(l[3],alpha=0.05,fmt='<',linebreak=False))    
     return ax
 
 def plot_residuals_versus_groups(
@@ -536,10 +541,11 @@ def plot_residuals_versus_groups(
     Returns:
         plt.Axes: output.
     """
+    import seaborn as sns
     fig = plt.figure(figsize = (5, 3))
     ax = sns.pointplot(x = model.model.groups, 
                        y = model.resid,
-                      ci='sd',
+                      errorbar='sd',
                       join=False)
     ax.set_ylabel("residuals")
     ax.set_xlabel("groups")

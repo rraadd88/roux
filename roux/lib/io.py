@@ -366,7 +366,12 @@ def read_pickle(p):
 def is_dict(p):
     return p.endswith(('.yml','.yaml','.json','.joblib','.pickle'))
     
-def read_dict(p,fmt='',**kws):
+def read_dict(
+    p,
+    fmt:str='',
+    apply_on_keys=None,
+    **kws,
+    )-> dict:
     """Read dictionary file.
     
     Parameters:
@@ -380,9 +385,11 @@ def read_dict(p,fmt='',**kws):
         d (dict): output dictionary.
     """    
     if '*' in p:
-        from roux.lib.io import basenamenoext
-        from glob import glob
-        return {basenamenoext(p):read_dict(p) for p in glob(p)}
+        d1={p:read_dict(p) for p in read_ps(p)}
+        if not apply_on_keys is None:
+            assert len(set([replace_many(k, replaces=apply_on_keys, replacewith='', ignore=False) for k in d1])) == len(d1.keys()), "apply_on_keys(keys)!=keys"
+            d1={replace_many(k, replaces=apply_on_keys, replacewith='', ignore=False):v for k,v in d1.items()}
+        return d1
     if p.endswith('.yml') or p.endswith('.yaml') or fmt=='yml' or fmt=='yaml':
         return read_yaml(p,**kws)
     elif p.endswith('.json') or fmt=='json':
