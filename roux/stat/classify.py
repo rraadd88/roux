@@ -6,6 +6,7 @@ def drop_low_complexity(
     df1: pd.DataFrame,
     min_nunique: int,
     max_inflation: int,
+    max_nunique:int=None,
     cols: list=None,
     cols_keep: list=[],
     test: bool=False,
@@ -35,14 +36,19 @@ def drop_low_complexity(
     if verbose:
         info(df_)
     df_=df_.sort_values(df_.columns.tolist(),ascending=False)
-    df_=df_.loc[((df_['nunique']<=min_nunique) | (df_['% inflation']>=max_inflation)),:]
-    l1=df_.index.tolist()
+    df1_=df_.loc[((df_['nunique']<=min_nunique) | (df_['% inflation']>=max_inflation)),:]
+    l1=df1_.index.tolist()
+    info(df1_)
+    if not max_nunique is None:
+        df2_=df_.loc[(df_['nunique']>max_nunique),:]
+        l1+=df2_.index.tolist()
+        info(df2_)
+    
 #     def apply_(x,df1,min_nunique,max_inflation):
 #         ds1=x.value_counts()
 #         return (len(ds1)<=min_nunique) or ((ds1.values[0]/len(df1))>=max_inflation)
 #     l1=df1.loc[:,cols].apply(lambda x: apply_(x,df1,min_nunique=min_nunique,max_inflation=max_inflation)).loc[lambda x: x].index.tolist()
-    logging.info(f"{len(l1)}(/{len(cols)}) low complexity columns {'could be ' if test else ''}dropped:")
-    info(df_)
+    logging.info(f"{len(l1)}(/{len(cols)}) columns {'could be ' if test else ''}dropped:")
     if len(cols_keep)!=0:
         assert all([c in df1 for c in cols_keep]), ([c for c in cols_keep if not c in df1])
         cols_kept=[c for c in l1 if c in cols_keep]

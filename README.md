@@ -27,30 +27,6 @@ pip install roux
 from roux.global_imports import *
 ```
 
-
-    0it [00:00, ?it/s]
-
-
-    INFO:root:Python implementation: CPython
-    Python version       : 3.7.13
-    IPython version      : 7.34.0
-    logging   : 0.5.1.2
-    numpy     : 1.21.6
-    matplotlib: 3.5.3
-    tqdm      : 4.64.1
-    scipy     : 1.7.3
-    pandas    : 1.3.5
-    re        : 2.2.1
-    seaborn   : 0.12.1
-    sys       : 3.7.13 (default, Mar 29 2022, 02:18:16) 
-    [GCC 7.5.0]
-    
-
-
-    INFO: Pandarallel will run on 6 workers.
-    INFO: Pandarallel will use standard multiprocessing data transfer (pipe) to transfer data between the main process and workers.
-
-
 ### Which helper functions are imported?
 
 
@@ -155,52 +131,52 @@ Total functions imported from `roux`=221.
 
 
 ### Documentation
-[`roux.global_imports`](https://github.com/rraadd88.py#module-roux.global_imports)
+[`roux.global_imports`](https://github.com/rraadd88/roux#module-roux.global_imports)
 
 #### Documentation of the helper functions imported from some of the main modules of `roux`
 
 
 ```python
 module_name='roux.lib.df'
-info_nb(f"Helper functions imported from <kbd>module</kbd>[`{module_name}`](https://github.com/rraadd88.py#module-{module_name}):\n\n"+' '.join(list(map(lambda x: f"<kbd>function</kbd> [`{x}`](https://github.com/rraadd88.py#function-{x})" , ds2[(ds2==module_name)].sort_index().index.tolist()))))
+info_nb(f"Helper functions imported from <kbd>module</kbd>[`{module_name}`](https://github.com/rraadd88/roux#module-{module_name}):\n\n"+' '.join(list(map(lambda x: f"<kbd>function</kbd> [`{x}`](https://github.com/rraadd88/roux#function-{x})" , ds2[(ds2==module_name)].sort_index().index.tolist()))))
 ```
 
 
 
 
-Helper functions imported from <kbd>module</kbd>[`roux.lib.df`](https://github.com/rraadd88.py#module-roux.lib.df):
+Helper functions imported from <kbd>module</kbd>[`roux.lib.df`](https://github.com/rraadd88/roux#module-roux.lib.df):
 
-<kbd>function</kbd> [`agg_bools`](https://github.com/rraadd88.py#function-agg_bools) <kbd>function</kbd> [`agg_by_order`](https://github.com/rraadd88.py#function-agg_by_order) <kbd>function</kbd> [`agg_by_order_counts`](https://github.com/rraadd88.py#function-agg_by_order_counts) <kbd>function</kbd> [`assert_dense`](https://github.com/rraadd88.py#function-assert_dense) <kbd>function</kbd> [`assert_no_dups`](https://github.com/rraadd88.py#function-assert_no_dups) <kbd>function</kbd> [`assert_no_na`](https://github.com/rraadd88.py#function-assert_no_na) <kbd>function</kbd> [`check_duplicated`](https://github.com/rraadd88.py#function-check_duplicated) <kbd>function</kbd> [`check_dups`](https://github.com/rraadd88.py#function-check_dups) <kbd>function</kbd> [`check_inflation`](https://github.com/rraadd88.py#function-check_inflation) <kbd>function</kbd> [`check_intersections`](https://github.com/rraadd88.py#function-check_intersections) <kbd>function</kbd> [`check_mappings`](https://github.com/rraadd88.py#function-check_mappings) <kbd>function</kbd> [`check_na`](https://github.com/rraadd88.py#function-check_na) <kbd>function</kbd> [`check_nunique`](https://github.com/rraadd88.py#function-check_nunique) <kbd>function</kbd> [`classify_mappings`](https://github.com/rraadd88.py#function-classify_mappings) <kbd>function</kbd> [`clean`](https://github.com/rraadd88.py#function-clean) <kbd>function</kbd> [`clean_columns`](https://github.com/rraadd88.py#function-clean_columns) <kbd>function</kbd> [`clean_compress`](https://github.com/rraadd88.py#function-clean_compress) <kbd>function</kbd> [`compress`](https://github.com/rraadd88.py#function-compress) <kbd>function</kbd> [`delunnamedcol`](https://github.com/rraadd88.py#function-delunnamedcol) <kbd>function</kbd> [`dict2df`](https://github.com/rraadd88.py#function-dict2df) <kbd>function</kbd> [`drop_constants`](https://github.com/rraadd88.py#function-drop_constants) <kbd>function</kbd> [`drop_inflates`](https://github.com/rraadd88.py#function-drop_inflates) <kbd>function</kbd> [`drop_levelcol`](https://github.com/rraadd88.py#function-drop_levelcol) <kbd>function</kbd> [`drop_unnamedcol`](https://github.com/rraadd88.py#function-drop_unnamedcol) <kbd>function</kbd> [`dropby_patterns`](https://github.com/rraadd88.py#function-dropby_patterns) <kbd>function</kbd> [`filter_rows`](https://github.com/rraadd88.py#function-filter_rows) <kbd>function</kbd> [`flatten_columns`](https://github.com/rraadd88.py#function-flatten_columns) <kbd>function</kbd> [`get_alt_id`](https://github.com/rraadd88.py#function-get_alt_id) <kbd>function</kbd> [`get_bools`](https://github.com/rraadd88.py#function-get_bools) <kbd>function</kbd> [`get_chunks`](https://github.com/rraadd88.py#function-get_chunks) <kbd>function</kbd> [`get_constants`](https://github.com/rraadd88.py#function-get_constants) <kbd>function</kbd> [`get_group`](https://github.com/rraadd88.py#function-get_group) <kbd>function</kbd> [`get_groupby_columns`](https://github.com/rraadd88.py#function-get_groupby_columns) <kbd>function</kbd> [`get_mappings`](https://github.com/rraadd88.py#function-get_mappings) <kbd>function</kbd> [`get_name`](https://github.com/rraadd88.py#function-get_name) <kbd>function</kbd> [`get_totals`](https://github.com/rraadd88.py#function-get_totals) <kbd>function</kbd> [`groupby_filter_fast`](https://github.com/rraadd88.py#function-groupby_filter_fast) <kbd>function</kbd> [`groupby_sort_values`](https://github.com/rraadd88.py#function-groupby_sort_values) <kbd>function</kbd> [`infer_index`](https://github.com/rraadd88.py#function-infer_index) <kbd>function</kbd> [`log`](https://github.com/rraadd88.py#function-log) <kbd>function</kbd> [`log_apply`](https://github.com/rraadd88.py#function-log_apply) <kbd>function</kbd> [`log_shape_change`](https://github.com/rraadd88.py#function-log_shape_change) <kbd>function</kbd> [`lower_columns`](https://github.com/rraadd88.py#function-lower_columns) <kbd>function</kbd> [`make_ids`](https://github.com/rraadd88.py#function-make_ids) <kbd>function</kbd> [`make_ids_sorted`](https://github.com/rraadd88.py#function-make_ids_sorted) <kbd>function</kbd> [`melt_paired`](https://github.com/rraadd88.py#function-melt_paired) <kbd>function</kbd> [`renameby_replace`](https://github.com/rraadd88.py#function-renameby_replace) <kbd>function</kbd> [`sort_columns_by_values`](https://github.com/rraadd88.py#function-sort_columns_by_values) <kbd>function</kbd> [`sort_values_groupby`](https://github.com/rraadd88.py#function-sort_values_groupby) <kbd>function</kbd> [`sort_valuesby_list`](https://github.com/rraadd88.py#function-sort_valuesby_list) <kbd>function</kbd> [`split_ids`](https://github.com/rraadd88.py#function-split_ids) <kbd>function</kbd> [`swap_paired_cols`](https://github.com/rraadd88.py#function-swap_paired_cols) <kbd>function</kbd> [`to_boolean`](https://github.com/rraadd88.py#function-to_boolean) <kbd>function</kbd> [`to_cat`](https://github.com/rraadd88.py#function-to_cat) <kbd>function</kbd> [`to_map_binary`](https://github.com/rraadd88.py#function-to_map_binary) <kbd>function</kbd> [`to_multiindex_columns`](https://github.com/rraadd88.py#function-to_multiindex_columns) <kbd>function</kbd> [`to_ranges`](https://github.com/rraadd88.py#function-to_ranges) <kbd>function</kbd> [`validate_1_1_mappings`](https://github.com/rraadd88.py#function-validate_1_1_mappings) <kbd>function</kbd> [`validate_dense`](https://github.com/rraadd88.py#function-validate_dense) <kbd>function</kbd> [`validate_no_duplicates`](https://github.com/rraadd88.py#function-validate_no_duplicates) <kbd>function</kbd> [`validate_no_dups`](https://github.com/rraadd88.py#function-validate_no_dups) <kbd>function</kbd> [`validate_no_na`](https://github.com/rraadd88.py#function-validate_no_na)
+<kbd>function</kbd> [`agg_bools`](https://github.com/rraadd88/roux#function-agg_bools) <kbd>function</kbd> [`agg_by_order`](https://github.com/rraadd88/roux#function-agg_by_order) <kbd>function</kbd> [`agg_by_order_counts`](https://github.com/rraadd88/roux#function-agg_by_order_counts) <kbd>function</kbd> [`assert_dense`](https://github.com/rraadd88/roux#function-assert_dense) <kbd>function</kbd> [`assert_no_dups`](https://github.com/rraadd88/roux#function-assert_no_dups) <kbd>function</kbd> [`assert_no_na`](https://github.com/rraadd88/roux#function-assert_no_na) <kbd>function</kbd> [`check_duplicated`](https://github.com/rraadd88/roux#function-check_duplicated) <kbd>function</kbd> [`check_dups`](https://github.com/rraadd88/roux#function-check_dups) <kbd>function</kbd> [`check_inflation`](https://github.com/rraadd88/roux#function-check_inflation) <kbd>function</kbd> [`check_intersections`](https://github.com/rraadd88/roux#function-check_intersections) <kbd>function</kbd> [`check_mappings`](https://github.com/rraadd88/roux#function-check_mappings) <kbd>function</kbd> [`check_na`](https://github.com/rraadd88/roux#function-check_na) <kbd>function</kbd> [`check_nunique`](https://github.com/rraadd88/roux#function-check_nunique) <kbd>function</kbd> [`classify_mappings`](https://github.com/rraadd88/roux#function-classify_mappings) <kbd>function</kbd> [`clean`](https://github.com/rraadd88/roux#function-clean) <kbd>function</kbd> [`clean_columns`](https://github.com/rraadd88/roux#function-clean_columns) <kbd>function</kbd> [`clean_compress`](https://github.com/rraadd88/roux#function-clean_compress) <kbd>function</kbd> [`compress`](https://github.com/rraadd88/roux#function-compress) <kbd>function</kbd> [`delunnamedcol`](https://github.com/rraadd88/roux#function-delunnamedcol) <kbd>function</kbd> [`dict2df`](https://github.com/rraadd88/roux#function-dict2df) <kbd>function</kbd> [`drop_constants`](https://github.com/rraadd88/roux#function-drop_constants) <kbd>function</kbd> [`drop_inflates`](https://github.com/rraadd88/roux#function-drop_inflates) <kbd>function</kbd> [`drop_levelcol`](https://github.com/rraadd88/roux#function-drop_levelcol) <kbd>function</kbd> [`drop_unnamedcol`](https://github.com/rraadd88/roux#function-drop_unnamedcol) <kbd>function</kbd> [`dropby_patterns`](https://github.com/rraadd88/roux#function-dropby_patterns) <kbd>function</kbd> [`filter_rows`](https://github.com/rraadd88/roux#function-filter_rows) <kbd>function</kbd> [`flatten_columns`](https://github.com/rraadd88/roux#function-flatten_columns) <kbd>function</kbd> [`get_alt_id`](https://github.com/rraadd88/roux#function-get_alt_id) <kbd>function</kbd> [`get_bools`](https://github.com/rraadd88/roux#function-get_bools) <kbd>function</kbd> [`get_chunks`](https://github.com/rraadd88/roux#function-get_chunks) <kbd>function</kbd> [`get_constants`](https://github.com/rraadd88/roux#function-get_constants) <kbd>function</kbd> [`get_group`](https://github.com/rraadd88/roux#function-get_group) <kbd>function</kbd> [`get_groupby_columns`](https://github.com/rraadd88/roux#function-get_groupby_columns) <kbd>function</kbd> [`get_mappings`](https://github.com/rraadd88/roux#function-get_mappings) <kbd>function</kbd> [`get_name`](https://github.com/rraadd88/roux#function-get_name) <kbd>function</kbd> [`get_totals`](https://github.com/rraadd88/roux#function-get_totals) <kbd>function</kbd> [`groupby_filter_fast`](https://github.com/rraadd88/roux#function-groupby_filter_fast) <kbd>function</kbd> [`groupby_sort_values`](https://github.com/rraadd88/roux#function-groupby_sort_values) <kbd>function</kbd> [`infer_index`](https://github.com/rraadd88/roux#function-infer_index) <kbd>function</kbd> [`log`](https://github.com/rraadd88/roux#function-log) <kbd>function</kbd> [`log_apply`](https://github.com/rraadd88/roux#function-log_apply) <kbd>function</kbd> [`log_shape_change`](https://github.com/rraadd88/roux#function-log_shape_change) <kbd>function</kbd> [`lower_columns`](https://github.com/rraadd88/roux#function-lower_columns) <kbd>function</kbd> [`make_ids`](https://github.com/rraadd88/roux#function-make_ids) <kbd>function</kbd> [`make_ids_sorted`](https://github.com/rraadd88/roux#function-make_ids_sorted) <kbd>function</kbd> [`melt_paired`](https://github.com/rraadd88/roux#function-melt_paired) <kbd>function</kbd> [`renameby_replace`](https://github.com/rraadd88/roux#function-renameby_replace) <kbd>function</kbd> [`sort_columns_by_values`](https://github.com/rraadd88/roux#function-sort_columns_by_values) <kbd>function</kbd> [`sort_values_groupby`](https://github.com/rraadd88/roux#function-sort_values_groupby) <kbd>function</kbd> [`sort_valuesby_list`](https://github.com/rraadd88/roux#function-sort_valuesby_list) <kbd>function</kbd> [`split_ids`](https://github.com/rraadd88/roux#function-split_ids) <kbd>function</kbd> [`swap_paired_cols`](https://github.com/rraadd88/roux#function-swap_paired_cols) <kbd>function</kbd> [`to_boolean`](https://github.com/rraadd88/roux#function-to_boolean) <kbd>function</kbd> [`to_cat`](https://github.com/rraadd88/roux#function-to_cat) <kbd>function</kbd> [`to_map_binary`](https://github.com/rraadd88/roux#function-to_map_binary) <kbd>function</kbd> [`to_multiindex_columns`](https://github.com/rraadd88/roux#function-to_multiindex_columns) <kbd>function</kbd> [`to_ranges`](https://github.com/rraadd88/roux#function-to_ranges) <kbd>function</kbd> [`validate_1_1_mappings`](https://github.com/rraadd88/roux#function-validate_1_1_mappings) <kbd>function</kbd> [`validate_dense`](https://github.com/rraadd88/roux#function-validate_dense) <kbd>function</kbd> [`validate_no_duplicates`](https://github.com/rraadd88/roux#function-validate_no_duplicates) <kbd>function</kbd> [`validate_no_dups`](https://github.com/rraadd88/roux#function-validate_no_dups) <kbd>function</kbd> [`validate_no_na`](https://github.com/rraadd88/roux#function-validate_no_na)
 
 
 
 
 ```python
 module_name='roux.lib.io'
-info_nb(f"Helper functions imported from <kbd>module</kbd>[`{module_name}`](https://github.com/rraadd88.py#module-{module_name}):\n\n"+' '.join(list(map(lambda x: f"<kbd>function</kbd> [`{x}`](https://github.com/rraadd88.py#function-{x})" , ds2[(ds2==module_name)].sort_index().index.tolist()))))
+info_nb(f"Helper functions imported from <kbd>module</kbd>[`{module_name}`](https://github.com/rraadd88/roux#module-{module_name}):\n\n"+' '.join(list(map(lambda x: f"<kbd>function</kbd> [`{x}`](https://github.com/rraadd88/roux#function-{x})" , ds2[(ds2==module_name)].sort_index().index.tolist()))))
 ```
 
 
 
 
-Helper functions imported from <kbd>module</kbd>[`roux.lib.io`](https://github.com/rraadd88.py#module-roux.lib.io):
+Helper functions imported from <kbd>module</kbd>[`roux.lib.io`](https://github.com/rraadd88/roux#module-roux.lib.io):
 
-<kbd>function</kbd> [`apply_on_paths`](https://github.com/rraadd88.py#function-apply_on_paths) <kbd>function</kbd> [`backup`](https://github.com/rraadd88.py#function-backup) <kbd>function</kbd> [`check_chunks`](https://github.com/rraadd88.py#function-check_chunks) <kbd>function</kbd> [`download`](https://github.com/rraadd88.py#function-download) <kbd>function</kbd> [`get_logp`](https://github.com/rraadd88.py#function-get_logp) <kbd>function</kbd> [`get_version`](https://github.com/rraadd88.py#function-get_version) <kbd>function</kbd> [`is_dict`](https://github.com/rraadd88.py#function-is_dict) <kbd>function</kbd> [`post_read_table`](https://github.com/rraadd88.py#function-post_read_table) <kbd>function</kbd> [`pqt2tsv`](https://github.com/rraadd88.py#function-pqt2tsv) <kbd>function</kbd> [`read_dict`](https://github.com/rraadd88.py#function-read_dict) <kbd>function</kbd> [`read_excel`](https://github.com/rraadd88.py#function-read_excel) <kbd>function</kbd> [`read_json`](https://github.com/rraadd88.py#function-read_json) <kbd>function</kbd> [`read_lines`](https://github.com/rraadd88.py#function-read_lines) <kbd>function</kbd> [`read_list`](https://github.com/rraadd88.py#function-read_list) <kbd>function</kbd> [`read_pickle`](https://github.com/rraadd88.py#function-read_pickle) <kbd>function</kbd> [`read_table`](https://github.com/rraadd88.py#function-read_table) <kbd>function</kbd> [`read_tables`](https://github.com/rraadd88.py#function-read_tables) <kbd>function</kbd> [`read_text`](https://github.com/rraadd88.py#function-read_text) <kbd>function</kbd> [`read_url`](https://github.com/rraadd88.py#function-read_url) <kbd>function</kbd> [`read_yaml`](https://github.com/rraadd88.py#function-read_yaml) <kbd>function</kbd> [`read_zip`](https://github.com/rraadd88.py#function-read_zip) <kbd>function</kbd> [`to_dict`](https://github.com/rraadd88.py#function-to_dict) <kbd>function</kbd> [`to_excel`](https://github.com/rraadd88.py#function-to_excel) <kbd>function</kbd> [`to_excel_commented`](https://github.com/rraadd88.py#function-to_excel_commented) <kbd>function</kbd> [`to_json`](https://github.com/rraadd88.py#function-to_json) <kbd>function</kbd> [`to_list`](https://github.com/rraadd88.py#function-to_list) <kbd>function</kbd> [`to_manytables`](https://github.com/rraadd88.py#function-to_manytables) <kbd>function</kbd> [`to_table`](https://github.com/rraadd88.py#function-to_table) <kbd>function</kbd> [`to_table_pqt`](https://github.com/rraadd88.py#function-to_table_pqt) <kbd>function</kbd> [`to_yaml`](https://github.com/rraadd88.py#function-to_yaml) <kbd>function</kbd> [`to_zip`](https://github.com/rraadd88.py#function-to_zip) <kbd>function</kbd> [`tsv2pqt`](https://github.com/rraadd88.py#function-tsv2pqt) <kbd>function</kbd> [`version`](https://github.com/rraadd88.py#function-version)
+<kbd>function</kbd> [`apply_on_paths`](https://github.com/rraadd88/roux#function-apply_on_paths) <kbd>function</kbd> [`backup`](https://github.com/rraadd88/roux#function-backup) <kbd>function</kbd> [`check_chunks`](https://github.com/rraadd88/roux#function-check_chunks) <kbd>function</kbd> [`download`](https://github.com/rraadd88/roux#function-download) <kbd>function</kbd> [`get_logp`](https://github.com/rraadd88/roux#function-get_logp) <kbd>function</kbd> [`get_version`](https://github.com/rraadd88/roux#function-get_version) <kbd>function</kbd> [`is_dict`](https://github.com/rraadd88/roux#function-is_dict) <kbd>function</kbd> [`post_read_table`](https://github.com/rraadd88/roux#function-post_read_table) <kbd>function</kbd> [`pqt2tsv`](https://github.com/rraadd88/roux#function-pqt2tsv) <kbd>function</kbd> [`read_dict`](https://github.com/rraadd88/roux#function-read_dict) <kbd>function</kbd> [`read_excel`](https://github.com/rraadd88/roux#function-read_excel) <kbd>function</kbd> [`read_json`](https://github.com/rraadd88/roux#function-read_json) <kbd>function</kbd> [`read_lines`](https://github.com/rraadd88/roux#function-read_lines) <kbd>function</kbd> [`read_list`](https://github.com/rraadd88/roux#function-read_list) <kbd>function</kbd> [`read_pickle`](https://github.com/rraadd88/roux#function-read_pickle) <kbd>function</kbd> [`read_table`](https://github.com/rraadd88/roux#function-read_table) <kbd>function</kbd> [`read_tables`](https://github.com/rraadd88/roux#function-read_tables) <kbd>function</kbd> [`read_text`](https://github.com/rraadd88/roux#function-read_text) <kbd>function</kbd> [`read_url`](https://github.com/rraadd88/roux#function-read_url) <kbd>function</kbd> [`read_yaml`](https://github.com/rraadd88/roux#function-read_yaml) <kbd>function</kbd> [`read_zip`](https://github.com/rraadd88/roux#function-read_zip) <kbd>function</kbd> [`to_dict`](https://github.com/rraadd88/roux#function-to_dict) <kbd>function</kbd> [`to_excel`](https://github.com/rraadd88/roux#function-to_excel) <kbd>function</kbd> [`to_excel_commented`](https://github.com/rraadd88/roux#function-to_excel_commented) <kbd>function</kbd> [`to_json`](https://github.com/rraadd88/roux#function-to_json) <kbd>function</kbd> [`to_list`](https://github.com/rraadd88/roux#function-to_list) <kbd>function</kbd> [`to_manytables`](https://github.com/rraadd88/roux#function-to_manytables) <kbd>function</kbd> [`to_table`](https://github.com/rraadd88/roux#function-to_table) <kbd>function</kbd> [`to_table_pqt`](https://github.com/rraadd88/roux#function-to_table_pqt) <kbd>function</kbd> [`to_yaml`](https://github.com/rraadd88/roux#function-to_yaml) <kbd>function</kbd> [`to_zip`](https://github.com/rraadd88/roux#function-to_zip) <kbd>function</kbd> [`tsv2pqt`](https://github.com/rraadd88/roux#function-tsv2pqt) <kbd>function</kbd> [`version`](https://github.com/rraadd88/roux#function-version)
 
 
 
 
 ```python
 module_name='roux.viz.ax_'
-info_nb(f"Helper functions imported from <kbd>module</kbd>[`{module_name}`](https://github.com/rraadd88.py#module-{module_name}):\n\n"+' '.join(list(map(lambda x: f"<kbd>function</kbd> [`{x}`](https://github.com/rraadd88.py#function-{x})" , ds2[(ds2==module_name)].sort_index().index.tolist()))))
+info_nb(f"Helper functions imported from <kbd>module</kbd>[`{module_name}`](https://github.com/rraadd88/roux#module-{module_name}):\n\n"+' '.join(list(map(lambda x: f"<kbd>function</kbd> [`{x}`](https://github.com/rraadd88/roux#function-{x})" , ds2[(ds2==module_name)].sort_index().index.tolist()))))
 ```
 
 
 
 
-Helper functions imported from <kbd>module</kbd>[`roux.viz.ax_`](https://github.com/rraadd88.py#module-roux.viz.ax_):
+Helper functions imported from <kbd>module</kbd>[`roux.viz.ax_`](https://github.com/rraadd88/roux#module-roux.viz.ax_):
 
-<kbd>function</kbd> [`append_legends`](https://github.com/rraadd88.py#function-append_legends) <kbd>function</kbd> [`color_ticklabels`](https://github.com/rraadd88.py#function-color_ticklabels) <kbd>function</kbd> [`drop_duplicate_legend`](https://github.com/rraadd88.py#function-drop_duplicate_legend) <kbd>function</kbd> [`format_ticklabels`](https://github.com/rraadd88.py#function-format_ticklabels) <kbd>function</kbd> [`get_axlims`](https://github.com/rraadd88.py#function-get_axlims) <kbd>function</kbd> [`get_axlimsby_data`](https://github.com/rraadd88.py#function-get_axlimsby_data) <kbd>function</kbd> [`get_line_cap_length`](https://github.com/rraadd88.py#function-get_line_cap_length) <kbd>function</kbd> [`get_subplot_dimentions`](https://github.com/rraadd88.py#function-get_subplot_dimentions) <kbd>function</kbd> [`get_ticklabel2position`](https://github.com/rraadd88.py#function-get_ticklabel2position) <kbd>function</kbd> [`get_ticklabel_position`](https://github.com/rraadd88.py#function-get_ticklabel_position) <kbd>function</kbd> [`rename_labels`](https://github.com/rraadd88.py#function-rename_labels) <kbd>function</kbd> [`rename_legends`](https://github.com/rraadd88.py#function-rename_legends) <kbd>function</kbd> [`rename_ticklabels`](https://github.com/rraadd88.py#function-rename_ticklabels) <kbd>function</kbd> [`reset_legend_colors`](https://github.com/rraadd88.py#function-reset_legend_colors) <kbd>function</kbd> [`set_`](https://github.com/rraadd88.py#function-set_) <kbd>function</kbd> [`set_axlims`](https://github.com/rraadd88.py#function-set_axlims) <kbd>function</kbd> [`set_colorbar`](https://github.com/rraadd88.py#function-set_colorbar) <kbd>function</kbd> [`set_colorbar_label`](https://github.com/rraadd88.py#function-set_colorbar_label) <kbd>function</kbd> [`set_equallim`](https://github.com/rraadd88.py#function-set_equallim) <kbd>function</kbd> [`set_grids`](https://github.com/rraadd88.py#function-set_grids) <kbd>function</kbd> [`set_legend_custom`](https://github.com/rraadd88.py#function-set_legend_custom) <kbd>function</kbd> [`set_legends_merged`](https://github.com/rraadd88.py#function-set_legends_merged) <kbd>function</kbd> [`set_ticklabels_color`](https://github.com/rraadd88.py#function-set_ticklabels_color) <kbd>function</kbd> [`set_ylabel`](https://github.com/rraadd88.py#function-set_ylabel) <kbd>function</kbd> [`sort_legends`](https://github.com/rraadd88.py#function-sort_legends) <kbd>function</kbd> [`split_ticklabels`](https://github.com/rraadd88.py#function-split_ticklabels)
+<kbd>function</kbd> [`append_legends`](https://github.com/rraadd88/roux#function-append_legends) <kbd>function</kbd> [`color_ticklabels`](https://github.com/rraadd88/roux#function-color_ticklabels) <kbd>function</kbd> [`drop_duplicate_legend`](https://github.com/rraadd88/roux#function-drop_duplicate_legend) <kbd>function</kbd> [`format_ticklabels`](https://github.com/rraadd88/roux#function-format_ticklabels) <kbd>function</kbd> [`get_axlims`](https://github.com/rraadd88/roux#function-get_axlims) <kbd>function</kbd> [`get_axlimsby_data`](https://github.com/rraadd88/roux#function-get_axlimsby_data) <kbd>function</kbd> [`get_line_cap_length`](https://github.com/rraadd88/roux#function-get_line_cap_length) <kbd>function</kbd> [`get_subplot_dimentions`](https://github.com/rraadd88/roux#function-get_subplot_dimentions) <kbd>function</kbd> [`get_ticklabel2position`](https://github.com/rraadd88/roux#function-get_ticklabel2position) <kbd>function</kbd> [`get_ticklabel_position`](https://github.com/rraadd88/roux#function-get_ticklabel_position) <kbd>function</kbd> [`rename_labels`](https://github.com/rraadd88/roux#function-rename_labels) <kbd>function</kbd> [`rename_legends`](https://github.com/rraadd88/roux#function-rename_legends) <kbd>function</kbd> [`rename_ticklabels`](https://github.com/rraadd88/roux#function-rename_ticklabels) <kbd>function</kbd> [`reset_legend_colors`](https://github.com/rraadd88/roux#function-reset_legend_colors) <kbd>function</kbd> [`set_`](https://github.com/rraadd88/roux#function-set_) <kbd>function</kbd> [`set_axlims`](https://github.com/rraadd88/roux#function-set_axlims) <kbd>function</kbd> [`set_colorbar`](https://github.com/rraadd88/roux#function-set_colorbar) <kbd>function</kbd> [`set_colorbar_label`](https://github.com/rraadd88/roux#function-set_colorbar_label) <kbd>function</kbd> [`set_equallim`](https://github.com/rraadd88/roux#function-set_equallim) <kbd>function</kbd> [`set_grids`](https://github.com/rraadd88/roux#function-set_grids) <kbd>function</kbd> [`set_legend_custom`](https://github.com/rraadd88/roux#function-set_legend_custom) <kbd>function</kbd> [`set_legends_merged`](https://github.com/rraadd88/roux#function-set_legends_merged) <kbd>function</kbd> [`set_ticklabels_color`](https://github.com/rraadd88/roux#function-set_ticklabels_color) <kbd>function</kbd> [`set_ylabel`](https://github.com/rraadd88/roux#function-set_ylabel) <kbd>function</kbd> [`sort_legends`](https://github.com/rraadd88/roux#function-sort_legends) <kbd>function</kbd> [`split_ticklabels`](https://github.com/rraadd88/roux#function-split_ticklabels)
 
 
 
@@ -432,8 +408,8 @@ df1.log.merge(right=df2,
 
 
 #### Documentation
-[`roux.lib.df`](https://github.com/rraadd88.py#module-roux.lib.df)
-[`roux.lib.dfs`](https://github.com/rraadd88.py#module-roux.lib.dfs)
+[`roux.lib.df`](https://github.com/rraadd88/roux#module-roux.lib.df)
+[`roux.lib.dfs`](https://github.com/rraadd88/roux#module-roux.lib.dfs)
 
 </details>
 
@@ -646,7 +622,7 @@ read_table('tests/output/data/table.tsv')
 
 
 #### Documentation
-[`roux.viz.io`](https://github.com/rraadd88.py#module-roux.viz.io)
+[`roux.viz.io`](https://github.com/rraadd88/roux#module-roux.viz.io)
 
 </details>
 
@@ -753,7 +729,7 @@ assert encoded==encoded_shuffled
 ```
 
 #### Documentation
-[`roux.lib.str`](https://github.com/rraadd88.py#module-roux.lib.str)
+[`roux.lib.str`](https://github.com/rraadd88/roux#module-roux.lib.str)
 
 </details>
 
@@ -847,7 +823,7 @@ len(output_paths)
 
 
 #### Documentation
-[`roux.lib.sys`](https://github.com/rraadd88.py#module-roux.lib.sys)
+[`roux.lib.sys`](https://github.com/rraadd88/roux#module-roux.lib.sys)
 
 </details>
 
@@ -947,7 +923,7 @@ to_table(df01,'tests/output/data/biomart/00_raw.tsv')
 
 
 #### Documentation
-[`roux.query.biomart`](https://github.com/rraadd88.py#module-roux.query.biomart)
+[`roux.query.biomart`](https://github.com/rraadd88/roux#module-roux.query.biomart)
 
 </details>
 
@@ -955,7 +931,7 @@ to_table(df01,'tests/output/data/biomart/00_raw.tsv')
 
 <a href="https://github.com/rraadd88/roux/blob/master/examples/roux_stat_cluster.ipynb"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
-## Helper functions Clustering.
+## Helper functions for clustering.
 <details><summary>Expand</summary>
 
 ### Requirements
@@ -1051,7 +1027,7 @@ to_table(df1,'tests/output/data/biomart/01_dedup.tsv')
 
 
 #### Documentation
-[`roux.lib.io`](https://github.com/rraadd88.py#module-roux.lib.io)
+[`roux.lib.io`](https://github.com/rraadd88/roux#module-roux.lib.io)
 
 ### Fitting a Gaussian-Mixture Model
 
@@ -1096,7 +1072,7 @@ assert exists('tests/output/plot/hist_gmm.png')
 
 
 #### Documentation
-[`roux.stat.cluster`](https://github.com/rraadd88.py#module-roux.stat.cluster)
+[`roux.stat.cluster`](https://github.com/rraadd88/roux#module-roux.stat.cluster)
 
 </details>
 
@@ -1145,8 +1121,8 @@ _=to_plot('tests/output/plot/scatter_annotated.png')
 
 
 #### Documentation
-[`roux.viz.annot`](https://github.com/rraadd88.py#module-roux.viz.annot)
-[`roux.viz.scatter`](https://github.com/rraadd88.py#module-roux.viz.scatter)
+[`roux.viz.annot`](https://github.com/rraadd88/roux#module-roux.viz.annot)
+[`roux.viz.scatter`](https://github.com/rraadd88/roux#module-roux.viz.scatter)
 
 ### Example of annotated histogram
 
@@ -1171,7 +1147,7 @@ _=to_plot('tests/output/plot/hist_annotated.png')
 
 
 #### Documentation
-[`roux.viz.dist`](https://github.com/rraadd88.py#module-roux.viz.dist)
+[`roux.viz.dist`](https://github.com/rraadd88/roux#module-roux.viz.dist)
 
 ### Example of annotated heatmap
 
@@ -1203,7 +1179,7 @@ _=to_plot('tests/output/plot/heatmap_annotated.png')
 
 
 #### Documentation
-[`roux.viz.heatmap`](https://github.com/rraadd88.py#module-roux.viz.heatmap)
+[`roux.viz.heatmap`](https://github.com/rraadd88/roux#module-roux.viz.heatmap)
 
 ### Example of annotated distributions
 
@@ -1229,7 +1205,7 @@ _=to_plot('tests/output/plot/dists_annotated.png')
 
 
 #### Documentation
-[`roux.viz.dist`](https://github.com/rraadd88.py#module-roux.viz.dist)
+[`roux.viz.dist`](https://github.com/rraadd88/roux#module-roux.viz.dist)
 
 ### Example of annotated barplot
 
@@ -1254,7 +1230,7 @@ _=to_plot('tests/output/plot/bar_annotated.png')
 
 
 #### Documentation
-[`roux.viz.bar`](https://github.com/rraadd88.py#module-roux.viz.bar)
+[`roux.viz.bar`](https://github.com/rraadd88/roux#module-roux.viz.bar)
 
 </details>
 
@@ -1288,7 +1264,7 @@ fig,ax=plt.subplots(figsize=[3,3])
 sns.scatterplot(data=df1,x='sepal_length',y=kws_plot['y'],hue='species',
                 ax=ax,)
 ## save the plot
-to_plot('tests/output/plot.py# filename
+to_plot('tests/output/plot/plot_saved.png',# filename
        df1=df1, #source data
        kws_plot=kws_plot,# plotting parameters
        )
@@ -1381,7 +1357,7 @@ read_plot('tests/output/plot/plot_saved.png',kws_plot=dict(y='petal_length'),tit
 
 
 #### Documentation
-[`roux.viz.io`](https://github.com/rraadd88.py#module-roux.viz.io)
+[`roux.viz.io`](https://github.com/rraadd88/roux#module-roux.viz.io)
 
 </details>
 
@@ -1392,517 +1368,517 @@ read_plot('tests/output/plot/plot_saved.png',kws_plot=dict(y='petal_length'),tit
 
 ## Modules
 
-- [`roux.global_imports`](..py#module-rouxglobal_imports): For the use in jupyter notebook for example.
-- [`roux.lib`](..py#module-rouxlib)
-- [`roux.lib.df`](..py#module-rouxlibdf): For processing individual pandas DataFrames/Series
-- [`roux.lib.dfs`](..py#module-rouxlibdfs): For processing multiple pandas DataFrames/Series
-- [`roux.lib.dict`](..py#module-rouxlibdict): For processing dictionaries.
-- [`roux.lib.google`](..py#module-rouxlibgoogle): Processing files form google-cloud services.
-- [`roux.lib.io`](..py#module-rouxlibio): For input/output of data files.
-- [`roux.lib.seq`](..py#module-rouxlibseq): For processing biological sequence data.
-- [`roux.lib.set`](..py#module-rouxlibset): For processing list-like sets.
-- [`roux.lib.str`](..py#module-rouxlibstr): For processing strings.
-- [`roux.lib.sys`](..py#module-rouxlibsys): For processing file paths for example.
-- [`roux.lib.text`](..py#module-rouxlibtext): For processing text files.
-- [`roux.query`](..py#module-rouxquery)
-- [`roux.query.biomart`](..py#module-rouxquerybiomart): For querying BioMart database.
-- [`roux.query.ensembl`](..py#module-rouxqueryensembl): For querying Ensembl databases.
-- [`roux.run`](..py#module-rouxrun): For access to a few functions from the terminal.
-- [`roux.stat`](..py#module-rouxstat)
-- [`roux.stat.binary`](..py#module-rouxstatbinary): For processing binary data.
-- [`roux.stat.classify`](..py#module-rouxstatclassify): For classification.
-- [`roux.stat.cluster`](..py#module-rouxstatcluster): For clustering data.
-- [`roux.stat.compare`](..py#module-rouxstatcompare): For comparison related stats.
-- [`roux.stat.corr`](..py#module-rouxstatcorr): For correlation stats.
-- [`roux.stat.diff`](..py#module-rouxstatdiff): For difference related stats.
-- [`roux.stat.enrich`](..py#module-rouxstatenrich): For enrichment related stats.
-- [`roux.stat.fit`](..py#module-rouxstatfit): For fitting data.
-- [`roux.stat.io`](..py#module-rouxstatio): For input/output of stats.
-- [`roux.stat.network`](..py#module-rouxstatnetwork): For network related stats.
-- [`roux.stat.norm`](..py#module-rouxstatnorm): For normalisation.
-- [`roux.stat.paired`](..py#module-rouxstatpaired): For paired stats.
-- [`roux.stat.regress`](..py#module-rouxstatregress): For regression.
-- [`roux.stat.set`](..py#module-rouxstatset): For set related stats.
-- [`roux.stat.solve`](..py#module-rouxstatsolve): For solving equations.
-- [`roux.stat.transform`](..py#module-rouxstattransform): For transformations.
-- [`roux.stat.variance`](..py#module-rouxstatvariance): For variance related stats.
-- [`roux.viz`](..py#module-rouxviz)
-- [`roux.viz.annot`](..py#module-rouxvizannot): For annotations.
-- [`roux.viz.ax_`](..py#module-rouxvizax_): For setting up subplots.
-- [`roux.viz.bar`](..py#module-rouxvizbar): For bar plots.
-- [`roux.viz.colors`](..py#module-rouxvizcolors): For setting up colors.
-- [`roux.viz.compare`](..py#module-rouxvizcompare): For comparative plots.
-- [`roux.viz.dist`](..py#module-rouxvizdist): For distribution plots.
-- [`roux.viz.figure`](..py#module-rouxvizfigure): For setting up figures.
-- [`roux.viz.heatmap`](..py#module-rouxvizheatmap): For heatmaps.
-- [`roux.viz.image`](..py#module-rouxvizimage): For visualization of images.
-- [`roux.viz.io`](..py#module-rouxvizio): For input/output of plots.
-- [`roux.viz.line`](..py#module-rouxvizline): For line plots.
-- [`roux.viz.scatter`](..py#module-rouxvizscatter): For scatter plots.
-- [`roux.viz.sequence`](..py#module-rouxvizsequence): For plotting sequences.
-- [`roux.viz.sets`](..py#module-rouxvizsets): For plotting sets.
-- [`roux.workflow`](..py#module-rouxworkflow)
-- [`roux.workflow.df`](..py#module-rouxworkflowdf): For management of tables.
-- [`roux.workflow.function`](..py#module-rouxworkflowfunction): For function management.
-- [`roux.workflow.io`](..py#module-rouxworkflowio): For input/output of workflow.
-- [`roux.workflow.knit`](..py#module-rouxworkflowknit): For workflow set up.
-- [`roux.workflow.monitor`](..py#module-rouxworkflowmonitor): For workflow monitors.
-- [`roux.workflow.task`](..py#module-rouxworkflowtask): For task management.
-- [`roux.workflow.version`](..py#module-rouxworkflowversion): For version control.
-- [`roux.workflow.workflow`](..py#module-rouxworkflowworkflow): For workflow management.
+- [`roux.global_imports`](./roux.global_imports.md#module-rouxglobal_imports): For the use in jupyter notebook for example.
+- [`roux.lib`](./roux.lib.md#module-rouxlib)
+- [`roux.lib.df`](./roux.lib.df.md#module-rouxlibdf): For processing individual pandas DataFrames/Series
+- [`roux.lib.dfs`](./roux.lib.dfs.md#module-rouxlibdfs): For processing multiple pandas DataFrames/Series
+- [`roux.lib.dict`](./roux.lib.dict.md#module-rouxlibdict): For processing dictionaries.
+- [`roux.lib.google`](./roux.lib.google.md#module-rouxlibgoogle): Processing files form google-cloud services.
+- [`roux.lib.io`](./roux.lib.io.md#module-rouxlibio): For input/output of data files.
+- [`roux.lib.seq`](./roux.lib.seq.md#module-rouxlibseq): For processing biological sequence data.
+- [`roux.lib.set`](./roux.lib.set.md#module-rouxlibset): For processing list-like sets.
+- [`roux.lib.str`](./roux.lib.str.md#module-rouxlibstr): For processing strings.
+- [`roux.lib.sys`](./roux.lib.sys.md#module-rouxlibsys): For processing file paths for example.
+- [`roux.lib.text`](./roux.lib.text.md#module-rouxlibtext): For processing text files.
+- [`roux.query`](./roux.query.md#module-rouxquery)
+- [`roux.query.biomart`](./roux.query.biomart.md#module-rouxquerybiomart): For querying BioMart database.
+- [`roux.query.ensembl`](./roux.query.ensembl.md#module-rouxqueryensembl): For querying Ensembl databases.
+- [`roux.run`](./roux.run.md#module-rouxrun): For access to a few functions from the terminal.
+- [`roux.stat`](./roux.stat.md#module-rouxstat)
+- [`roux.stat.binary`](./roux.stat.binary.md#module-rouxstatbinary): For processing binary data.
+- [`roux.stat.classify`](./roux.stat.classify.md#module-rouxstatclassify): For classification.
+- [`roux.stat.cluster`](./roux.stat.cluster.md#module-rouxstatcluster): For clustering data.
+- [`roux.stat.compare`](./roux.stat.compare.md#module-rouxstatcompare): For comparison related stats.
+- [`roux.stat.corr`](./roux.stat.corr.md#module-rouxstatcorr): For correlation stats.
+- [`roux.stat.diff`](./roux.stat.diff.md#module-rouxstatdiff): For difference related stats.
+- [`roux.stat.enrich`](./roux.stat.enrich.md#module-rouxstatenrich): For enrichment related stats.
+- [`roux.stat.fit`](./roux.stat.fit.md#module-rouxstatfit): For fitting data.
+- [`roux.stat.io`](./roux.stat.io.md#module-rouxstatio): For input/output of stats.
+- [`roux.stat.network`](./roux.stat.network.md#module-rouxstatnetwork): For network related stats.
+- [`roux.stat.norm`](./roux.stat.norm.md#module-rouxstatnorm): For normalisation.
+- [`roux.stat.paired`](./roux.stat.paired.md#module-rouxstatpaired): For paired stats.
+- [`roux.stat.regress`](./roux.stat.regress.md#module-rouxstatregress): For regression.
+- [`roux.stat.set`](./roux.stat.set.md#module-rouxstatset): For set related stats.
+- [`roux.stat.solve`](./roux.stat.solve.md#module-rouxstatsolve): For solving equations.
+- [`roux.stat.transform`](./roux.stat.transform.md#module-rouxstattransform): For transformations.
+- [`roux.stat.variance`](./roux.stat.variance.md#module-rouxstatvariance): For variance related stats.
+- [`roux.viz`](./roux.viz.md#module-rouxviz)
+- [`roux.viz.annot`](./roux.viz.annot.md#module-rouxvizannot): For annotations.
+- [`roux.viz.ax_`](./roux.viz.ax_.md#module-rouxvizax_): For setting up subplots.
+- [`roux.viz.bar`](./roux.viz.bar.md#module-rouxvizbar): For bar plots.
+- [`roux.viz.colors`](./roux.viz.colors.md#module-rouxvizcolors): For setting up colors.
+- [`roux.viz.compare`](./roux.viz.compare.md#module-rouxvizcompare): For comparative plots.
+- [`roux.viz.dist`](./roux.viz.dist.md#module-rouxvizdist): For distribution plots.
+- [`roux.viz.figure`](./roux.viz.figure.md#module-rouxvizfigure): For setting up figures.
+- [`roux.viz.heatmap`](./roux.viz.heatmap.md#module-rouxvizheatmap): For heatmaps.
+- [`roux.viz.image`](./roux.viz.image.md#module-rouxvizimage): For visualization of images.
+- [`roux.viz.io`](./roux.viz.io.md#module-rouxvizio): For input/output of plots.
+- [`roux.viz.line`](./roux.viz.line.md#module-rouxvizline): For line plots.
+- [`roux.viz.scatter`](./roux.viz.scatter.md#module-rouxvizscatter): For scatter plots.
+- [`roux.viz.sequence`](./roux.viz.sequence.md#module-rouxvizsequence): For plotting sequences.
+- [`roux.viz.sets`](./roux.viz.sets.md#module-rouxvizsets): For plotting sets.
+- [`roux.workflow`](./roux.workflow.md#module-rouxworkflow)
+- [`roux.workflow.df`](./roux.workflow.df.md#module-rouxworkflowdf): For management of tables.
+- [`roux.workflow.function`](./roux.workflow.function.md#module-rouxworkflowfunction): For function management.
+- [`roux.workflow.io`](./roux.workflow.io.md#module-rouxworkflowio): For input/output of workflow.
+- [`roux.workflow.knit`](./roux.workflow.knit.md#module-rouxworkflowknit): For workflow set up.
+- [`roux.workflow.monitor`](./roux.workflow.monitor.md#module-rouxworkflowmonitor): For workflow monitors.
+- [`roux.workflow.task`](./roux.workflow.task.md#module-rouxworkflowtask): For task management.
+- [`roux.workflow.version`](./roux.workflow.version.md#module-rouxworkflowversion): For version control.
+- [`roux.workflow.workflow`](./roux.workflow.workflow.md#module-rouxworkflowworkflow): For workflow management.
 
 ## Classes
 
-- [`lib.rd`](..py#class-rd): `roux-dataframe` (`.rd`) extension.
-- [`df.log`](..py#class-log): Report (log) the changes in the shapes of the dataframe before and after an operation/s.
-- [`google.slides`](..py#class-slides)
+- [`lib.rd`](./roux.lib.md#class-rd): `roux-dataframe` (`.rd`) extension.
+- [`df.log`](./roux.lib.df.md#class-log): Report (log) the changes in the shapes of the dataframe before and after an operation/s.
+- [`google.slides`](./roux.lib.google.md#class-slides)
 
 ## Functions
 
-- [`lib.to_class`](..py#function-to_class): Get the decorator to attach functions. 
-- [`lib.decorator`](..py#function-decorator)
-- [`df.agg_bools`](..py#function-agg_bools): Bools to columns. Reverse of one-hot encoder (`get_dummies`). 
-- [`df.agg_by_order`](..py#function-agg_by_order): Get first item in the order.
-- [`df.agg_by_order_counts`](..py#function-agg_by_order_counts): Get the aggregated counts by order*.
-- [`df.assert_dense`](..py#function-assert_dense): Alias of `validate_dense`.
-- [`df.assert_no_dups`](..py#function-assert_no_dups): Assert that no duplicates
-- [`df.assert_no_na`](..py#function-assert_no_na): Assert that no missing values in columns.
-- [`df.check_duplicated`](..py#function-check_duplicated): Check duplicates (alias of `check_dups`)    
-- [`df.check_dups`](..py#function-check_dups): Check duplicates.
-- [`df.check_inflation`](..py#function-check_inflation): Occurances of values in columns.
-- [`df.check_intersections`](..py#function-check_intersections): Check intersections.
-- [`df.check_mappings`](..py#function-check_mappings): Mapping between items in two columns.
-- [`df.check_na`](..py#function-check_na): Number/percentage of missing values in columns.
-- [`df.check_nunique`](..py#function-check_nunique): Number/percentage of unique values in columns.
-- [`df.classify_mappings`](..py#function-classify_mappings): Classify mappings between items in two columns.
-- [`df.clean`](..py#function-clean): Deletes potentially temporary columns.
-- [`df.clean_columns`](..py#function-clean_columns): Standardise columns.
-- [`df.clean_compress`](..py#function-clean_compress): `clean` and `compress` the dataframe.
-- [`df.compress`](..py#function-compress): Compress the dataframe by converting columns containing strings/objects to categorical.
-- [`df.drop_unnamedcol`](..py#function-drop_unnamedcol): Deletes the columns with "Unnamed" prefix.
-- [`df.dict2df`](..py#function-dict2df): Dictionary to DataFrame.
-- [`df.drop_constants`](..py#function-drop_constants): Deletes columns with a single unique value.
-- [`df.drop_inflates`](..py#function-drop_inflates): Deletes columns with high number of duplicates.
-- [`df.drop_levelcol`](..py#function-drop_levelcol): Deletes the potentially temporary columns names with "level" prefix.
-- [`df.drop_unnamedcol`](..py#function-drop_unnamedcol): Deletes the columns with "Unnamed" prefix.
-- [`df.dropby_patterns`](..py#function-dropby_patterns): Deletes columns containing substrings i.e. patterns.
-- [`df.filter_rows`](..py#function-filter_rows): Filter rows using a dictionary.
-- [`df.flatten_columns`](..py#function-flatten_columns): Multi-index columns to single-level.
-- [`df.get_alt_id`](..py#function-get_alt_id): Get alternate/partner id from a paired id.
-- [`df.get_bools`](..py#function-get_bools): Columns to bools. One-hot-encoder (`get_dummies`).
-- [`df.get_chunks`](..py#function-get_chunks): Get chunks of a dataframe.
-- [`df.get_constants`](..py#function-get_constants): Get the columns with a single unique value.
-- [`df.get_group`](..py#function-get_group): Get a dataframe for a group out of the `groupby` object.
-- [`df.get_groupby_columns`](..py#function-get_groupby_columns): Get the columns supplied to `groupby`.
-- [`df.get_mappings`](..py#function-get_mappings): Classify the mapapping between items in two columns.
-- [`df.get_name`](..py#function-get_name): Gets the name of the dataframe. 
-- [`df.get_totals`](..py#function-get_totals): Get totals from the output of `check_intersections`.
-- [`df.groupby_filter_fast`](..py#function-groupby_filter_fast): Groupby and filter fast.
-- [`df.groupby_sort_values`](..py#function-groupby_sort_values): Sort groups. 
-- [`df.infer_index`](..py#function-infer_index): Infer the index (id) of the table.
-- [`df.log_apply`](..py#function-log_apply): Report (log) the changes in the shapes of the dataframe before and after an operation/s.
-- [`df.log_shape_change`](..py#function-log_shape_change): Report the changes in the shapes of a DataFrame.
-- [`df.lower_columns`](..py#function-lower_columns): Column names of the dataframe to lower-case letters.
-- [`df.make_ids`](..py#function-make_ids): Make ids by joining string ids in more than one columns.
-- [`df.make_ids_sorted`](..py#function-make_ids_sorted): Make sorted ids by joining string ids in more than one columns.
-- [`df.melt_paired`](..py#function-melt_paired): Melt a paired dataframe.
-- [`df.renameby_replace`](..py#function-renameby_replace): Rename columns by replacing sub-strings.
-- [`df.sort_columns_by_values`](..py#function-sort_columns_by_values): Sort the values in columns in ascending order.
-- [`df.groupby_sort_values`](..py#function-groupby_sort_values): Sort groups. 
-- [`df.sort_valuesby_list`](..py#function-sort_valuesby_list): Sort dataframe by custom order of items in a column.
-- [`df.split_ids`](..py#function-split_ids): Split joined ids to individual ones.
-- [`df.swap_paired_cols`](..py#function-swap_paired_cols): Swap suffixes of paired columns.
-- [`df.to_boolean`](..py#function-to_boolean): Boolean from ranges.
-- [`df.to_cat`](..py#function-to_cat): To series containing categories.
-- [`df.to_map_binary`](..py#function-to_map_binary): Convert linear mappings to a binary map
-- [`df.to_multiindex_columns`](..py#function-to_multiindex_columns): Single level columns to multiindex.
-- [`df.to_ranges`](..py#function-to_ranges): Ranges from boolean columns.
-- [`df.validate_1_1_mappings`](..py#function-validate_1_1_mappings): Validate that the papping between items in two columns is 1:1.
-- [`df.validate_dense`](..py#function-validate_dense): Validate no missing values and no duplicates in the dataframe.
-- [`df.validate_no_duplicates`](..py#function-validate_no_duplicates): Validate that no duplicates (alias of `validate_no_dups`)
-- [`df.validate_no_dups`](..py#function-validate_no_dups): Validate that no duplicates.
-- [`df.validate_no_na`](..py#function-validate_no_na): Validate no missing values in columns.
-- [`dfs.compare_rows`](..py#function-compare_rows)
-- [`dfs.filter_dfs`](..py#function-filter_dfs): Filter dataframes based items in the common columns.
-- [`dfs.merge_dfs`](..py#function-merge_dfs): Merge dataframes from left to right.   
-- [`dfs.merge_paired`](..py#function-merge_paired): Merge uppaired dataframes to a paired dataframe. 
-- [`dfs.merge_with_many_columns`](..py#function-merge_with_many_columns): Merge with many columns.
-- [`dict.flip_dict`](..py#function-flip_dict): switch values with keys and vice versa.
-- [`dict.head_dict`](..py#function-head_dict)
-- [`dict.merge_dict_values`](..py#function-merge_dict_values): Merge dictionary values.
-- [`dict.merge_dicts`](..py#function-merge_dicts): Merge dictionaries.
-- [`dict.sort_dict`](..py#function-sort_dict): Sort dictionary by values.
-- [`google.download_drawings`](..py#function-download_drawings): Download specific files: drawings
-- [`google.download_file`](..py#function-download_file): Downloads a specified file.
-- [`google.get_comments`](..py#function-get_comments): Get comments.
-- [`google.get_file_id`](..py#function-get_file_id)
-- [`google.get_metadata_of_paper`](..py#function-get_metadata_of_paper): Get the metadata of a pdf document.
-- [`google.get_search_strings`](..py#function-get_search_strings): Google search.
-- [`google.get_service`](..py#function-get_service): Creates a google service object. 
-- [`google.get_service`](..py#function-get_service): Creates a google service object. 
-- [`google.list_files_in_folder`](..py#function-list_files_in_folder): Lists files in a google drive folder.
-- [`google.search`](..py#function-search): Google search.
-- [`google.share`](..py#function-share): :params user_permission:     
-- [`google.upload_file`](..py#function-upload_file): Uploads a local file onto google drive.
-- [`google.upload_files`](..py#function-upload_files)
-- [`io.apply_on_paths`](..py#function-apply_on_paths): Apply a function on list of files.
-- [`io.backup`](..py#function-backup): Backup a directory
-- [`io.check_chunks`](..py#function-check_chunks): Create chunks of the tables.
-- [`io.download`](..py#function-download): Download a file.
-- [`io.get_logp`](..py#function-get_logp): Infer the path of the log file.
-- [`io.get_version`](..py#function-get_version): Get the time-based version string.
-- [`io.is_dict`](..py#function-is_dict)
-- [`io.post_read_table`](..py#function-post_read_table): Post-reading a table.
-- [`io.pqt2tsv`](..py#function-pqt2tsv): Convert Apache parquet file to tab-separated. 
-- [`io.read_dict`](..py#function-read_dict): Read dictionary file.
-- [`io.read_excel`](..py#function-read_excel): Read excel file
-- [`io.read_json`](..py#function-read_json): Read `.json` file.
-- [`io.read_list`](..py#function-read_list): Read the lines in the file.
-- [`io.read_list`](..py#function-read_list): Read the lines in the file.
-- [`io.read_pickle`](..py#function-read_pickle): Read `.pickle` file.
-- [`io.read_table`](..py#function-read_table):     Table/s reader.
-- [`io.read_tables`](..py#function-read_tables): Read multiple tables.
-- [`io.read_text`](..py#function-read_text): Read a file. 
-- [`io.read_url`](..py#function-read_url): Read text from an URL.
-- [`io.read_yaml`](..py#function-read_yaml): Read `.yaml` file.
-- [`io.read_zip`](..py#function-read_zip): Read the contents of a zip file.
-- [`io.to_dict`](..py#function-to_dict): Save dictionary file.
-- [`io.to_excel`](..py#function-to_excel): Save excel file.
-- [`io.to_excel_commented`](..py#function-to_excel_commented): Add comments to the columns of excel file and save.
-- [`io.to_json`](..py#function-to_json): Save `.json` file.
-- [`io.to_list`](..py#function-to_list): Save list.
-- [`io.to_manytables`](..py#function-to_manytables): Save many table.
-- [`io.to_table`](..py#function-to_table): Save table.
-- [`io.to_table_pqt`](..py#function-to_table_pqt)
-- [`io.to_yaml`](..py#function-to_yaml): Save `.yaml` file.
-- [`io.to_zip`](..py#function-to_zip): Compress a file/directory.
-- [`io.tsv2pqt`](..py#function-tsv2pqt): Convert tab-separated file to Apache parquet. 
-- [`io.version`](..py#function-version): Get the version of the file/directory.
-- [`seq.fa2df`](..py#function-fa2df): _summary_
-- [`seq.read_fasta`](..py#function-read_fasta): Read fasta
-- [`seq.reverse_complement`](..py#function-reverse_complement): Reverse complement.
-- [`seq.to_bed`](..py#function-to_bed): Genome co-ordinates to bed.
-- [`seq.to_fasta`](..py#function-to_fasta): Save fasta file.
-- [`seq.to_genomeocoords`](..py#function-to_genomeocoords): String-formated genome co-ordinates to separated values.
-- [`set.bools2intervals`](..py#function-bools2intervals): Convert bools to intervals.
-- [`set.dropna`](..py#function-dropna): Drop `np.nan` items from a list.
-- [`set.flatten`](..py#function-flatten): List of lists to list.
-- [`set.get_alt`](..py#function-get_alt): Get alternate item between two.
-- [`set.get_pairs`](..py#function-get_pairs): Creates a dataframe with the paired items.
-- [`set.get_windows`](..py#function-get_windows): Windows/segments from a range. 
-- [`set.intersection`](..py#function-intersection): Intersections of lists.
-- [`set.intersections`](..py#function-intersections): Get intersections between lists.
-- [`set.jaccard_index`](..py#function-jaccard_index)
-- [`set.intersection`](..py#function-intersection): Intersections of lists.
-- [`set.list2ranges`](..py#function-list2ranges)
-- [`set.list2str`](..py#function-list2str): Returns string if single item in a list.
-- [`set.union`](..py#function-union): Union of lists.
-- [`set.nintersection`](..py#function-nintersection): Count the items in intersetion.
-- [`set.nunion`](..py#function-nunion): Count the items in union.
-- [`set.nunique`](..py#function-nunique): Count unique items in a list
-- [`set.range_overlap`](..py#function-range_overlap): Overlap between ranges.
-- [`set.union`](..py#function-union): Union of lists.
-- [`set.unique`](..py#function-unique): Unique items in a list.
-- [`set.unique_str`](..py#function-unique_str): Unique single item from a list.
-- [`str.align`](..py#function-align): Align strings.
-- [`str.decode`](..py#function-decode): Decode data from a string.
-- [`str.dict2str`](..py#function-dict2str): Dictionary to string.
-- [`str.encode`](..py#function-encode): Encode the data as a string.
-- [`str.findall`](..py#function-findall): Find the substrings or their locations in a string.
-- [`str.get_bracket`](..py#function-get_bracket): Get bracketed substrings.
-- [`str.get_fix`](..py#function-get_fix): Infer common prefix or suffix.
-- [`str.get_marked_substrings`](..py#function-get_marked_substrings): Get the substrings flanked with markers from a string.
-- [`str.get_prefix`](..py#function-get_prefix): Get the prefix of the strings
-- [`str.get_suffix`](..py#function-get_suffix): Get the suffix of the strings
-- [`str.get_marked_substrings`](..py#function-get_marked_substrings): Get the substrings flanked with markers from a string.
-- [`str.linebreaker`](..py#function-linebreaker): Insert `newline`s within a string. 
-- [`str.mark_substrings`](..py#function-mark_substrings): Mark sub-string/s in a string.
-- [`str.num2str`](..py#function-num2str): Number to string.
-- [`str.removesuffix`](..py#function-removesuffix): Remove suffix.
-- [`str.replace_many`](..py#function-replace_many): Rename by replacing sub-strings.
-- [`str.substitution`](..py#function-substitution): Substitute character in a string.
-- [`str.replace_many`](..py#function-replace_many): Rename by replacing sub-strings.
-- [`str.str2dict`](..py#function-str2dict): String to dictionary.
-- [`str.str2num`](..py#function-str2num): String to number.
-- [`str.substitution`](..py#function-substitution): Substitute character in a string.
-- [`str.tuple2str`](..py#function-tuple2str): Join tuple items.
-- [`sys.basenamenoext`](..py#function-basenamenoext): Basename without the extension.
-- [`sys.create_symlink`](..py#function-create_symlink): Create symbolic links.
-- [`sys.get_all_subpaths`](..py#function-get_all_subpaths): Get all the subpaths.
-- [`sys.get_datetime`](..py#function-get_datetime): Get the date and time.
-- [`sys.get_encoding`](..py#function-get_encoding): Get encoding of a file.
-- [`sys.get_env`](..py#function-get_env): Get the virtual environment as a dictionary.
-- [`sys.get_excecution_location`](..py#function-get_excecution_location): Get the location of the function being executed.
-- [`sys.get_logger`](..py#function-get_logger): Get the logging object.
-- [`sys.input_binary`](..py#function-input_binary): Get input in binary format.
-- [`sys.is_interactive`](..py#function-is_interactive): Check if the UI is interactive e.g. jupyter or command line. 
-- [`sys.is_interactive_notebook`](..py#function-is_interactive_notebook): Check if the UI is interactive e.g. jupyter or command line.     
-- [`sys.to_path`](..py#function-to_path): Normalise a string to be used as a path of file.
-- [`sys.makedirs`](..py#function-makedirs): Make directories recursively.
-- [`sys.p2time`](..py#function-p2time): Get the creation/modification dates of files.
-- [`sys.ps2time`](..py#function-ps2time): Get the times for a list of files. 
-- [`sys.read_ps`](..py#function-read_ps): Read a list of paths.
-- [`sys.remove_exts`](..py#function-remove_exts): Filename without the extension.
-- [`sys.runbash`](..py#function-runbash): Run a bash command. 
-- [`sys.runbash_tmp`](..py#function-runbash_tmp): Run a bash command in `/tmp` directory.
-- [`sys.to_output_path`](..py#function-to_output_path): Infer a single output path for a list of paths.
-- [`sys.to_output_paths`](..py#function-to_output_paths): Infer a output path for each of the paths or inputs.
-- [`sys.to_path`](..py#function-to_path): Normalise a string to be used as a path of file.
-- [`text.cat`](..py#function-cat): Concatenate text files.
-- [`text.get_header`](..py#function-get_header): Get the header of a file.
-- [`biomart.get_ensembl_dataset_name`](..py#function-get_ensembl_dataset_name): Get the name of the Ensembl dataset.
-- [`biomart.query`](..py#function-query): Query the biomart database.
-- [`ensembl.convert_coords_human_assemblies`](..py#function-convert_coords_human_assemblies): Convert coordinates between human assemblies.
-- [`ensembl.get_utr_sequence`](..py#function-get_utr_sequence): Protein id to UTR sequence.
-- [`ensembl.is_protein_coding`](..py#function-is_protein_coding): A gene or protein is protein coding or not.
-- [`ensembl.map_id`](..py#function-map_id): Map ids between releases.
-- [`ensembl.map_ids`](..py#function-map_ids): Map many ids between Ensembl releases.
-- [`ensembl.map_ids_`](..py#function-map_ids_): Function for mapping many ids.
-- [`ensembl.read_idmapper_output`](..py#function-read_idmapper_output): Read the output of Ensembl's idmapper.
-- [`ensembl.rest`](..py#function-rest): Query Ensembl database using REST API.
-- [`ensembl.to_cdsseq`](..py#function-to_cdsseq): Transcript id to coding sequence (CDS).
-- [`ensembl.to_dnaseq`](..py#function-to_dnaseq): Gene id to DNA sequence.
-- [`ensembl.to_domains`](..py#function-to_domains): Protein id to domains. 
-- [`ensembl.to_gene_id`](..py#function-to_gene_id): Transcript id to gene id.
-- [`ensembl.to_gene_name`](..py#function-to_gene_name): Gene id to gene name.
-- [`ensembl.to_homology`](..py#function-to_homology): Query homology of a gene using Ensembl REST API.
-- [`ensembl.to_protein_id`](..py#function-to_protein_id): Transcript id to protein id.
-- [`ensembl.to_protein_id_longest`](..py#function-to_protein_id_longest): Gene id to protein id of the longest protein.
-- [`ensembl.to_protein_seq`](..py#function-to_protein_seq): Protein/transcript id to protein sequence.
-- [`ensembl.to_species_name`](..py#function-to_species_name): Convert to species name.
-- [`ensembl.to_taxid`](..py#function-to_taxid): Convert to taxonomic ids.  
-- [`ensembl.to_transcript_id`](..py#function-to_transcript_id): Protein id to transcript id.
-- [`binary.classify_bools`](..py#function-classify_bools): Classify bools.
-- [`binary.compare_bools_jaccard`](..py#function-compare_bools_jaccard): Compare bools in terms of the jaccard index.
-- [`binary.compare_bools_jaccard_df`](..py#function-compare_bools_jaccard_df): Pairwise compare bools in terms of the jaccard index.
-- [`binary.frac`](..py#function-frac): Fraction.
-- [`binary.get_cutoff`](..py#function-get_cutoff): Obtain threshold based on ROC or PR curve.
-- [`binary.get_stats_confusion_matrix`](..py#function-get_stats_confusion_matrix): Get stats confusion matrix.
-- [`binary.perc`](..py#function-perc): Percentage.
-- [`classify.drop_low_complexity`](..py#function-drop_low_complexity): Remove low-complexity columns from the data. 
-- [`classify.get_Xy_for_classification`](..py#function-get_xy_for_classification): Get X matrix and y vector. 
-- [`classify.get_cvsplits`](..py#function-get_cvsplits): Get cross-validation splits.
-- [`classify.get_estimatorn2grid_search`](..py#function-get_estimatorn2grid_search): Estimator-wise grid search.
-- [`classify.get_feature_importances`](..py#function-get_feature_importances): Feature importances.
-- [`classify.get_feature_predictive_power`](..py#function-get_feature_predictive_power): get_feature_predictive_power _summary_
-- [`classify.get_grid_search`](..py#function-get_grid_search): Grid search.
-- [`classify.get_partial_dependence`](..py#function-get_partial_dependence): Partial dependence.
-- [`classify.get_probability`](..py#function-get_probability): Classification probability.
-- [`classify.get_test_scores`](..py#function-get_test_scores): Test scores.
-- [`classify.plot_feature_predictive_power`](..py#function-plot_feature_predictive_power): Plot feature-wise predictive power.
-- [`classify.plot_metrics`](..py#function-plot_metrics): Plot performance metrics.
-- [`classify.run_grid_search`](..py#function-run_grid_search): Run grid search.
-- [`cluster.check_clusters`](..py#function-check_clusters): Check clusters.
-- [`cluster.cluster_1d`](..py#function-cluster_1d): Cluster 1D data.
-- [`cluster.get_clusters`](..py#function-get_clusters): Get clusters.
-- [`cluster.get_clusters_optimum`](..py#function-get_clusters_optimum): Get optimum clusters.
-- [`cluster.get_gmm_intersection`](..py#function-get_gmm_intersection)
-- [`cluster.get_gmm_params`](..py#function-get_gmm_params): Intersection point of the two peak Gaussian mixture Models (GMMs).
-- [`cluster.get_n_clusters_optimum`](..py#function-get_n_clusters_optimum): Get n clusters optimum.
-- [`cluster.get_pos_umap`](..py#function-get_pos_umap): Get positions of the umap points.
-- [`cluster.plot_silhouette`](..py#function-plot_silhouette): Plot silhouette
-- [`compare.compare_strings`](..py#function-compare_strings): Compare two lists of strings.
-- [`compare.get_cols_x_for_comparison`](..py#function-get_cols_x_for_comparison): Identify X columns.
-- [`compare.get_comparison`](..py#function-get_comparison): Compare the x and y columns.
-- [`compare.to_filteredby_samples`](..py#function-to_filteredby_samples): Filter table before calculating differences.
-- [`compare.to_preprocessed_data`](..py#function-to_preprocessed_data)
-- [`corr.check_collinearity`](..py#function-check_collinearity): Check collinearity.
-- [`corr.corr_to_str`](..py#function-corr_to_str): Correlation to string
-- [`corr.get_corr`](..py#function-get_corr): Correlation between vectors (wrapper).
-- [`corr.get_corr_bootstrapped`](..py#function-get_corr_bootstrapped): Get correlations after bootstraping.
-- [`corr.get_corrs`](..py#function-get_corrs): Correlate columns of a dataframes.
-- [`corr.get_partial_corrs`](..py#function-get_partial_corrs): Get partial correlations.
-- [`corr.get_pearsonr`](..py#function-get_pearsonr): Get Pearson correlation coefficient.
-- [`corr.get_spearmanr`](..py#function-get_spearmanr): Get Spearman correlation coefficient.
-- [`corr.pairwise_chi2`](..py#function-pairwise_chi2): Pairwise chi2 test.
-- [`diff.apply_get_significant_changes`](..py#function-apply_get_significant_changes): Apply on dataframe to get significant changes.
-- [`diff.binby_pvalue_coffs`](..py#function-binby_pvalue_coffs): Bin data by pvalue cutoffs.
-- [`diff.compare_classes`](..py#function-compare_classes):     
-- [`diff.compare_classes_many`](..py#function-compare_classes_many)
-- [`diff.get_demo_data`](..py#function-get_demo_data): Demo data to test the differences.
-- [`diff.get_diff`](..py#function-get_diff): Wrapper around the `get_stats_groupby`
-- [`diff.get_pval`](..py#function-get_pval): Get p-value.
-- [`diff.get_significant_changes`](..py#function-get_significant_changes): Get significant changes.
-- [`diff.get_stat`](..py#function-get_stat): Get statistics.
-- [`diff.get_stats`](..py#function-get_stats): Get statistics by iterating over columns wuth values.
-- [`diff.get_stats_groupby`](..py#function-get_stats_groupby): Iterate over groups, to get the differences.
-- [`enrich.get_enrichment`](..py#function-get_enrichment): Get enrichments between sets.
-- [`enrich.get_enrichments`](..py#function-get_enrichments): Get enrichments between sets, iterate over types/groups of test elements e.g. upregulated and downregulated genes.
-- [`fit.check_poly_fit`](..py#function-check_poly_fit): Check the fit of a polynomial equations.
-- [`fit.fit_2d_distribution_kde`](..py#function-fit_2d_distribution_kde): 2D kernel density estimate (KDE).
-- [`fit.fit_curve_fit`](..py#function-fit_curve_fit): Wrapper around `scipy`'s `curve_fit`.
-- [`fit.fit_gauss_bimodal`](..py#function-fit_gauss_bimodal): Fit bimodal gaussian distribution to the data in vector format.
-- [`fit.fit_gaussian2d`](..py#function-fit_gaussian2d): Fit gaussian 2D.
-- [`fit.get_grid`](..py#function-get_grid): 2D grids from 1d data.
-- [`fit.get_mlr_2_str`](..py#function-get_mlr_2_str): Get the result of the multiple linear regression between two variables as a string.
-- [`fit.mlr_2`](..py#function-mlr_2): Multiple linear regression between two variables.
-- [`io.perc_label`](..py#function-perc_label)
-- [`io.pval2annot`](..py#function-pval2annot): P/Q-value to annotation.
-- [`network.get_subgraphs`](..py#function-get_subgraphs): Subgraphs from the the edge list.
-- [`norm.norm_by_gaussian_kde`](..py#function-norm_by_gaussian_kde): Normalise matrix by gaussian KDE.
-- [`norm.norm_by_quantile`](..py#function-norm_by_quantile): Normalize the columns of X to each have the same distribution.
-- [`norm.zscore`](..py#function-zscore): Z-score.
-- [`norm.zscore_robust`](..py#function-zscore_robust): Robust Z-score.
-- [`paired.balance`](..py#function-balance): Balance.
-- [`paired.classify_sharing`](..py#function-classify_sharing): Classify sharing % calculated from Jaccard index.
-- [`paired.diff`](..py#function-diff): Get difference
-- [`paired.get_diff_sorted`](..py#function-get_diff_sorted): Difference sorted/absolute.
-- [`paired.get_paired_sets_stats`](..py#function-get_paired_sets_stats): Paired stats comparing two sets.
-- [`paired.get_ratio_sorted`](..py#function-get_ratio_sorted): Get ratio sorted.
-- [`paired.get_stats_paired`](..py#function-get_stats_paired): Paired stats, row-wise.
-- [`paired.get_stats_paired_agg`](..py#function-get_stats_paired_agg): Paired stats aggregated, for example, to classify 2D distributions.
-- [`regress.get_stats_regression`](..py#function-get_stats_regression): Get stats from regression models.
-- [`regress.plot_model_qcs`](..py#function-plot_model_qcs): Plot Quality Checks.
-- [`regress.plot_residuals_versus_fitted`](..py#function-plot_residuals_versus_fitted): plot Residuals Versus Fitted (RVF).
-- [`regress.plot_residuals_versus_groups`](..py#function-plot_residuals_versus_groups): plot Residuals Versus groups.
-- [`regress.run_lr_test`](..py#function-run_lr_test): Run LR test.
-- [`regress.to_columns_renamed_for_regression`](..py#function-to_columns_renamed_for_regression):     
-- [`regress.to_filteredby_variable`](..py#function-to_filteredby_variable): Filter regression statistics.
-- [`regress.to_formulas`](..py#function-to_formulas)
-- [`regress.to_input_data_for_regression`](..py#function-to_input_data_for_regression): Input data for the regression.
-- [`set.get_enrichment`](..py#function-get_enrichment): :return leading edge gene ids: high rank first
-- [`set.get_enrichments`](..py#function-get_enrichments): :param df1: test sets
-- [`set.get_intersection_stats`](..py#function-get_intersection_stats)
-- [`set.get_paired_sets_stats`](..py#function-get_paired_sets_stats): overlap, intersection, union, ratio
-- [`set.get_set_enrichment_stats`](..py#function-get_set_enrichment_stats): test:
-- [`set.test_set_enrichment`](..py#function-test_set_enrichment)
-- [`solve.get_intersection_locations`](..py#function-get_intersection_locations): Get co-ordinates of the intersection (x[idx]).
-- [`transform.anti_plog`](..py#function-anti_plog): Anti-psudo-log.
-- [`transform.get_q`](..py#function-get_q): To FDR corrected P-value.
-- [`transform.glog`](..py#function-glog): Generalised logarithm.
-- [`transform.log_pval`](..py#function-log_pval): Transform p-values to Log10.
-- [`transform.plog`](..py#function-plog): Psudo-log.
-- [`transform.rescale`](..py#function-rescale): Rescale within a new range.
-- [`transform.rescale_divergent`](..py#function-rescale_divergent): Rescale divergently i.e. two-sided.
-- [`variance.confidence_interval_95`](..py#function-confidence_interval_95): 95% confidence interval.
-- [`variance.get_ci`](..py#function-get_ci)
-- [`annot.annot_confusion_matrix`](..py#function-annot_confusion_matrix): Annotate a confusion matrix.
-- [`annot.annot_corners`](..py#function-annot_corners): Annotate points above and below the diagonal.
-- [`annot.annot_n_legend`](..py#function-annot_n_legend)
-- [`annot.annot_side`](..py#function-annot_side): Annot elements of the plots on the of the side plot.
-- [`annot.color_ax`](..py#function-color_ax): Color border of `plt.Axes`.
-- [`annot.confidence_ellipse`](..py#function-confidence_ellipse): Create a plot of the covariance confidence ellipse of *x* and *y*.
-- [`annot.get_logo_ax`](..py#function-get_logo_ax): Get `plt.Axes` for placing the logo.
-- [`annot.set_label`](..py#function-set_label): Set label on a plot.
-- [`annot.set_logo`](..py#function-set_logo): Set logo.
-- [`annot.show_box`](..py#function-show_box): Highlight sections of a plot e.g. heatmap by drawing boxes.
-- [`ax_.append_legends`](..py#function-append_legends): Append to legends.
-- [`ax_.set_ticklabels_color`](..py#function-set_ticklabels_color): Set colors to ticklabels.
-- [`ax_.drop_duplicate_legend`](..py#function-drop_duplicate_legend)
-- [`ax_.format_ticklabels`](..py#function-format_ticklabels): format_ticklabels
-- [`ax_.get_axlims`](..py#function-get_axlims): Get axis limits.
-- [`ax_.get_axlimsby_data`](..py#function-get_axlimsby_data): Infer axis limits from data.
-- [`ax_.get_line_cap_length`](..py#function-get_line_cap_length): Get the line cap length.
-- [`ax_.get_subplot_dimentions`](..py#function-get_subplot_dimentions): Calculate the aspect ratio of `plt.Axes`.
-- [`ax_.get_ticklabel_position`](..py#function-get_ticklabel_position): Get positions of the ticklabels.
-- [`ax_.get_ticklabel_position`](..py#function-get_ticklabel_position): Get positions of the ticklabels.
-- [`ax_.rename_labels`](..py#function-rename_labels)
-- [`ax_.rename_legends`](..py#function-rename_legends): Rename legends.
-- [`ax_.rename_ticklabels`](..py#function-rename_ticklabels): Rename the ticklabels.
-- [`ax_.reset_legend_colors`](..py#function-reset_legend_colors): Reset legend colors.
-- [`ax_.set_`](..py#function-set_): Ser many axis parameters.
-- [`ax_.set_axlims`](..py#function-set_axlims): Set axis limits.
-- [`ax_.set_colorbar`](..py#function-set_colorbar): Set colorbar.
-- [`ax_.set_colorbar_label`](..py#function-set_colorbar_label): Find colorbar and set label for it.
-- [`ax_.set_equallim`](..py#function-set_equallim): Set equal axis limits.
-- [`ax_.set_grids`](..py#function-set_grids): Show grids.
-- [`ax_.set_legend_custom`](..py#function-set_legend_custom): Set custom legends.
-- [`ax_.set_legends_merged`](..py#function-set_legends_merged): Reset legend colors.
-- [`ax_.set_ticklabels_color`](..py#function-set_ticklabels_color): Set colors to ticklabels.
-- [`ax_.set_ylabel`](..py#function-set_ylabel): Set ylabel horizontal.
-- [`ax_.sort_legends`](..py#function-sort_legends): Sort or filter legends.
-- [`ax_.split_ticklabels`](..py#function-split_ticklabels): Split ticklabels into major and minor. Two minor ticks are created per major tick. 
-- [`bar.plot_bar_serial`](..py#function-plot_bar_serial): Barplots with serial increase in resolution.
-- [`bar.plot_barh`](..py#function-plot_barh): Plot horizontal bar plot with text on them.
-- [`bar.plot_barh_stacked_percentage`](..py#function-plot_barh_stacked_percentage): Plot horizontal stacked bar plot with percentages.
-- [`bar.plot_barh_stacked_percentage_intersections`](..py#function-plot_barh_stacked_percentage_intersections): Plot horizontal stacked bar plot with percentages and intesections.
-- [`bar.plot_sankey`](..py#function-plot_sankey)
-- [`bar.plot_value_counts`](..py#function-plot_value_counts): Plot pandas's `value_counts`. 
-- [`bar.to_input_data_sankey`](..py#function-to_input_data_sankey):     
-- [`colors.append_cmap`](..py#function-append_cmap): Append a color to colormap.
-- [`colors.get_cmap_section`](..py#function-get_cmap_section): Get section of a colormap.
-- [`colors.get_colors_default`](..py#function-get_colors_default): get default colors.
-- [`colors.get_ncolors`](..py#function-get_ncolors): Get colors.
-- [`colors.get_val2color`](..py#function-get_val2color): Get color for a value.
-- [`colors.make_cmap`](..py#function-make_cmap): Create a colormap.
-- [`colors.mix_colors`](..py#function-mix_colors): Mix colors.
-- [`colors.rgbfloat2int`](..py#function-rgbfloat2int)
-- [`colors.saturate_color`](..py#function-saturate_color): Saturate a color.
-- [`compare.plot_comparisons`](..py#function-plot_comparisons): Parameters:
-- [`dist.hist_annot`](..py#function-hist_annot): Annoted histogram.
-- [`dist.plot_dists`](..py#function-plot_dists): Plot distributions.
-- [`dist.plot_gmm`](..py#function-plot_gmm): Plot Gaussian mixture Models (GMMs).
-- [`dist.plot_normal`](..py#function-plot_normal): Plot normal distribution.
-- [`dist.pointplot_groupbyedgecolor`](..py#function-pointplot_groupbyedgecolor): Plot seaborn's `pointplot` grouped by edgecolor of points.
-- [`figure.get_subplots`](..py#function-get_subplots): Get subplots.
-- [`figure.labelplots`](..py#function-labelplots): Label (sub)plots.
-- [`heatmap.plot_crosstab`](..py#function-plot_crosstab): Plot crosstab table.
-- [`heatmap.plot_table`](..py#function-plot_table): Plot to show a table.
-- [`image.plot_image`](..py#function-plot_image): Plot image e.g. schematic.
-- [`io.get_lines`](..py#function-get_lines): Get lines from the log.
-- [`io.get_plot_inputs`](..py#function-get_plot_inputs): Get plot inputs.
-- [`io.log_code`](..py#function-log_code): Log the code.
-- [`io.read_plot`](..py#function-read_plot): Generate the plot from data, parameters and a script.
-- [`io.savefig`](..py#function-savefig): Wrapper around `plt.savefig`.
-- [`io.savelegend`](..py#function-savelegend): Save only the legend of the plot/figure.
-- [`io.to_concat`](..py#function-to_concat): Concat images.
-- [`io.to_convert`](..py#function-to_convert): Convert format of image using `PIL`.
-- [`io.to_data`](..py#function-to_data): Convert to base64 string.
-- [`io.to_gif`](..py#function-to_gif): Convert to GIF.
-- [`io.to_montage`](..py#function-to_montage): To montage.
-- [`io.to_plot`](..py#function-to_plot): Save a plot.
-- [`io.to_plotp`](..py#function-to_plotp): Infer output path for a plot.
-- [`io.to_raster`](..py#function-to_raster): to_raster _summary_
-- [`io.to_rasters`](..py#function-to_rasters): Convert many images to raster. Uses inkscape.
-- [`io.to_script`](..py#function-to_script): Save the script with the code for the plot.
-- [`io.update_kws_plot`](..py#function-update_kws_plot): Update the input parameters.
-- [`line.plot_connections`](..py#function-plot_connections): Plot connections between points with annotations.
-- [`line.plot_kinetics`](..py#function-plot_kinetics): Plot time-dependent kinetic data.
-- [`line.plot_range`](..py#function-plot_range): Plot range/intervals e.g. genome coordinates as lines.
-- [`line.plot_steps`](..py#function-plot_steps): changes in numbers
-- [`scatter.plot_qq`](..py#function-plot_qq): plot QQ.
-- [`scatter.plot_ranks`](..py#function-plot_ranks): Plot rankings.
-- [`scatter.plot_scatter`](..py#function-plot_scatter): Plot scatter.
-- [`scatter.plot_trendline`](..py#function-plot_trendline): Plot a trendline.
-- [`sequence.plot_domain`](..py#function-plot_domain): Plot protein domain.
-- [`sequence.plot_gene`](..py#function-plot_gene): Plot genes.
-- [`sequence.plot_genes`](..py#function-plot_genes): Plot many genes.
-- [`sequence.plot_genes_data`](..py#function-plot_genes_data): Plot gene-wise data.
-- [`sequence.plot_genes_legend`](..py#function-plot_genes_legend): Make the legends for the genes.
-- [`sequence.plot_protein`](..py#function-plot_protein): Plot protein.
-- [`sets.plot_enrichment`](..py#function-plot_enrichment): Plot enrichment stats.
-- [`sets.plot_intersections`](..py#function-plot_intersections): Plot upset plot.
-- [`sets.plot_venn`](..py#function-plot_venn): Plot Venn diagram.
-- [`df.exclude_items`](..py#function-exclude_items): Exclude items from the table with the workflow info.
-- [`function.get_ios`](..py#function-get_ios): Get input and output (IO) paths.
-- [`function.get_name`](..py#function-get_name): Get name of the function.
-- [`function.get_path`](..py#function-get_path): Extract pathsfrom a line of code.
-- [`function.get_quoted_path`](..py#function-get_quoted_path): Quoted paths.
-- [`function.get_step`](..py#function-get_step): Get code for a step.
-- [`function.remove_dirs_from_outputs`](..py#function-remove_dirs_from_outputs): Remove directories from the output paths.
-- [`function.to_task`](..py#function-to_task): Get the lines of code for a task (script to be saved as an individual `.py` file).
-- [`io.clear_dataframes`](..py#function-clear_dataframes)
-- [`io.clear_variables`](..py#function-clear_variables): Clear dataframes from the workspace.
-- [`io.create_workflow_report`](..py#function-create_workflow_report): Create report for the workflow run.
-- [`io.get_lines`](..py#function-get_lines): Get lines of code from notebook.
-- [`io.import_from_file`](..py#function-import_from_file): Import functions from python (`.py`) file.
-- [`io.make_symlinks`](..py#function-make_symlinks): Make symbolic links.
-- [`io.read_config`](..py#function-read_config): Read configuration.
-- [`io.read_metadata`](..py#function-read_metadata): Read metadata.
-- [`io.read_nb_md`](..py#function-read_nb_md): Read notebook's documentation in the markdown cells.
-- [`io.to_diff_notebooks`](..py#function-to_diff_notebooks): "Diff" notebooks using `nbdiff` (https://nbdime.readthedocs.io/en/latest/)
-- [`io.to_info`](..py#function-to_info): Save README.md file.
-- [`io.to_parameters`](..py#function-to_parameters): Get function to parameters map.
-- [`io.to_py`](..py#function-to_py): To python script (.py).
-- [`io.to_workflow`](..py#function-to_workflow): Save workflow file.
-- [`knit.nb_to_py`](..py#function-nb_to_py): notebook to script.
-- [`knit.sort_stepns`](..py#function-sort_stepns): Sort steps (functions) of a task (script).
-- [`monitor.plot_workflow_log`](..py#function-plot_workflow_log): Plot workflow log.
-- [`task.pre_run_notebook`](..py#function-pre_run_notebook): notebooks.
-- [`task.run_notebooks`](..py#function-run_notebooks): Execute a list of notebooks.
-- [`version.git_commit`](..py#function-git_commit): Version control.
-- [`workflow.get_scripts`](..py#function-get_scripts): Get scripts.
-- [`workflow.to_scripts`](..py#function-to_scripts): To scripts.
+- [`lib.to_class`](./roux.lib.md#function-to_class): Get the decorator to attach functions. 
+- [`lib.decorator`](./roux.lib.md#function-decorator)
+- [`df.agg_bools`](./roux.lib.df.md#function-agg_bools): Bools to columns. Reverse of one-hot encoder (`get_dummies`). 
+- [`df.agg_by_order`](./roux.lib.df.md#function-agg_by_order): Get first item in the order.
+- [`df.agg_by_order_counts`](./roux.lib.df.md#function-agg_by_order_counts): Get the aggregated counts by order*.
+- [`df.assert_dense`](./roux.lib.df.md#function-assert_dense): Alias of `validate_dense`.
+- [`df.assert_no_dups`](./roux.lib.df.md#function-assert_no_dups): Assert that no duplicates
+- [`df.assert_no_na`](./roux.lib.df.md#function-assert_no_na): Assert that no missing values in columns.
+- [`df.check_duplicated`](./roux.lib.df.md#function-check_duplicated): Check duplicates (alias of `check_dups`)    
+- [`df.check_dups`](./roux.lib.df.md#function-check_dups): Check duplicates.
+- [`df.check_inflation`](./roux.lib.df.md#function-check_inflation): Occurances of values in columns.
+- [`df.check_intersections`](./roux.lib.df.md#function-check_intersections): Check intersections.
+- [`df.check_mappings`](./roux.lib.df.md#function-check_mappings): Mapping between items in two columns.
+- [`df.check_na`](./roux.lib.df.md#function-check_na): Number/percentage of missing values in columns.
+- [`df.check_nunique`](./roux.lib.df.md#function-check_nunique): Number/percentage of unique values in columns.
+- [`df.classify_mappings`](./roux.lib.df.md#function-classify_mappings): Classify mappings between items in two columns.
+- [`df.clean`](./roux.lib.df.md#function-clean): Deletes potentially temporary columns.
+- [`df.clean_columns`](./roux.lib.df.md#function-clean_columns): Standardise columns.
+- [`df.clean_compress`](./roux.lib.df.md#function-clean_compress): `clean` and `compress` the dataframe.
+- [`df.compress`](./roux.lib.df.md#function-compress): Compress the dataframe by converting columns containing strings/objects to categorical.
+- [`df.drop_unnamedcol`](./roux.lib.df.md#function-drop_unnamedcol): Deletes the columns with "Unnamed" prefix.
+- [`df.dict2df`](./roux.lib.df.md#function-dict2df): Dictionary to DataFrame.
+- [`df.drop_constants`](./roux.lib.df.md#function-drop_constants): Deletes columns with a single unique value.
+- [`df.drop_inflates`](./roux.lib.df.md#function-drop_inflates): Deletes columns with high number of duplicates.
+- [`df.drop_levelcol`](./roux.lib.df.md#function-drop_levelcol): Deletes the potentially temporary columns names with "level" prefix.
+- [`df.drop_unnamedcol`](./roux.lib.df.md#function-drop_unnamedcol): Deletes the columns with "Unnamed" prefix.
+- [`df.dropby_patterns`](./roux.lib.df.md#function-dropby_patterns): Deletes columns containing substrings i.e. patterns.
+- [`df.filter_rows`](./roux.lib.df.md#function-filter_rows): Filter rows using a dictionary.
+- [`df.flatten_columns`](./roux.lib.df.md#function-flatten_columns): Multi-index columns to single-level.
+- [`df.get_alt_id`](./roux.lib.df.md#function-get_alt_id): Get alternate/partner id from a paired id.
+- [`df.get_bools`](./roux.lib.df.md#function-get_bools): Columns to bools. One-hot-encoder (`get_dummies`).
+- [`df.get_chunks`](./roux.lib.df.md#function-get_chunks): Get chunks of a dataframe.
+- [`df.get_constants`](./roux.lib.df.md#function-get_constants): Get the columns with a single unique value.
+- [`df.get_group`](./roux.lib.df.md#function-get_group): Get a dataframe for a group out of the `groupby` object.
+- [`df.get_groupby_columns`](./roux.lib.df.md#function-get_groupby_columns): Get the columns supplied to `groupby`.
+- [`df.get_mappings`](./roux.lib.df.md#function-get_mappings): Classify the mapapping between items in two columns.
+- [`df.get_name`](./roux.lib.df.md#function-get_name): Gets the name of the dataframe. 
+- [`df.get_totals`](./roux.lib.df.md#function-get_totals): Get totals from the output of `check_intersections`.
+- [`df.groupby_filter_fast`](./roux.lib.df.md#function-groupby_filter_fast): Groupby and filter fast.
+- [`df.groupby_sort_values`](./roux.lib.df.md#function-groupby_sort_values): Sort groups. 
+- [`df.infer_index`](./roux.lib.df.md#function-infer_index): Infer the index (id) of the table.
+- [`df.log_apply`](./roux.lib.df.md#function-log_apply): Report (log) the changes in the shapes of the dataframe before and after an operation/s.
+- [`df.log_shape_change`](./roux.lib.df.md#function-log_shape_change): Report the changes in the shapes of a DataFrame.
+- [`df.lower_columns`](./roux.lib.df.md#function-lower_columns): Column names of the dataframe to lower-case letters.
+- [`df.make_ids`](./roux.lib.df.md#function-make_ids): Make ids by joining string ids in more than one columns.
+- [`df.make_ids_sorted`](./roux.lib.df.md#function-make_ids_sorted): Make sorted ids by joining string ids in more than one columns.
+- [`df.melt_paired`](./roux.lib.df.md#function-melt_paired): Melt a paired dataframe.
+- [`df.renameby_replace`](./roux.lib.df.md#function-renameby_replace): Rename columns by replacing sub-strings.
+- [`df.sort_columns_by_values`](./roux.lib.df.md#function-sort_columns_by_values): Sort the values in columns in ascending order.
+- [`df.groupby_sort_values`](./roux.lib.df.md#function-groupby_sort_values): Sort groups. 
+- [`df.sort_valuesby_list`](./roux.lib.df.md#function-sort_valuesby_list): Sort dataframe by custom order of items in a column.
+- [`df.split_ids`](./roux.lib.df.md#function-split_ids): Split joined ids to individual ones.
+- [`df.swap_paired_cols`](./roux.lib.df.md#function-swap_paired_cols): Swap suffixes of paired columns.
+- [`df.to_boolean`](./roux.lib.df.md#function-to_boolean): Boolean from ranges.
+- [`df.to_cat`](./roux.lib.df.md#function-to_cat): To series containing categories.
+- [`df.to_map_binary`](./roux.lib.df.md#function-to_map_binary): Convert linear mappings to a binary map
+- [`df.to_multiindex_columns`](./roux.lib.df.md#function-to_multiindex_columns): Single level columns to multiindex.
+- [`df.to_ranges`](./roux.lib.df.md#function-to_ranges): Ranges from boolean columns.
+- [`df.validate_1_1_mappings`](./roux.lib.df.md#function-validate_1_1_mappings): Validate that the papping between items in two columns is 1:1.
+- [`df.validate_dense`](./roux.lib.df.md#function-validate_dense): Validate no missing values and no duplicates in the dataframe.
+- [`df.validate_no_duplicates`](./roux.lib.df.md#function-validate_no_duplicates): Validate that no duplicates (alias of `validate_no_dups`)
+- [`df.validate_no_dups`](./roux.lib.df.md#function-validate_no_dups): Validate that no duplicates.
+- [`df.validate_no_na`](./roux.lib.df.md#function-validate_no_na): Validate no missing values in columns.
+- [`dfs.compare_rows`](./roux.lib.dfs.md#function-compare_rows)
+- [`dfs.filter_dfs`](./roux.lib.dfs.md#function-filter_dfs): Filter dataframes based items in the common columns.
+- [`dfs.merge_dfs`](./roux.lib.dfs.md#function-merge_dfs): Merge dataframes from left to right.   
+- [`dfs.merge_paired`](./roux.lib.dfs.md#function-merge_paired): Merge uppaired dataframes to a paired dataframe. 
+- [`dfs.merge_with_many_columns`](./roux.lib.dfs.md#function-merge_with_many_columns): Merge with many columns.
+- [`dict.flip_dict`](./roux.lib.dict.md#function-flip_dict): switch values with keys and vice versa.
+- [`dict.head_dict`](./roux.lib.dict.md#function-head_dict)
+- [`dict.merge_dict_values`](./roux.lib.dict.md#function-merge_dict_values): Merge dictionary values.
+- [`dict.merge_dicts`](./roux.lib.dict.md#function-merge_dicts): Merge dictionaries.
+- [`dict.sort_dict`](./roux.lib.dict.md#function-sort_dict): Sort dictionary by values.
+- [`google.download_drawings`](./roux.lib.google.md#function-download_drawings): Download specific files: drawings
+- [`google.download_file`](./roux.lib.google.md#function-download_file): Downloads a specified file.
+- [`google.get_comments`](./roux.lib.google.md#function-get_comments): Get comments.
+- [`google.get_file_id`](./roux.lib.google.md#function-get_file_id)
+- [`google.get_metadata_of_paper`](./roux.lib.google.md#function-get_metadata_of_paper): Get the metadata of a pdf document.
+- [`google.get_search_strings`](./roux.lib.google.md#function-get_search_strings): Google search.
+- [`google.get_service`](./roux.lib.google.md#function-get_service): Creates a google service object. 
+- [`google.get_service`](./roux.lib.google.md#function-get_service): Creates a google service object. 
+- [`google.list_files_in_folder`](./roux.lib.google.md#function-list_files_in_folder): Lists files in a google drive folder.
+- [`google.search`](./roux.lib.google.md#function-search): Google search.
+- [`google.share`](./roux.lib.google.md#function-share): :params user_permission:     
+- [`google.upload_file`](./roux.lib.google.md#function-upload_file): Uploads a local file onto google drive.
+- [`google.upload_files`](./roux.lib.google.md#function-upload_files)
+- [`io.apply_on_paths`](./roux.lib.io.md#function-apply_on_paths): Apply a function on list of files.
+- [`io.backup`](./roux.lib.io.md#function-backup): Backup a directory
+- [`io.check_chunks`](./roux.lib.io.md#function-check_chunks): Create chunks of the tables.
+- [`io.download`](./roux.lib.io.md#function-download): Download a file.
+- [`io.get_logp`](./roux.lib.io.md#function-get_logp): Infer the path of the log file.
+- [`io.get_version`](./roux.lib.io.md#function-get_version): Get the time-based version string.
+- [`io.is_dict`](./roux.lib.io.md#function-is_dict)
+- [`io.post_read_table`](./roux.lib.io.md#function-post_read_table): Post-reading a table.
+- [`io.pqt2tsv`](./roux.lib.io.md#function-pqt2tsv): Convert Apache parquet file to tab-separated. 
+- [`io.read_dict`](./roux.lib.io.md#function-read_dict): Read dictionary file.
+- [`io.read_excel`](./roux.lib.io.md#function-read_excel): Read excel file
+- [`io.read_json`](./roux.lib.io.md#function-read_json): Read `.json` file.
+- [`io.read_list`](./roux.lib.io.md#function-read_list): Read the lines in the file.
+- [`io.read_list`](./roux.lib.io.md#function-read_list): Read the lines in the file.
+- [`io.read_pickle`](./roux.lib.io.md#function-read_pickle): Read `.pickle` file.
+- [`io.read_table`](./roux.lib.io.md#function-read_table):     Table/s reader.
+- [`io.read_tables`](./roux.lib.io.md#function-read_tables): Read multiple tables.
+- [`io.read_text`](./roux.lib.io.md#function-read_text): Read a file. 
+- [`io.read_url`](./roux.lib.io.md#function-read_url): Read text from an URL.
+- [`io.read_yaml`](./roux.lib.io.md#function-read_yaml): Read `.yaml` file.
+- [`io.read_zip`](./roux.lib.io.md#function-read_zip): Read the contents of a zip file.
+- [`io.to_dict`](./roux.lib.io.md#function-to_dict): Save dictionary file.
+- [`io.to_excel`](./roux.lib.io.md#function-to_excel): Save excel file.
+- [`io.to_excel_commented`](./roux.lib.io.md#function-to_excel_commented): Add comments to the columns of excel file and save.
+- [`io.to_json`](./roux.lib.io.md#function-to_json): Save `.json` file.
+- [`io.to_list`](./roux.lib.io.md#function-to_list): Save list.
+- [`io.to_manytables`](./roux.lib.io.md#function-to_manytables): Save many table.
+- [`io.to_table`](./roux.lib.io.md#function-to_table): Save table.
+- [`io.to_table_pqt`](./roux.lib.io.md#function-to_table_pqt)
+- [`io.to_yaml`](./roux.lib.io.md#function-to_yaml): Save `.yaml` file.
+- [`io.to_zip`](./roux.lib.io.md#function-to_zip): Compress a file/directory.
+- [`io.tsv2pqt`](./roux.lib.io.md#function-tsv2pqt): Convert tab-separated file to Apache parquet. 
+- [`io.version`](./roux.lib.io.md#function-version): Get the version of the file/directory.
+- [`seq.fa2df`](./roux.lib.seq.md#function-fa2df): _summary_
+- [`seq.read_fasta`](./roux.lib.seq.md#function-read_fasta): Read fasta
+- [`seq.reverse_complement`](./roux.lib.seq.md#function-reverse_complement): Reverse complement.
+- [`seq.to_bed`](./roux.lib.seq.md#function-to_bed): Genome co-ordinates to bed.
+- [`seq.to_fasta`](./roux.lib.seq.md#function-to_fasta): Save fasta file.
+- [`seq.to_genomeocoords`](./roux.lib.seq.md#function-to_genomeocoords): String-formated genome co-ordinates to separated values.
+- [`set.bools2intervals`](./roux.lib.set.md#function-bools2intervals): Convert bools to intervals.
+- [`set.dropna`](./roux.lib.set.md#function-dropna): Drop `np.nan` items from a list.
+- [`set.flatten`](./roux.lib.set.md#function-flatten): List of lists to list.
+- [`set.get_alt`](./roux.lib.set.md#function-get_alt): Get alternate item between two.
+- [`set.get_pairs`](./roux.lib.set.md#function-get_pairs): Creates a dataframe with the paired items.
+- [`set.get_windows`](./roux.lib.set.md#function-get_windows): Windows/segments from a range. 
+- [`set.intersection`](./roux.lib.set.md#function-intersection): Intersections of lists.
+- [`set.intersections`](./roux.lib.set.md#function-intersections): Get intersections between lists.
+- [`set.jaccard_index`](./roux.lib.set.md#function-jaccard_index)
+- [`set.intersection`](./roux.lib.set.md#function-intersection): Intersections of lists.
+- [`set.list2ranges`](./roux.lib.set.md#function-list2ranges)
+- [`set.list2str`](./roux.lib.set.md#function-list2str): Returns string if single item in a list.
+- [`set.union`](./roux.lib.set.md#function-union): Union of lists.
+- [`set.nintersection`](./roux.lib.set.md#function-nintersection): Count the items in intersetion.
+- [`set.nunion`](./roux.lib.set.md#function-nunion): Count the items in union.
+- [`set.nunique`](./roux.lib.set.md#function-nunique): Count unique items in a list
+- [`set.range_overlap`](./roux.lib.set.md#function-range_overlap): Overlap between ranges.
+- [`set.union`](./roux.lib.set.md#function-union): Union of lists.
+- [`set.unique`](./roux.lib.set.md#function-unique): Unique items in a list.
+- [`set.unique_str`](./roux.lib.set.md#function-unique_str): Unique single item from a list.
+- [`str.align`](./roux.lib.str.md#function-align): Align strings.
+- [`str.decode`](./roux.lib.str.md#function-decode): Decode data from a string.
+- [`str.dict2str`](./roux.lib.str.md#function-dict2str): Dictionary to string.
+- [`str.encode`](./roux.lib.str.md#function-encode): Encode the data as a string.
+- [`str.findall`](./roux.lib.str.md#function-findall): Find the substrings or their locations in a string.
+- [`str.get_bracket`](./roux.lib.str.md#function-get_bracket): Get bracketed substrings.
+- [`str.get_fix`](./roux.lib.str.md#function-get_fix): Infer common prefix or suffix.
+- [`str.get_marked_substrings`](./roux.lib.str.md#function-get_marked_substrings): Get the substrings flanked with markers from a string.
+- [`str.get_prefix`](./roux.lib.str.md#function-get_prefix): Get the prefix of the strings
+- [`str.get_suffix`](./roux.lib.str.md#function-get_suffix): Get the suffix of the strings
+- [`str.get_marked_substrings`](./roux.lib.str.md#function-get_marked_substrings): Get the substrings flanked with markers from a string.
+- [`str.linebreaker`](./roux.lib.str.md#function-linebreaker): Insert `newline`s within a string. 
+- [`str.mark_substrings`](./roux.lib.str.md#function-mark_substrings): Mark sub-string/s in a string.
+- [`str.num2str`](./roux.lib.str.md#function-num2str): Number to string.
+- [`str.removesuffix`](./roux.lib.str.md#function-removesuffix): Remove suffix.
+- [`str.replace_many`](./roux.lib.str.md#function-replace_many): Rename by replacing sub-strings.
+- [`str.substitution`](./roux.lib.str.md#function-substitution): Substitute character in a string.
+- [`str.replace_many`](./roux.lib.str.md#function-replace_many): Rename by replacing sub-strings.
+- [`str.str2dict`](./roux.lib.str.md#function-str2dict): String to dictionary.
+- [`str.str2num`](./roux.lib.str.md#function-str2num): String to number.
+- [`str.substitution`](./roux.lib.str.md#function-substitution): Substitute character in a string.
+- [`str.tuple2str`](./roux.lib.str.md#function-tuple2str): Join tuple items.
+- [`sys.basenamenoext`](./roux.lib.sys.md#function-basenamenoext): Basename without the extension.
+- [`sys.create_symlink`](./roux.lib.sys.md#function-create_symlink): Create symbolic links.
+- [`sys.get_all_subpaths`](./roux.lib.sys.md#function-get_all_subpaths): Get all the subpaths.
+- [`sys.get_datetime`](./roux.lib.sys.md#function-get_datetime): Get the date and time.
+- [`sys.get_encoding`](./roux.lib.sys.md#function-get_encoding): Get encoding of a file.
+- [`sys.get_env`](./roux.lib.sys.md#function-get_env): Get the virtual environment as a dictionary.
+- [`sys.get_excecution_location`](./roux.lib.sys.md#function-get_excecution_location): Get the location of the function being executed.
+- [`sys.get_logger`](./roux.lib.sys.md#function-get_logger): Get the logging object.
+- [`sys.input_binary`](./roux.lib.sys.md#function-input_binary): Get input in binary format.
+- [`sys.is_interactive`](./roux.lib.sys.md#function-is_interactive): Check if the UI is interactive e.g. jupyter or command line. 
+- [`sys.is_interactive_notebook`](./roux.lib.sys.md#function-is_interactive_notebook): Check if the UI is interactive e.g. jupyter or command line.     
+- [`sys.to_path`](./roux.lib.sys.md#function-to_path): Normalise a string to be used as a path of file.
+- [`sys.makedirs`](./roux.lib.sys.md#function-makedirs): Make directories recursively.
+- [`sys.p2time`](./roux.lib.sys.md#function-p2time): Get the creation/modification dates of files.
+- [`sys.ps2time`](./roux.lib.sys.md#function-ps2time): Get the times for a list of files. 
+- [`sys.read_ps`](./roux.lib.sys.md#function-read_ps): Read a list of paths.
+- [`sys.remove_exts`](./roux.lib.sys.md#function-remove_exts): Filename without the extension.
+- [`sys.runbash`](./roux.lib.sys.md#function-runbash): Run a bash command. 
+- [`sys.runbash_tmp`](./roux.lib.sys.md#function-runbash_tmp): Run a bash command in `/tmp` directory.
+- [`sys.to_output_path`](./roux.lib.sys.md#function-to_output_path): Infer a single output path for a list of paths.
+- [`sys.to_output_paths`](./roux.lib.sys.md#function-to_output_paths): Infer a output path for each of the paths or inputs.
+- [`sys.to_path`](./roux.lib.sys.md#function-to_path): Normalise a string to be used as a path of file.
+- [`text.cat`](./roux.lib.text.md#function-cat): Concatenate text files.
+- [`text.get_header`](./roux.lib.text.md#function-get_header): Get the header of a file.
+- [`biomart.get_ensembl_dataset_name`](./roux.query.biomart.md#function-get_ensembl_dataset_name): Get the name of the Ensembl dataset.
+- [`biomart.query`](./roux.query.biomart.md#function-query): Query the biomart database.
+- [`ensembl.convert_coords_human_assemblies`](./roux.query.ensembl.md#function-convert_coords_human_assemblies): Convert coordinates between human assemblies.
+- [`ensembl.get_utr_sequence`](./roux.query.ensembl.md#function-get_utr_sequence): Protein id to UTR sequence.
+- [`ensembl.is_protein_coding`](./roux.query.ensembl.md#function-is_protein_coding): A gene or protein is protein coding or not.
+- [`ensembl.map_id`](./roux.query.ensembl.md#function-map_id): Map ids between releases.
+- [`ensembl.map_ids`](./roux.query.ensembl.md#function-map_ids): Map many ids between Ensembl releases.
+- [`ensembl.map_ids_`](./roux.query.ensembl.md#function-map_ids_): Function for mapping many ids.
+- [`ensembl.read_idmapper_output`](./roux.query.ensembl.md#function-read_idmapper_output): Read the output of Ensembl's idmapper.
+- [`ensembl.rest`](./roux.query.ensembl.md#function-rest): Query Ensembl database using REST API.
+- [`ensembl.to_cdsseq`](./roux.query.ensembl.md#function-to_cdsseq): Transcript id to coding sequence (CDS).
+- [`ensembl.to_dnaseq`](./roux.query.ensembl.md#function-to_dnaseq): Gene id to DNA sequence.
+- [`ensembl.to_domains`](./roux.query.ensembl.md#function-to_domains): Protein id to domains. 
+- [`ensembl.to_gene_id`](./roux.query.ensembl.md#function-to_gene_id): Transcript id to gene id.
+- [`ensembl.to_gene_name`](./roux.query.ensembl.md#function-to_gene_name): Gene id to gene name.
+- [`ensembl.to_homology`](./roux.query.ensembl.md#function-to_homology): Query homology of a gene using Ensembl REST API.
+- [`ensembl.to_protein_id`](./roux.query.ensembl.md#function-to_protein_id): Transcript id to protein id.
+- [`ensembl.to_protein_id_longest`](./roux.query.ensembl.md#function-to_protein_id_longest): Gene id to protein id of the longest protein.
+- [`ensembl.to_protein_seq`](./roux.query.ensembl.md#function-to_protein_seq): Protein/transcript id to protein sequence.
+- [`ensembl.to_species_name`](./roux.query.ensembl.md#function-to_species_name): Convert to species name.
+- [`ensembl.to_taxid`](./roux.query.ensembl.md#function-to_taxid): Convert to taxonomic ids.  
+- [`ensembl.to_transcript_id`](./roux.query.ensembl.md#function-to_transcript_id): Protein id to transcript id.
+- [`binary.classify_bools`](./roux.stat.binary.md#function-classify_bools): Classify bools.
+- [`binary.compare_bools_jaccard`](./roux.stat.binary.md#function-compare_bools_jaccard): Compare bools in terms of the jaccard index.
+- [`binary.compare_bools_jaccard_df`](./roux.stat.binary.md#function-compare_bools_jaccard_df): Pairwise compare bools in terms of the jaccard index.
+- [`binary.frac`](./roux.stat.binary.md#function-frac): Fraction.
+- [`binary.get_cutoff`](./roux.stat.binary.md#function-get_cutoff): Obtain threshold based on ROC or PR curve.
+- [`binary.get_stats_confusion_matrix`](./roux.stat.binary.md#function-get_stats_confusion_matrix): Get stats confusion matrix.
+- [`binary.perc`](./roux.stat.binary.md#function-perc): Percentage.
+- [`classify.drop_low_complexity`](./roux.stat.classify.md#function-drop_low_complexity): Remove low-complexity columns from the data. 
+- [`classify.get_Xy_for_classification`](./roux.stat.classify.md#function-get_xy_for_classification): Get X matrix and y vector. 
+- [`classify.get_cvsplits`](./roux.stat.classify.md#function-get_cvsplits): Get cross-validation splits.
+- [`classify.get_estimatorn2grid_search`](./roux.stat.classify.md#function-get_estimatorn2grid_search): Estimator-wise grid search.
+- [`classify.get_feature_importances`](./roux.stat.classify.md#function-get_feature_importances): Feature importances.
+- [`classify.get_feature_predictive_power`](./roux.stat.classify.md#function-get_feature_predictive_power): get_feature_predictive_power _summary_
+- [`classify.get_grid_search`](./roux.stat.classify.md#function-get_grid_search): Grid search.
+- [`classify.get_partial_dependence`](./roux.stat.classify.md#function-get_partial_dependence): Partial dependence.
+- [`classify.get_probability`](./roux.stat.classify.md#function-get_probability): Classification probability.
+- [`classify.get_test_scores`](./roux.stat.classify.md#function-get_test_scores): Test scores.
+- [`classify.plot_feature_predictive_power`](./roux.stat.classify.md#function-plot_feature_predictive_power): Plot feature-wise predictive power.
+- [`classify.plot_metrics`](./roux.stat.classify.md#function-plot_metrics): Plot performance metrics.
+- [`classify.run_grid_search`](./roux.stat.classify.md#function-run_grid_search): Run grid search.
+- [`cluster.check_clusters`](./roux.stat.cluster.md#function-check_clusters): Check clusters.
+- [`cluster.cluster_1d`](./roux.stat.cluster.md#function-cluster_1d): Cluster 1D data.
+- [`cluster.get_clusters`](./roux.stat.cluster.md#function-get_clusters): Get clusters.
+- [`cluster.get_clusters_optimum`](./roux.stat.cluster.md#function-get_clusters_optimum): Get optimum clusters.
+- [`cluster.get_gmm_intersection`](./roux.stat.cluster.md#function-get_gmm_intersection)
+- [`cluster.get_gmm_params`](./roux.stat.cluster.md#function-get_gmm_params): Intersection point of the two peak Gaussian mixture Models (GMMs).
+- [`cluster.get_n_clusters_optimum`](./roux.stat.cluster.md#function-get_n_clusters_optimum): Get n clusters optimum.
+- [`cluster.get_pos_umap`](./roux.stat.cluster.md#function-get_pos_umap): Get positions of the umap points.
+- [`cluster.plot_silhouette`](./roux.stat.cluster.md#function-plot_silhouette): Plot silhouette
+- [`compare.compare_strings`](./roux.stat.compare.md#function-compare_strings): Compare two lists of strings.
+- [`compare.get_cols_x_for_comparison`](./roux.stat.compare.md#function-get_cols_x_for_comparison): Identify X columns.
+- [`compare.get_comparison`](./roux.stat.compare.md#function-get_comparison): Compare the x and y columns.
+- [`compare.to_filteredby_samples`](./roux.stat.compare.md#function-to_filteredby_samples): Filter table before calculating differences.
+- [`compare.to_preprocessed_data`](./roux.stat.compare.md#function-to_preprocessed_data)
+- [`corr.check_collinearity`](./roux.stat.corr.md#function-check_collinearity): Check collinearity.
+- [`corr.corr_to_str`](./roux.stat.corr.md#function-corr_to_str): Correlation to string
+- [`corr.get_corr`](./roux.stat.corr.md#function-get_corr): Correlation between vectors (wrapper).
+- [`corr.get_corr_bootstrapped`](./roux.stat.corr.md#function-get_corr_bootstrapped): Get correlations after bootstraping.
+- [`corr.get_corrs`](./roux.stat.corr.md#function-get_corrs): Correlate columns of a dataframes.
+- [`corr.get_partial_corrs`](./roux.stat.corr.md#function-get_partial_corrs): Get partial correlations.
+- [`corr.get_pearsonr`](./roux.stat.corr.md#function-get_pearsonr): Get Pearson correlation coefficient.
+- [`corr.get_spearmanr`](./roux.stat.corr.md#function-get_spearmanr): Get Spearman correlation coefficient.
+- [`corr.pairwise_chi2`](./roux.stat.corr.md#function-pairwise_chi2): Pairwise chi2 test.
+- [`diff.apply_get_significant_changes`](./roux.stat.diff.md#function-apply_get_significant_changes): Apply on dataframe to get significant changes.
+- [`diff.binby_pvalue_coffs`](./roux.stat.diff.md#function-binby_pvalue_coffs): Bin data by pvalue cutoffs.
+- [`diff.compare_classes`](./roux.stat.diff.md#function-compare_classes):     
+- [`diff.compare_classes_many`](./roux.stat.diff.md#function-compare_classes_many)
+- [`diff.get_demo_data`](./roux.stat.diff.md#function-get_demo_data): Demo data to test the differences.
+- [`diff.get_diff`](./roux.stat.diff.md#function-get_diff): Wrapper around the `get_stats_groupby`
+- [`diff.get_pval`](./roux.stat.diff.md#function-get_pval): Get p-value.
+- [`diff.get_significant_changes`](./roux.stat.diff.md#function-get_significant_changes): Get significant changes.
+- [`diff.get_stat`](./roux.stat.diff.md#function-get_stat): Get statistics.
+- [`diff.get_stats`](./roux.stat.diff.md#function-get_stats): Get statistics by iterating over columns wuth values.
+- [`diff.get_stats_groupby`](./roux.stat.diff.md#function-get_stats_groupby): Iterate over groups, to get the differences.
+- [`enrich.get_enrichment`](./roux.stat.enrich.md#function-get_enrichment): Get enrichments between sets.
+- [`enrich.get_enrichments`](./roux.stat.enrich.md#function-get_enrichments): Get enrichments between sets, iterate over types/groups of test elements e.g. upregulated and downregulated genes.
+- [`fit.check_poly_fit`](./roux.stat.fit.md#function-check_poly_fit): Check the fit of a polynomial equations.
+- [`fit.fit_2d_distribution_kde`](./roux.stat.fit.md#function-fit_2d_distribution_kde): 2D kernel density estimate (KDE).
+- [`fit.fit_curve_fit`](./roux.stat.fit.md#function-fit_curve_fit): Wrapper around `scipy`'s `curve_fit`.
+- [`fit.fit_gauss_bimodal`](./roux.stat.fit.md#function-fit_gauss_bimodal): Fit bimodal gaussian distribution to the data in vector format.
+- [`fit.fit_gaussian2d`](./roux.stat.fit.md#function-fit_gaussian2d): Fit gaussian 2D.
+- [`fit.get_grid`](./roux.stat.fit.md#function-get_grid): 2D grids from 1d data.
+- [`fit.get_mlr_2_str`](./roux.stat.fit.md#function-get_mlr_2_str): Get the result of the multiple linear regression between two variables as a string.
+- [`fit.mlr_2`](./roux.stat.fit.md#function-mlr_2): Multiple linear regression between two variables.
+- [`io.perc_label`](./roux.stat.io.md#function-perc_label)
+- [`io.pval2annot`](./roux.stat.io.md#function-pval2annot): P/Q-value to annotation.
+- [`network.get_subgraphs`](./roux.stat.network.md#function-get_subgraphs): Subgraphs from the the edge list.
+- [`norm.norm_by_gaussian_kde`](./roux.stat.norm.md#function-norm_by_gaussian_kde): Normalise matrix by gaussian KDE.
+- [`norm.norm_by_quantile`](./roux.stat.norm.md#function-norm_by_quantile): Normalize the columns of X to each have the same distribution.
+- [`norm.zscore`](./roux.stat.norm.md#function-zscore): Z-score.
+- [`norm.zscore_robust`](./roux.stat.norm.md#function-zscore_robust): Robust Z-score.
+- [`paired.balance`](./roux.stat.paired.md#function-balance): Balance.
+- [`paired.classify_sharing`](./roux.stat.paired.md#function-classify_sharing): Classify sharing % calculated from Jaccard index.
+- [`paired.diff`](./roux.stat.paired.md#function-diff): Get difference
+- [`paired.get_diff_sorted`](./roux.stat.paired.md#function-get_diff_sorted): Difference sorted/absolute.
+- [`paired.get_paired_sets_stats`](./roux.stat.paired.md#function-get_paired_sets_stats): Paired stats comparing two sets.
+- [`paired.get_ratio_sorted`](./roux.stat.paired.md#function-get_ratio_sorted): Get ratio sorted.
+- [`paired.get_stats_paired`](./roux.stat.paired.md#function-get_stats_paired): Paired stats, row-wise.
+- [`paired.get_stats_paired_agg`](./roux.stat.paired.md#function-get_stats_paired_agg): Paired stats aggregated, for example, to classify 2D distributions.
+- [`regress.get_stats_regression`](./roux.stat.regress.md#function-get_stats_regression): Get stats from regression models.
+- [`regress.plot_model_qcs`](./roux.stat.regress.md#function-plot_model_qcs): Plot Quality Checks.
+- [`regress.plot_residuals_versus_fitted`](./roux.stat.regress.md#function-plot_residuals_versus_fitted): plot Residuals Versus Fitted (RVF).
+- [`regress.plot_residuals_versus_groups`](./roux.stat.regress.md#function-plot_residuals_versus_groups): plot Residuals Versus groups.
+- [`regress.run_lr_test`](./roux.stat.regress.md#function-run_lr_test): Run LR test.
+- [`regress.to_columns_renamed_for_regression`](./roux.stat.regress.md#function-to_columns_renamed_for_regression):     
+- [`regress.to_filteredby_variable`](./roux.stat.regress.md#function-to_filteredby_variable): Filter regression statistics.
+- [`regress.to_formulas`](./roux.stat.regress.md#function-to_formulas)
+- [`regress.to_input_data_for_regression`](./roux.stat.regress.md#function-to_input_data_for_regression): Input data for the regression.
+- [`set.get_enrichment`](./roux.stat.set.md#function-get_enrichment): :return leading edge gene ids: high rank first
+- [`set.get_enrichments`](./roux.stat.set.md#function-get_enrichments): :param df1: test sets
+- [`set.get_intersection_stats`](./roux.stat.set.md#function-get_intersection_stats)
+- [`set.get_paired_sets_stats`](./roux.stat.set.md#function-get_paired_sets_stats): overlap, intersection, union, ratio
+- [`set.get_set_enrichment_stats`](./roux.stat.set.md#function-get_set_enrichment_stats): test:
+- [`set.test_set_enrichment`](./roux.stat.set.md#function-test_set_enrichment)
+- [`solve.get_intersection_locations`](./roux.stat.solve.md#function-get_intersection_locations): Get co-ordinates of the intersection (x[idx]).
+- [`transform.anti_plog`](./roux.stat.transform.md#function-anti_plog): Anti-psudo-log.
+- [`transform.get_q`](./roux.stat.transform.md#function-get_q): To FDR corrected P-value.
+- [`transform.glog`](./roux.stat.transform.md#function-glog): Generalised logarithm.
+- [`transform.log_pval`](./roux.stat.transform.md#function-log_pval): Transform p-values to Log10.
+- [`transform.plog`](./roux.stat.transform.md#function-plog): Psudo-log.
+- [`transform.rescale`](./roux.stat.transform.md#function-rescale): Rescale within a new range.
+- [`transform.rescale_divergent`](./roux.stat.transform.md#function-rescale_divergent): Rescale divergently i.e. two-sided.
+- [`variance.confidence_interval_95`](./roux.stat.variance.md#function-confidence_interval_95): 95% confidence interval.
+- [`variance.get_ci`](./roux.stat.variance.md#function-get_ci)
+- [`annot.annot_confusion_matrix`](./roux.viz.annot.md#function-annot_confusion_matrix): Annotate a confusion matrix.
+- [`annot.annot_corners`](./roux.viz.annot.md#function-annot_corners): Annotate points above and below the diagonal.
+- [`annot.annot_n_legend`](./roux.viz.annot.md#function-annot_n_legend)
+- [`annot.annot_side`](./roux.viz.annot.md#function-annot_side): Annot elements of the plots on the of the side plot.
+- [`annot.color_ax`](./roux.viz.annot.md#function-color_ax): Color border of `plt.Axes`.
+- [`annot.confidence_ellipse`](./roux.viz.annot.md#function-confidence_ellipse): Create a plot of the covariance confidence ellipse of *x* and *y*.
+- [`annot.get_logo_ax`](./roux.viz.annot.md#function-get_logo_ax): Get `plt.Axes` for placing the logo.
+- [`annot.set_label`](./roux.viz.annot.md#function-set_label): Set label on a plot.
+- [`annot.set_logo`](./roux.viz.annot.md#function-set_logo): Set logo.
+- [`annot.show_box`](./roux.viz.annot.md#function-show_box): Highlight sections of a plot e.g. heatmap by drawing boxes.
+- [`ax_.append_legends`](./roux.viz.ax_.md#function-append_legends): Append to legends.
+- [`ax_.set_ticklabels_color`](./roux.viz.ax_.md#function-set_ticklabels_color): Set colors to ticklabels.
+- [`ax_.drop_duplicate_legend`](./roux.viz.ax_.md#function-drop_duplicate_legend)
+- [`ax_.format_ticklabels`](./roux.viz.ax_.md#function-format_ticklabels): format_ticklabels
+- [`ax_.get_axlims`](./roux.viz.ax_.md#function-get_axlims): Get axis limits.
+- [`ax_.get_axlimsby_data`](./roux.viz.ax_.md#function-get_axlimsby_data): Infer axis limits from data.
+- [`ax_.get_line_cap_length`](./roux.viz.ax_.md#function-get_line_cap_length): Get the line cap length.
+- [`ax_.get_subplot_dimentions`](./roux.viz.ax_.md#function-get_subplot_dimentions): Calculate the aspect ratio of `plt.Axes`.
+- [`ax_.get_ticklabel_position`](./roux.viz.ax_.md#function-get_ticklabel_position): Get positions of the ticklabels.
+- [`ax_.get_ticklabel_position`](./roux.viz.ax_.md#function-get_ticklabel_position): Get positions of the ticklabels.
+- [`ax_.rename_labels`](./roux.viz.ax_.md#function-rename_labels)
+- [`ax_.rename_legends`](./roux.viz.ax_.md#function-rename_legends): Rename legends.
+- [`ax_.rename_ticklabels`](./roux.viz.ax_.md#function-rename_ticklabels): Rename the ticklabels.
+- [`ax_.reset_legend_colors`](./roux.viz.ax_.md#function-reset_legend_colors): Reset legend colors.
+- [`ax_.set_`](./roux.viz.ax_.md#function-set_): Ser many axis parameters.
+- [`ax_.set_axlims`](./roux.viz.ax_.md#function-set_axlims): Set axis limits.
+- [`ax_.set_colorbar`](./roux.viz.ax_.md#function-set_colorbar): Set colorbar.
+- [`ax_.set_colorbar_label`](./roux.viz.ax_.md#function-set_colorbar_label): Find colorbar and set label for it.
+- [`ax_.set_equallim`](./roux.viz.ax_.md#function-set_equallim): Set equal axis limits.
+- [`ax_.set_grids`](./roux.viz.ax_.md#function-set_grids): Show grids.
+- [`ax_.set_legend_custom`](./roux.viz.ax_.md#function-set_legend_custom): Set custom legends.
+- [`ax_.set_legends_merged`](./roux.viz.ax_.md#function-set_legends_merged): Reset legend colors.
+- [`ax_.set_ticklabels_color`](./roux.viz.ax_.md#function-set_ticklabels_color): Set colors to ticklabels.
+- [`ax_.set_ylabel`](./roux.viz.ax_.md#function-set_ylabel): Set ylabel horizontal.
+- [`ax_.sort_legends`](./roux.viz.ax_.md#function-sort_legends): Sort or filter legends.
+- [`ax_.split_ticklabels`](./roux.viz.ax_.md#function-split_ticklabels): Split ticklabels into major and minor. Two minor ticks are created per major tick. 
+- [`bar.plot_bar_serial`](./roux.viz.bar.md#function-plot_bar_serial): Barplots with serial increase in resolution.
+- [`bar.plot_barh`](./roux.viz.bar.md#function-plot_barh): Plot horizontal bar plot with text on them.
+- [`bar.plot_barh_stacked_percentage`](./roux.viz.bar.md#function-plot_barh_stacked_percentage): Plot horizontal stacked bar plot with percentages.
+- [`bar.plot_barh_stacked_percentage_intersections`](./roux.viz.bar.md#function-plot_barh_stacked_percentage_intersections): Plot horizontal stacked bar plot with percentages and intesections.
+- [`bar.plot_sankey`](./roux.viz.bar.md#function-plot_sankey)
+- [`bar.plot_value_counts`](./roux.viz.bar.md#function-plot_value_counts): Plot pandas's `value_counts`. 
+- [`bar.to_input_data_sankey`](./roux.viz.bar.md#function-to_input_data_sankey):     
+- [`colors.append_cmap`](./roux.viz.colors.md#function-append_cmap): Append a color to colormap.
+- [`colors.get_cmap_section`](./roux.viz.colors.md#function-get_cmap_section): Get section of a colormap.
+- [`colors.get_colors_default`](./roux.viz.colors.md#function-get_colors_default): get default colors.
+- [`colors.get_ncolors`](./roux.viz.colors.md#function-get_ncolors): Get colors.
+- [`colors.get_val2color`](./roux.viz.colors.md#function-get_val2color): Get color for a value.
+- [`colors.make_cmap`](./roux.viz.colors.md#function-make_cmap): Create a colormap.
+- [`colors.mix_colors`](./roux.viz.colors.md#function-mix_colors): Mix colors.
+- [`colors.rgbfloat2int`](./roux.viz.colors.md#function-rgbfloat2int)
+- [`colors.saturate_color`](./roux.viz.colors.md#function-saturate_color): Saturate a color.
+- [`compare.plot_comparisons`](./roux.viz.compare.md#function-plot_comparisons): Parameters:
+- [`dist.hist_annot`](./roux.viz.dist.md#function-hist_annot): Annoted histogram.
+- [`dist.plot_dists`](./roux.viz.dist.md#function-plot_dists): Plot distributions.
+- [`dist.plot_gmm`](./roux.viz.dist.md#function-plot_gmm): Plot Gaussian mixture Models (GMMs).
+- [`dist.plot_normal`](./roux.viz.dist.md#function-plot_normal): Plot normal distribution.
+- [`dist.pointplot_groupbyedgecolor`](./roux.viz.dist.md#function-pointplot_groupbyedgecolor): Plot seaborn's `pointplot` grouped by edgecolor of points.
+- [`figure.get_subplots`](./roux.viz.figure.md#function-get_subplots): Get subplots.
+- [`figure.labelplots`](./roux.viz.figure.md#function-labelplots): Label (sub)plots.
+- [`heatmap.plot_crosstab`](./roux.viz.heatmap.md#function-plot_crosstab): Plot crosstab table.
+- [`heatmap.plot_table`](./roux.viz.heatmap.md#function-plot_table): Plot to show a table.
+- [`image.plot_image`](./roux.viz.image.md#function-plot_image): Plot image e.g. schematic.
+- [`io.get_lines`](./roux.viz.io.md#function-get_lines): Get lines from the log.
+- [`io.get_plot_inputs`](./roux.viz.io.md#function-get_plot_inputs): Get plot inputs.
+- [`io.log_code`](./roux.viz.io.md#function-log_code): Log the code.
+- [`io.read_plot`](./roux.viz.io.md#function-read_plot): Generate the plot from data, parameters and a script.
+- [`io.savefig`](./roux.viz.io.md#function-savefig): Wrapper around `plt.savefig`.
+- [`io.savelegend`](./roux.viz.io.md#function-savelegend): Save only the legend of the plot/figure.
+- [`io.to_concat`](./roux.viz.io.md#function-to_concat): Concat images.
+- [`io.to_convert`](./roux.viz.io.md#function-to_convert): Convert format of image using `PIL`.
+- [`io.to_data`](./roux.viz.io.md#function-to_data): Convert to base64 string.
+- [`io.to_gif`](./roux.viz.io.md#function-to_gif): Convert to GIF.
+- [`io.to_montage`](./roux.viz.io.md#function-to_montage): To montage.
+- [`io.to_plot`](./roux.viz.io.md#function-to_plot): Save a plot.
+- [`io.to_plotp`](./roux.viz.io.md#function-to_plotp): Infer output path for a plot.
+- [`io.to_raster`](./roux.viz.io.md#function-to_raster): to_raster _summary_
+- [`io.to_rasters`](./roux.viz.io.md#function-to_rasters): Convert many images to raster. Uses inkscape.
+- [`io.to_script`](./roux.viz.io.md#function-to_script): Save the script with the code for the plot.
+- [`io.update_kws_plot`](./roux.viz.io.md#function-update_kws_plot): Update the input parameters.
+- [`line.plot_connections`](./roux.viz.line.md#function-plot_connections): Plot connections between points with annotations.
+- [`line.plot_kinetics`](./roux.viz.line.md#function-plot_kinetics): Plot time-dependent kinetic data.
+- [`line.plot_range`](./roux.viz.line.md#function-plot_range): Plot range/intervals e.g. genome coordinates as lines.
+- [`line.plot_steps`](./roux.viz.line.md#function-plot_steps): changes in numbers
+- [`scatter.plot_qq`](./roux.viz.scatter.md#function-plot_qq): plot QQ.
+- [`scatter.plot_ranks`](./roux.viz.scatter.md#function-plot_ranks): Plot rankings.
+- [`scatter.plot_scatter`](./roux.viz.scatter.md#function-plot_scatter): Plot scatter.
+- [`scatter.plot_trendline`](./roux.viz.scatter.md#function-plot_trendline): Plot a trendline.
+- [`sequence.plot_domain`](./roux.viz.sequence.md#function-plot_domain): Plot protein domain.
+- [`sequence.plot_gene`](./roux.viz.sequence.md#function-plot_gene): Plot genes.
+- [`sequence.plot_genes`](./roux.viz.sequence.md#function-plot_genes): Plot many genes.
+- [`sequence.plot_genes_data`](./roux.viz.sequence.md#function-plot_genes_data): Plot gene-wise data.
+- [`sequence.plot_genes_legend`](./roux.viz.sequence.md#function-plot_genes_legend): Make the legends for the genes.
+- [`sequence.plot_protein`](./roux.viz.sequence.md#function-plot_protein): Plot protein.
+- [`sets.plot_enrichment`](./roux.viz.sets.md#function-plot_enrichment): Plot enrichment stats.
+- [`sets.plot_intersections`](./roux.viz.sets.md#function-plot_intersections): Plot upset plot.
+- [`sets.plot_venn`](./roux.viz.sets.md#function-plot_venn): Plot Venn diagram.
+- [`df.exclude_items`](./roux.workflow.df.md#function-exclude_items): Exclude items from the table with the workflow info.
+- [`function.get_ios`](./roux.workflow.function.md#function-get_ios): Get input and output (IO) paths.
+- [`function.get_name`](./roux.workflow.function.md#function-get_name): Get name of the function.
+- [`function.get_path`](./roux.workflow.function.md#function-get_path): Extract pathsfrom a line of code.
+- [`function.get_quoted_path`](./roux.workflow.function.md#function-get_quoted_path): Quoted paths.
+- [`function.get_step`](./roux.workflow.function.md#function-get_step): Get code for a step.
+- [`function.remove_dirs_from_outputs`](./roux.workflow.function.md#function-remove_dirs_from_outputs): Remove directories from the output paths.
+- [`function.to_task`](./roux.workflow.function.md#function-to_task): Get the lines of code for a task (script to be saved as an individual `.py` file).
+- [`io.clear_dataframes`](./roux.workflow.io.md#function-clear_dataframes)
+- [`io.clear_variables`](./roux.workflow.io.md#function-clear_variables): Clear dataframes from the workspace.
+- [`io.create_workflow_report`](./roux.workflow.io.md#function-create_workflow_report): Create report for the workflow run.
+- [`io.get_lines`](./roux.workflow.io.md#function-get_lines): Get lines of code from notebook.
+- [`io.import_from_file`](./roux.workflow.io.md#function-import_from_file): Import functions from python (`.py`) file.
+- [`io.make_symlinks`](./roux.workflow.io.md#function-make_symlinks): Make symbolic links.
+- [`io.read_config`](./roux.workflow.io.md#function-read_config): Read configuration.
+- [`io.read_metadata`](./roux.workflow.io.md#function-read_metadata): Read metadata.
+- [`io.read_nb_md`](./roux.workflow.io.md#function-read_nb_md): Read notebook's documentation in the markdown cells.
+- [`io.to_diff_notebooks`](./roux.workflow.io.md#function-to_diff_notebooks): "Diff" notebooks using `nbdiff` (https://nbdime.readthedocs.io/en/latest/)
+- [`io.to_info`](./roux.workflow.io.md#function-to_info): Save README.md file.
+- [`io.to_parameters`](./roux.workflow.io.md#function-to_parameters): Get function to parameters map.
+- [`io.to_py`](./roux.workflow.io.md#function-to_py): To python script (.py).
+- [`io.to_workflow`](./roux.workflow.io.md#function-to_workflow): Save workflow file.
+- [`knit.nb_to_py`](./roux.workflow.knit.md#function-nb_to_py): notebook to script.
+- [`knit.sort_stepns`](./roux.workflow.knit.md#function-sort_stepns): Sort steps (functions) of a task (script).
+- [`monitor.plot_workflow_log`](./roux.workflow.monitor.md#function-plot_workflow_log): Plot workflow log.
+- [`task.pre_run_notebook`](./roux.workflow.task.md#function-pre_run_notebook): notebooks.
+- [`task.run_notebooks`](./roux.workflow.task.md#function-run_notebooks): Execute a list of notebooks.
+- [`version.git_commit`](./roux.workflow.version.md#function-git_commit): Version control.
+- [`workflow.get_scripts`](./roux.workflow.workflow.md#function-get_scripts): Get scripts.
+- [`workflow.to_scripts`](./roux.workflow.workflow.md#function-to_scripts): To scripts.
 </details>
 
 # API
@@ -10014,7 +9990,7 @@ get_stat(
     subsets=None,
     cols_subsets=['subset1', 'subset2'],
     df2=None,
-    stats=[<function mean at 0x7f9d1c061b90>, <function median at 0x7f9d066e9b90>, <function var at 0x7f9d1c064050>, <built-in function len>],
+    stats=[<function mean at 0x7fd5e41e0b90>, <function median at 0x7fd5e409ab90>, <function var at 0x7fd5e41e5050>, <built-in function len>],
     coff_samples_min=None,
     verb=False,
     **kws
@@ -10072,7 +10048,7 @@ get_stats(
     subsets=None,
     df2=None,
     cols_subsets=['subset1', 'subset2'],
-    stats=[<function mean at 0x7f9d1c061b90>, <function median at 0x7f9d066e9b90>, <function var at 0x7f9d1c064050>, <built-in function len>],
+    stats=[<function mean at 0x7fd5e41e0b90>, <function median at 0x7fd5e409ab90>, <function var at 0x7fd5e41e5050>, <built-in function len>],
     axis=0,
     test=False,
     **kws

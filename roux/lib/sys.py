@@ -172,6 +172,14 @@ def to_output_paths(
         dictionary with the output path mapped to input paths or inputs.
     """
     output_paths={}
+    # path standardisation
+    for i,_ in enumerate(inputs):
+        for k,v in inputs[i].items():
+            if k.endswith('_path') and isinstance(v,str):
+                inputs[i][k]=str(Path(v))
+            if k.endswith('_paths') and isinstance(v,list):
+                inputs[i][k]=[str(Path(s)) for s in v]
+    
     if isinstance(input_paths,list):
         ## transform input path
         l1={replace_many(p, replaces=replaces_output_path, replacewith='', ignore=False):p for p in input_paths}
@@ -190,9 +198,9 @@ def to_output_paths(
         ## check existing output paths 
         output_paths.update(l2)
         output_paths_exist=glob(output_path.replace('{KEY}','*'))
-    if not key_output_path is None:
+    for k in output_paths:
         ## add output path in the dictionary
-        for k in output_paths:
+        if not key_output_path is None:
             output_paths[k][key_output_path]=k
     if force:
         return output_paths

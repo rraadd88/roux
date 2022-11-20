@@ -2,6 +2,12 @@
 from roux.lib.df import *
 import logging
 
+# def get_column_types(
+#     df1,
+#     subset,
+    
+#     )
+
 def get_cols_x_for_comparison(
     df1: pd.DataFrame,
     cols_y: list,
@@ -165,6 +171,7 @@ def get_comparison(
     d1: dict=None,
     coff_p: float=0.05,
     between_ys: bool=False,
+    verbose: bool=False,
     **kws,
     ):
     """
@@ -174,11 +181,13 @@ def get_comparison(
         df1 (pd.DataFrame): input table.
         d1 (dict): columns dict, output of `get_cols_x_for_comparison`.  
         between_ys (bool): compare y's
+        
     Notes:
-        Column types:
-            cols_x: decrete and continuous
-            cols_y: decrete and continuous
-
+        Column information:
+            d1={'cols_index': ['id'],
+           'cols_x': {'cont': [], 'desc': []},
+           'cols_y': {'cont': [], 'desc': []}}
+           
         Comparison types:
             1. continuous vs continuous -> correlation
             2. decrete vs continuous -> difference
@@ -188,10 +197,10 @@ def get_comparison(
     if d1 is None:
         d1=get_cols_x_for_comparison(
             df1,
-            cols_y,
-            cols_index,
             **kws,
             )
+        if verbose:
+            info(d1)
     
     ## gather stats in a dictionary
     if between_ys:
@@ -256,7 +265,7 @@ def get_comparison(
                                     'coly':'variable y',
                                                 },
                                     errors='raise')
-                                 .assign(**{'stat type':'FE'})
+                                 .assign(**{'stat type':'FE/CHI2'})
                                  )
     if not coff_p is None:
         for k in d2:

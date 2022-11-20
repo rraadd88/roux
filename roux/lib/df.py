@@ -143,51 +143,6 @@ def dropby_patterns(
     logging.info('columns dropped:'+','.join(cols))
     return df1.log.drop(labels=cols,axis=1)
 
-@to_rd
-def drop_inflates(
-    df1: pd.DataFrame,
-    col: str,
-    cols_index: list,
-    test: bool=False,
-    ) -> pd.DataFrame:
-    """Deletes columns with high number of duplicates.
-    
-    Parameters:
-        df1 (DataFrame): input dataframe.
-        col (str): column with values.
-        cols_index (list): index columns.
-        test (bool): verbose. 
-        
-    Returns:
-        df1 (DataFrame): output dataframe.
-    
-    Notes:
-        Under development.
-    """
-    logging.warning("UNDER DEVELOPMENT")
-    df_=df1.rd.check_duplicated(cols_index,out='df')
-    ## how many times duplicated?
-    ds1_=df_[col].value_counts()
-    ## unique number of times duplicated? e.g. x times whereas others are consistently y times
-    ds2_=ds1_.value_counts()
-    if test: 
-        print(ds1_.head())
-        print(ds2_)
-    if len(ds2_)==1:
-        logging.warning("skipping, inflates are consistent")
-        logging.info(ds2_)
-        return df1
-    if len(ds2_.value_counts())==1:
-        logging.warning("skipping, inflates are consistent")
-        logging.info(ds2_)
-        return df1        
-    ## drop the unique number of times duplicated
-    dropped_items=ds1_.loc[ds1_.isin(ds2_.loc[lambda x: x==1].index)].index.tolist()
-    logging.info(f"dropped_items: {', '.join(dropped_items)}")
-    df1=df1.loc[~(df1[col].isin(dropped_items)),:]
-    assert(all(df1.rd.check_inflation([col])<1))
-    return df1
-
 ## columns reformatting
 @to_rd
 def flatten_columns(

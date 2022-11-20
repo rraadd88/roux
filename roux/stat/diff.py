@@ -49,7 +49,6 @@ def compare_classes_many(
     ) -> pd.DataFrame:
     df0=pd.DataFrame(itertools.product(cols_y,cols_x,)).rename(columns={0:'colx',1:'coly'},errors='raise')
     # df0.head(1)
-    # from roux.lib.stat.diff import compare_classes
     return (df0
             .join(df0.apply(lambda x: compare_classes(df1[x['colx']],
                                                       df1[x['coly']]),

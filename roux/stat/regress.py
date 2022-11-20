@@ -47,6 +47,70 @@ def to_columns_renamed_for_regression(
     )
     return df2,columns
 
+def check_covariates(
+    df1,
+    covariates,
+    colindex,
+    plot: bool=False,
+    ):
+    """
+    [UNDER DEVELOPMENT] Quality check covariates for redundancy.
+    
+    Todos:
+        Support continuous value covariates using `from roux.stat.compare import get_comparison`.
+    """
+    df1=(df1
+    .loc[:,[colindex]+covariates]
+    .drop_duplicates()
+    # .rd.assert_no_dups(subset=[colindex])
+    )
+
+    for c in covariates:
+        info(df1.groupby(c)[colindex].nunique())
+
+    from roux.stat.classify import drop_low_complexity
+    # %run ../../../../code/roux/roux/stat/classify.py
+    df2=drop_low_complexity(
+        df1=df1,
+        min_nunique=2,
+        cols = covariates,
+        max_inflation=100,
+        # cols_keep: list = [],
+        # test: bool = False,
+        # verbose: bool = False,
+    )
+
+    from roux.stat.diff import compare_classes
+    from roux.viz.heatmap import plot_crosstab
+    ## check for redundant columns
+    covariates_drop=list(set(covariates) - set(df2.columns))
+    covariates= list(set(covariates) - set(covariates_drop))
+    for c1,c2 in itertools.combinations([colindex]+covariates,2):
+        if df2.rd.check_mappings(subset=[c1,c2]).loc[(c1,c2),:]['map to'].sum()==1:
+            logging.warning(f"1:1 mapping between '{c1}' and '{c2}'.")
+            covariates_drop+=[c1,c2]
+        if c1==colindex or c2==colindex:
+            continue
+        if plot:
+            ax=plot_crosstab(
+                df1=df2.loc[:,[colindex,c1,c2]].drop_duplicates(),
+                # cols=['primary_or_metastasis','sample_collection_site'], # significant
+                cols=[c1,c2],
+                ax=None,
+                alpha=0.05,
+                confusion=False,
+                rename_cols=True,
+                annot_pval='bottom',
+                scales=[2,1],
+            #     **kws,
+            )
+        if compare_classes(df2[c1],df2[c2])[0]<0.05:
+            logging.warning(f"associated covariates '{c1}' and '{c2}'.")
+            covariates_drop+=[c1,c2]     
+    covariates_drop=list(set(covariates_drop)-set([colindex]))
+    logging.warning(f"covariates to drop:{covariates_drop}")
+    return covariates_drop
+
 def to_input_data_for_regression(
     df1: pd.DataFrame,
     cols_y: list,
@@ -98,16 +162,22 @@ def to_input_data_for_regression(
         )
 
 def to_formulas(
-    formula,
-    covariates,
-    data,
-    ):
+    formula: str,
+    covariates: list,
+    covariate_dtypes:dict=None,
+    ) -> list:
+    """
+    [UNDER DEVELOPMENT] Generate formulas.
+    
+    Notes:
+        covariate_dtypes=data.dtypes.to_dict()
+    """
+    formulas=[formula] # base formula
     ## add covariates to the equation
-    covariate_types=data.dtypes.to_dict()
-    formulas=[formula]
-    for i in enumerate(covariates):
-        #formats
-        formulas.append(' + '+' + '.join([k if ((covariate_types[k]==int) or (covariate_types[k]==float)) else f"C({k})" for k in covariates[:i+1] if k in covariate_types]))
+    covariates=[s.replace(' ','_') for s in covariates]
+    for i,_ in enumerate(covariates):
+        formulas.append(formula+' + '+' + '.join([k if ((covariate_dtypes[k]==int) or (covariate_dtypes[k]==float)) else f"C({k})" for k in covariates[:i+1] if k in covariate_dtypes]))
+        
     return formulas
     
 def get_stats_regression(
@@ -282,6 +352,7 @@ def to_filteredby_variable(
       
     ## calculate q value
     df3=(df3
+         .assign(**{'P': lambda df: df['P'].replace('',np.nan)})
         .log.dropna(subset=['P'])
         .astype({
             'P':float,
