@@ -54,7 +54,7 @@ def log_pval(
                 ## for visualisation purpose e.g. volcano plot.
                 if replace_zero_with is None:
                     p_min=x.replace(0,np.nan).min()
-                    for replace_zero_with in [0.1,0.05,0.01,0.001,0.0001,0]:
+                    for replace_zero_with in [0.1,0.05,0.01,0.001,0.0001,p_min]:
                         if p_min>replace_zero_with:
                             break
                 x=x.replace(0,replace_zero_with)

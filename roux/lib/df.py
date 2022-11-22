@@ -809,7 +809,11 @@ def filter_rows(df,
 
 ## conversion to type
 @to_rd
-def to_dict(df,cols,drop_duplicates=False):
+def to_dict(
+    df: pd.DataFrame,
+    cols: list=None,
+    drop_duplicates: bool=False,
+    ):
     """DataFrame to dictionary.
     
     Parameters:
@@ -820,6 +824,8 @@ def to_dict(df,cols,drop_duplicates=False):
     Returns:
         d (dict): output dictionary.
     """
+    if cols is None and df.shape[1]==2:
+        cols=df.columns.tolist()
     df=df.log.dropna(subset=cols)
     if drop_duplicates:
         df=df.loc[:,cols].drop_duplicates()

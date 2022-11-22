@@ -61,7 +61,7 @@ def read_ps(
             ps=[ps]
     ps=sorted(ps)
     if test:
-        ds1=pd.Series({p:p2time(p) if exists(p) else np.nan for p in ps}).sort_values().dropna()
+        ds1=pd.Series({p:p2time(p) if exists(p) else None for p in ps}).sort_values().dropna()
         if len(ds1)>1:
             from roux.lib.str import get_suffix
             d0=ds1.iloc[[0,-1]].to_dict()
