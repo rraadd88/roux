@@ -66,6 +66,11 @@ def read_zip(
         p (str): path of the file.
         file_open (str): path of file within the zip file to open.
         fun_read (object): function to read the file.
+    
+    Examples:
+        1. Setting `fun_read` parameter for reading tab-separated table from a zip file.
+
+             fun_read=lambda x: pd.read_csv(io.StringIO(x.decode('utf-8')),sep='\t',header=None),
 
     """
     from io import BytesIO
@@ -83,9 +88,9 @@ def read_zip(
         return file
     else:
         if fun_read is None:
-            return file.open(file_open)
+            return file.open(file_open).read()
         else:
-            return fun_read(file.open(file_open))
+            return fun_read(file.open(file_open).read())
         
 def get_version(suffix=''):
     """Get the time-based version string.
@@ -466,19 +471,20 @@ def post_read_table(df1,clean,tables,
     return df1
     
 from roux.lib.text import get_header
-def read_table(p,
-               ext=None,
-               clean=True,
-               filterby_time=None,
-               check_paths=True, # read files in the path column
-               test=False,
-               params={},
-               kws_clean={},
-               kws_cloud={},
-               tables=1,
-               verbose=True,
-               **kws_read_tables
-              ):
+def read_table(
+    p,
+    ext=None,
+    clean=True,
+    filterby_time=None,
+    params={},
+    kws_clean={},
+    kws_cloud={},
+    check_paths=True, # read files in the path column
+    tables=1,
+    test=False,
+    verbose=True,
+    **kws_read_tables,
+    ):
     """
     Table/s reader.
     
@@ -530,11 +536,14 @@ def read_table(p,
                 logging.warning(f"exists: {p.replace('/*','')}")
         elif isinstance(p,list):
             ps=p
-        return read_tables(ps,params=params,
-                               filterby_time=filterby_time,
-                               tables=len(ps),
-                               verbose=verbose,
-                               **kws_read_tables)
+        return read_tables(
+                    ps,
+                    params=params,
+                    filterby_time=filterby_time,
+                    tables=len(ps),
+                    verbose=verbose,
+                    **kws_read_tables,# is kws_apply_on_paths,
+                    )
     elif isinstance(p,str):
         ## read paths
         if check_paths and isdir(splitext(p)[0]):
@@ -542,7 +551,15 @@ def read_table(p,
             df_=read_table(p,check_paths=False)
             if df_.columns.tolist()[-1]=='path':
                 logging.info(f"paths read {len(df_['path'].tolist())}paths from the file")
-                return read_table(df_['path'].tolist())
+                ps=df_['path'].tolist()
+                return read_tables(
+                    ps,
+                    params=params,
+                    filterby_time=filterby_time,
+                    tables=len(ps),
+                    verbose=verbose,
+                    **kws_read_tables,# is kws_apply_on_paths,
+                    )
             else:
                 return df_
         elif p.startswith("https://docs.google.com/file/"):
@@ -559,7 +576,7 @@ def read_table(p,
         if len(params.keys())==0:
             params={}
         if ext is None:
-            ext=basename(p).split('.',1)[1]
+            ext=basename(p).rsplit('.',1)[1]
         if any([s==ext for s in ['pqt','parquet']]):#p.endswith('.pqt') or p.endswith('.parquet'):
             return post_read_table(pd.read_parquet(p,engine='fastparquet',**params),
                                    clean=clean,tables=tables,verbose=verbose,**kws_clean)        
@@ -587,7 +604,7 @@ def read_table(p,
                  comment='!',
                  ))
         else: 
-            logging.error(f'unknown extension {ext} in {p}')
+            raise ValueError(f'unknown extension {ext} in {p}')
         if test: print(params)
         return post_read_table(pd.read_table(p,**params,),clean=clean,tables=tables,verbose=verbose,**kws_clean)            
 
@@ -618,7 +635,7 @@ def apply_on_paths(
     fast=False, 
     progress_bar=True,
     params={},
-    #                    log=True,
+    #log=True,
     dbug=False,
     test1=False,
     verbose=True,
@@ -761,7 +778,6 @@ def read_tables(
     ps,
     fast=False,
     filterby_time=None,
-    drop_index=True,
     to_dict=False,
     params={},
     tables=None,
@@ -787,16 +803,15 @@ def read_tables(
     TODOs:
         Parameter to report the creation dates of the newest and the oldest files.
     """
-    
     if not filterby_time is None:
         from roux.lib.sys import ps2time
         df_=ps2time(ps)
         ps=df_.loc[df_['time'].str.contains(filterby_time),'p'].unique().tolist()
-        drop_index=False # see which files are read
+        kws_apply_on_paths['drop_index']=False # see which files are read
     if not to_dict:
         df2=apply_on_paths(ps,func=lambda df: df,
                            fast=fast,
-                           drop_index=drop_index,
+                           # drop_index=drop_index,
                            params=params,
                            kws_read_table=dict(tables=tables), 
 #                            kws_read_table=dict(verb=False if len(ps)>5 else True),

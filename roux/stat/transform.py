@@ -37,24 +37,29 @@ def log_pval(
     x,
     errors: str='raise',
     replace_zero_with: float=None,
+    p_min:float=None,
     ):
     """Transform p-values to Log10.
 
     Paramters: 
         x: input.
-        errors (str): Defaults to 'raise'.
+        errors (str): Defaults to 'raise' else replace (in case of visualization only).
+        p_min (float): Replace zeros with this value. Note: to be used for visualization only. 
+        
     Returns:
         output.
     """ 
     if isinstance(x,pd.Series): 
         if any(x==0):
-            if errors=='raise':
-                raise ValueError('zeros found in x')
+            if errors=='raise' and p_min is None:
+                raise ValueError(f'{sum(x==0)} zeros found in x')
             else:
+                logging.info(f'{sum(x==0)} zeros will be replaced')               
                 ## for visualisation purpose e.g. volcano plot.
                 if replace_zero_with is None:
-                    p_min=x.replace(0,np.nan).min()
-                    for replace_zero_with in [0.1,0.05,0.01,0.001,0.0001,p_min]:
+                    if p_min is None:
+                        p_min=x.replace(0,np.nan).min()
+                    for replace_zero_with in [0.01,0.001,0.0001,p_min]:
                         if p_min>replace_zero_with:
                             break
                 x=x.replace(0,replace_zero_with)

@@ -771,14 +771,15 @@ def get_totals(ds1):
     
 #filter df
 @to_rd
-def filter_rows(df,
-                d,
-                sign='==',
-                logic='and',
-                drop_constants=False,
-                test=False,
-                verb=True,
-               ):
+def filter_rows(
+    df,
+    d,
+    sign='==',
+    logic='and',
+    drop_constants=False,
+    test=False,
+    verbose=True,
+    ):
     """Filter rows using a dictionary.
     
     Parameters:
@@ -788,21 +789,20 @@ def filter_rows(df,
         logic (str): condition between mappings ('and').
         drop_constants (bool): to drop the columns with single unique value (False).
         test (bool): testing (False).
-        verb (bool): more verbose (True).
+        verbose (bool): more verbose (True).
                 
     Returns:
         df (DataFrame): output dataframe.
-    
     """
-    if verb: logging.info(df.shape)    
+    if verbose: logging.info(df.shape)    
     assert(all([isinstance(d[k],(str,list)) for k in d]))
-    qry = f" {logic} ".join([f"`{k}` {sign} "+(f"'{v}'" if isinstance(v,str) else f"{v}") for k,v in d.items()])
+    qry = f" {logic} ".join([f"`{k}` {sign} "+(f'"{v}"' if isinstance(v,str) else f'{v}') for k,v in d.items()])
     df1=df.query(qry)
     if test:
         logging.info(df1.loc[:,list(d.keys())].drop_duplicates())
         logging.warning('may be some column names are wrong..')
         logging.warning([k for k in d if not k in df])
-    if verb: logging.info(df1.shape)
+    if verbose: logging.info(df1.shape)
     if drop_constants:
         df1=df1.rd.drop_constants()
     return df1

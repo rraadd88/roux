@@ -9,47 +9,55 @@ def plot_venn(
     ax: plt.Axes=None,
     figsize: tuple=[2.5,2.5],
     show_n: bool=True,
+    outmore=False,
     **kws,
     ) -> plt.Axes:
     """Plot Venn diagram.
 
     Args:
-        ds1 (pd.Series): input vector. Subsets in the index levels, mapped to counts. 
+        ds1 (pd.Series): input pandas.Series or dictionary. Subsets in the index levels, mapped to counts. 
         ax (plt.Axes, optional): `plt.Axes` object. Defaults to None.
         figsize (tuple, optional): figure size. Defaults to [2.5,2.5].
         show_n (bool, optional): show sample sizes. Defaults to True.
 
     Returns:
-        plt.Axes: `plt.Axes` object.
-        
-    Notes:
-        1. Create the input pd.Series from dict.
-        
-            df_=to_map_binary(dict2df(d_).explode('value'),colgroupby='key',colvalue='value')
-            ds_=df_.groupby(df_.columns.tolist()).size()
+        plt.Axes: `plt.Axes` object.        
     """
-    assert isinstance(ds1,pd.Series)
-    assert not ds1._is_view, "input series should be a copy not a view"    
-    assert ds1.dtypes=='int'
-    assert len(ds1.index.names)>=2
+    # if ds1.dtypes!='int':
+    if isinstance(ds1,dict):
+        df_=to_map_binary(dict2df(ds1).explode('value'),colgroupby='key',colvalue='value')
+        ds2=df_.groupby(df_.columns.tolist()).size()
+    elif isinstance(ds1,pd.Series):
+        # assert not ds1._is_view, "input series should be a copy not a view" 
+        ds2=ds1.copy()
+    assert isinstance(ds2,pd.Series)
+    assert ds2.dtypes=='int'
+    assert len(ds2.index.names)>=2
     if ax is None:
         fig,ax=plt.subplots(figsize=figsize)
     if show_n:
         from roux.lib.df import get_totals
-        d1=get_totals(ds1)
-        ds1.index.names=[f"{k}\n({d1[k]})" for k in ds1.index.names]
-    set_labels=list(ds1.index.names)
+        d1=get_totals(ds2)
+        ds2.index.names=[f"{k}\n({d1[k]})" for k in ds2.index.names]
+    set_labels=list(ds2.index.names)
     if len(set_labels)==1 or len(set_labels)>3:
         logging.warning("need 2 or 3 sets")
         return 
-    ds1.index=[''.join([str(int(i)) for i in list(t)]) for t in ds1.index]
+    ds2.index=[''.join([str(int(i)) for i in list(t)]) for t in ds2.index]
     import matplotlib_venn as mv
-    _=getattr(mv,f"venn{len(set_labels)}")(subsets=ds1.to_dict(),
+    venn=getattr(mv,f"venn{len(set_labels)}")(subsets=ds2.to_dict(),
                                             set_labels=set_labels,
                                             ax=ax,
-                                            **kws,
-         )
-    return ax
+                                            **kws,)
+    if len(set_labels)==2:
+        ds1={key:sorted(val) for key,val in ds1.items()}
+        venn.get_label_by_id('11').set_text('\n'.join(sorted(set(ds1[list(ds1.keys())[0]])&set(ds1[list(ds1.keys())[1]]))+[f"({venn.get_label_by_id('11').get_text()})"]))
+        venn.get_label_by_id('10').set_text('\n'.join(sorted(set(ds1[list(ds1.keys())[0]])-set(ds1[list(ds1.keys())[1]]))+[f"({venn.get_label_by_id('10').get_text()})"]))
+        venn.get_label_by_id('01').set_text('\n'.join(sorted(set(ds1[list(ds1.keys())[1]])-set(ds1[list(ds1.keys())[0]]))+[f"({venn.get_label_by_id('01').get_text()})"]))
+    if not outmore:
+        return ax
+    else:
+        return ax,venn
 
 def plot_intersections(
     ds1: pd.Series,
