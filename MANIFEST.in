@@ -1,8 +1,8 @@
 include MANIFEST.in
 include setup.py
-include README.md
 include LICENSE
-prune examples
+prune README.md
+prune examples/*
 prune tests
 prune test 
 prune roux/data*

@@ -30,6 +30,35 @@ def set_(
         getattr(ax,f"set_{k}")(**v)
     return ax
 
+def set_axes_minimal(
+    ax,
+    xlabel=None,
+    ylabel=None,
+    off_axes_pad=0,
+    ) -> plt.Axes:
+    """
+    Set minimal axes labels, at the lower left corner.
+    """
+    if xlabel is None:
+        xlabel=ax.get_xlabel()
+    if ylabel is None:
+        ylabel=ax.get_ylabel()
+        
+    ax.arrow(x=off_axes_pad, y=off_axes_pad, dx=0.1, dy=0, head_width = .02,
+             transform=ax.transAxes,#fig.transFigure,
+             clip_on=False,color='k',lw=1)
+    ax.arrow(x=off_axes_pad, y=off_axes_pad, dx=0, dy=0.1, head_width = .02,
+             transform=ax.transAxes,#fig.transFigure,
+             clip_on=False,color='k',lw=1)
+    ax.text(x=off_axes_pad,y=off_axes_pad-0.01,s=xlabel,
+            transform=ax.transAxes,#fig.transFigure,
+            ha='left',va='top')
+    ax.text(y=off_axes_pad,x=off_axes_pad-0.01,s=ylabel,
+            transform=ax.transAxes,#fig.transFigure,
+            rotation=90,ha='right',va='bottom')    
+    return ax
+
+
 def set_ylabel(
     ax: plt.Axes,
     s: str=None,
@@ -589,7 +618,7 @@ def set_legend_custom(
                        label=k,
                        lw=(lw if param!='lw' else legend2param[k]),
                        linestyle=linestyle if param!='lw' else '-',
-                      ) for k in legend2param]   
+                      ) for k in legend2param]
     o1=ax.legend(handles=legend_elements,frameon=frameon,
               **kws)
     o1._legend_box.align=title_ha

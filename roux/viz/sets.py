@@ -51,9 +51,12 @@ def plot_venn(
                                             **kws,)
     if len(set_labels)==2:
         ds1={key:sorted(val) for key,val in ds1.items()}
-        venn.get_label_by_id('11').set_text('\n'.join(sorted(set(ds1[list(ds1.keys())[0]])&set(ds1[list(ds1.keys())[1]]))+[f"({venn.get_label_by_id('11').get_text()})"]))
-        venn.get_label_by_id('10').set_text('\n'.join(sorted(set(ds1[list(ds1.keys())[0]])-set(ds1[list(ds1.keys())[1]]))+[f"({venn.get_label_by_id('10').get_text()})"]))
-        venn.get_label_by_id('01').set_text('\n'.join(sorted(set(ds1[list(ds1.keys())[1]])-set(ds1[list(ds1.keys())[0]]))+[f"({venn.get_label_by_id('01').get_text()})"]))
+        if hasattr(venn.get_label_by_id('11'),'set_text'):
+            venn.get_label_by_id('11').set_text('\n'.join(sorted(set(ds1[list(ds1.keys())[0]])&set(ds1[list(ds1.keys())[1]]))+[f"({venn.get_label_by_id('11').get_text()})"]))
+        if hasattr(venn.get_label_by_id('10'),'set_text'):
+            venn.get_label_by_id('10').set_text('\n'.join(sorted(set(ds1[list(ds1.keys())[0]])-set(ds1[list(ds1.keys())[1]]))+[f"({venn.get_label_by_id('10').get_text()})"]))
+        if hasattr(venn.get_label_by_id('01'),'set_text'):
+            venn.get_label_by_id('01').set_text('\n'.join(sorted(set(ds1[list(ds1.keys())[1]])-set(ds1[list(ds1.keys())[0]]))+[f"({venn.get_label_by_id('01').get_text()})"]))
     if not outmore:
         return ax
     else:

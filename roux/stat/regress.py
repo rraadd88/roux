@@ -54,6 +54,7 @@ def check_covariates(
     covariates,
     colindex,
     plot: bool=False,
+    **kws_drop_low_complexity,
     ):
     """
     [UNDER DEVELOPMENT] Quality check covariates for redundancy.
@@ -73,12 +74,13 @@ def check_covariates(
     from roux.stat.classify import drop_low_complexity
     df2=drop_low_complexity(
         df1=df1,
-        min_nunique=2,
+        min_nunique=1,
         cols = covariates,
-        max_inflation=100,
+        max_inflation=90,
         # cols_keep: list = [],
         # test: bool = False,
         # verbose: bool = False,
+        **kws_drop_low_complexity,
     )
 
     from roux.stat.diff import compare_classes

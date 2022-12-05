@@ -2,7 +2,7 @@
 
 from roux.lib.io import *
 
-def run_notebook(
+def run_experiment(
     parameters: dict,
     input_notebook_path: str,
     kernel: str,
@@ -13,7 +13,7 @@ def run_notebook(
     **kws_papermill,
     ):
     """
-    [UNDER DEVELOPMENT] Execute a single notebooks.    
+    [UNDER DEVELOPMENT] Execute a single notebook.    
     """
     if not output_notebook_path:
         ## save report i.e. output notebook
@@ -37,7 +37,7 @@ def run_notebook(
     )
     return parameters['output_path']
 
-def run_notebooks(
+def run_experiments(
     input_notebook_path: str,
     inputs: list,
     output_path: str,
@@ -56,6 +56,7 @@ def run_notebooks(
         1. Integrate with apply_on_paths for parallel processing etc.
         2. Reporting by quarto?
     """
+    ## save experiments in unique directories
     from roux.lib.sys import to_output_paths
     parameters_list=to_output_paths(
         inputs = inputs,
@@ -65,12 +66,13 @@ def run_notebooks(
         verbose=verbose,
         force=force,
         )
+    ## save all parameters
     for k,parameters in parameters_list.items():
         ## save parameters
         output_dir_path=output_path.split('{KEY}')[0]
         to_dict(parameters,
                 f"{output_dir_path}/{k.split(output_dir_path)[1].split('/')[0]}/.parameters.yaml")
-
+    ## run experiments
     ds1=pd.Series(parameters_list)
     if test1:
         ds1=ds1.head(1)

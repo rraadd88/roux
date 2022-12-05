@@ -392,7 +392,7 @@ def str2dict(
         import json
         return json.loads(s)
     else:
-        ## for dictionaries containing strings only
+        ## for dictionaries containing strings only. for url-like strings e.g. a=b;c=d;
         return dict(item.split(sep_equal) for item in s.split(sep))
 
 def dict2str(

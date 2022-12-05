@@ -265,7 +265,8 @@ def plot_volcano(
     legend:bool=False,
     verbose:bool=False,
     p_min:float=0.01,
-    ax=None,
+    ax:plt.Axes=None,
+    outmore:bool=False,
     kws_legend: dict={},
     **kws_scatterplot,
     ) -> plt.Axes:
@@ -300,7 +301,7 @@ def plot_volcano(
         data[style]='o'
     data['significance bin']=pd.cut(data[coly],
                         bins=log_pval([0,0.05,0.1,1])[::-1],
-                        labels=['q<0.05','q<0.1','ns'],
+                        labels=['ns','q<0.1','q<0.05'],
                         include_lowest=True,
                        )
     assert not data['significance bin'].isnull().any()
@@ -457,4 +458,7 @@ def plot_volcano(
     )
     ax.spines.top.set(visible=False)
     ax.spines.right.set(visible=False)
-    return ax
+    if not outmore:
+        return ax
+    else:
+        return ax,data  

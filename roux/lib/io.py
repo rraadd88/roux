@@ -9,7 +9,11 @@ import logging
 
 ## operate
 
-def to_zip(p, outp=None,fmt='zip'):
+def to_zip(
+    p: str,
+    outp: str=None,
+    fmt: str='zip',
+    ):
     """Compress a file/directory.
     
     Parameters:
@@ -92,7 +96,9 @@ def read_zip(
         else:
             return fun_read(file.open(file_open).read())
         
-def get_version(suffix=''):
+def get_version(
+    suffix: str='',
+    ) -> str:
     """Get the time-based version string.
     
     Parameters:
@@ -103,8 +109,11 @@ def get_version(suffix=''):
     """
     return 'v'+get_datetime()+'_'+suffix
 
-def version(p,outd=None,
-            **kws):
+def version(
+    p: str,
+    outd: str=None,
+    **kws: dict,
+    ) -> str:
     """Get the version of the file/directory.
     
     Parameters:
@@ -128,14 +137,16 @@ def version(p,outd=None,
     shutil.move(p,outp)
     return outp
 
-def backup(p,outd,
-           versioned=False,
-           suffix='',
-           zipped=False,
-           move_only=False,
-           test=True,
-          no_test=False
-          ):
+def backup(
+    p: str,
+    outd: str,
+    versioned: bool=False,
+    suffix: str='',
+    zipped: bool=False,
+    move_only: bool=False,
+    test: bool=True,
+    no_test: bool=False
+    ):
     """Backup a directory
     
     Steps:
@@ -297,77 +308,6 @@ def read_list(p):
 read_lines=read_list
 
 ## dict
-def read_yaml(p):
-    """Read `.yaml` file.
-    
-    Parameters:
-        p (str): path.
-        
-    Returns:
-        d (dict): output dictionary.
-    """
-    import yaml    
-    with open(p,'r') as f:
-        return yaml.safe_load(f)
-    
-def to_yaml(d,p,**kws): 
-    """Save `.yaml` file.
-    
-    Parameters:
-        d (dict): input dictionary.
-        p (str): path.
-        
-    Keyword Arguments:
-        kws (d): parameters provided to `yaml.safe_dump`.
-        
-    Returns:
-        p (str): path.
-    """
-    import yaml
-    with open(p,'w') as f:
-        yaml.safe_dump(d,f,**kws)
-    return p
-
-def read_json(path_to_file,encoding=None):    
-    """Read `.json` file.
-    
-    Parameters:
-        p (str): path.
-        
-    Returns:
-        d (dict): output dictionary.
-    """
-    import json    
-    with open(path_to_file,encoding=encoding) as p:
-        return json.load(p)
-    
-def to_json(data,p):
-    """Save `.json` file.
-    
-    Parameters:
-        d (dict): input dictionary.
-        p (str): path.
-                
-    Returns:
-        p (str): path.
-    """
-    import json    
-    with open(p, 'w') as outfile:
-        json.dump(data, outfile)
-    return p
-
-def read_pickle(p):
-    """Read `.pickle` file.
-    
-    Parameters:
-        p (str): path.
-        
-    Returns:
-        d (dict): output dictionary.
-    """    
-    import pickle
-    return pickle.load(open(p,
-               'rb'))
 def is_dict(p):
     return p.endswith(('.yml','.yaml','.json','.joblib','.pickle'))
     
@@ -396,9 +336,14 @@ def read_dict(
             d1={replace_many(k, replaces=apply_on_keys, replacewith='', ignore=False):v for k,v in d1.items()}
         return d1
     if p.endswith('.yml') or p.endswith('.yaml') or fmt=='yml' or fmt=='yaml':
-        return read_yaml(p,**kws)
+        import yaml    
+        with open(p,'r') as f:
+            return yaml.safe_load(f,**kws)
+    
     elif p.endswith('.json') or fmt=='json':
-        return read_json(p,**kws)
+        import json    
+        with open(p,encoding=encoding) as p:
+            return json.load(p,**kws)
     elif p.startswith('https'):
         from urllib.request import urlopen
         try:
@@ -407,7 +352,9 @@ def read_dict(
             print(logging.error(p))
 #         return read_json(p,**kws)    
     elif p.endswith('.pickle'):
-        return read_pickle(p,**kws)
+        import pickle
+        return pickle.load(open(p,
+                   'rb'))
     elif p.endswith('.joblib'):
         import joblib
         return joblib.load(p,**kws)
@@ -434,9 +381,15 @@ def to_dict(d,p,**kws):
         logging.warning('probably working on google drive; space/s left in the path.')
     makedirs(p)
     if p.endswith('.yml') or p.endswith('.yaml'):
-        return to_yaml(d,p,**kws)
+        import yaml
+        with open(p,'w') as f:
+            yaml.safe_dump(d,f,**kws)
+        return p
     elif p.endswith('.json'):
-        return to_json(d,p,**kws)
+        import json    
+        with open(p, 'w') as outfile:
+            json.dump(data, outfile,**kws)
+        return p        
     elif p.endswith('.pickle'):
         import pickle
         return pickle.dump(d, open(p, 'wb'),**kws)
@@ -447,9 +400,13 @@ def to_dict(d,p,**kws):
         raise ValueError(f'supported extensions: .yml .yaml .json .pickle .joblib')
         
 ## tables
-def post_read_table(df1,clean,tables,
-                    verbose=True,
-                    **kws_clean):
+def post_read_table(
+    df1: pd.DataFrame,
+    clean: bool,
+    tables: list,
+    verbose: bool=True,
+    **kws_clean: dict,
+    ):
     """Post-reading a table.
     
     Parameters: 
@@ -472,18 +429,18 @@ def post_read_table(df1,clean,tables,
     
 from roux.lib.text import get_header
 def read_table(
-    p,
-    ext=None,
-    clean=True,
+    p: str,
+    ext: str=None,
+    clean: bool=True,
     filterby_time=None,
-    params={},
-    kws_clean={},
-    kws_cloud={},
-    check_paths=True, # read files in the path column
-    tables=1,
-    test=False,
-    verbose=True,
-    **kws_read_tables,
+    params: dict={},
+    kws_clean: dict={},
+    kws_cloud: dict={},
+    check_paths: bool=True, # read files in the path column
+    tables: int=1,
+    test: bool=False,
+    verbose: bool=True,
+    **kws_read_tables: dict,
     ):
     """
     Table/s reader.
@@ -608,7 +565,9 @@ def read_table(
         if test: print(params)
         return post_read_table(pd.read_table(p,**params,),clean=clean,tables=tables,verbose=verbose,**kws_clean)            
 
-def get_logp(ps):
+def get_logp(
+    ps: list,
+    ) -> str:
     """Infer the path of the log file.
     
     Parameters:
@@ -624,23 +583,23 @@ def get_logp(ps):
     return f"{p}.log"
 
 def apply_on_paths(
-    ps,
+    ps: list,
     func,
-    replaces_outp=None,
+    replaces_outp: str=None,
     # path=None,
     replaces_index=None,
-    drop_index=True, # keep path
-    colindex='path',
-    filter_rows=None,
-    fast=False, 
-    progress_bar=True,
-    params={},
+    drop_index: bool=True, # keep path
+    colindex: str='path',
+    filter_rows: dict=None,
+    fast: bool=False, 
+    progress_bar: bool=True,
+    params: dict={},
     #log=True,
-    dbug=False,
-    test1=False,
-    verbose=True,
-    kws_read_table={},
-    **kws,
+    dbug: bool=False,
+    test1: bool=False,
+    verbose: bool=True,
+    kws_read_table: dict={},
+    **kws: dict,
     ):
     """Apply a function on list of files.
     
@@ -775,13 +734,13 @@ def apply_on_paths(
     return df2
 
 def read_tables(
-    ps,
-    fast=False,
+    ps: list,
+    fast: bool=False,
     filterby_time=None,
-    to_dict=False,
-    params={},
-    tables=None,
-    **kws_apply_on_paths,
+    to_dict: bool=False,
+    params: dict={},
+    tables: int=None,
+    **kws_apply_on_paths: dict,
     ):
     """Read multiple tables.
     
@@ -823,10 +782,10 @@ def read_tables(
 
 ## save table
 def to_table(
-    df,
-    p,
-    colgroupby=None,
-    test=False,
+    df: pd.DataFrame,
+    p: str,
+    colgroupby: str=None,
+    test: bool=False,
     **kws
     ):
     """Save table.
@@ -865,10 +824,14 @@ def to_table(
         logging.error(f'unknown extension {p}')
     return p
 
-def to_manytables(df,p,colgroupby,
-                  fmt='',
-                  ignore=False,
-                  **kws_get_chunks):
+def to_manytables(
+    df: pd.DataFrame,
+    p: str,
+    colgroupby: str,
+    fmt: str='',
+    ignore: bool=False,
+    **kws_get_chunks,
+    ):
     """
     Save many table.
     
@@ -919,14 +882,35 @@ def to_manytables(df,p,colgroupby,
     df2=df.groupby(colgroupby).progress_apply(lambda x: to_table(x,to_outp(x.name,outd,colgroupby,fmt))).to_frame('path').reset_index()
     to_table(df2,p)
     
-def to_table_pqt(df,p,engine='fastparquet',compression='gzip',**kws_pqt):
+def to_table_pqt(
+    df: pd.DataFrame,
+    p: str,
+    engine: str='fastparquet',
+    compression: str='gzip',
+    **kws_pqt: dict,
+    ) -> str:
+    """Save a parquet file.
+    
+    Parameters:
+        df (pd.DataFrame): table.
+        p (str): path.
+        
+    Keyword parameters:
+        Parameters provided to `pd.DataFrame.to_parquet`.
+    
+    Returns:
+        
+    """
     if len(df.index.names)>1:
         df=df.reset_index()    
     if not exists(dirname(p)) and dirname(p)!='':
         makedirs(p,exist_ok=True)
     df.to_parquet(p,engine=engine,compression=compression,**kws_pqt)
-    
-def tsv2pqt(p):
+    return p
+
+def tsv2pqt(
+    p: str,
+    ) -> str:
     """Convert tab-separated file to Apache parquet. 
     
     Parameters:
