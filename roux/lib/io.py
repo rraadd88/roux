@@ -139,12 +139,13 @@ def version(
 
 def backup(
     p: str,
-    outd: str,
+    outd: str= None,
     versioned: bool=False,
     suffix: str='',
     zipped: bool=False,
     move_only: bool=False,
     test: bool=True,
+    verbose:bool=False,
     no_test: bool=False
     ):
     """Backup a directory
@@ -161,7 +162,7 @@ def backup(
         suffix (str): custom suffix for the backup ('').
         zipped (bool): whether to zip the backup (False).
         test (bool): testing (True).
-        no_test (bool): no testing (False).
+        no_test (bool): no testing. Usage in command line (False).
                 
     TODO:
         1. Chain to if exists and force.
@@ -170,31 +171,39 @@ def backup(
             "find -regex .*/_.*"
             "find -regex .*/test.*"
     """
-    info(p,outd)
-    if no_test:
+    if no_test: ## usage in command line
         test=False
     logging.warning(f"test={test}")
     from roux.lib.set import unique
     ps=read_ps(p)
     assert(len(ps)!=0)
-#     if test:print(ps)
+    if verbose:info(ps)    
+    ## correct paths if it is a directory
     ps=[ p+'/' if isdir(p) else p for p in ps]
-#     if test:print(ps)
+    if verbose: info(ps)
+    if outd is None:
+        from os.path import commonprefix
+        outd=dirname(commonprefix(ps))
+        if isdir(outd):
+            outd=dirname(outd)+'/'
+    ## add version suffix
     from roux.lib.sys import get_datetime
-#     if timed:
     outd2=outd+'/.'+get_version(suffix)#'/_v'+get_datetime()+'_'+(suffix+'_' if not suffix is None else '')
+    logging.warning(f"backup direction: {outd} -> {outd2}")
     # create directoried in outd
-    outds=unique([dirname(dirname(p)) if isdir(p) else dirname(p) for p in ps])
-#     if test:print(outds)
-    outds=[replace_many(p,{outd:outd2})+'/' if not move_only else outd2+p for p in outds]
-#     if test:print(outds)
+    # outds=unique([dirname(dirname(p)) if isdir(p) else dirname(p) for p in ps])
+    outds=unique([dirname(p) for p in ps])
+    if verbose: info(outds)
+    outds=list(set([replace_many(p,{outd:outd2})+'/' if not move_only else outd2+p for p in outds]))
+    if verbose: info(outds)
     l1=[(p,replace_many(p,{outd:outd2})) if not move_only else (p,outd2+p) for p in ps]
-#     if test:print(l1)
-    l1=[(p1,dirname(dirname(p2)) if p2.endswith('/') else p2) for p1,p2 in l1]    
+    if verbose: info(l1)
+    l1=list(set([(p1,dirname(dirname(p2)) if p2.endswith('/') else p2) for p1,p2 in l1]))    
     if test:
         return l1
     assert(len(outds)!=0)
-    _=[makedirs(p) for p in outds]
+    # _=[makedirs(p) for p in outds]
+    print(l1)
     l2=[shutil.move(*t) for t in l1]
     # zip
     if zipped:
@@ -302,7 +311,7 @@ def read_list(p):
         l (list): list.
     """
     with open(p,'r') as f:
-        s=f.readlines()
+        s=f.read().split('\n')
     return s
 # alias to be deprecated
 read_lines=read_list
@@ -315,6 +324,7 @@ def read_dict(
     p,
     fmt:str='',
     apply_on_keys=None,
+    # encoding=None,
     **kws,
     )-> dict:
     """Read dictionary file.
@@ -342,7 +352,7 @@ def read_dict(
     
     elif p.endswith('.json') or fmt=='json':
         import json    
-        with open(p,encoding=encoding) as p:
+        with open(p,'r') as p:
             return json.load(p,**kws)
     elif p.startswith('https'):
         from urllib.request import urlopen
@@ -388,7 +398,7 @@ def to_dict(d,p,**kws):
     elif p.endswith('.json'):
         import json    
         with open(p, 'w') as outfile:
-            json.dump(data, outfile,**kws)
+            json.dump(d, outfile,**kws)
         return p        
     elif p.endswith('.pickle'):
         import pickle

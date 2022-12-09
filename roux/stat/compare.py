@@ -73,6 +73,7 @@ def get_cols_x_for_comparison(
     
     if len(columns['cols_x']['cont'])>1: 
         ## check collinearity 
+        logging.info("checking collinearity..")
         from roux.stat.corr import check_collinearity
         ds1_=check_collinearity(
             df1=df1.loc[:,columns['cols_x']['cont']],
@@ -212,12 +213,13 @@ def get_comparison(
     ## 1. correlations 
     if len(d1['cols_y']['cont'])!=0 and len(d1['cols_x']['cont'])!=0:
         from roux.stat.corr import get_corrs
-        d2['correlation x vs y']=get_corrs(df1=df1,
+        d2['correlation x vs y']=get_corrs(
+            df1=df1,
             method='spearman',
             cols=d1['cols_y']['cont'],
             cols_with=d1['cols_x']['cont'],
             coff_inflation_min=50,
-                 )
+            )
     
     ## 2. difference 
     from roux.stat.diff import get_diff

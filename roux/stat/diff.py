@@ -185,9 +185,11 @@ def get_stat(
                                                             colvalue_bool=colvalue_bool,
                                                             **kws,
                                                            )).apply(pd.Series)
-    df2=df2.rename(columns={0:f"stat ({'MWU' if not colvalue_bool else 'FE'} test)",
-                            1:f"P ({'MWU' if not colvalue_bool else 'FE'} test)",
-                            }).reset_index()
+    df2=df2.rename(columns={
+        0:f"stat ({'MWU' if not colvalue_bool else 'FE'} test)",
+        1:f"P ({'MWU' if not colvalue_bool else 'FE'} test)",
+        },
+        ).reset_index()
     from roux.lib.dfs import merge_paired
     from roux.lib.str import get_prefix,get_suffix
     colsubset_=get_prefix(*cols_subsets,common=True, clean=True)

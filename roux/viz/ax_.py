@@ -89,9 +89,41 @@ def set_ylabel(
 #                                                        ha='right',va='bottom',ax=ax)
 
 def rename_labels(ax,d1):
+    from roux.lib.str import replace_many
     ax.set_xlabel(replace_many(ax.get_xlabel(),d1,ignore=True))
     ax.set_ylabel(replace_many(ax.get_ylabel(),d1,ignore=True))
     ax.set_title(replace_many(ax.get_title(),d1,ignore=True))
+    return ax
+
+def format_labels(
+    ax,
+    fmt='cap1',
+    title_fontsize=15,
+    test=False,
+    ):
+    def cap1(s): 
+        return s[0].upper()+s[1:]
+    for k in ['legend','xlabel','ylabel','title']: 
+        if k=='title':
+            kws=dict(fontdict=dict(fontsize=title_fontsize))
+        else:
+            kws={}
+        if hasattr(ax,"get_"+k):
+            if k=='legend':
+                ## adjust legend first, because setting other labels can have unexpected effects on the legend.
+                if not ax.legend_ is None:
+                    label=ax.legend_.get_title().get_text()
+                    if test: print(label)
+                    if fmt=='cap1':
+                        if isinstance(label,str):
+                            if label!='':                    
+                                ax.legend(title=cap1(label))
+            else:
+                label=getattr(ax,"get_"+k)()
+                if isinstance(label,str):
+                    if label!='':                    
+                        if fmt=='cap1':
+                            getattr(ax,"set_"+k)(cap1(label),**kws)
     return ax
 
 ## ticklabels
@@ -118,10 +150,11 @@ def rename_ticklabels(
         plt.Axes: `plt.Axes` object.
     """
     k=f"{axis}ticklabels"
-    if not rename is None:
-        _=getattr(ax,f"set_{k}")([rename[t.get_text()] for t in getattr(ax,f"get_{k}")()])
-    elif not replace is None:
+    if not replace is None:
+        from roux.lib.str import replace_many
         _=getattr(ax,f"set_{k}")([replace_many(t.get_text(),replace,ignore=ignore) for t in getattr(ax,f"get_{k}")()])
+    elif not rename is None:
+        _=getattr(ax,f"set_{k}")([rename[t.get_text()] for t in getattr(ax,f"get_{k}")()])
     else:
         raise ValueError("either `rename` or `replace` should be provided.")
     return ax

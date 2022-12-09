@@ -2,7 +2,11 @@
 from roux.lib.df import *
 from roux.lib import to_rd
         
-def filter_dfs(dfs,cols,how='inner'):
+def filter_dfs(
+    dfs,
+    cols,
+    how='inner',
+    ):
     """Filter dataframes based items in the common columns.
 
     Parameters:

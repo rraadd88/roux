@@ -70,8 +70,9 @@ def corr_to_str(
     method: str,
     r: float,
     p: float,
+    show_n: bool=True,
+    show_n_prefix: str='',    
     fmt='<',
-    n=True, 
     ci=None,
     ci_type=None, 
     magnitide=True,
@@ -96,7 +97,9 @@ def corr_to_str(
     s0=f"$r_{method[0]}$={r:.2f}"
     if not ci is None:
         s0+=f"$\pm${ci:.2f}{ci_type if ci_type!='max' else ''}"
-    s0+=f"\n{pval2annot(p,fmt='<',linebreak=False, alpha=0.05)}"+('' if not n else f"\nn="+num2str(num=n,magnitude=False))
+    s0+=f"\n{pval2annot(p,fmt='<',linebreak=False, alpha=0.05)}"
+    if show_n:
+        s0+=f"\n({num2str(num=show_n,magnitude=False)})"
     return s0
 
 def get_corr(
@@ -106,7 +109,8 @@ def get_corr(
     ci_type='max',
     magnitide=True,
     outstr=False,
-    **kws,
+    kws_to_str={},
+    **kws_boots,
     ):
     """Correlation between vectors (wrapper).
 
@@ -125,18 +129,24 @@ def get_corr(
     """
     n=len(x)
     if bootstrapped:
-        r,ci=get_corr_bootstrapped(x,y,method=method,ci_type=ci_type,**kws)
+        r,ci=get_corr_bootstrapped(x,y,method=method,ci_type=ci_type,**kws_boots)
         _,p=globals()[f"get_{method}r"](x, y)
         if not outstr:
             return r,p,ci,n
         else:
-            return corr_to_str(method,r,p,n=n, ci=ci,ci_type=ci_type, magnitide=magnitide),r
+            if 'show_n' in kws_to_str:
+                if kws_to_str['show_n']==True:
+                    kws_to_str['show_n']=n
+            return corr_to_str(method,r,p, ci=ci,ci_type=ci_type, magnitide=magnitide,**kws_to_str),r
     else:
         r,p=globals()[f"get_{method}r"](x, y)
         if not outstr:
             return r,p,n
         else:
-            return corr_to_str(method,r,p,n=n, ci=None,ci_type=None, magnitide=magnitide),r
+            if 'show_n' in kws_to_str:
+                if kws_to_str['show_n']==True:
+                    kws_to_str['show_n']=n
+            return corr_to_str(method,r,p, ci=None,ci_type=None, magnitide=magnitide,**kws_to_str),r
 
 def get_corrs(
     df1: pd.DataFrame,
@@ -145,6 +155,7 @@ def get_corrs(
     cols_with: list=[],
     coff_inflation_min: float=None,
     test: bool=False,
+    verbose: bool=False,
     **kws
     ):
     """Correlate columns of a dataframes.
@@ -170,12 +181,13 @@ def get_corrs(
     from roux.stat.transform import get_q
     # check inflation/over-representations
     from roux.lib.df import check_inflation
-    ds_=check_inflation(df1,subset=cols+cols_with).loc[lambda x: x>=(50 if coff_inflation_min is None else coff_inflation_min)]
-    info(ds_)
+    ds_=check_inflation(df1,subset=cols+cols_with)
     if not coff_inflation_min is None:
+        ds_=ds_.loc[lambda x: x>=coff_inflation_min]
+        info(ds_)
         # remove inflated
-        cols=[c for c in cols if not c in ds_.index.tolist()]
-        cols_with=[c for c in cols_with if not c in ds_.index.tolist()]
+    cols=[c for c in cols if not c in ds_.index.tolist()]
+    cols_with=[c for c in cols_with if not c in ds_.index.tolist()]
     if len(cols_with)==0:
         o1=itertools.combinations(cols,2)
     else:
@@ -202,7 +214,7 @@ def get_corrs(
         .log.dropna(subset=['P'])
         .groupby(['variable1']+(['variable2'] if len(cols_with)==0 else []),
                  as_index=False,
-                ).apply(lambda df: get_q(df,'P')).reset_index(drop=True)
+                ).apply(lambda df: get_q(df,'P',verbose=False)).reset_index(drop=True)
         .sort_values(['Q',f"$r_{method[0]}$"],ascending=[True,False])
         )
     return df2

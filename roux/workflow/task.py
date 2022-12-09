@@ -78,8 +78,10 @@ def run_experiments(
         ds1=ds1.head(1)
         logging.warning("testing only 1st input.")
     
-    return getattr(ds1,'parallel_apply' if fast else 'progress_apply')(lambda x: run_notebook(x,
+    _=getattr(ds1,'parallel_apply' if fast else 'progress_apply')(lambda x: run_experiment(x,
                                                                                                 input_notebook_path=input_notebook_path,
                                                                                                 kernel=kernel,
                                                                                                 **kws_papermill,
                                                                                                 ))
+
+    return parameters_list

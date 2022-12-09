@@ -33,6 +33,7 @@ plt.rcParams['pdf.fonttype'] = 42
 plt.rcParams['ps.fonttype'] = 42
 plt.rcParams['font.family'] = 'Myriad Pro'
 plt.rcParams['figure.figsize'] = (3, 3)
+plt.rcParams['axes.titlesize']=15
 plt.rcParams['axes.facecolor']='none'
 plt.rcParams['axes.edgecolor']='#6B6B6B'
 # plt.rcParams['axes.formatter.use_mathtext'] = True

@@ -74,6 +74,8 @@ def plot_scatter(
     bbox_to_anchor: list=[1,1],
     loc: str='upper left',
     title: str=None,
+    show_n:bool=True,
+    show_n_prefix:str='',
     params_plot: dict={},
     params_plot_trendline: dict={},
     params_set_label: dict={},
@@ -142,7 +144,7 @@ def plot_scatter(
                             x=colx,
                             y=coly,
                             hue=colz,       
-                            palette=cmap,
+                            palette=cmap if not colz is None else None,
                             ax=ax,
                            **params_plot,
                            **kws)
@@ -161,10 +163,13 @@ def plot_scatter(
     if 'spearman' in stat_method or 'pearson' in stat_method:
         from roux.stat.corr import get_corr
         label,r=get_corr(dplot[colx],dplot[coly],method=stat_method[0],
-                                       bootstrapped=bootstrapped,
-                                       outstr=True,
-                                      # n=True
-                                     )
+                         bootstrapped=bootstrapped,
+                         outstr=True,
+                         kws_to_str=dict(
+                             show_n=show_n,
+                             show_n_prefix=show_n_prefix,
+                         )
+                         )
         if not 'loc' in params_set_label:
             if r>=0:
                 params_set_label['loc']=2
@@ -264,7 +269,7 @@ def plot_volcano(
     text_diff: str=None,
     legend:bool=False,
     verbose:bool=False,
-    p_min:float=0.01,
+    p_min:float=None,
     ax:plt.Axes=None,
     outmore:bool=False,
     kws_legend: dict={},
@@ -294,7 +299,7 @@ def plot_volcano(
         logging.warning(f'transforming the coly ("{coly}") values.')
         coly_=f'significance\n(-log10({coly}))'
         data=data.assign(
-            **{coly_:lambda df: log_pval(df[coly],p_min=p_min)}
+            **{coly_:lambda df: log_pval(df[coly],p_min=p_min,errors=None)}
             )
         coly=coly_
     elif not style in data:
@@ -452,7 +457,7 @@ def plot_volcano(
     
     ax.set(
         xlabel='Log$_\mathrm{2}$ Fold Change (LFC)',
-        ylabel='Significance\n(-Log10($q$))',
+        ylabel='Significance\n(-Log$_\mathrm{10}$($q$))',
         xlim=xlim,
         ylim=ylim,
     )

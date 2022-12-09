@@ -1,6 +1,7 @@
 """For distribution plots."""
 
-from roux.global_imports import *
+from roux.lib.df import *
+from roux.lib.set import dropna
 from roux.viz.colors import *
 from roux.viz.annot import *
 from roux.viz.ax_ import *
@@ -196,14 +197,16 @@ def plot_dists(
     show_p: bool=True,
     show_n: bool=True,
     show_n_prefix: str='',
-    show_n_ha='left',
+    show_n_ha=None,
+    show_n_ticklabels: bool=True,
     alternative: str='two-sided',
     offx_n: float=0,
-    xlim: tuple=None,
-    xscale: str='linear',
+    axis_cont_lim: tuple=None,
+    axis_cont_scale: str='linear',
     offx_pval: float=0.05,
     offy_pval: float=None,
-    saturate_color_alpha: float=1.5,
+    alpha: float=0.5,
+    # saturate_color_alpha: float=1.5,
     ax: plt.Axes = None,
     test: bool= False,
     kws_stats: dict={},
@@ -224,10 +227,10 @@ def plot_dists(
         show_n (bool, optional): show sample sizes. Defaults to True.
         show_n_prefix (str, optional): show prefix of sample size label i.e. `n=`. Defaults to ''.
         offx_n (float, optional): x-offset for the sample size label. Defaults to 0.
-        xlim (tuple, optional): x-axis limits. Defaults to None.
+        axis_cont_lim (tuple, optional): x-axis limits. Defaults to None.
         offx_pval (float, optional): x-offset for the p-value labels. Defaults to 0.05.
         offy_pval (float, optional): y-offset for the p-value labels. Defaults to None.
-        saturate_color_alpha (float, optional): saturation of the color. Defaults to 1.5.
+        # saturate_color_alpha (float, optional): saturation of the color. Defaults to 1.5.
         ax (plt.Axes, optional): `plt.Axes` object. Defaults to None.
         test (bool, optional): test mode. Defaults to False.
         kws_stats (dict, optional): parameters provided to the stat function. Defaults to {}.
@@ -245,29 +248,50 @@ def plot_dists(
     """
     if isinstance(colindex,str):
         colindex=[colindex]
+    ## y is expected to be categorical (str/bool) for horizontal orientation which is preferred and also for calculating stats
+    ## if it is not, switch between x and y
+    # print(df1[y].dtype)
+    if not df1[y].dtype in [int,float]:
+        x_stat,y_stat=x,y
+        axis_desc,axis_cont='y','x'
+    else:
+        x_stat,y_stat=y,x
+        axis_desc,axis_cont='x','y'
+        
+    if test:
+        info(x_stat,y_stat)
+    
+    ## formatting the table
     df1=(df1
         .log.dropna(subset=colindex+[x,y])
-        .assign(**{y: lambda df: df[y].astype(str)})
+        .assign(**{y_stat: lambda df: df[y_stat].astype(str)})
         )
+    
+    ## set order of the categories
     if order is None:
-        order=df1[y].unique().tolist()
+        order=df1[y_stat].unique().tolist()
         for l in [['True','False'],['yes','no']]:
-            if df1[y].isin(l).all():
+            if df1[y_stat].isin(l).all():
                 order=l
                 break
+    if test:
+        info(order)        
+    ## set order of the colors
     if not hue is None and hue_order is None:
         hue_order=df1[hue].unique().tolist()
+        
+    ## get stats
     if (hue is None) and (isinstance(show_p,bool) and show_p):
         from roux.stat.diff import get_stats
         df2=get_stats(df1,
-                      colindex=colindex,
-                          colsubset=y,
-                          cols_value=[x],
-                          subsets=order,
-        #                   alpha=0.05
-                        axis=0,
-                        **kws_stats,
-                         )
+                colindex=colindex,
+                colsubset=y_stat,
+                cols_value=[x_stat],
+                subsets=order,
+                # alpha=0.05
+                axis=0,
+                **kws_stats,
+                )
         if df2 is None:
             logging.error("get_stats failed.")
             d1={}
@@ -296,8 +320,12 @@ def plot_dists(
         d1=df2.set_index(y)['P (MWU test)'].to_dict()
         if test:
             print(d1)
+            
+    ## axes
     if ax is None:
         _,ax=plt.subplots(figsize=[2,2])
+        
+    ## distributions
     if isinstance(kind,str):
         kind={kind:{}}
     elif isinstance(kind,list):
@@ -312,9 +340,11 @@ def plot_dists(
             # from roux.viz.colors import saturate_color
             # kws['palette']=[saturate_color(color=c, alpha=saturate_color_alpha+0.5) for c in kws['palette']]
         if k=='box' and (('swarm' in kind) or ('strip' in kind)):
-            kws_['boxprops']=dict(alpha=.3)
-            # print(kws_,kws)
-            # print(kws['palette'])
+            kws_['boxprops']=dict(alpha=alpha)
+        if k in ['swarm','strip'] and ('box' in kind):
+            kws_['alpha']=alpha
+        if hue is None:
+            kws_['color']=get_colors_default()[0]
         getattr(sns,k+"plot")(data=df1,
                     x=x,y=y,
                     hue=hue,
@@ -324,15 +354,15 @@ def plot_dists(
                     **kws_,
                      ax=ax)
     ax.set(
-        xlabel=x,
-        xscale=xscale,
+        **{
+          f"{axis_desc}label":y_stat,#None if hue is None else y_stat,
+          f"{axis_cont}scale":axis_cont_scale,
+          f"{axis_cont}lim":axis_cont_lim,
+        },
     )
-    d2=get_ticklabel2position(ax,'y')
-    ax.set(
-          ylabel=None if hue is None else y,
-          xlim=xlim,
-          )
+    ticklabel2position=get_ticklabel2position(ax,axis_desc)
     d3=get_axlims(ax)
+    ## show p-value
     if isinstance(show_p,(bool,dict)):
         if isinstance(show_p,bool) and show_p:
             d1={k:pval2annot(d1[k],
@@ -347,24 +377,40 @@ def plot_dists(
         else:
             offy_pval=0            
         if isinstance(d1,dict):
+            if test:
+                info(d1,ticklabel2position,d3)
             for k,s in d1.items():
-                if test:
-                    print(d1)
-                    print(d2)
-                    print(d3)
-                ax.text(d3['x']['max']+(d3['x']['len']*offx_pval),d2[k]+offy_pval,s,va='center')
+                ax.text(**{
+                    axis_cont:d3[axis_cont]['max'],#+((d3[axis_cont]['len']*offx_pval) if axis_desc=='y' else 0),
+                    axis_desc:ticklabel2position[k]+offy_pval,
+                    },
+                    s=s,
+                    va='center' if axis_desc=='y' else 'top',
+                    ha='right' if axis_desc=='y' else 'center',
+                    )
+                
+    ## show sample sizes
     if show_n:
-        df1_=df1.groupby(y).apply(lambda df: df.groupby(colindex).ngroups).to_frame('n').reset_index()
-        df1_['y']=df1_[y].map(d2)
-        import matplotlib.transforms as transforms
-        df1_.apply(lambda x: ax.text(
-            x=1.1+offx_n,
-            y=x['y'],
-            s=show_n_prefix+str(x['n']),
-            va='center',ha=show_n_ha,
-            transform=transforms.blended_transform_factory(ax.transAxes,ax.transData),
-            ),axis=1)
-    ax.tick_params(axis='y', colors='k')
+        df1_=df1.groupby(y_stat).apply(lambda df: df.groupby(colindex).ngroups).to_frame('n').reset_index()
+        df1_[axis_desc]=df1_[y_stat].map(ticklabel2position)
+        if test: info(df1_)
+        if show_n_ticklabels:
+            df1_['label']=df1_.apply(lambda x: f"{x[y_stat]}\n({show_n_prefix}{x['n']})" ,axis=1)
+            ax=rename_ticklabels(ax=ax,axis=axis_desc,rename=df1_.rd.to_dict([y_stat,'label']))
+        else:
+            import matplotlib.transforms as transforms
+            df1_.apply(lambda x: ax.text(
+                **{
+                    axis_cont:1.1+offx_n,
+                    axis_desc:x[axis_desc],                
+                },
+                s=show_n_prefix+str(x['n']),
+                va='center' if axis_desc=='y' else 'top',
+                ha=show_n_ha if not show_n_ha is None else 'left' if axis_desc=='y' else 'center',
+                transform=transforms.blended_transform_factory(**{f"{axis_cont}_transform":ax.transAxes,
+                                                                  f"{axis_desc}_transform":ax.transData}),
+                ),axis=1)
+    ax.tick_params(axis=axis_desc, colors='k')
     if not hue is None:
         o1=ax.legend(
             loc='upper left', 
