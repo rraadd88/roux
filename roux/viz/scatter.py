@@ -79,6 +79,7 @@ def plot_scatter(
     params_plot: dict={},
     params_plot_trendline: dict={},
     params_set_label: dict={},
+    verbose: bool=False,
     ax: plt.Axes = None,
     **kws,
     ) -> plt.Axes:
@@ -132,12 +133,14 @@ def plot_scatter(
             params_plot['reduce_C_function']=len if colz=='count' else params_plot['reduce_C_function'] if 'reduce_C_function' in params_plot else np.mean        
             params_plot['gridsize']=params_plot['gridsize'] if 'gridsize' in params_plot else gridsize
             params_plot['cmap']=params_plot['cmap'] if 'cmap' in params_plot else cmap
-            print(params_plot)
-        ax=dplot.plot(kind=kind, x=colx, y=coly, 
-    #         C=colz,
+            if verbose: print(params_plot)
+        ax=dplot.plot(
+            kind=kind,
+            x=colx,
+            y=coly, 
             ax=ax,
             **params_plot,
-                      **kws,
+            **kws,
             )
     else:
         ax=sns.scatterplot(data=dplot,
@@ -157,9 +160,15 @@ def plot_scatter(
     ax=set_colorbar_label(ax,colz if label_colorbar is None else label_colorbar)
     from roux.viz.annot import set_label
     if 'mlr' in stat_method:
-        from roux.lib.stat.poly import get_mlr_2_str
-        ax=set_label(ax,label=get_mlr_2_str(dplot,colz,[colx,coly]),
-                    title=True,params={'loc':'left'})
+        from roux.stat.fit import get_mlr_2_str
+        ax=set_label(ax=ax,s=get_mlr_2_str(dplot.loc[:,[colx,coly,colz,]].dropna(),
+                                            colz,[colx,coly]),
+                     x=0.5,
+                     y=1.1,
+                     ha='center',
+                    # title=True,
+                     # params={'loc':'left'}
+                    )
     if 'spearman' in stat_method or 'pearson' in stat_method:
         from roux.stat.corr import get_corr
         label,r=get_corr(dplot[colx],dplot[coly],method=stat_method[0],

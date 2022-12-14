@@ -76,7 +76,9 @@ def plot_crosstab(
     method: str=None,#'chi2'|fe
     confusion: bool=False,
     rename_cols: bool=False,
-    sort_cols: tuple=[True,True],    
+    sort_cols: tuple=[True,True],
+    order_x: list= None,
+    order_y: list= None,
     annot_pval: str='bottom',
     cmap: str='Reds',
     ax: plt.Axes=None,
@@ -142,7 +144,12 @@ def plot_crosstab(
                             :]
     info(stat,pval)
     # dplot=dplot.sort_index(ascending=False,axis=1).sort_index(ascending=False,axis=0)
-    ax=plot_table(dplot,
+    if order_y is None:
+        order_y=dplot.index.tolist()
+    if order_x is None:
+        order_x=dplot.columns.tolist()
+        
+    ax=plot_table(dplot.loc[order_y,order_x],
                     cmap=cmap,
                     ax=ax,
                     **kws,

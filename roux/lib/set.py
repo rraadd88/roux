@@ -76,6 +76,9 @@ def unique(l):
     
     Returns:
         l (list): list.
+    
+    Notes:
+        The function can return list of lists if used in `pandas.core.groupby.DataFrameGroupBy.agg` context. 
     """
     return list(np.unique(l))
     

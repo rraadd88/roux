@@ -208,8 +208,8 @@ def get_plot_inputs(
         ## remove suffixes
         outd=remove_exts(plotp)+'/'
     if df1 is None:
-        df1=read_table(f"{outd}/df1.tsv");
-    kws_plot=update_kws_plot(kws_plot,kws_plotp=f"{outd}/kws_plot.json")
+        df1=read_table(f"{outd}/data.tsv");
+    kws_plot=update_kws_plot(kws_plot,kws_plotp=f"{outd}/config.yaml")
     return plotp,df1,kws_plot
 
 def log_code():
@@ -221,18 +221,19 @@ def log_code():
             # open(logp, 'w').close()
             # logging.info(f'{logp} emptied')
         get_ipython().run_line_magic('logstart',f'{logp} over')        
-        return 
+        return
+begin_plot=log_code    
 
 def get_lines(
     logp: str='log_notebook.log',
-    sep: str='# plot',
+    sep: str='begin_plot()',
     test: bool=False
     ) -> list:
     """Get lines from the log.
 
     Args:
         logp (str, optional): path to the log file. Defaults to 'log_notebook.log'.
-        sep (str, optional): label marking the start of code of the plot. Defaults to '# plot'.
+        sep (str, optional): label marking the start of code of the plot. Defaults to 'begin_plot()'.
         test (bool, optional): test mode. Defaults to False.
 
     Returns:
@@ -270,7 +271,8 @@ def get_lines(
         lines.append(line)
         if test:
             print(f"'{line}'")
-        if any([line_.startswith(f"{sep} "),
+        if test: print(line_)
+        if any([line_.startswith(f"{sep}"),
                 line_==f"{sep}\n",
                 line_==f"{sep} \n"]):
             break
@@ -309,16 +311,17 @@ def to_script(
             2. Replace `df1` with the variable name of the dataframe.
     """
     lines=get_lines(**kws)
+    if test: print(lines)
     if lines is None: return
     #make def
     for linei,line in enumerate(lines):
         if 'plt.subplot(' in line:
             lines[linei]=f'if ax is None:{line}'        
-        if 'plt.subplots(' in line:
+        elif 'plt.subplots(' in line:
             lines[linei]=f'if ax is None:{line}'                
     lines=[f"    {l}" for l in lines]
-    lines=''.join(lines)
-    lines=f'def {defn}(\n{s4}plotp="{plotp}",\n{s4}df1=None,\n{s4}kws_plot=None,\n{s4}ax=None,\n{s4}fig=None,\n{s4}outd=None,\n{s4}fun_df1=None,\n{s4}**kws_set,\n{s4}):\n{s4}plotp,df1,kws_plot=get_plot_inputs(plotp=plotp,df1=df1,kws_plot=kws_plot,outd=f"{{dirname(__file__)}}");\n{s4}df1=fun_df1(df1) if not fun_df1 is None else df1;\n'+lines+f'{s4}ax.set(**kws_set)\n{s4}return ax\n'
+    lines='\n'.join(lines)
+    lines=f'def {defn}(\n{s4}plotp="{plotp}",\n{s4}data=None,\n{s4}df1=None,\n{s4}kws_plot=None,\n{s4}ax=None,\n{s4}fig=None,\n{s4}outd=None,\n{s4}fun_data=None,\n{s4}**kws_set,\n{s4}):\n{s4}\n{s4}## get the inputs\n{s4}plotp,data,kws_plot=get_plot_inputs(plotp=plotp,df1=data,kws_plot=kws_plot,outd=f"{{dirname(__file__)}}");\n{s4}data=fun_data(data) if not fun_data is None else data;\n{s4}\n{s4}## plotting\n'+lines+f'\n{s4}ax.set(**kws_set)\n{s4}return ax\n'
     #save def
     with open(srcp,'w') as f:
         f.write('from roux.global_imports import *\n')
@@ -328,10 +331,11 @@ def to_script(
 
 def to_plot(
     plotp: str,
+    data: pd.DataFrame=None,
     df1: pd.DataFrame=None,
     kws_plot: dict=dict(),
     logp: str='log_notebook.log',
-    sep: str='# plot',
+    sep: str='begin_plot()',
     validate: bool=False,
     show_path: bool=False,
     show_path_offy: float=-0.2,
@@ -344,9 +348,10 @@ def to_plot(
     Args:
         plotp (str): output path.
         df1 (pd.DataFrame, optional): dataframe with plotting data. Defaults to None.
+        data (pd.DataFrame, optional): dataframe with plotting data. Defaults to None.
         kws_plot (dict, optional): parameters for plotting. Defaults to dict().
         logp (str, optional): path to the log. Defaults to 'log_notebook.log'.
-        sep (str, optional): separator marking the start of the plotting code in jupyter notebook. Defaults to '# plot'.
+        sep (str, optional): separator marking the start of the plotting code in jupyter notebook. Defaults to 'begin_plot()'.
         validate (bool, optional): validate the "readability" using `read_plot` function. Defaults to False.
         show_path (bool, optional): show path on the plot. Defaults to False.
         show_path_offy (float, optional): y-offset for the path label. Defaults to 0.
@@ -371,6 +376,8 @@ def to_plot(
         plt.figtext(x=0.5,y=0+show_path_offy,
                     s=plotp.split('plot/')[1] if 'plot/' in plotp else plotp,
                     ha='center')
+    if df1 is None and not data is None:
+        df1=data
     if df1 is None:
         if not quiet:
             logging.warning("no data provided to_plot")
@@ -379,8 +386,8 @@ def to_plot(
     outd=remove_exts(outd)
     if test:
         info(outd)
-    df1p=f"{outd}/df1.tsv"
-    paramp=f"{outd}/kws_plot.json"    
+    df1p=f"{outd}/data.tsv"
+    paramp=f"{outd}/config.yaml"    
     srcp=f"{outd}/plot.py"
     #save data
     to_table(df1,df1p)

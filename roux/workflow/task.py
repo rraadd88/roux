@@ -39,9 +39,10 @@ def run_experiment(
 
 def run_experiments(
     input_notebook_path: str,
-    inputs: list,
-    output_path: str,
     kernel: str,
+    inputs: list= None,
+    output_path: str=None,
+    parameters_list: list=None,
     fast: bool=False,
     test1: bool=False,
     force: bool=False,
@@ -57,28 +58,35 @@ def run_experiments(
         2. Reporting by quarto?
     """
     ## save experiments in unique directories
-    from roux.lib.sys import to_output_paths
-    parameters_list=to_output_paths(
-        inputs = inputs,
-        output_path = output_path,
-        encode_short = True,
-        key_output_path='output_path',
-        verbose=verbose,
-        force=force,
-        )
-    ## save all parameters
-    for k,parameters in parameters_list.items():
-        ## save parameters
-        output_dir_path=output_path.split('{KEY}')[0]
-        to_dict(parameters,
-                f"{output_dir_path}/{k.split(output_dir_path)[1].split('/')[0]}/.parameters.yaml")
+    if parameters_list is None:
+        from roux.lib.sys import to_output_paths
+        parameters_list=to_output_paths(
+            inputs = inputs,
+            output_path = output_path,
+            encode_short = True,
+            key_output_path='output_path',
+            verbose=verbose,
+            force=force,
+            )
+        ## save all parameters
+        for k,parameters in parameters_list.items():
+            ## save parameters
+            output_dir_path=output_path.split('{KEY}')[0]
+            to_dict(parameters,
+                    f"{output_dir_path}/{k.split(output_dir_path)[1].split('/')[0]}/.parameters.yaml")
+    else:
+        before=len(parameters_list)
+        parameters_list=[d for d in parameters_list if (force if force else not exists(d['output_path']))]
+        if not force:
+            logging.info(f"parameters_list reduced because force=False: {before} -> {len(parameters_list)}")
     ## run experiments
     ds1=pd.Series(parameters_list)
-    if test1:
-        ds1=ds1.head(1)
-        logging.warning("testing only 1st input.")
+    if len(ds1)!=0:
+        if test1:
+            ds1=ds1.head(1)
+            logging.warning("testing only 1st input.")
     
-    _=getattr(ds1,'parallel_apply' if fast else 'progress_apply')(lambda x: run_experiment(x,
+        _=getattr(ds1,'parallel_apply' if fast else 'progress_apply')(lambda x: run_experiment(x,
                                                                                                 input_notebook_path=input_notebook_path,
                                                                                                 kernel=kernel,
                                                                                                 **kws_papermill,

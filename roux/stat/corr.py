@@ -61,7 +61,7 @@ def get_corr_bootstrapped(
     """
     from roux.stat.classify import get_cvsplits
     from roux.stat.variance import get_ci
-    cv2xy=get_cvsplits(x,y,cv=cv,outtest=False,random_state=1)
+    cv2xy=get_cvsplits(x,y,cv=cv,outtest=False,random_state=random_state)
     rs=[globals()[f"get_{method}r"](**cv2xy[k])[0] for k in cv2xy]
     if verbose: info(cv,ci_type)
     return np.mean(rs), get_ci(rs,ci_type=ci_type)
@@ -71,6 +71,7 @@ def corr_to_str(
     r: float,
     p: float,
     show_n: bool=True,
+    n:int=None,
     show_n_prefix: str='',    
     fmt='<',
     ci=None,
@@ -99,6 +100,7 @@ def corr_to_str(
         s0+=f"$\pm${ci:.2f}{ci_type if ci_type!='max' else ''}"
     s0+=f"\n{pval2annot(p,fmt='<',linebreak=False, alpha=0.05)}"
     if show_n:
+        assert not n is None, n
         s0+=f"\n({num2str(num=show_n,magnitude=False)})"
     return s0
 
@@ -137,7 +139,10 @@ def get_corr(
             if 'show_n' in kws_to_str:
                 if kws_to_str['show_n']==True:
                     kws_to_str['show_n']=n
-            return corr_to_str(method,r,p, ci=ci,ci_type=ci_type, magnitide=magnitide,**kws_to_str),r
+            return corr_to_str(method,r,p,n=n,
+                               ci=ci,ci_type=ci_type, 
+                               magnitide=magnitide,
+                               **kws_to_str),r
     else:
         r,p=globals()[f"get_{method}r"](x, y)
         if not outstr:
@@ -146,7 +151,10 @@ def get_corr(
             if 'show_n' in kws_to_str:
                 if kws_to_str['show_n']==True:
                     kws_to_str['show_n']=n
-            return corr_to_str(method,r,p, ci=None,ci_type=None, magnitide=magnitide,**kws_to_str),r
+            return corr_to_str(method,r,p,n=n,
+                               ci=None,ci_type=None, 
+                               magnitide=magnitide,
+                               **kws_to_str),r
 
 def get_corrs(
     df1: pd.DataFrame,
@@ -214,7 +222,7 @@ def get_corrs(
         .log.dropna(subset=['P'])
         .groupby(['variable1']+(['variable2'] if len(cols_with)==0 else []),
                  as_index=False,
-                ).apply(lambda df: get_q(df,'P',verbose=False)).reset_index(drop=True)
+                ).apply(lambda df: get_q(df,'P',verb=verbose)).reset_index(drop=True)
         .sort_values(['Q',f"$r_{method[0]}$"],ascending=[True,False])
         )
     return df2

@@ -194,6 +194,7 @@ def classify_sharing(
     """
     df1=df1.assign(**{
     f'{prefix}shared (>=1)': lambda df: df[column_value]!=0,
+    f'{prefix}shared (>=25%)': lambda df: (df[column_value]>=25),
     f'{prefix}shared (>=50%)': lambda df: (df[column_value]>=50),
     f'{prefix}shared (==100%)': lambda df: (df[column_value]==100),
     f'{prefix}sharing type': lambda df: df[column_value].apply(lambda x: 'same' if x==100 else 'distinct' if x==0 else 'shared'),

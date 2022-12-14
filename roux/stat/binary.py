@@ -117,6 +117,7 @@ def get_cutoff(
     show_diagonal=True,
     show_area=True,
     show_cutoff=True,
+    plot_pr=True,
     color='k',
     returns=['ax'],
     ax=None,
@@ -138,7 +139,8 @@ def get_cutoff(
         Dictionary:
             Thresholds from AUC, PR
             
-
+    TODOs: 
+        1. Separate the plotting functions.
     """
     if all((y_score)<=0):
         negative_values=True
@@ -185,10 +187,12 @@ def get_cutoff(
             # max pr
             cutoff=df1.loc[(df1[columns_value[0]]==df1[columns_value[0]].max()),:].iloc[0,:]
             columns_value=columns_value[::-1]
-    for xaxis in [columns_value[0],'count TP']:
-        # if ax is None:
-        import matplotlib.pyplot as plt
-        fig,ax=plt.subplots(figsize=[2,2])
+    ## plot
+    for xaxis in [columns_value[0]]+(['count TP'] if plot_pr else []):
+        if ax is None:
+            import matplotlib.pyplot as plt
+            fig,ax=plt.subplots(figsize=[2,2])
+        ## line
         ax.plot(
             df1[xaxis],
             df1[columns_value[1]],
@@ -196,6 +200,7 @@ def get_cutoff(
             zorder=2,
             solid_capstyle='butt',
         )
+        ## area for ROC-AUC
         if show_area!=False and xaxis==columns_value[0] and method=='roc_curve':
             ax.fill_between(
                 df1[xaxis],
@@ -214,6 +219,7 @@ def get_cutoff(
                 ax.set(
                 xticks=[0,1],yticks=[0,1],
                 )
+        ## mark threshold
         if show_cutoff!=False:
             ax.scatter(
                 [cutoff[xaxis]],

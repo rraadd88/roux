@@ -154,6 +154,7 @@ def to_fasta(
         logging.warning('file exists.')
         return
     makedirs(output_path)
+    molecule_type=molecule_type.capitalize()
     assert molecule_type in ['Protein','RNA','DNA']
     seqs = (SeqRecord.SeqRecord(Seq.Seq(sequences[k]), id=k,annotations=dict(molecule_type=molecule_type),**kws_SeqRecord) for k in sequences)
     SeqIO.write(seqs, output_path, "fasta")
