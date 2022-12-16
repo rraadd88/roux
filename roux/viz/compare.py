@@ -33,7 +33,7 @@ def plot_comparisons(
             coly=x['variable x'],
             trendline_method= 'lowess',
             stat_method = 'spearman',
-            bootstrapped = True,
+            resample = True,
             params_plot={'color':get_colors_default()[0],'ec':get_colors_default()[0],'fc':'none','linewidth':1},
             params_plot_trendline= {'linestyle':':'},
             params_set_label = {'loc': 2,'off_loc':0.01},

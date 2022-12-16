@@ -25,7 +25,10 @@ def get_spearmanr(
     t=sc.stats.spearmanr(x,y,nan_policy='omit')
     return t.correlation,float(t.pvalue)
 
-def get_pearsonr(x: np.array,y: np.array) -> tuple:
+def get_pearsonr(
+    x: np.array,
+    y: np.array,
+    ) -> tuple:
     """Get Pearson correlation coefficient.
 
     Args:
@@ -37,7 +40,7 @@ def get_pearsonr(x: np.array,y: np.array) -> tuple:
     """
     return sc.stats.pearsonr(x,y)
 
-def get_corr_bootstrapped(
+def get_corr_resampled(
     x: np.array,
     y: np.array,
     method='spearman',
@@ -46,14 +49,14 @@ def get_corr_bootstrapped(
     random_state=1,
     verbose=False,
     ) -> tuple:
-    """Get correlations after bootstraping.
+    """Get correlations after resampling.
 
     Args:
         x (np.array): x vector.
         y (np.array): y vector.
         method (str, optional): method name. Defaults to 'spearman'.
         ci_type (str, optional): confidence interval type. Defaults to 'max'.
-        cv (int, optional): number of bootstraps. Defaults to 5.
+        cv (int, optional): number of resamples. Defaults to 5.
         random_state (int, optional): random state. Defaults to 1.
 
     Returns:
@@ -101,13 +104,14 @@ def corr_to_str(
     s0+=f"\n{pval2annot(p,fmt='<',linebreak=False, alpha=0.05)}"
     if show_n:
         assert not n is None, n
-        s0+=f"\n({num2str(num=show_n,magnitude=False)})"
+        s0+=f"\n({num2str(num=n,magnitude=False)})"
     return s0
 
 def get_corr(
-    x: np.array,y: np.array,
+    x: np.array,
+    y: np.array,
     method='spearman',
-    bootstrapped=False,
+    resample=False,
     ci_type='max',
     magnitide=True,
     outstr=False,
@@ -120,18 +124,18 @@ def get_corr(
         x (np.array): x.
         y (np.array): y.
         method (str, optional): method name. Defaults to 'spearman'.
-        bootstrapped (bool, optional): bootstraping. Defaults to False.
+        resample (bool, optional): resampling. Defaults to False.
         ci_type (str, optional): confidence interval type. Defaults to 'max'.
         magnitide (bool, optional): show magnitude. Defaults to True.
         outstr (bool, optional): output as string. Defaults to False.
     
     Keyword arguments:
-        kws: parameters provided to `get_corr_bootstrapped` function.
+        kws: parameters provided to `get_corr_resampled` function.
 
     """
     n=len(x)
-    if bootstrapped:
-        r,ci=get_corr_bootstrapped(x,y,method=method,ci_type=ci_type,**kws_boots)
+    if resample:
+        r,ci=get_corr_resampled(x,y,method=method,ci_type=ci_type,**kws_boots)
         _,p=globals()[f"get_{method}r"](x, y)
         if not outstr:
             return r,p,ci,n

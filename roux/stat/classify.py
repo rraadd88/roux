@@ -1,5 +1,6 @@
 """For classification."""
-from roux.global_imports import *
+from roux.lib.df import *
+import  matplotlib.pyplot as plt 
 
 # curate data 
 def drop_low_complexity(

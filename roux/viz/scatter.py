@@ -67,7 +67,7 @@ def plot_scatter(
     kind: str='scatter',
     trendline_method: str='poly',
     stat_method: str="spearman",
-    bootstrapped: bool=False,
+    resample: bool=False,
     cmap: str='Reds',
     label_colorbar: str=None,
     gridsize: int=25,
@@ -93,7 +93,7 @@ def plot_scatter(
         kind (str, optional): kind of scatter. Defaults to 'hexbin'.
         trendline_method (str, optional): trendline method ['poly','lowess']. Defaults to 'poly'.
         stat_method (str, optional): method of annoted stats ['mlr',"spearman"]. Defaults to "spearman".
-        bootstrapped (bool, optional): bootstrap data. Defaults to False.
+        resample (bool, optional): resample data. Defaults to False.
         cmap (str, optional): colormap. Defaults to 'Reds'.
         label_colorbar (str, optional): label of the colorbar. Defaults to None.
         gridsize (int, optional): number of grids in the hexbin. Defaults to 25.
@@ -172,7 +172,7 @@ def plot_scatter(
     if 'spearman' in stat_method or 'pearson' in stat_method:
         from roux.stat.corr import get_corr
         label,r=get_corr(dplot[colx],dplot[coly],method=stat_method[0],
-                         bootstrapped=bootstrapped,
+                         resample=resample,
                          outstr=True,
                          kws_to_str=dict(
                              show_n=show_n,
