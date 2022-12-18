@@ -19,10 +19,6 @@ def test_stdout(tb):
 def test_stdout(tb):
     assert "data/table.tsv" in tb.cell_output_text('to_table'), tb.cell_output_text('to_table')
 
-@testbook('examples/roux_query.ipynb', execute=True)
-def test_stdout(tb):
-    assert "data/biomart/00_raw.tsv" in tb.cell_output_text('to_table'), tb.cell_output_text('to_table')    
-
 @testbook('examples/roux_stat_cluster.ipynb', execute=True)
 def test_stdout(tb):
     assert 'data/biomart/01_dedup.tsv' in tb.cell_output_text('to_table'), tb.cell_output_text('to_table')    

@@ -113,9 +113,11 @@ def get_corr(
     method='spearman',
     resample=False,
     ci_type='max',
+    sample_size_min=10,
     magnitide=True,
     outstr=False,
     kws_to_str={},
+    verbose: bool= False,
     **kws_boots,
     ):
     """Correlation between vectors (wrapper).
@@ -134,6 +136,10 @@ def get_corr(
 
     """
     n=len(x)
+    if n<sample_size_min:
+        if verbose:
+            logging.warning("low sample size")
+        return
     if resample:
         r,ci=get_corr_resampled(x,y,method=method,ci_type=ci_type,**kws_boots)
         _,p=globals()[f"get_{method}r"](x, y)
@@ -163,9 +169,11 @@ def get_corr(
 def get_corrs(
     df1: pd.DataFrame,
     method: str,
-    cols: list,
-    cols_with: list=[],
+    cols: list=None,
+    cols_with: list=None,
+    pairs: list=None,
     coff_inflation_min: float=None,
+    fast: bool=False,
     test: bool=False,
     verbose: bool=False,
     **kws
@@ -177,7 +185,9 @@ def get_corrs(
         method (str): method of correlation `spearman` or `pearson`.        
         cols (str): columns.
         cols_with (str): columns to correlate with i.e. variable2.
-
+        pairs (list): list of tuples of column (variable) pairs.
+        fast (bool): use parallel-processing if True.
+        
     Keyword arguments:
         kws: parameters provided to `get_corr` function.
 
@@ -185,12 +195,21 @@ def get_corrs(
         DataFrame: output dataframe.
         
     TODOs:
-        0. use `lib.set.get_pairs` to get the combinations.
+        0. Use `lib.set.get_pairs` to get the combinations.
         1. Provide 2D array to `scipy.stats.spearmanr`?
-        2. Add parallel processing through `fast` parameter.
+        2. Compare with `Pingouin`'s equivalent function.
     """
+    if cols is None:
+        if pairs is None:
+            cols=df1.columns.tolist()
+        else:
+            cols=list(set(np.array(pairs).flatten()))
+    # cols=list(set(df1.columns.tolist()) & set(cols))
+    if cols_with is None:
+        cols_with=[]
     import itertools
     from roux.stat.transform import get_q
+    
     # check inflation/over-representations
     from roux.lib.df import check_inflation
     ds_=check_inflation(df1,subset=cols+cols_with)
@@ -198,29 +217,57 @@ def get_corrs(
         ds_=ds_.loc[lambda x: x>=coff_inflation_min]
         info(ds_)
         # remove inflated
-    cols=[c for c in cols if not c in ds_.index.tolist()]
-    cols_with=[c for c in cols_with if not c in ds_.index.tolist()]
-    if len(cols_with)==0:
-        o1=itertools.combinations(cols,2)
-    else:
-        o1=itertools.product(cols,cols_with)
+        cols=[c for c in cols if not c in ds_.index.tolist()]
+        cols_with=[c for c in cols_with if not c in ds_.index.tolist()]
     # remove inf
     df1=df1.loc[:,np.unique(cols+cols_with)].replace([np.inf, -np.inf], np.nan)
+    assert len(np.unique(cols+cols_with))!=0, "len(np.unique(cols+cols_with))==0" 
     
-    df0=pd.DataFrame(o1,columns=['variable1','variable2'])
+    ## get pairs
+    if pairs is None:
+        ## get pairs
+        if len(cols_with)==0:
+            pairs=itertools.combinations(cols,2) # cols->cols
+        else:
+            pairs=itertools.product(cols,cols_with) # cols->cols_with
+    df0=pd.DataFrame(
+        pairs,
+        columns=['variable1','variable2'],
+        )
+    if test:
+        info(df0)
     df0=df0.loc[(df0['variable1']!=df0['variable2']),:]
     if test:
         info(df0)
-    df2=(df0
-        .groupby(['variable1','variable2'])
-        .progress_apply(lambda df: get_corr(
-            x=df1[df.name[0]],
-            y=df1[df.name[1]],
+     
+    ## correlations
+    def pre(df1,cols):
+        ## drop missing values if any, in a pairwise manner
+        df_=df1.dropna(subset=cols)
+        return df_[cols[0]],df_[cols[1]]
+    
+    from roux.lib.df import get_name
+    df2=(getattr(df0
+        .groupby(['variable1','variable2']),
+               'progress_apply' if not fast else 'parallel_apply'
+               )(lambda df: get_corr(
+            *pre(df1,
+            cols=[get_name(df, cols='variable1'),
+            get_name(df, cols='variable2'),
+                ],
+            ),
             method=method,
+            verbose=False,
             **kws))
         .apply(pd.Series)
         )
-    df2.columns=[f"$r_{method[0]}$",'P','n']
+    try:
+        df2.columns=[f"$r_{method[0]}$",'P','n']
+    except:
+        print(df2.head(1))
+        print(df2.shape)
+        
+    ## FDR
     df2=(df2
         .reset_index()
         .log.dropna(subset=['P'])

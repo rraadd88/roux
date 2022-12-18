@@ -44,8 +44,6 @@ requirements = {
         ],
 # 'viz':['',
 #       ],
-'query':['pyensembl',
-         'pybiomart'],
 'workflow':['snakemake',
             'gitpython',
             'networkx',
