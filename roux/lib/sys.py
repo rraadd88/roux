@@ -450,7 +450,9 @@ def get_excecution_location(depth=1):
 
 ## time
 ## logging system
-def get_datetime(outstr=True):
+def get_datetime(
+    outstr: bool=True,
+    ):
     """Get the date and time.
 
     Args:
@@ -459,11 +461,12 @@ def get_datetime(outstr=True):
     Returns:
         s : date and time.
     """
-    from roux.lib.io import to_path # potential circular import
     import datetime
     time=datetime.datetime.now()
     if outstr:
-        return to_path(str(time)).replace('-','_')
+        # from roux.lib.io import to_path # potential circular import
+        # return to_path(str(time)).replace('-','_').replace('.','_')
+        return=time.strftime("%G%m%dT%H%M%S")
     else:
         return time
 

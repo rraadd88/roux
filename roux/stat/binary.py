@@ -116,6 +116,7 @@ def get_cutoff(
     method,#'roc','pr'
     show_diagonal=True,
     show_area=True,
+    kws_area:dict={},
     show_cutoff=True,
     plot_pr=True,
     color='k',
@@ -199,6 +200,7 @@ def get_cutoff(
             color=color,
             zorder=2,
             solid_capstyle='butt',
+            clip_on=False,
         )
         ## area for ROC-AUC
         if show_area!=False and xaxis==columns_value[0] and method=='roc_curve':
@@ -206,6 +208,7 @@ def get_cutoff(
                 df1[xaxis],
                 df1[columns_value[1]],
                 zorder=1,
+                **kws_area,
             )
             auc = metrics.roc_auc_score(
                 y_true=list(y_true),

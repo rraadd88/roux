@@ -503,7 +503,7 @@ def assert_dense(
     Notes:
         to be deprecated in future releases.
     """
-    assert validate_dense(df01,subset=subset,duplicates=duplicates,na=na,message=message)
+    assert validate_dense(df01,subset=subset,duplicates=duplicates,na=na,message=message), "Duplicates or missing values or both found in the table."
     return df01
 
 ## mappings

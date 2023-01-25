@@ -184,6 +184,18 @@ def plot_normal(
     ax.legend()
     return ax
 
+## annotations
+def get_jitter_positions(
+    ax,
+    df1,
+    order,
+    column_category,
+    column_position,
+    ):
+    df1=df1.loc[df1[column_category].isin(order),:]
+    d1=dict(zip(order,[c.get_offsets()[:,0].data for c in ax.collections]))
+    return df1.groupby(column_category,as_index=False).apply(lambda df: df.assign(**{column_position:(d1[df.name])})).reset_index(drop=True)
+
 ## paired distributions.
 def plot_dists(
     df1: pd.DataFrame,
@@ -199,6 +211,8 @@ def plot_dists(
     show_n_prefix: str='',
     show_n_ha=None,
     show_n_ticklabels: bool=True,
+    show_outlines:bool=False,
+    kws_outlines:dict={},
     alternative: str='two-sided',
     offx_n: float=0,
     axis_cont_lim: tuple=None,
@@ -387,6 +401,7 @@ def plot_dists(
                     s=s,
                     va='center' if axis_desc=='y' else 'top',
                     ha='right' if axis_desc=='y' else 'center',
+                    zorder=5,
                     )
                 
     ## show sample sizes
@@ -419,6 +434,23 @@ def plot_dists(
             title=hue,
             )
         o1.get_frame().set_edgecolor((0.95,0.95,0.95))
+    if show_outlines:
+        ## get jitter positions and plot outlines
+        from roux.viz.scatter import annot_outlines
+        annot_outlines(
+            get_jitter_positions(
+                ax,
+                df1,
+                order=order,
+                column_category=x if axis_desc=='x' else y,
+                column_position='x' if axis_desc=='x' else 'y', # jitter is along the axis with decrete values 
+                ),
+            colx='x' if axis_desc=='x' else 'y',
+            coly=y if axis_desc=='x' else x,
+            column_outlines=show_outlines,
+            **kws_outlines,
+            ax=ax,
+            )        
     return ax
 
 def pointplot_groupbyedgecolor(

@@ -67,6 +67,26 @@ def set_label(
             **kws)
     return ax
 
+def set_suptitle(
+    axs,
+    title,
+    offy=0,
+    ):
+    """
+    Combined title for a list of subplots.
+    
+    """
+    a1=np.vstack((np.array(ax.get_position()) for ax in axs))
+    return plt.text(
+              x=np.mean([np.min(a1[:,0]),np.max(a1[:,0])]),
+              # y=np.mean([np.min(a1[:,1]),np.max(a1[:,1])]),
+              y=np.max(a1[:,1])+offy,
+              s=title,
+              ha='center',
+              fontdict=dict(fontsize=15),
+              transform= plt.gcf().transFigure,
+    )
+
 def annot_side(
     ax: plt.Axes,
     df1: pd.DataFrame,

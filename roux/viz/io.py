@@ -4,6 +4,7 @@
 import matplotlib.pyplot as plt
 from roux.lib.io import *#read_ps,to_outp
 from roux.lib.sys import is_interactive_notebook
+plt.set_loglevel("warning")
 
 ## matplotlib plots
 def to_plotp(
@@ -39,6 +40,7 @@ def to_plotp(
                 if not ax.legend_ is None:
                     plotp=f"{plotp}_"+(ax.legend_.get_title().get_text()).replace('.','_')
     plotp=f"{plotp} {suffix}"+(f".{fmts[0]}" if len(fmts)==1 else '')
+    logging.warning(f"Inferred path of the plot (plotp): '{plotp}'")
     return plotp
 
 def savefig(
@@ -171,16 +173,14 @@ def update_kws_plot(
     if test:print(kws_plot,kws_plot_)
     if kws_plot is None:
         return kws_plot_
-    for k in kws_plot_:
-        if not k in kws_plot:
-            kws_plot[k]=kws_plot_[k]
-    return kws_plot
+    from roux.lib.dict import merge_dicts_deep
+    return merge_dicts_deep(kws_plot_, kws_plot)
 
 def get_plot_inputs(
     plotp: str,
-    df1: pd.DataFrame,
-    kws_plot: dict,
-    outd: str,
+    df1: pd.DataFrame=None,
+    kws_plot: dict={},
+    outd: str=None,
     ) -> tuple:
     """Get plot inputs.
 

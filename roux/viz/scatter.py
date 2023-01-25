@@ -11,16 +11,59 @@ import logging
 from icecream import ic as info
 from roux.viz.ax_ import *
 
+## annotations
+def annot_outlines(
+    data: pd.DataFrame,
+    colx: str,
+    coly: str,
+    column_outlines: str,
+    outline_colors: dict,
+    style=None,
+    legend: bool=True,
+    kws_legend:dict={},
+    zorder:int=3,
+    ax: plt.Axes=None,
+    ) -> plt.Axes:
+    """
+    Outline points on the scatter plot by categories.
+    
+    """
+    if isinstance(outline_colors,list):
+        outline_colors=dict(zip(data[column_outlines].unique(),outline_colors))
+        logging.warning(f"Mapping between the categories and the colors of the coutlines: {outline_colors}.")
+    for (cat, df_) in data.groupby(column_outlines):
+        ax=sns.scatterplot(
+            data=df_,
+            x=colx,
+            y=coly,
+            ec=outline_colors[cat],
+            linewidth=1,
+            s=50,
+            fc="none",
+            style=style,
+            ax=ax,
+            legend=False,
+            label=f"{df_[column_outlines].unique()[0]} ({len(df_)})" if legend else None,
+            zorder=zorder,
+        )
+        if legend:
+            ax.legend(
+                title=column_outlines,
+                **kws_legend,
+            )  
+    return ax
+
 def plot_trendline(
     dplot: pd.DataFrame,
     colx: str,
     coly: str,
-    params_plot: dict={'color':'r','lw':2},
     poly: bool=False,
     lowess: bool=True,
-    linestyle: str= 'solid',
+    linestyle: str= ':',
     params_poly: dict={'deg':1},
     params_lowess: dict={'frac':0.7,'it':5},
+    lw:float=2,
+    color:str='k',
     ax: plt.Axes = None,
     **kws
     ) -> plt.Axes:
@@ -51,11 +94,11 @@ def plot_trendline(
         coef = np.polyfit(dplot[colx], dplot[coly],**params_poly)
         poly1d_fn = np.poly1d(coef)
         # poly1d_fn is now a function which takes in x and returns an estimate for y
-        ax.plot(dplot[colx], poly1d_fn(dplot[colx]),linestyle=linestyle, **params_plot,**kws)
+        ax.plot(dplot[colx], poly1d_fn(dplot[colx]),linestyle=linestyle,**kws)
     if lowess:
         from statsmodels.nonparametric.smoothers_lowess import lowess
         xys_lowess=lowess(dplot[coly], dplot[colx],frac=0.7,it=5)
-        ax.plot(xys_lowess[:,0],xys_lowess[:,1],linestyle=linestyle, **params_plot,**kws)
+        ax.plot(xys_lowess[:,0],xys_lowess[:,1],linestyle=linestyle,**kws)
     return ax
 
 # @to_class(rd)
@@ -76,7 +119,7 @@ def plot_scatter(
     title: str=None,
     show_n:bool=True,
     show_n_prefix:str='',
-    params_plot: dict={},
+    # params_plot: dict={},
     params_plot_trendline: dict={},
     params_set_label: dict={},
     verbose: bool=False,
@@ -100,7 +143,7 @@ def plot_scatter(
         bbox_to_anchor (list, optional): location of the legend. Defaults to [1,1].
         loc (str, optional): location of the legend. Defaults to 'upper left'.
         title (str, optional): title of the plot. Defaults to None.
-        params_plot (dict, optional): parameters provided to the `plot` function. Defaults to {}.
+        #params_plot (dict, optional): parameters provided to the `plot` function. Defaults to {}.
         params_plot_trendline (dict, optional): parameters provided to the `plot_trendline` function. Defaults to {}.
         params_set_label (dict, optional): parameters provided to the `set_label` function. Defaults to dict(x=0,y=1).
         ax (plt.Axes, optional): `plt.Axes` object. Defaults to None.
@@ -129,17 +172,17 @@ def plot_scatter(
             colz='count'
             dplot[colz]=1
         if colz in dplot:
-            params_plot['C']=colz
-            params_plot['reduce_C_function']=len if colz=='count' else params_plot['reduce_C_function'] if 'reduce_C_function' in params_plot else np.mean        
-            params_plot['gridsize']=params_plot['gridsize'] if 'gridsize' in params_plot else gridsize
-            params_plot['cmap']=params_plot['cmap'] if 'cmap' in params_plot else cmap
-            if verbose: print(params_plot)
+            kws['C']=colz
+            kws['reduce_C_function']=len if colz=='count' else kws['reduce_C_function'] if 'reduce_C_function' in kws else np.mean        
+            kws['gridsize']=kws['gridsize'] if 'gridsize' in kws else gridsize
+            kws['cmap']=kws['cmap'] if 'cmap' in kws else cmap
+            if verbose: print(kws)
         ax=dplot.plot(
             kind=kind,
             x=colx,
             y=coly, 
             ax=ax,
-            **params_plot,
+            # **params_plot,
             **kws,
             )
     else:
@@ -149,7 +192,7 @@ def plot_scatter(
                             hue=colz,       
                             palette=cmap if not colz is None else None,
                             ax=ax,
-                           **params_plot,
+                           # **params_plot,
                            **kws)
         if not colz is None:
             leg=ax.legend(loc=loc,bbox_to_anchor=bbox_to_anchor,title=colz if title is None else title)
@@ -184,10 +227,15 @@ def plot_scatter(
                 params_set_label['loc']=2
             elif r<0:
                 params_set_label['loc']=1
-        ax=set_label(ax=ax,s=label,**params_set_label)
-    from roux.viz.colors import saturate_color
+        ax=set_label(ax=ax,s=label,
+                     zorder=5,
+                     **params_set_label)
+    if not 'color' in params_plot_trendline:
+        from roux.viz.colors import saturate_color,get_colors_default
+        params_plot_trendline['color']=saturate_color(kws['color'] if 'color' in kws else get_colors_default()[0],
+                                    alpha=1.75)
     plot_trendline(dplot,colx,coly,
-                    params_plot={'color':saturate_color(params_plot['color'],alpha=1.75) if 'color' in params_plot else None,},
+                    # params_plot=kws,
                     poly='poly' in trendline_method,
                     lowess='lowess' in trendline_method,
                    ax=ax, 
@@ -425,29 +473,17 @@ def plot_volcano(
                 legend=False,
             )
         else:
-            for (cat, df_), c in zip(data1.groupby(show_outlines), outline_colors):
-                ax=sns.scatterplot(
-                    data=df_,
-                    x=colx,
-                    y=coly,
-                    # hue=c,
-                    ec=c,
-                    # ec="face",
-                    linewidth=1,
-                    s=50,
-                    fc="none",
-                    style=style,
-                    style_order=['o','^'],
-                    markers=['o','^'],
-                    ax=ax,
-                    legend=False,
-                    label=f"{df_[show_outlines].unique()[0]} ({len(df_)})" if legend else None,
+            ax=annot_outlines(
+                data1,
+                colx,
+                coly,
+                column_outlines=show_outlines,
+                outline_colors= outline_colors,
+                kws_legend=kws_legend,
+                style=style,
+                legend=legend,
+                ax=ax,
                 )
-                if legend:
-                    ax.legend(
-                        title=show_outlines,
-                        **kws_legend,
-                    )            
     if show_labels: 
         texts=(data1
                 .apply(lambda x: ax.text(x=x[colx],

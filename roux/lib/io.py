@@ -202,8 +202,10 @@ def backup(
     if test:
         return l1
     assert(len(outds)!=0)
-    # _=[makedirs(p) for p in outds]
     print(l1)
+    ## make directories
+    # _=[makedirs(p) for p in outds]
+    [makedirs(t[1]) for t in l1]
     l2=[shutil.move(*t) for t in l1]
     # zip
     if zipped:
@@ -1028,6 +1030,7 @@ def to_excel(
     sheetname2df: dict,
     outp: str,
     comments: dict=None,
+    save_input: bool=False,
     author: str=None,
     append: bool=False,
     **kws,
@@ -1039,7 +1042,8 @@ def to_excel(
         outp (str): output path. 
         append (bool): append the dataframes (default:False).
         comments (dict): map between column names and comment e.g. description of the column.
-
+        save_input (bool): additionally save the input tables in text format.
+        
     Keyword parameters: 
         kws: parameters provided to the excel writer.
     """
@@ -1050,11 +1054,11 @@ def to_excel(
         ## order the columns
         for k1 in sheetname2df:
             sheetname2df[k1]=sheetname2df[k1].loc[:,[k for k in comments if k in sheetname2df[k1]]+[k for k in sheetname2df[k1] if not k in comments]]
-
-        ## insert a table with the description
-        items = list(sheetname2df.items())
-        items.insert(0, ('description', dict2df(comments,colkey='column name',colvalue='description')))
-        sheetname2df = dict(items)
+        if not any([k.lower().startswith('descr') for k in sheetname2df]):
+            ## insert a table with the description
+            items = list(sheetname2df.items())
+            items.insert(0, ('description', dict2df(comments,colkey='column name',colvalue='description')))
+            sheetname2df = dict(items)
     
     outp=to_path(outp)
     writer = pd.ExcelWriter(outp)
@@ -1066,6 +1070,11 @@ def to_excel(
             sheetname2df[sn].to_excel(writer,startrow=startrow,index=False,**kws)  
             startrow+=len(sheetname2df[sn])+2
     writer.save()
+    ## save in tsv format
+    if save_input:
+        for k in sheetname2df:
+            to_table(sheetname2df[k],f"{splitext(outp)[0]}/{k}.tsv")
+    
     if not comments is None:
         to_excel_commented(
             outp,
