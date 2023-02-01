@@ -367,6 +367,7 @@ def check_nunique(
     subset: list=None,
     groupby: str=None,
     perc: bool=False,
+    out=False,
     ) -> pd.Series:
     """Number/percentage of unique values in columns.
     
@@ -384,13 +385,19 @@ def check_nunique(
         subset=[subset]
     if groupby is None:
         if not perc:
-            return df.loc[:,subset].nunique()
+            df_=df.loc[:,subset].nunique()
         else:
-            return (df.loc[:,subset].nunique()/df.loc[:,subset].agg(len))*100
+            df_=(df.loc[:,subset].nunique()/df.loc[:,subset].agg(len))*100
     else:
         from roux.lib.set import list2str
-        return df.groupby(groupby)[list2str(subset)].nunique()
-
+        df_=df.groupby(groupby)[list2str(subset)].nunique()
+    
+    if not out:
+        logging.info(df_)
+        return df #input
+    else:
+        return df_
+    
 ## nunique:
 @to_rd
 def check_inflation(df1,subset=None):
@@ -888,6 +895,7 @@ def melt_paired(
     cols_index: list=None, # paired
     suffixes: list=None,
     cols_value: list=None,
+    clean: bool=False,
     ) -> pd.DataFrame:
     """Melt a paired dataframe.
     
@@ -929,6 +937,8 @@ def melt_paired(
             df2=df2.rename(columns={'':'id'},
                    errors='raise')
         assert len(df2)==len(df)*2
+        if clean:
+            df2=df2.drop(['suffix'],axis=1)
         return df2
     else:
         assert not suffixes is None

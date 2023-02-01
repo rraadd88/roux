@@ -6,7 +6,7 @@ from roux.global_imports import *
 def get_ratio_sorted(
     a: float,
     b: float,
-    increase=True
+    increase=True,
     ) -> float:
     """Get ratio sorted.
 

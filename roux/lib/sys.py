@@ -12,8 +12,6 @@ import sys
 import logging
 import shutil
 
-import pandas as pd
-
 ## for file paths
 def basenamenoext(p):
     """Basename without the extension.
@@ -61,6 +59,7 @@ def read_ps(
             ps=[ps]
     ps=sorted(ps)
     if test:
+        import pandas as pd
         ds1=pd.Series({p:p2time(p) if exists(p) else None for p in ps}).sort_values().dropna()
         if len(ds1)>1:
             from roux.lib.str import get_suffix
@@ -452,12 +451,14 @@ def get_excecution_location(depth=1):
 ## logging system
 def get_datetime(
     outstr: bool=True,
+    fmt="%G%m%dT%H%M%S",
     ):
     """Get the date and time.
 
     Args:
         outstr (bool, optional): string output. Defaults to True.
-
+        fmt (str): format of the string.
+        
     Returns:
         s : date and time.
     """
@@ -466,7 +467,7 @@ def get_datetime(
     if outstr:
         # from roux.lib.io import to_path # potential circular import
         # return to_path(str(time)).replace('-','_').replace('.','_')
-        return=time.strftime("%G%m%dT%H%M%S")
+        return time.strftime(fmt)
     else:
         return time
 

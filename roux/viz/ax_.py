@@ -354,7 +354,7 @@ def get_axlimsby_data(
 def split_ticklabels(
     ax: plt.Axes,
     axis='x',
-    grouped=False,
+    fmt: str='paired',
     group_x=0.01,
     group_prefix=None,
     group_loc='left',
@@ -365,6 +365,7 @@ def split_ticklabels(
     show_group_span=True,
     sep: str='-',
     pad_major=6,
+    off: float=0.2,    
     **kws,
     ) -> plt.Axes:
     """Split ticklabels into major and minor. Two minor ticks are created per major tick. 
@@ -377,21 +378,13 @@ def split_ticklabels(
         plt.Axes: `plt.Axes` object.
     """
     ticklabels=getattr(ax,f'get_{axis}ticklabels')()
-    import pandas as pd
-    if not grouped:
-        if axis=='y':logging.warning(f'axis={axis} is not tested.')        
-        ticklabels_major=pd.unique(['\u2014\n'+s.get_text().split(sep)[0] for s in ticklabels])
-        ticklabels_minor=[s.get_text().split(sep)[1] for s in ticklabels]
-
-        ticks_minor=getattr(ax,f'get_{axis}ticks')()
-        ticks_major=ticks_minor.reshape(int(len(ticks_minor)/2),2).mean(axis=1)
-        _=getattr(ax,f'set_{axis}ticks')(ticks_major, minor=False)
-        getattr(ax,f'set_{axis}ticklabels')(ticklabels_major,minor=False,**kws,)
-        _=ax.set_xticks( ticks_minor, minor=True )
-        getattr(ax,f'set_{axis}ticklabels')(ticklabels_minor,minor=True,**kws,)
-        ax.tick_params(axis=axis, which='minor', bottom=True,pad=0)
-        ax.tick_params(axis=axis, which='major', bottom=False,pad=pad_major)
-    else:
+    if fmt.startswith('pair'):
+        kws={
+            f"{axis}ticks":flatten([[i-off,i+off] for i in range(0,len(ticklabels))]),
+            f"{axis}ticklabels":flatten([t.get_text().split('-') for t in ticklabels]),
+        }
+        ax.set(**kws)
+    elif fmt.startswith('group'):
         if axis=='x':logging.warning(f'axis={axis} is not tested.')
         from roux.lib.df import dict2df
         df0_=dict2df(get_ticklabel2position(ax=ax,axis=axis),
@@ -455,6 +448,20 @@ def split_ticklabels(
                                    ),axis=1)
         getattr(ax,f'set_{axis}ticklabels')([s.get_text().split(sep,1)[1] for s in ticklabels],
                                             **kws,)        
+    else:
+        import pandas as pd
+        if axis=='y':logging.warning(f'axis={axis} is not tested.')        
+        ticklabels_major=pd.unique(['\u2014\n'+s.get_text().split(sep)[0] for s in ticklabels])
+        ticklabels_minor=[s.get_text().split(sep)[1] for s in ticklabels]
+
+        ticks_minor=getattr(ax,f'get_{axis}ticks')()
+        ticks_major=ticks_minor.reshape(int(len(ticks_minor)/2),2).mean(axis=1)
+        _=getattr(ax,f'set_{axis}ticks')(ticks_major, minor=False)
+        getattr(ax,f'set_{axis}ticklabels')(ticklabels_major,minor=False,**kws,)
+        _=ax.set_xticks( ticks_minor, minor=True )
+        getattr(ax,f'set_{axis}ticklabels')(ticklabels_minor,minor=True,**kws,)
+        ax.tick_params(axis=axis, which='minor', bottom=True,pad=0)
+        ax.tick_params(axis=axis, which='major', bottom=False,pad=pad_major)
     return ax
 
 def set_grids(

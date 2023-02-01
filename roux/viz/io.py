@@ -3,8 +3,6 @@
 # from roux.global_imports import *
 import matplotlib.pyplot as plt
 from roux.lib.io import *#read_ps,to_outp
-from roux.lib.sys import is_interactive_notebook
-plt.set_loglevel("warning")
 
 ## matplotlib plots
 def to_plotp(
@@ -99,6 +97,14 @@ def savefig(
     if exists(plotp) and not force:
         logging.info("fig exists")
         return
+    
+    ## warnings
+    from roux.lib.sys import is_interactive_notebook
+    plt.set_loglevel("warning")
+    import fontTools
+    fontTools.logging.disable()
+    del fontTools
+    
     if '.' in plotp:
         plt.savefig(plotp,
                     dpi=dpi,

@@ -8,7 +8,51 @@ from roux.lib.str import replace_many
 import logging
 
 ## operate
-
+def read_zip(
+    p: str,
+    file_open: str=None,
+    fun_read=None,
+    test: bool=False,
+    ):
+    """Read the contents of a zip file.
+    
+    Parameters:
+        p (str): path of the file.
+        file_open (str): path of file within the zip file to open.
+        fun_read (object): function to read the file.
+    
+    Examples:
+        1. Setting `fun_read` parameter for reading tab-separated table from a zip file.
+             
+            from io import StringIO
+            ...
+            fun_read=lambda x: pd.read_csv(io.StringIO(x.decode('utf-8')),sep='\t',header=None),
+            
+            or 
+            
+            from io import BytesIO
+            ...
+            fun_read=lambda x: pd.read_table(BytesIO(x)),
+    """
+    from io import BytesIO
+    from zipfile import ZipFile,ZipExtFile
+    from urllib.request import urlopen
+    if isinstance(p,ZipExtFile):
+        file=p
+    else:
+        if isinstance(p,str):
+            if p.startswith('http') or p.startswith('ftp'):
+                p=BytesIO(urlopen(p).read())
+        file = ZipFile(p)
+    if file_open is None:
+        logging.info(f"list of files within the zip file: {[f.filename for f in file.filelist]}")
+        return file
+    else:
+        if fun_read is None:
+            return file.open(file_open).read()
+        else:
+            return fun_read(file.open(file_open).read())
+        
 def to_zip(
     p: str,
     outp: str=None,
@@ -57,44 +101,6 @@ def to_zip(
     with tempfile.TemporaryDirectory() as outd:
         _=[shutil.copyfile(p,f"{outd}/{basename(p)}") for p in ps]
         return _to_zip(outd+'/', destination=outp, fmt=fmt)
-    
-def read_zip(
-    p: str,
-    file_open: str=None,
-    fun_read=None,
-    test: bool=False,
-    ):
-    """Read the contents of a zip file.
-    
-    Parameters:
-        p (str): path of the file.
-        file_open (str): path of file within the zip file to open.
-        fun_read (object): function to read the file.
-    
-    Examples:
-        1. Setting `fun_read` parameter for reading tab-separated table from a zip file.
-
-             fun_read=lambda x: pd.read_csv(io.StringIO(x.decode('utf-8')),sep='\t',header=None),
-
-    """
-    from io import BytesIO
-    from zipfile import ZipFile,ZipExtFile
-    from urllib.request import urlopen
-    if isinstance(p,ZipExtFile):
-        file=p
-    else:
-        if isinstance(p,str):
-            if p.startswith('http') or p.startswith('ftp'):
-                p=BytesIO(urlopen(p).read())
-        file = ZipFile(p)
-    if file_open is None:
-        logging.info(f"list of files within the zip file: {[f.filename for f in file.filelist]}")
-        return file
-    else:
-        if fun_read is None:
-            return file.open(file_open).read()
-        else:
-            return fun_read(file.open(file_open).read())
         
 def get_version(
     suffix: str='',
