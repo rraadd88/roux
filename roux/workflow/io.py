@@ -163,8 +163,11 @@ def read_config(
 ## metadata-related
 def read_metadata(
     p: str='./metadata.yaml',
-    ind: str='./metadata/',
+    ind: str=None,
     max_paths: int= 30,
+    config_paths: list=[],
+    config_paths_auto=False,
+    verbose: bool=False,
     **kws_read_config,
     ) -> dict:
     """Read metadata.
@@ -179,12 +182,6 @@ def read_metadata(
     TODOs:
         1. Metadata files include colors.yaml, database.yaml, constants.yaml etc.
     """
-    if ind is None:
-        ind=dirname(p)+'/'
-    # for p_ in [ind,p]:
-    #     if not exists(p_):
-    #         logging.warning(f'not found: {p_}')
-    #         return 
     if not exists(p):
         logging.warning(f'not found: {p}')
 
@@ -217,7 +214,15 @@ def read_metadata(
                 if len(d_)!=0:
                     d1[k]=d_
     ## read files from directory containing specific setings and other data to be incorporated into metadata
-    for p_ in glob(f"{ind}/*"):
+    if config_paths_auto:
+        if ind is None:
+            ind=splitext(p)[0]+'/'
+            if verbose:info(ind)
+            config_paths+=glob(f"{ind}/*")
+    ## before
+    config_size=len(d1)
+    ## separate metadata (.yaml) /data (.json) files
+    for p_ in config_paths:
         if isdir(p_):
             if len(glob(f'{p_}/*.json'))!=0:
                 ## data e.g. stats etc
@@ -232,8 +237,8 @@ def read_metadata(
                 d1[basenamenoext(p_)]=read_dict(p_)
             else:
                 logging.error(f"file not found: {p_}")
-    logging.info(f"metadata read from {p} (+"+str(len(glob(f'{ind}/*.json')))+" jsons)")
-    
+    if (len(d1)-config_size)!=0:
+        logging.info(f"metadata appended from "+str(len(d1)-config_size)+" separate config/s.")    
     return d1
 
 ## create documentation

@@ -379,6 +379,7 @@ def split_ticklabels(
     """
     ticklabels=getattr(ax,f'get_{axis}ticklabels')()
     if fmt.startswith('pair'):
+        from roux.lib.set import flatten
         kws={
             f"{axis}ticks":flatten([[i-off,i+off] for i in range(0,len(ticklabels))]),
             f"{axis}ticklabels":flatten([t.get_text().split('-') for t in ticklabels]),
@@ -657,7 +658,7 @@ def set_legend_custom(
                        markersize=(size if param!='size' else legend2param[k]),
                        label=k,
                        lw=(lw if param!='lw' else legend2param[k]),
-                       linestyle=linestyle if param!='lw' else '-',
+                       linestyle=legend2param[k] if param=='linestyle' else linestyle if param!='lw' else '-',
                       ) for k in legend2param]
     o1=ax.legend(handles=legend_elements,frameon=frameon,
               **kws)
