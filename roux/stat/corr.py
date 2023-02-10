@@ -1,44 +1,11 @@
 """For correlation stats."""
 import pandas as pd
 import numpy as np
+
 import scipy as sc
+
 import logging
 from roux.lib.sys import info
-from scipy.stats import spearmanr,pearsonr
-
-def get_spearmanr(
-    x: np.array,
-    y: np.array,
-    ) -> tuple:
-    """Get Spearman correlation coefficient.
-
-    Args:
-        x (np.array): x vector.
-        y (np.array): y vector.
-
-    Returns:
-        tuple: rs, p-value
-    """
-    assert x.dtype in [int,float]
-    assert y.dtype in [int,float]
-    
-    t=sc.stats.spearmanr(x,y,nan_policy='omit')
-    return t.correlation,float(t.pvalue)
-
-def get_pearsonr(
-    x: np.array,
-    y: np.array,
-    ) -> tuple:
-    """Get Pearson correlation coefficient.
-
-    Args:
-        x (np.array): x vector.
-        y (np.array): y vector.
-
-    Returns:
-        tuple: rs, p-value
-    """
-    return sc.stats.pearsonr(x,y)
 
 def get_corr_resampled(
     x: np.array,
@@ -98,7 +65,7 @@ def corr_to_str(
     """
     from roux.viz.annot import pval2annot
     from roux.lib.str import num2str
-    s0=f"$r_{method[0]}$={r:.2f}"
+    s0=(f"$r_{method[0]}$" if not 'tau' in method else '$\\tau$')+f"={r:.2f}"
     if not ci is None:
         s0+=f"$\pm${ci:.2f}{ci_type if ci_type!='max' else ''}"
     s0+=f"\n{pval2annot(p,fmt='<',linebreak=False, alpha=0.05)}"
@@ -106,6 +73,58 @@ def corr_to_str(
         assert not n is None, n
         s0+=f"\n({num2str(num=n,magnitude=False)})"
     return s0
+
+def get_spearmanr(
+    x: np.array,
+    y: np.array,
+    ) -> tuple:
+    """Get Spearman correlation coefficient.
+
+    Args:
+        x (np.array): x vector.
+        y (np.array): y vector.
+
+    Returns:
+        tuple: rs, p-value
+    """
+    assert x.dtype in [int,float]
+    assert y.dtype in [int,float]
+    
+    t=sc.stats.spearmanr(x,y,nan_policy='omit')
+    return t.correlation,float(t.pvalue)
+
+def get_pearsonr(
+    x: np.array,
+    y: np.array,
+    ) -> tuple:
+    """Get Pearson correlation coefficient.
+
+    Args:
+        x (np.array): x vector.
+        y (np.array): y vector.
+
+    Returns:
+        tuple: rs, p-value
+    """
+    return sc.stats.pearsonr(x,y)
+
+def get_kendalltaur(
+    x: np.array,
+    y: np.array,
+    ) -> tuple:
+    """Get Pearson correlation coefficient.
+
+    Args:
+        x (np.array): x vector.
+        y (np.array): y vector.
+
+    Returns:
+        tuple: rs, p-value
+    """
+    assert x.dtype in [int,float]
+    assert y.dtype in [int,float]
+    
+    return sc.stats.kendalltau(x,y)
 
 def get_corr(
     x: np.array,
@@ -138,11 +157,13 @@ def get_corr(
     n=len(x)
     if n<sample_size_min:
         if verbose:
-            logging.warning("low sample size")
+            logging.error("low sample size")
         return
     if resample:
         r,ci=get_corr_resampled(x,y,method=method,ci_type=ci_type,**kws_boots)
         _,p=globals()[f"get_{method}r"](x, y)
+        if verbose:
+            logging.info(f"r={r} (resampled), P={p} (collective)")
         if not outstr:
             return r,p,ci,n
         else:
@@ -155,6 +176,8 @@ def get_corr(
                                **kws_to_str),r
     else:
         r,p=globals()[f"get_{method}r"](x, y)
+        if verbose:
+            logging.info(f"r={r},P={p}")
         if not outstr:
             return r,p,n
         else:

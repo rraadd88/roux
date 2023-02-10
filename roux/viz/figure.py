@@ -1,28 +1,8 @@
 """For setting up figures."""
+import numpy as np
 
 import matplotlib.pyplot as plt
-
-## set subplots
-def get_subplots(
-    nrows: int,
-    ncols: int,
-    total: int=None
-    ) -> list:
-    """Get subplots.
-
-    Args:
-        nrows (int): number of rows.
-        ncols (int): number of columns.
-        total (int, optional): total subplots. Defaults to None.
-
-    Returns:
-        list: list of `plt.Axes` objects.
-    """
-    idxs=list(itertools.product(range(nrows),range(ncols)))
-    if not total is None:
-        idxs=idxs[:total]
-    print(idxs)
-    return [plt.subplot2grid([nrows,ncols],idx,1,1) for idx in idxs]
+import logging
 
 def labelplots(
     fig,
@@ -31,10 +11,11 @@ def labelplots(
     xoff: float=0,
     yoff: float=0,
     custom_positions: dict={},
-    size:float = 20,
-    va:str = 'bottom',
+    size:float = None,
+    va:str = 'center',
     ha:str = 'right',
     test: bool=False,
+    transform='ax',
     **kws_text,
     ):
     """Label (sub)plots.
@@ -59,16 +40,46 @@ def labelplots(
     axi2xy={}
     for axi,label in enumerate(label2ax.keys()):
         ax=label2ax[label]
-        axi2xy[axi]=ax.get_position(original=True).xmin+xoff,ax.get_position(original=False).ymax+yoff
-    # for pair in params_alignment:
-    #     axi2xy[pair[1]]=[axi2xy[pair[0 if 'x' in params_alignment[pair] else 1]][0],
-    #                      axi2xy[pair[0 if 'y' in params_alignment[pair] else 1]][1]]
-    for axi,label in enumerate(label2ax.keys()):
-        label2ax[label].text(*(axi2xy[axi] if not axi in custom_positions else custom_positions[axi]),
-                             f"{label}",
-                             size=size,
-                             ha=ha,
-                             va=va,
-                             transform=fig.transFigure,
-                             **kws_text)    
-
+    
+    # import matplotlib.transforms as transforms
+    # trans = transforms.blended_transform_factory(
+    #             # fig.transFigure, 
+    #             ax.transAxes,
+    #             ax.transAxes,
+    # )
+    if transform=='ax':
+        for label,ax in label2ax.items():
+            ## x position
+            logging.info(f"ax.yaxis.get_label().get_position()={ax.yaxis.get_label().get_position()}")
+            t=ax.yaxis.get_label()
+            
+            logging.info(f"t.get_position()={t.get_position()}")
+            ## y position
+            x,y=np.array(ax.get_position())[0][0], (ax.title.get_position()[1] if hasattr(ax,'title') else 1.0)+yoff
+            if test: logging.info(f"ax.title.get_position()={ax.title.get_position()}")
+            if test: logging.info(f"x,y={x},{y}")
+            
+            ax.set_title(
+                label,
+                loc='left',
+                # x=x,
+                x=-0.175+xoff,
+                # x=np.array(ax.get_position())[0][0],
+                y= (ax.title.get_position()[1] if hasattr(ax,'title') else 1.0)+yoff,
+                ha=ha,
+                # va=va,
+                # transform=trans,
+                )
+    elif transform=='figure':
+        for axi,label in enumerate(label2ax.keys()):
+            axi2xy[axi]=ax.get_position(original=True).xmin+xoff,ax.get_position(original=False).ymax+yoff
+            label2ax[label].text(
+                *(axi2xy[axi] if not axi in custom_positions else custom_positions[axi]),
+                f"{label}",
+                size=None,
+                ha=ha,
+                va=va,
+                transform=fig.transFigure,
+                **kws_text,
+            )    
+        

@@ -9,7 +9,9 @@ import logging
 from Bio.Seq import Seq as to_seq
 
 ##defs
-def reverse_complement(s): 
+def reverse_complement(
+    s: str,
+    ) -> str: 
     """Reverse complement.
 
     Args:
@@ -20,7 +22,10 @@ def reverse_complement(s):
     """
     return str((str2seq(s) if isinstance(s,str) else s).reverse_complement())
 
-def fa2df(alignedfastap: str,ids2cols=False) -> pd.DataFrame:
+def fa2df(
+    alignedfastap: str,
+    ids2cols=False,
+    ) -> pd.DataFrame:
     """_summary_
 
     Args:
@@ -47,7 +52,9 @@ def fa2df(alignedfastap: str,ids2cols=False) -> pd.DataFrame:
             dtmp.loc[i,'end']=end
     return dtmp
 
-def to_genomeocoords(genomecoord: str) -> tuple:
+def to_genomeocoords(
+    genomecoord: str,
+    ) -> tuple:
     """String-formated genome co-ordinates to separated values.
 
     Args:
@@ -77,8 +84,11 @@ def to_genomeocoords(genomecoord: str) -> tuple:
 #     print(tail,strand)
     return chrom,start,end,strand
 
-bed_colns=['chromosome', 'start', 'end', 'id', 'NM', 'strand']
-def to_bed(df, col_genomeocoord):
+def to_bed(
+    df: pd.DataFrame,
+    col_genomeocoord: str,
+    bed_colns: list=['chromosome', 'start', 'end', 'id', 'NM', 'strand'],
+    ) -> pd.DataFrame:
     """Genome co-ordinates to bed.
 
     Args:

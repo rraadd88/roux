@@ -3,10 +3,10 @@ from roux.lib.df import *
 from roux.lib import to_rd
         
 def filter_dfs(
-    dfs,
-    cols,
-    how='inner',
-    ):
+    dfs: list,
+    cols: list,
+    how: str='inner',
+    ) -> pd.DataFrame:
     """Filter dataframes based items in the common columns.
 
     Parameters:
@@ -109,18 +109,19 @@ def merge_with_many_columns(
 
 @to_rd
 def merge_paired(
-    df1,df2,
-    left_ons, # suffixed
-    right_on, # to be suffixed
-    common=[], # not suffixed
-    right_ons_common=[], # not to be suffixed
-    how='inner',
-    validates=['1:1','1:1'],
-    suffixes=None,
-    test=False,
-    verb=True,
+    df1: pd.DataFrame,
+    df2: pd.DataFrame,
+    left_ons: list, # suffixed
+    right_on: list, # to be suffixed
+    common: list=[], # not suffixed
+    right_ons_common: list=[], # not to be suffixed
+    how: str='inner',
+    validates: list=['1:1','1:1'],
+    suffixes: list=None,
+    test: bool=False,
+    verb: bool=True,
     **kws,
-    ):
+    ) -> pd.DataFrame:
     """Merge uppaired dataframes to a paired dataframe. 
     
     Parameters:
@@ -194,8 +195,10 @@ def merge_paired(
 ## append
 
 ## merge dfs
-def merge_dfs(dfs,
-             **kws):
+def merge_dfs(
+    dfs: list,
+    **kws,
+    ) -> pd.DataFrame:
     """Merge dataframes from left to right.   
     
     Parameters:

@@ -23,6 +23,7 @@ def annot_outlines(
     kws_legend:dict={},
     zorder:int=3,
     ax: plt.Axes=None,
+    **kws_scatter,
     ) -> plt.Axes:
     """
     Outline points on the scatter plot by categories.
@@ -45,6 +46,7 @@ def annot_outlines(
             legend=False,
             label=f"{df_[column_outlines].unique()[0]} ({len(df_)})" if legend else None,
             zorder=zorder,
+            **kws_scatter,
         )
         if legend:
             ax.legend(
@@ -164,6 +166,7 @@ def plot_scatter(
     ax= plt.subplot() if ax is None else ax
     
     trendline_method = [trendline_method] if isinstance(trendline_method,str) else [] if trendline_method is None else trendline_method
+    ## string to list
     stat_method = [stat_method] if isinstance(stat_method,str) else [] if stat_method is None else stat_method
     
     dplot=dplot.dropna(subset=[colx,coly]+[] if colz is None else [colz],how='any')
@@ -212,7 +215,7 @@ def plot_scatter(
                     # title=True,
                      # params={'loc':'left'}
                     )
-    if 'spearman' in stat_method or 'pearson' in stat_method:
+    if 'spearman' in stat_method or 'pearson' in stat_method or 'kendalltau' in stat_method:
         from roux.stat.corr import get_corr
         label,r=get_corr(dplot[colx],dplot[coly],method=stat_method[0],
                          resample=resample,
@@ -220,7 +223,8 @@ def plot_scatter(
                          kws_to_str=dict(
                              show_n=show_n,
                              show_n_prefix=show_n_prefix,
-                         )
+                         ),
+                         verbose=verbose,
                          )
         if not 'loc' in params_set_label:
             if r>=0:
@@ -313,6 +317,8 @@ def plot_volcano(
     colindex:str,
     hue:str='x',
     style:str='P=0',
+    style_order: list=['o','^'],
+    markers: list=['o','^'],    
     show_labels: int=None,
     show_outlines: int=None,
     outline_colors: list=['k'],
@@ -391,8 +397,8 @@ def plot_volcano(
         y=coly,
         hue=hue,
         style=style,
-        style_order=['o','^'],
-        markers=['o','^'],
+        style_order=style_order,
+        markers=markers,
         ec=None,
         ax=ax,
         legend=False,
@@ -467,8 +473,8 @@ def plot_volcano(
                 s=50,
                 fc="none",
                 style=style,
-                style_order=['o','^'],
-                markers=['o','^'],
+                style_order=style_order,
+                markers=markers,
                 ax=ax,
                 legend=False,
             )
@@ -479,9 +485,11 @@ def plot_volcano(
                 coly,
                 column_outlines=show_outlines,
                 outline_colors= outline_colors,
-                kws_legend=kws_legend,
                 style=style,
+                style_order=style_order,
+                markers=markers,
                 legend=legend,
+                kws_legend=kws_legend,
                 ax=ax,
                 )
     if show_labels: 

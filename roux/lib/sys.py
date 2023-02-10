@@ -147,7 +147,7 @@ def to_output_path(ps,outd=None,outp=None,suffix=''):
 def to_output_paths(
     input_paths:list=None,
     inputs: list=None,
-    output_path: str=None,
+    output_path_base: str=None,
     encode_short: bool=True,
     replaces_output_path=None,
     key_output_path: str= None,
@@ -160,7 +160,7 @@ def to_output_paths(
     Parameters:
         input_paths (list) : list of input paths. Defaults to None.
         inputs (list) : list of inputs e.g. dictionaries. Defaults to None.
-        output_path (str) : output path with a placeholder '{KEY}' to be replaced. Defaults to None.
+        output_path_base (str) : output path with a placeholder '{KEY}' to be replaced. Defaults to None.
         encode_short: (bool) : short encoded string, else long encoded string (reversible) is used. Defaults to True.
         replaces_output_path : list, dictionary or function to replace the input paths. Defaults to None.
         key_output_path (str) : key to be used to incorporate output_path variable among the inputs. Defaults to None.
@@ -169,6 +169,9 @@ def to_output_paths(
         
     Returns:  
         dictionary with the output path mapped to input paths or inputs.
+        
+    TODOs:
+        1. Placeholders other than {KEY}.
     """
     output_paths={}
     # path standardisation
@@ -188,16 +191,16 @@ def to_output_paths(
         output_paths_exist=list(filter(exists,output_paths))
     if isinstance(inputs,list):    
         ## infer output_path
-        assert not '*' in output_path, output_path
-        assert '{KEY}' in output_path, f"placeholder i.e. '{{KEY}}' not found in output_path: '{output_path}'"
-        l2={output_path.format(KEY=encode(d.copy(),short=encode_short)):d.copy() for d in inputs}
+        assert not '*' in output_path_base, output_path_base
+        assert '{KEY}' in output_path_base, f"placeholder i.e. '{{KEY}}' not found in output_path_base: '{output_path_base}'"
+        l2={output_path_base.format(KEY=encode(d.copy(),short=encode_short)):d.copy() for d in inputs}
         # if verbose:
         #     logging.info(l2.keys())
         ## test collisions
         assert len(l2)==len(inputs), 'possible duplicated inputs or collisions of the hashes'
         ## check existing output paths 
         output_paths.update(l2)
-        output_paths_exist=glob(output_path.replace('{KEY}','*'))
+        output_paths_exist=glob(output_path_base.replace('{KEY}','*'))
     for k in output_paths:
         ## add output path in the dictionary
         if not key_output_path is None:

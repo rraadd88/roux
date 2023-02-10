@@ -27,19 +27,15 @@ from roux.stat.io import perc_label
 import matplotlib.pyplot as plt
 import seaborn as sns
 ## settings
+FONTSIZE=12
+PAD=2
 plt.set_loglevel('error')
 plt.style.use('ggplot')
 plt.rcParams['pdf.fonttype'] = 42
 plt.rcParams['ps.fonttype'] = 42
 plt.rcParams['font.family'] = 'Myriad Pro'
-plt.rcParams['figure.figsize'] = (3, 3)
-plt.rcParams['axes.titlesize']=15
-plt.rcParams['axes.facecolor']='none'
-plt.rcParams['axes.edgecolor']='#6B6B6B'
-# plt.rcParams['axes.formatter.use_mathtext'] = True
-plt.rcParams['axes.formatter.limits'] = -3, 3
-plt.rcParams['axes.formatter.min_exponent'] = 3
-# plt.rcParams['legend.frameon']=True
+plt.rcParams['font.size'] = FONTSIZE
+plt.rcParams['legend.frameon']=False
 from cycler import cycler
 plt.rcParams['axes.prop_cycle']= cycler('color',[
     '#50AADC',#blue
@@ -48,21 +44,40 @@ plt.rcParams['axes.prop_cycle']= cycler('color',[
     "#f55f5f",#red
     "#046C9A",#blue
     "#00A08A", "#F2AD00", "#F98400", "#5BBCD6", "#ECCBAE", "#D69C4E", "#ABDDDE", "#000000"])
-from roux.viz.colors import get_colors_default
-# plt.rcParams['xtick.color']=[0.95,0.95,0.95]
 # plt.rc('grid', lw=0.2,linestyle="-", color=[0.98,0.98,0.98])
-plt.rcParams['axes.grid']=False
-plt.rc('axes', axisbelow=True)
-plt.rc('axes', unicode_minus=False)
-plt.rcParams['axes.labelcolor'] = 'k'
-sns.set_context('notebook') # paper < notebook < talk < poster
+## ticks
+# plt.rcParams['xtick.color']=[0.95,0.95,0.95]
+plt.rc('axes', grid=False,axisbelow=True,unicode_minus=False,
+       labelsize=FONTSIZE,
+       labelcolor='k',labelpad=PAD,
+       titlesize=FONTSIZE,
+       facecolor='none',
+       edgecolor='k',linewidth=0.5,)
+# plt.rcParams['axes.formatter.use_mathtext'] = True
+plt.rcParams['axes.formatter.limits'] = -3, 3
+plt.rcParams['axes.formatter.min_exponent'] = 3
+
+plt.rcParams["xtick.major.size"] = PAD
+plt.rcParams["ytick.major.size"] = PAD
+plt.rcParams["xtick.major.width"] = 0.5
+plt.rcParams["ytick.major.width"] = 0.5
+plt.rcParams["xtick.major.pad"] = PAD
+plt.rcParams["ytick.major.pad"] = PAD
+plt.rcParams["xtick.direction"] = "in"
+plt.rcParams["ytick.direction"] = "in"
+## scale
+plt.rc('figure',figsize = (3, 3))
+plt.rc('figure.subplot',wspace= 0.3,hspace= 0.3)
+# sns.set_context('notebook') # paper < notebook < talk < poster
+
 ## helper functions
-from roux.viz.figure import *
-from roux.viz.io import begin_plot,get_plot_inputs,to_plot,read_plot#*
+from roux.viz.figure import labelplots
+from roux.viz.io import begin_plot,get_plot_inputs,to_plot,read_plot
 from roux.viz.ax_ import *
 from roux.viz.annot import *
+from roux.viz.colors import get_colors_default
 
-from tqdm import tqdm#,notebook
+from tqdm import tqdm
 # from roux.lib.sys import is_interactive_notebook
 if not is_interactive_notebook():
     ## progress bar
@@ -84,7 +99,3 @@ logging.info(watermark(python=True)+watermark(iversions=True,globals_=globals())
 from pandarallel import pandarallel
 pandarallel.initialize(nb_workers=6,progress_bar=True,use_memory_fs=False)
 # logging.info("pandarallel.initialize(nb_workers=4,progress_bar=True)")
-
-# metadata
-if exists('metadata.yaml'):
-    metadata=read_metadata('metadata.yaml')

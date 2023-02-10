@@ -96,21 +96,23 @@ def annot_side(
     hue: str=None,
     loc: str='right',
     scatter=False,
+    scatter_marker='|',
+    scatter_alpha=0.75,
     lines=True,
-    text=True,
-    invert_xaxis: bool=False, 
     offx3: float=0.15,
     offymin: float=0.1,
     offymax: float=0.9,
-    offx_text: float=0,
-    offy_text: float=0,
-    break_pt: int=25,
     length_axhline: float=3,
+    text=True,
+    text_offx: float=0,
+    text_offy: float=0,
+    invert_xaxis: bool=False, 
+    break_pt: int=25,
     va: str='bottom',
-    zorder: int=1,
+    zorder: int=2,
     color: str='gray',
     kws_line: dict={},
-    kws_scatter: dict={'zorder':2,'alpha':0.75,'marker':'|','s':100},
+    kws_scatter: dict={},#'zorder':2,'alpha':0.75,'marker':'|','s':100},
     **kws_text,
     ) -> plt.Axes:
     """Annot elements of the plots on the of the side plot.
@@ -160,22 +162,25 @@ def annot_side(
     x3=d1['x']['min']-(d1['x']['len']*offx3) if (loc=='left' and not invert_xaxis) else \
         d1['y']['max']+(d1['y']['len']*offx3) if loc=='top' else \
         d1['x']['max']+(d1['x']['len']*offx3)
-    # print(x2,x3)
+    
     # line#1
-    # print(df1.loc[:,[colx,coly,'y']].iloc[0,:])
     if lines:
         df1.apply(lambda x: ax.plot(
             [x[colx],x2] if loc!='top' else [x[colx], x['y']],
             [x[coly],x['y']] if loc!='top' else [x[coly], x2],
-            color=color,lw=1,**kws_line,
-            zorder=zorder,
+            color=color,
+            zorder=zorder-1,
+            **kws_line,
             ),
-                  axis=1)
+            axis=1)
     if scatter:
         df1.plot.scatter(
             x=colx,
             y=coly,
             ax=ax,
+            marker=scatter_marker,
+            alpha=scatter_alpha,
+            zorder=zorder,
             **kws_scatter,
             )
     ## text
@@ -187,14 +192,14 @@ def annot_side(
         else:
             kws_text['ha']='left'
         df1.apply(lambda x: ax.text(
-            (x3 if loc!='top' else x['y'])+offx_text,
-            (x['y'] if loc!='top' else x3)+offy_text,
+            (x3 if loc!='top' else x['y'])+text_offx,
+            (x['y'] if loc!='top' else x3)+text_offy,
             linebreaker(x[cols],break_pt=break_pt,),
             va=va,
-            color=x[hue] if not hue is None else 'k',
+            color='k' if hue is None else x[hue] if hue in x else hue, ## prefer if column is present
             # **{k:v for k,v in kws_text.items() if not (k==color and not hue is None)},
             **kws_text,
-            zorder=2),
+            zorder=zorder+1),
             axis=1)
     # line #2
     if lines:
@@ -202,13 +207,15 @@ def annot_side(
             df1.apply(lambda x:ax.axhline(y = x['y'], 
                                          xmin=0 if loc=='left' else 1,
                                          xmax=0-(length_axhline-1)-offx3 if loc=='left' else length_axhline+offx3,
-                                                 clip_on = False,color=color,lw=1,
+                                                 clip_on = False,color=color,zorder=zorder-1,
+                                          **kws_line,
                                         ),axis=1)
         else:
             df1.apply(lambda x:ax.axvline(x = x['y'], 
                                          ymin=0 if loc=='left' else 1,
                                          ymax=0-(length_axhline-1)-offx3 if loc=='left' else length_axhline+offx3,
-                                                 clip_on = False,color=color,lw=1,
+                                                 clip_on = False,color=color,zorder=zorder-1,
+                                          **kws_line,
                                         ),axis=1)
     if loc=='left':
         ax.yaxis.tick_right()

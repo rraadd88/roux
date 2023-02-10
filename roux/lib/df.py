@@ -361,13 +361,27 @@ def assert_no_na(df,subset=None):
     return df
 
 ## nunique:
+def to_str(
+    data,
+    log=False,
+    ):
+    if isinstance(data,pd.Series):
+        data.index=[str(i) for i in data.index]
+        return data.to_csv(sep='\t').split('\n',1)[1].rsplit('\n',1)[0].replace('\t',' = ').replace('\n','; ')
+    elif isinstance(data,(list,tuple)):
+        return data[0] if not log else f'"{data[0]}"' if len(data)==1 else str(data)
+    else:
+        # raise ValueError(type(data))
+        raise ValueError(data)
 @to_rd
 def check_nunique(
     df: pd.DataFrame,
     subset: list=None,
     groupby: str=None,
     perc: bool=False,
-    out=False,
+    auto=False,
+    out=True,
+    log=True,
     ) -> pd.Series:
     """Number/percentage of unique values in columns.
     
@@ -379,24 +393,34 @@ def check_nunique(
     Returns:
         ds (Series): output stats.
     """
-    if subset is None:
-        subset=df.select_dtypes((object,bool)).columns.tolist()
+    if subset is None and auto:       
+        subset=df.select_dtypes((object,bool)).columns.tolist()    
+        logging.warning(f"Auto-detected columns (subset): {subset}")
     if isinstance(subset,str):
         subset=[subset]
+    assert len(set(subset) - set(df.columns.tolist()))==0, (set(subset) ^ set(df.columns.tolist()))    
     if groupby is None:
         if not perc:
-            df_=df.loc[:,subset].nunique()
+            ds_=df.loc[:,subset].nunique()
         else:
-            df_=(df.loc[:,subset].nunique()/df.loc[:,subset].agg(len))*100
+            ds_=(df.loc[:,subset].nunique()/df.loc[:,subset].agg(len))*100
     else:
-        from roux.lib.set import list2str
-        df_=df.groupby(groupby)[list2str(subset)].nunique()
-    
-    if not out:
-        logging.info(df_)
-        return df #input
+        if isinstance(groupby,str):
+            groupby=[groupby]
+        if len(subset)==1:
+            ds_=df.groupby(groupby)[subset].nunique()[subset[0]]
+        else:
+            ds_=df.groupby(groupby).apply(lambda df: len(df.loc[:,subset].drop_duplicates()))
+    if out:
+        ## no logging
+        return ds_
     else:
-        return df_
+        str_log=f"{'by '+to_str(groupby,log=True)+', nunique '+to_str(subset,log=True)+':' if not groupby is None else 'nunique:'} {to_str(ds_)}"
+        if log:
+            logging.info(str_log)
+            return df #input    
+        else:
+            return str_log
     
 ## nunique:
 @to_rd
@@ -1442,10 +1466,23 @@ class log:
     """    
     def __init__(self, pandas_obj):
         self._obj = pandas_obj
-    def __call__(self,col=None):
-        if not col is None and col in self._obj:
-            logging.info(f"nunique('{col}') = {self._obj[col].nunique()}")
-        logging.info(f"shape = {self._obj.shape}")
+    def __call__(
+        self,
+        subset=None,
+        groupby=None,
+        **kws_check_nunique,
+        ):
+        if not subset is None:
+            suffix=self._obj.rd.check_nunique(
+                subset=subset,
+                groupby=groupby,
+                out=False,
+                log=False,
+                **kws_check_nunique,            
+                )
+        else:
+            suffix=""
+        logging.info(f"shape = {self._obj.shape} {suffix}")
         return self._obj
     def dropna(self,**kws):
         from roux.lib.df import log_apply
@@ -1500,9 +1537,6 @@ class log:
         from roux.lib.df import log_apply
         return log_apply(self._obj,fun=melt_paired,**kws)
     ## .rd functions for logging-only
-    def check_nunique(self,**kws):
-        logging.info(check_nunique(self._obj,**kws))
-        return self._obj    
     def check_na(self,**kws):
         #logging.info(f'na {kws}')
         logging.info(check_na(self._obj,**kws))

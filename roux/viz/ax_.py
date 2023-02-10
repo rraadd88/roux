@@ -5,31 +5,6 @@ import matplotlib.pyplot as plt
 import pandas as pd
 import numpy as np
 
-## set
-def set_(
-    ax: plt.Axes,
-    test: bool=False,
-    **kws
-    ) -> plt.Axes:
-    """Ser many axis parameters.
-
-    Args:
-        ax (plt.Axes): `plt.Axes` object.
-        test (bool, optional): test mode. Defaults to False.
-
-    Keyword Args:
-        kws: parameters provided to the `ax.set` function. 
-
-    Returns:
-        plt.Axes: `plt.Axes` object.
-    """
-    kws1={k:v for k,v in kws.items() if not isinstance(v,dict)}
-    kws2={k:v for k,v in kws.items() if isinstance(v,dict)}    
-    ax.set(**kws1)
-    for k,v in kws2.items():
-        getattr(ax,f"set_{k}")(**v)
-    return ax
-
 def set_axes_minimal(
     ax,
     xlabel=None,
@@ -88,17 +63,11 @@ def set_ylabel(
 #     return set_label(x=x,y=y,s=ax.get_ylabel() if s is None else s,
 #                                                        ha='right',va='bottom',ax=ax)
 
-def rename_labels(ax,d1):
-    from roux.lib.str import replace_many
-    ax.set_xlabel(replace_many(ax.get_xlabel(),d1,ignore=True))
-    ax.set_ylabel(replace_many(ax.get_ylabel(),d1,ignore=True))
-    ax.set_title(replace_many(ax.get_title(),d1,ignore=True))
-    return ax
-
 def format_labels(
     ax,
     fmt='cap1',
     title_fontsize=15,
+    rename_labels=None,
     test=False,
     ):
     def cap1(s): 
@@ -113,6 +82,8 @@ def format_labels(
                 ## adjust legend first, because setting other labels can have unexpected effects on the legend.
                 if not ax.legend_ is None:
                     label=ax.legend_.get_title().get_text()
+                    if not rename_labels is None:
+                        label=replace_many(label,rename_labels,ignore=True)
                     if test: print(label)
                     if fmt=='cap1':
                         if isinstance(label,str):
@@ -120,6 +91,8 @@ def format_labels(
                                 ax.legend(title=cap1(label))
             else:
                 label=getattr(ax,"get_"+k)()
+                if not rename_labels is None:
+                    label=replace_many(label,rename_labels,ignore=True)
                 if isinstance(label,str):
                     if label!='':                    
                         if fmt=='cap1':
@@ -175,9 +148,6 @@ def get_ticklabel_position(
     return dict(zip([t.get_text() for t in getattr(ax,f'get_{axis}ticklabels')()],
                   getattr(ax,f"{axis}axis").get_ticklocs()))
 
-## alias to deprecate
-get_ticklabel2position=get_ticklabel_position
-
 def set_ticklabels_color(
     ax: plt.Axes,
     ticklabel2color: dict,
@@ -197,11 +167,11 @@ def set_ticklabels_color(
         if tick.get_text() in ticklabel2color.keys():
             tick.set_color(ticklabel2color[tick.get_text()])
     return ax 
-color_ticklabels=set_ticklabels_color
 
 def format_ticklabels(
     ax: plt.Axes,
     axes: tuple=['x','y'],
+    interval: float=None,
     n: int=None,
     fmt: str=None,
     font: str=None,#'DejaVu Sans Mono',#"Monospace"
@@ -212,7 +182,7 @@ def format_ticklabels(
         ax (plt.Axes): `plt.Axes` object.
         axes (tuple, optional): axes. Defaults to ['x','y'].
         n (int, optional): number of ticks. Defaults to None.
-        fmt (str, optional): format. Defaults to None.
+        fmt (str, optional): format e.g. '.0f'. Defaults to None.
         font (str, optional): font. Defaults to 'DejaVu Sans Mono'.
 
     Returns:
@@ -230,126 +200,14 @@ def format_ticklabels(
     for axis in axes:
         if not n is None:        
             getattr(ax,axis+'axis').set_major_locator(plt.MaxNLocator(n[axis]))
+        elif not interval is None:
+            getattr(ax,axis+'axis').set_major_locator(plt.MultipleLocator(2.5))
         if not fmt is None:
             getattr(ax,axis+'axis').set_major_formatter(plt.FormatStrFormatter(fmt[axis]))
         if not font is None:
             for tick in getattr(ax,f'get_{axis}ticklabels')():
                 tick.set_fontname(font)
     return ax
-
-## lims
-def set_equallim(
-    ax: plt.Axes,
-    diagonal: bool=False,
-    difference: float=None,
-    format_ticks : bool=True,
-    **kws_format_ticklabels,
-    ) -> plt.Axes:
-    """Set equal axis limits.
-
-    Args:
-        ax (plt.Axes): `plt.Axes` object.
-        diagonal (bool, optional): show diagonal. Defaults to False.
-        difference (float, optional): difference from . Defaults to None.
-
-    Returns:
-        plt.Axes: `plt.Axes` object.
-    """
-    min_,max_=np.min([ax.get_xlim()[0],ax.get_ylim()[0]]),np.max([ax.get_xlim()[1],ax.get_ylim()[1]])
-    if diagonal:
-        ax.plot([min_,max_],[min_,max_],':',color='gray',zorder=5)
-    if not difference is None:
-        off=np.sqrt(difference**2+difference**2)
-        ax.plot([min_+off ,max_+off],[min_,max_],':',color='gray',zorder=5)        
-        ax.plot([min_-off ,max_-off],[min_,max_],':',color='gray',zorder=5)      
-    if format_ticks and len(ax.get_xticklabels())!=0:
-        ax=format_ticklabels(ax,n=len(ax.get_xticklabels()),**kws_format_ticklabels)
-        # logging.warning('format_ticklabels failed possibly because of shared axes (?).')
-    ax.set_xlim(min_,max_)
-    ax.set_ylim(min_,max_)
-#     ax.set_xticks(ax.get_yticks())
-    ax.set_aspect('equal', 'box')
-    return ax
-
-def get_axlims(ax: plt.Axes
-    ) -> plt.Axes:
-    """Get axis limits.
-
-    Args:
-        ax (plt.Axes): `plt.Axes` object.
-
-    Returns:
-        plt.Axes: `plt.Axes` object.
-    """
-    d1={}
-    for axis in ['x','y']:
-        d1[axis]={}
-        d1[axis]['min'],d1[axis]['max']=getattr(ax,f'get_{axis}lim')()
-        if d1[axis]['min'] > d1[axis]['max']:
-            d1[axis]['min'],d1[axis]['max']=d1[axis]['max'],d1[axis]['min']
-        d1[axis]['len']=abs(d1[axis]['min']-d1[axis]['max'])
-    return d1
-
-
-# axis limits    
-def set_axlims(
-    ax: plt.Axes,
-    off: float,
-    axes: list=['x','y']
-    ) -> plt.Axes:
-    """Set axis limits.
-
-    Args:
-        ax (plt.Axes): `plt.Axes` object.
-        off (float): offset.
-        axes (list, optional): axis name/s. Defaults to ['x','y'].
-
-    Returns:
-        plt.Axes: `plt.Axes` object.
-    """
-    logging.warning("prefer `ax.margins`")
-    d1=get_axlims(ax)
-    for k in axes:
-        off_=(d1[k]['len'])*off
-        if not getattr(ax,f"{k}axis").get_inverted():
-            getattr(ax,f"set_{k}lim")(d1[k]['min']-off_,d1[k]['max']+off_)
-        else:
-            getattr(ax,f"set_{k}lim")(d1[k]['max']+off_,d1[k]['min']-off_)            
-    return ax
-
-def get_axlimsby_data(
-    X: pd.Series,
-    Y: pd.Series,
-    off: float=0.2,
-    equal: bool=False
-    ) -> plt.Axes:
-    """Infer axis limits from data.
-
-    Args:
-        X (pd.Series): x values.
-        Y (pd.Series): y values.
-        off (float, optional): offsets. Defaults to 0.2.
-        equal (bool, optional): equal limits. Defaults to False.
-
-    Returns:
-        plt.Axes: `plt.Axes` object.
-    """
-    try:
-        xmin=np.min(X)
-        xmax=np.max(X)
-    except:
-        print(X)
-    xlen=xmax-xmin
-    ymin=np.min(Y)
-    ymax=np.max(Y)
-    ylen=ymax-ymin
-    xlim=(xmin-off*xlen,xmax+off*xlen)
-    ylim=(ymin-off*ylen,ymax+off*ylen)
-    if not equal:
-        return xlim,ylim
-    else:
-        lim=[np.min([xlim[0],ylim[0]]),np.max([xlim[1],ylim[1]])]
-        return lim,lim
 
 def split_ticklabels(
     ax: plt.Axes,
@@ -465,11 +323,134 @@ def split_ticklabels(
         ax.tick_params(axis=axis, which='major', bottom=False,pad=pad_major)
     return ax
 
+# axis limits
+def get_axlimsby_data(
+    X: pd.Series,
+    Y: pd.Series,
+    off: float=0.2,
+    equal: bool=False
+    ) -> plt.Axes:
+    """Infer axis limits from data.
+
+    Args:
+        X (pd.Series): x values.
+        Y (pd.Series): y values.
+        off (float, optional): offsets. Defaults to 0.2.
+        equal (bool, optional): equal limits. Defaults to False.
+
+    Returns:
+        plt.Axes: `plt.Axes` object.
+    """
+    logging.warning("Check ax.autoscale.")
+    try:
+        xmin=np.min(X)
+        xmax=np.max(X)
+    except:
+        print(X)
+    xlen=xmax-xmin
+    ymin=np.min(Y)
+    ymax=np.max(Y)
+    ylen=ymax-ymin
+    xlim=(xmin-off*xlen,xmax+off*xlen)
+    ylim=(ymin-off*ylen,ymax+off*ylen)
+    if not equal:
+        return xlim,ylim
+    else:
+        lim=[np.min([xlim[0],ylim[0]]),np.max([xlim[1],ylim[1]])]
+        return lim,lim
+
+def get_axlims(ax: plt.Axes
+    ) -> plt.Axes:
+    """Get axis limits.
+
+    Args:
+        ax (plt.Axes): `plt.Axes` object.
+
+    Returns:
+        plt.Axes: `plt.Axes` object.
+    """
+    d1={}
+    for axis in ['x','y']:
+        d1[axis]={}
+        d1[axis]['min'],d1[axis]['max']=getattr(ax,f'get_{axis}lim')()
+        if d1[axis]['min'] > d1[axis]['max']:
+            d1[axis]['min'],d1[axis]['max']=d1[axis]['max'],d1[axis]['min']
+        d1[axis]['len']=abs(d1[axis]['min']-d1[axis]['max'])
+    return d1
+
+def set_equallim(
+    ax: plt.Axes,
+    diagonal: bool=False,
+    difference: float=None,
+    format_ticks : bool=True,
+    **kws_format_ticklabels,
+    ) -> plt.Axes:
+    """Set equal axis limits.
+
+    Args:
+        ax (plt.Axes): `plt.Axes` object.
+        diagonal (bool, optional): show diagonal. Defaults to False.
+        difference (float, optional): difference from . Defaults to None.
+
+    Returns:
+        plt.Axes: `plt.Axes` object.
+    """
+    min_,max_=np.min([ax.get_xlim()[0],ax.get_ylim()[0]]),np.max([ax.get_xlim()[1],ax.get_ylim()[1]])
+    if diagonal:
+        ax.plot([min_,max_],[min_,max_],':',color='gray',zorder=5)
+    if not difference is None:
+        off=np.sqrt(difference**2+difference**2)
+        ax.plot([min_+off ,max_+off],[min_,max_],':',color='gray',zorder=5)        
+        ax.plot([min_-off ,max_-off],[min_,max_],':',color='gray',zorder=5)      
+    if format_ticks and len(ax.get_xticklabels())!=0:
+        ax=format_ticklabels(ax,n=len(ax.get_xticklabels()),**kws_format_ticklabels)
+        # logging.warning('format_ticklabels failed possibly because of shared axes (?).')
+    ax.set_xlim(min_,max_)
+    ax.set_ylim(min_,max_)
+#     ax.set_xticks(ax.get_yticks())
+    ax.set_aspect('equal', 'box')
+    return ax
+
+def set_axlims(
+    ax: plt.Axes,
+    off: float,
+    axes: list=['x','y'],
+    equal=False,
+    **kws_set_equallim,
+    ) -> plt.Axes:
+    """Set axis limits.
+
+    Args:
+        ax (plt.Axes): `plt.Axes` object.
+        off (float): offset.
+        axes (list, optional): axis name/s. Defaults to ['x','y'].
+
+    Returns:
+        plt.Axes: `plt.Axes` object.
+    """
+    if not equal:
+        logging.warning("prefer `ax.margins`")
+        d1=get_axlims(ax)
+        for k in axes:
+            off_=(d1[k]['len'])*off
+            if not getattr(ax,f"{k}axis").get_inverted():
+                getattr(ax,f"set_{k}lim")(d1[k]['min']-off_,d1[k]['max']+off_)
+            else:
+                getattr(ax,f"set_{k}lim")(d1[k]['max']+off_,d1[k]['min']-off_)          
+    else:
+        ax=set_equallim(
+            ax=ax,
+            **kws_set_equallim,
+        )        
+    return ax
+
+
+
 def set_grids(
     ax: plt.Axes,
     axis: str=None
     ) -> plt.Axes:
-    """Show grids.
+    """Show grids based on the shape (aspect ratio) of the plot.
 
     Args:
         ax (plt.Axes): `plt.Axes` object.
@@ -487,7 +468,7 @@ def set_grids(
         ax.xaxis.grid(color='gray', linestyle='dashed')
     return ax
 
-## legends
+# legends
 def rename_legends(
     ax: plt.Axes,
     replaces: dict,
@@ -534,8 +515,6 @@ def append_legends(
               labels=l1+labels,
               **kws)
     return ax
-
-## legend related stuff: also includes colormaps
 
 def sort_legends(
     ax: plt.Axes,
@@ -666,7 +645,7 @@ def set_legend_custom(
     o1.get_frame().set_edgecolor((0.95,0.95,0.95))
     return ax
 
-## line round
+# line round
 def get_line_cap_length(
     ax: plt.Axes,
     linewidth: float
@@ -686,28 +665,6 @@ def get_line_cap_length(
     x_radius = ((trans((radius / ppd, 0)) - trans((0, 0))))[0]
     y_radius = ((trans((0, radius / ppd)) - trans((0, 0))))[1]
     return x_radius,y_radius
-
-
-# shape
-def get_subplot_dimentions(ax=None):
-    """Calculate the aspect ratio of `plt.Axes`.
-
-    Args:
-        ax (plt.Axes): `plt.Axes` object
-
-    Returns:
-        plt.Axes: `plt.Axes` object
-
-    References: 
-        https://github.com/matplotlib/matplotlib/issues/8013#issuecomment-285472404    
-    """
-    if ax is None:
-        ax = plt.gca()
-    fig = ax.figure
-
-    ll, ur = ax.get_position() * fig.get_size_inches()
-    width, height = ur - ll
-    return width, height,height / width
 
 # colorbar
 def set_colorbar(

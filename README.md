@@ -1,25 +1,21 @@
 # `roux` : General-purpose helper functions in Python.
-
 [![PyPI](https://img.shields.io/pypi/v/roux?style=flat-square&colorB=blue)![PyPI](https://img.shields.io/pypi/pyversions/roux?style=flat-square&colorB=blue)](https://pypi.org/project/roux)  
 [![build](https://img.shields.io/github/workflow/status/rraadd88/roux/build?style=flat-square&colorB=blue)](https://github.com/rraadd88/roux/actions/workflows/build.yml)  
-
 # Installation
     
 ```
 pip install roux
 ```
-
 # Examples
-
-1. [ Tables/Dataframes.]('https://github.com/rraadd88/roux/blob/master/examples/roux_lib_df.ipynb')
-1. [ General Input/Output.]('https://github.com/rraadd88/roux/blob/master/examples/roux_lib_io.ipynb')
-1. [ Strings encoding/decoding.]('https://github.com/rraadd88/roux/blob/master/examples/roux_lib_str.ipynb')
-1. [ File paths Input/Output.]('https://github.com/rraadd88/roux/blob/master/examples/roux_lib_sys.ipynb')
-1. [ Clustering.]('https://github.com/rraadd88/roux/blob/master/examples/roux_stat_cluster.ipynb')
-1. [ Annotating visualisations.]('https://github.com/rraadd88/roux/blob/master/examples/roux_viz_annot.ipynb')
-1. [ Visualizations Input/Output.]('https://github.com/rraadd88/roux/blob/master/examples/roux_viz_io.ipynb')
-1. [ Line plots.]('https://github.com/rraadd88/roux/blob/master/examples/roux_viz_line.ipynb')
-1. [ Scatter plots.]('https://github.com/rraadd88/roux/blob/master/examples/roux_viz_scatter.ipynb')
+**[Tables/Dataframes.]('https://github.com/rraadd88/roux/blob/master/examples/roux_lib_df.ipynb')**  
+**[General Input/Output.]('https://github.com/rraadd88/roux/blob/master/examples/roux_lib_io.ipynb')**  
+**[Strings encoding/decoding.]('https://github.com/rraadd88/roux/blob/master/examples/roux_lib_str.ipynb')**  
+**[File paths Input/Output.]('https://github.com/rraadd88/roux/blob/master/examples/roux_lib_sys.ipynb')**  
+**[Clustering.]('https://github.com/rraadd88/roux/blob/master/examples/roux_stat_cluster.ipynb')**  
+**[Annotating visualisations.]('https://github.com/rraadd88/roux/blob/master/examples/roux_viz_annot.ipynb')**  
+**[Visualizations Input/Output.]('https://github.com/rraadd88/roux/blob/master/examples/roux_viz_io.ipynb')**  
+**[Line plots.]('https://github.com/rraadd88/roux/blob/master/examples/roux_viz_line.ipynb')**  
+**[Scatter plots.]('https://github.com/rraadd88/roux/blob/master/examples/roux_viz_scatter.ipynb')**  
 
 # API
 <!-- markdownlint-disable -->
@@ -7284,7 +7280,7 @@ get_stat(
     subsets=None,
     cols_subsets=['subset1', 'subset2'],
     df2=None,
-    stats=[<function mean at 0x7f1179791e60>, <function median at 0x7f1179645e60>, <function var at 0x7f1179794320>, <built-in function len>],
+    stats=[<function mean at 0x7f7c744d2e60>, <function median at 0x7f7c74119e60>, <function var at 0x7f7c744d5320>, <built-in function len>],
     coff_samples_min=None,
     verb=False,
     **kws
@@ -7342,7 +7338,7 @@ get_stats(
     subsets=None,
     df2=None,
     cols_subsets=['subset1', 'subset2'],
-    stats=[<function mean at 0x7f1179791e60>, <function median at 0x7f1179645e60>, <function var at 0x7f1179794320>, <built-in function len>],
+    stats=[<function mean at 0x7f7c744d2e60>, <function median at 0x7f7c74119e60>, <function var at 0x7f7c744d5320>, <built-in function len>],
     axis=0,
     test=False,
     **kws
