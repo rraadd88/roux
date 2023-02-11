@@ -163,6 +163,7 @@ def plot_crosstab(
             linebreak=True
         else:
             raise ValueError(annot_pval)
+        from roux.viz.ax_ import set_label
         set_label(s=f"{stat_label}={stat:.1f}"+(', ' if not linebreak else '\n')+pval2annot(pval, alternative='two-sided', alpha=alpha, fmt='<', linebreak=False),
                  **kws_set_label,
                  ax=ax)

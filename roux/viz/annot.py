@@ -4,88 +4,10 @@ import numpy as np
 import pandas as pd
 import logging
 from roux.lib.str import *
+from roux.viz.ax_ import set_label
 
 # redirects
 from roux.stat.io import perc_label,pval2annot
-
-# labels 
-def set_label(
-    s: str,
-    ax: plt.Axes,
-    x: float= 0,
-    y: float= 0,
-    ha: str='left',
-    va: str='top',
-    loc=None,
-    off_loc=0.01,
-    title: bool=False,
-    **kws,
-    ) -> plt.Axes:
-    """Set label on a plot.
-
-    Args:
-        x (float): x position.
-        y (float): y position.
-        s (str): label.
-        ax (plt.Axes): `plt.Axes` object.
-        ha (str, optional): horizontal alignment. Defaults to 'left'.
-        va (str, optional): vertical alignment. Defaults to 'top'.
-        loc (int, optional): location of the label. 1:'upper right', 2:'upper left', 3:'lower left':3, 4:'lower right'
-        offs_loc (tuple,optional): x and y location offsets.
-        title (bool, optional): set as title. Defaults to False.
-        
-    Returns:
-        plt.Axes: `plt.Axes` object.
-    """
-    if title:
-        ax.set_title(s,**kws)
-    elif not loc is None:
-        if loc==1 or loc=='upper right':
-            x=1-off_loc
-            y=1-off_loc
-            ha='right'
-            va='top'
-        elif loc==2 or loc=='upper left':
-            x=0+off_loc
-            y=1-off_loc
-            ha='left'
-            va='top'
-        elif loc==3 or loc=='lower left':
-            x=0+off_loc
-            y=0+off_loc
-            ha='left'
-            va='bottom'            
-        elif loc==4 or loc=='lower right':
-            x=1-off_loc
-            y=0+off_loc
-            ha='right'
-            va='bottom'            
-        else:
-            raise ValueError(loc)
-    ax.text(s=s,transform=ax.transAxes,
-            x=x,y=y,ha=ha,va=va,
-            **kws)
-    return ax
-
-def set_suptitle(
-    axs,
-    title,
-    offy=0,
-    ):
-    """
-    Combined title for a list of subplots.
-    
-    """
-    a1=np.vstack((np.array(ax.get_position()) for ax in axs))
-    return plt.text(
-              x=np.mean([np.min(a1[:,0]),np.max(a1[:,0])]),
-              # y=np.mean([np.min(a1[:,1]),np.max(a1[:,1])]),
-              y=np.max(a1[:,1])+offy,
-              s=title,
-              ha='center',
-              fontdict=dict(fontsize=15),
-              transform= plt.gcf().transFigure,
-    )
 
 def annot_side(
     ax: plt.Axes,
@@ -225,48 +147,53 @@ def annot_side(
             )
     return ax
 
-def annot_corners(
-    ax : plt.Axes,
-    df1 : pd.DataFrame,
-    colx : str,
-    coly : str,
-    coltext : str,
-    off : float=0.1,
-    **kws,
+# scatters
+## annotations
+def show_outlines(
+    data: pd.DataFrame,
+    colx: str,
+    coly: str,
+    column_outlines: str,
+    outline_colors: dict,
+    style=None,
+    legend: bool=True,
+    kws_legend:dict={},
+    zorder:int=3,
+    ax: plt.Axes=None,
+    **kws_scatter,
     ) -> plt.Axes:
     """
-    Annotate points above and below the diagonal.
+    Outline points on the scatter plot by categories.
+    
     """
-    df1['diff']=df1[coly]-df1[colx]
-    # above diagonal
-    df1['loc']=df1['diff'].apply(lambda x: 'above' if x>0 else 'below')
-    from roux.viz.ax_ import get_axlims
-    axlims=get_axlims(ax=ax)
-    for loc,df1_ in df1.groupby('loc'):
-        df1_=df1_.sort_values([colx,coly])        
-        offx=axlims['x']['len']*off
-        offy=axlims['y']['len']*off
-        # upper
-        df1_['x text' if loc=='above' else 'y text']=np.linspace(axlims['x' if loc=='above' else 'y']['min']+offx,
-                                (axlims['x' if loc=='above' else 'y']['min']+axlims['x' if loc=='above' else 'y']['len']*0.5)-offx,
-                                len(df1_))
-        df1_['y text' if loc=='above' else 'x text']=np.linspace(
-                                (axlims['y' if loc=='above' else 'x']['min']+axlims['y' if loc=='above' else 'x']['len']*0.5)+offy,
-                                axlims['y' if loc=='above' else 'x']['max']-offy,
-                                len(df1_))
-        df1_.apply(lambda x: ax.annotate(s=x[coltext], 
-                                        xytext=(x['x text'],x['y text']), 
-                                        xy=(x[colx],x[coly]), 
-                                        va='center',
-                                        ha='center',
-                                         **kws,
-                                        ),axis=1)
+    if isinstance(outline_colors,list):
+        outline_colors=dict(zip(data[column_outlines].unique(),outline_colors))
+        logging.warning(f"Mapping between the categories and the colors of the coutlines: {outline_colors}.")
+    for (cat, df_) in data.groupby(column_outlines):
+        ax=sns.scatterplot(
+            data=df_,
+            x=colx,
+            y=coly,
+            ec=outline_colors[cat],
+            linewidth=1,
+            s=50,
+            fc="none",
+            style=style,
+            ax=ax,
+            legend=False,
+            label=f"{df_[column_outlines].unique()[0]} ({len(df_)})" if legend else None,
+            zorder=zorder,
+            **kws_scatter,
+        )
+        if legend:
+            ax.legend(
+                title=column_outlines,
+                **kws_legend,
+            )  
     return ax
 
-# variance
-from matplotlib.patches import Ellipse
-import matplotlib.transforms as transforms
-def confidence_ellipse(x, y, ax, n_std=3.0, facecolor='none', **kwargs):
+## variance
+def show_confidence_ellipse(x, y, ax, n_std=3.0, facecolor='none', **kwargs):
     """
     Create a plot of the covariance confidence ellipse of *x* and *y*.
 
@@ -292,6 +219,9 @@ def confidence_ellipse(x, y, ax, n_std=3.0, facecolor='none', **kwargs):
     ----------
     https://matplotlib.org/3.5.0/gallery/statistics/confidence_ellipse.html
     """
+    from matplotlib.patches import Ellipse
+    import matplotlib.transforms as transforms
+    
     if x.size != y.size:
         raise ValueError("x and y must be the same size")
 
@@ -322,7 +252,8 @@ def confidence_ellipse(x, y, ax, n_std=3.0, facecolor='none', **kwargs):
     ellipse.set_transform(transf + ax.transData)
     return ax.add_patch(ellipse)
 
-## heatmaps
+
+# heatmaps
 def show_box(
     ax: plt.Axes,
     xy: tuple,
@@ -371,7 +302,96 @@ def show_box(
                             **kws,
                             ))
 
-def annot_confusion_matrix(
+# color
+def color_ax(
+    ax: plt.Axes,
+    c: str,
+    linewidth: float=None
+    ) -> plt.Axes:
+    """Color border of `plt.Axes`.
+
+    Args:
+        ax (plt.Axes): `plt.Axes` object.
+        c (str): color.
+        linewidth (float, optional): line width. Defaults to None.
+
+    Returns:
+        plt.Axes: `plt.Axes` object.
+    """
+    plt.setp(ax.spines.values(), color=c)
+    if not linewidth is None:
+        plt.setp(ax.spines.values(), linewidth=linewidth)
+    plt.setp([ax.get_xticklines(), ax.get_yticklines()], color=c)
+    return ax
+
+# stats
+def show_n_legend(
+    ax,
+    df1: pd.DataFrame,
+    colid: str,
+    colgroup: str,
+    **kws,
+    ):
+    from roux.viz.ax_ import rename_legends
+    replaces={str(k):str(k)+'\n'+f'(n={v})' for k,v in df1.groupby(colgroup)[colid].nunique().items()}
+    return rename_legends(
+                  ax,
+                  replaces=replaces,
+                  **kws)
+
+def show_scatter_stats(
+    ax: plt.Axes,
+    data,
+    x,y,z,
+    method,
+    resample=False,
+    show_n=True,
+    show_n_prefix='',
+    loc=None,
+    zorder=5,
+    # kws_stat={},
+    verbose:bool=True,
+    **kws_set_label,
+    ):
+    """
+            resample (bool, optional): resample data. Defaults to False.
+    """
+    if 'spearman' in method or 'pearson' in method or 'kendalltau' in method:
+        from roux.stat.corr import get_corr
+        label,r=get_corr(data[x],data[y],
+                         method=method[0],
+                         outstr=True,
+                         resample=resample,
+                         kws_to_str=dict(
+                             show_n=show_n,
+                             show_n_prefix=show_n_prefix,
+                         ),
+                         verbose=verbose,
+                         # **kws_stat,
+                         )
+        if loc is None:
+            ## infer
+            if r>=0:
+                loc=2
+            elif r<0:
+                loc=3
+    if 'mlr' in method:
+        from roux.stat.fit import get_mlr_2_str
+        label=get_mlr_2_str(
+            data.loc[:,[x,y,z,]].dropna(),
+            z,[x,y],
+            **kws_stat,
+            )
+    _=set_label(
+        ax=ax,
+        s=label,
+        zorder=zorder,
+        loc=loc,
+        **kws_set_label,
+        )
+    return ax
+
+def show_confusion_matrix_stats(
     df_: pd.DataFrame,
     ax: plt.Axes=None,
     off: float=0.5
@@ -423,9 +443,9 @@ def annot_confusion_matrix(
     #                               f"({x['T|F']+x['P|N']})",
                                 ha='center',va='bottom',
                                ),axis=1)
-    return ax
+    return ax        
 
-
+# logo
 def get_logo_ax(
     ax: plt.Axes,
     size: float=0.5,
@@ -512,38 +532,23 @@ def set_logo(
         print(width, height,aspect_ratio,size/(height*2))
     return axins
 
-## color
-def color_ax(
-    ax: plt.Axes,
-    c: str,
-    linewidth: float=None
-    ) -> plt.Axes:
-    """Color border of `plt.Axes`.
-
-    Args:
-        ax (plt.Axes): `plt.Axes` object.
-        c (str): color.
-        linewidth (float, optional): line width. Defaults to None.
-
-    Returns:
-        plt.Axes: `plt.Axes` object.
-    """
-    plt.setp(ax.spines.values(), color=c)
-    if not linewidth is None:
-        plt.setp(ax.spines.values(), linewidth=linewidth)
-    plt.setp([ax.get_xticklines(), ax.get_yticklines()], color=c)
-    return ax
-
-## stats
-def annot_n_legend(
-    ax,
-    df1: pd.DataFrame,
-    colid: str,
-    colgroup: str,
-    **kws,
+# multiple subplots
+def set_suptitle(
+    axs,
+    title,
+    offy=0,
     ):
-    from roux.viz.ax_ import rename_legends
-    replaces={str(k):str(k)+'\n'+f'(n={v})' for k,v in df1.groupby(colgroup)[colid].nunique().items()}
-    return rename_legends(ax,
-                  replaces=replaces,
-                  **kws)
+    """
+    Combined title for a list of subplots.
+    
+    """
+    a1=np.vstack((np.array(ax.get_position()) for ax in axs))
+    return plt.text(
+              x=np.mean([np.min(a1[:,0]),np.max(a1[:,0])]),
+              # y=np.mean([np.min(a1[:,1]),np.max(a1[:,1])]),
+              y=np.max(a1[:,1])+offy,
+              s=title,
+              ha='center',
+              fontdict=dict(fontsize=15),
+              transform= plt.gcf().transFigure,
+    )

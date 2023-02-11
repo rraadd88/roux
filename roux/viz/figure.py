@@ -3,19 +3,22 @@ import numpy as np
 
 import matplotlib.pyplot as plt
 import logging
+from icecream import ic as info
 
 def labelplots(
-    fig,
     axes: list=None,
+    fig=None,
     labels: list=None,
     xoff: float=0,
     yoff: float=0,
-    custom_positions: dict={},
-    size:float = None,
+    auto: bool=False,
+    xoffs: dict={},
+    yoffs: dict={},
     va:str = 'center',
-    ha:str = 'right',
+    ha:str = 'left',
+    verbose: bool=True,
     test: bool=False,
-    transform='ax',
+    # transform='ax',
     **kws_text,
     ):
     """Label (sub)plots.
@@ -28,6 +31,9 @@ def labelplots(
         params_alignment (dict, optional): alignment parameters. Defaults to {}.
         params_text (dict, optional): parameters provided to `plt.text`. Defaults to {'size':20,'va':'bottom', 'ha':'right' }.
         test (bool, optional): test mode. Defaults to False.
+        
+    Todos:
+        1. Get the x coordinate of the ylabel.
     """
     if axes is None:
         axes=fig.axes
@@ -40,46 +46,25 @@ def labelplots(
     axi2xy={}
     for axi,label in enumerate(label2ax.keys()):
         ax=label2ax[label]
-    
-    # import matplotlib.transforms as transforms
-    # trans = transforms.blended_transform_factory(
-    #             # fig.transFigure, 
-    #             ax.transAxes,
-    #             ax.transAxes,
-    # )
-    if transform=='ax':
+    if auto:
+        fig.draw_without_rendering() ## get positions after drawing, applicable to ylabel's x.
         for label,ax in label2ax.items():
-            ## x position
-            logging.info(f"ax.yaxis.get_label().get_position()={ax.yaxis.get_label().get_position()}")
-            t=ax.yaxis.get_label()
+            x,y=ax.yaxis.get_label().get_position()[0], (ax.transAxes.transform(ax.title.get_position())[1] if hasattr(ax,'title') else 1.0)
+            if verbose: logging.info(f"x,y={x},{y}")
+            ax.annotate(label,
+                        xy=(x, y),
+                        xycoords='figure pixels'
+                       )
+
+    else:
+        ## manual
+        # if len(xoffs)!=0 or len(xoffs)!=0:
+        for label,ax in label2ax.items():
+            x,y=0, (ax.title.get_position()[1] if hasattr(ax,'title') else 1.0)
+            ax.text(s=label,
+                    x=x+xoff+(xoffs[label] if label in xoffs else 0),
+                    y=y+0.045+yoff+(yoffs[label] if label in yoffs else 0),
+                    **kws_text,
+                    transform=ax.transAxes,
+                    )
             
-            logging.info(f"t.get_position()={t.get_position()}")
-            ## y position
-            x,y=np.array(ax.get_position())[0][0], (ax.title.get_position()[1] if hasattr(ax,'title') else 1.0)+yoff
-            if test: logging.info(f"ax.title.get_position()={ax.title.get_position()}")
-            if test: logging.info(f"x,y={x},{y}")
-            
-            ax.set_title(
-                label,
-                loc='left',
-                # x=x,
-                x=-0.175+xoff,
-                # x=np.array(ax.get_position())[0][0],
-                y= (ax.title.get_position()[1] if hasattr(ax,'title') else 1.0)+yoff,
-                ha=ha,
-                # va=va,
-                # transform=trans,
-                )
-    elif transform=='figure':
-        for axi,label in enumerate(label2ax.keys()):
-            axi2xy[axi]=ax.get_position(original=True).xmin+xoff,ax.get_position(original=False).ymax+yoff
-            label2ax[label].text(
-                *(axi2xy[axi] if not axi in custom_positions else custom_positions[axi]),
-                f"{label}",
-                size=None,
-                ha=ha,
-                va=va,
-                transform=fig.transFigure,
-                **kws_text,
-            )    
-        

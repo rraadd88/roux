@@ -11,134 +11,77 @@ import logging
 from icecream import ic as info
 from roux.viz.ax_ import *
 
-## annotations
-def annot_outlines(
-    data: pd.DataFrame,
-    colx: str,
-    coly: str,
-    column_outlines: str,
-    outline_colors: dict,
-    style=None,
-    legend: bool=True,
-    kws_legend:dict={},
-    zorder:int=3,
-    ax: plt.Axes=None,
-    **kws_scatter,
-    ) -> plt.Axes:
-    """
-    Outline points on the scatter plot by categories.
-    
-    """
-    if isinstance(outline_colors,list):
-        outline_colors=dict(zip(data[column_outlines].unique(),outline_colors))
-        logging.warning(f"Mapping between the categories and the colors of the coutlines: {outline_colors}.")
-    for (cat, df_) in data.groupby(column_outlines):
-        ax=sns.scatterplot(
-            data=df_,
-            x=colx,
-            y=coly,
-            ec=outline_colors[cat],
-            linewidth=1,
-            s=50,
-            fc="none",
-            style=style,
-            ax=ax,
-            legend=False,
-            label=f"{df_[column_outlines].unique()[0]} ({len(df_)})" if legend else None,
-            zorder=zorder,
-            **kws_scatter,
-        )
-        if legend:
-            ax.legend(
-                title=column_outlines,
-                **kws_legend,
-            )  
-    return ax
-
-def plot_trendline(
+def plot_scatter_agg(
     dplot: pd.DataFrame,
-    colx: str,
-    coly: str,
-    poly: bool=False,
-    lowess: bool=True,
-    linestyle: str= ':',
-    params_poly: dict={'deg':1},
-    params_lowess: dict={'frac':0.7,'it':5},
-    lw:float=2,
-    color:str='k',
-    ax: plt.Axes = None,
-    **kws
-    ) -> plt.Axes:
-    """Plot a trendline.
-
-    Args:
-        dplot (pd.DataFrame): input dataframe.
-        colx (str): x column.
-        coly (str): y column.
-        params_plot (dict, optional): parameters provided to the plot. Defaults to {'color':'r','linestyle':'solid','lw':2}.
-        poly (bool, optional): apply polynomial function. Defaults to False.
-        lowess (bool, optional): apply lowess function. Defaults to True.
-        params_poly (_type_, optional): parameters provided to the polynomial function. Defaults to {'deg':1}.
-        params_lowess (_type_, optional): parameters provided to the lowess function.. Defaults to {'frac':0.7,'it':5}.
-        ax (plt.Axes, optional): `plt.Axes` object. Defaults to None.
-
-    Keyword Args:
-        kws: parameters provided to the `plot` function. 
-
-    Returns:
-        plt.Axes: `plt.Axes` object.
-
-    TODOs: 
-        1. Label with goodness of fit, r (y_hat vs y)
-    """
-    ax= plt.subplot() if ax is None else ax    
-    if poly:
-        coef = np.polyfit(dplot[colx], dplot[coly],**params_poly)
-        poly1d_fn = np.poly1d(coef)
-        # poly1d_fn is now a function which takes in x and returns an estimate for y
-        ax.plot(dplot[colx], poly1d_fn(dplot[colx]),linestyle=linestyle,**kws)
-    if lowess:
-        from statsmodels.nonparametric.smoothers_lowess import lowess
-        xys_lowess=lowess(dplot[coly], dplot[colx],frac=0.7,it=5)
-        ax.plot(xys_lowess[:,0],xys_lowess[:,1],linestyle=linestyle,**kws)
+    x: str=None,
+    y: str=None,
+    z: str=None,
+    kws_legend=dict(
+        bbox_to_anchor=[1,1],
+        loc='upper left',
+        ),    
+    ):
+    """UNDER DEV."""
+    ## with more options compared to the seaborn one.
+    ### to be updated
+    dplot=dplot.dropna(subset=[x,y,z],how='any')
+    if z is None: 
+        z='count'
+        dplot[z]=1
+    if z in dplot:
+        kws['C']=z
+        kws['reduce_C_function']=len if z=='count' else kws['reduce_C_function'] if 'reduce_C_function' in kws else np.mean        
+        kws['gridsize']=kws['gridsize'] if 'gridsize' in kws else gridsize
+        kws['cmap']=kws['cmap'] if 'cmap' in kws else cmap
+        if verbose: print(kws)
+    ax=dplot.plot(
+        kind=kind,
+        x=x,
+        y=y, 
+        ax=ax,
+        # **params_plot,
+        **kws,
+        )
+    from roux.viz.ax_ import set_colorbar_label
+    ax=set_colorbar_label(ax,z if label_colorbar is None else label_colorbar)
+    
+    leg=ax.legend(title=z if title is None else title,**kws_legend)
+    if '\n' in title:
+        leg._legend_box.align = "center"
     return ax
 
 # @to_class(rd)
 def plot_scatter(
-    dplot: pd.DataFrame,
-    colx: str,
-    coly: str,
-    colz: str=None,
+    data: pd.DataFrame,
+    x: str=None,
+    y: str=None,
+    z: str=None,
+    ## type
     kind: str='scatter',
-    trendline_method: str='poly',
+    scatter_kws={},
+    ## trendline
+    line_kws={},
+    ## stats
     stat_method: str="spearman",
-    resample: bool=False,
-    cmap: str='Reds',
-    label_colorbar: str=None,
-    gridsize: int=25,
-    bbox_to_anchor: list=[1,1],
-    loc: str='upper left',
-    title: str=None,
-    show_n:bool=True,
-    show_n_prefix:str='',
-    # params_plot: dict={},
-    params_plot_trendline: dict={},
-    params_set_label: dict={},
-    verbose: bool=False,
-    ax: plt.Axes = None,
+    stat_kws={},
+    # stats_annot_kws={},
+    ## aes
+    hollow: bool=False,
+    ## set
+    ax: plt.Axes = None,  
+    verbose: bool=True,
     **kws,
     ) -> plt.Axes:
-    """Plot scatter.
+    """Plot scatter with multiple layers and stats.
 
     Args:
-        dplot (pd.DataFrame): input dataframe.
-        colx (str): x column.
-        coly (str): y column.
-        colz (str, optional): z column. Defaults to None.
+        data (pd.DataFrame): input dataframe.
+        x (str): x column.
+        y (str): y column.
+        z (str, optional): z column. Defaults to None.
         kind (str, optional): kind of scatter. Defaults to 'hexbin'.
         trendline_method (str, optional): trendline method ['poly','lowess']. Defaults to 'poly'.
         stat_method (str, optional): method of annoted stats ['mlr',"spearman"]. Defaults to "spearman".
-        resample (bool, optional): resample data. Defaults to False.
         cmap (str, optional): colormap. Defaults to 'Reds'.
         label_colorbar (str, optional): label of the colorbar. Defaults to None.
         gridsize (int, optional): number of grids in the hexbin. Defaults to 25.
@@ -146,8 +89,7 @@ def plot_scatter(
         loc (str, optional): location of the legend. Defaults to 'upper left'.
         title (str, optional): title of the plot. Defaults to None.
         #params_plot (dict, optional): parameters provided to the `plot` function. Defaults to {}.
-        params_plot_trendline (dict, optional): parameters provided to the `plot_trendline` function. Defaults to {}.
-        params_set_label (dict, optional): parameters provided to the `set_label` function. Defaults to dict(x=0,y=1).
+        line_kws (dict, optional): parameters provided to the `plot_trendline` function. Defaults to {}.
         ax (plt.Axes, optional): `plt.Axes` object. Defaults to None.
 
     Keyword Args:
@@ -157,94 +99,59 @@ def plot_scatter(
         plt.Axes: `plt.Axes` object.
 
     Notes:
-        For a rasterized scatter plot set `scatter_kws={'rasterized': True}`
-    
-    TODOs:
-        1. Access the function as an attribute of roux-data i.e. `rd`. 
-
-    """
+        1. For a rasterized scatter plot set `scatter_kws={'rasterized': True}`
+        2. This function does not apply multiple colors, similar to `sns.regplot`. 
+    """        
+    ## axis
     ax= plt.subplot() if ax is None else ax
-    
-    trendline_method = [trendline_method] if isinstance(trendline_method,str) else [] if trendline_method is None else trendline_method
+        
     ## string to list
     stat_method = [stat_method] if isinstance(stat_method,str) else [] if stat_method is None else stat_method
-    
-    dplot=dplot.dropna(subset=[colx,coly]+[] if colz is None else [colz],how='any')
-    if kind in ['hexbin']:
-        if colz is None: 
-            colz='count'
-            dplot[colz]=1
-        if colz in dplot:
-            kws['C']=colz
-            kws['reduce_C_function']=len if colz=='count' else kws['reduce_C_function'] if 'reduce_C_function' in kws else np.mean        
-            kws['gridsize']=kws['gridsize'] if 'gridsize' in kws else gridsize
-            kws['cmap']=kws['cmap'] if 'cmap' in kws else cmap
-            if verbose: print(kws)
-        ax=dplot.plot(
-            kind=kind,
-            x=colx,
-            y=coly, 
-            ax=ax,
-            # **params_plot,
-            **kws,
-            )
-    else:
-        ax=sns.scatterplot(data=dplot,
-                            x=colx,
-                            y=coly,
-                            hue=colz,       
-                            palette=cmap if not colz is None else None,
-                            ax=ax,
-                           # **params_plot,
-                           **kws)
-        if not colz is None:
-            leg=ax.legend(loc=loc,bbox_to_anchor=bbox_to_anchor,title=colz if title is None else title)
-            if '\n' in title:
-                leg._legend_box.align = "center"
-    from roux.viz.ax_ import set_colorbar_label
-#     print(colz)
-    ax=set_colorbar_label(ax,colz if label_colorbar is None else label_colorbar)
-    from roux.viz.annot import set_label
-    if 'mlr' in stat_method:
-        from roux.stat.fit import get_mlr_2_str
-        ax=set_label(ax=ax,s=get_mlr_2_str(dplot.loc[:,[colx,coly,colz,]].dropna(),
-                                            colz,[colx,coly]),
-                     x=0.5,
-                     y=1.1,
-                     ha='center',
-                    # title=True,
-                     # params={'loc':'left'}
-                    )
-    if 'spearman' in stat_method or 'pearson' in stat_method or 'kendalltau' in stat_method:
-        from roux.stat.corr import get_corr
-        label,r=get_corr(dplot[colx],dplot[coly],method=stat_method[0],
-                         resample=resample,
-                         outstr=True,
-                         kws_to_str=dict(
-                             show_n=show_n,
-                             show_n_prefix=show_n_prefix,
-                         ),
-                         verbose=verbose,
-                         )
-        if not 'loc' in params_set_label:
-            if r>=0:
-                params_set_label['loc']=2
-            elif r<0:
-                params_set_label['loc']=1
-        ax=set_label(ax=ax,s=label,
-                     zorder=5,
-                     **params_set_label)
-    if not 'color' in params_plot_trendline:
+
+    ## data
+    data=data.log.dropna(subset=[x,y],how='any') # to show the number of rows with missing values. seaborn applies 'dropna' anyways.
+    ## set
+    ## background
+    if 'hexbin' in kind:
+        plot_scatter_agg(data,x,y,z,**kws)
+    ## points
+    if 'scatter' in kind:
         from roux.viz.colors import saturate_color,get_colors_default
-        params_plot_trendline['color']=saturate_color(kws['color'] if 'color' in kws else get_colors_default()[0],
-                                    alpha=1.75)
-    plot_trendline(dplot,colx,coly,
-                    # params_plot=kws,
-                    poly='poly' in trendline_method,
-                    lowess='lowess' in trendline_method,
-                   ax=ax, 
-                   **params_plot_trendline,
-                    )    
+        ## shape
+        if hollow:
+            ## short-cut for making the points hollow
+            scatter_kws={**dict(ec=scatter_kws['ec'] if 'ec' in scatter_kws else scatter_kws['color'] if 'color' in kws else get_colors_default()[0],
+                        fc='none',
+                        linewidth=1,
+                       ),
+                **scatter_kws,
+                }
+        ### color
+        if not 'color' in line_kws:
+            line_kws['color']=saturate_color(kws['color'] if 'color' in kws else get_colors_default()[0],
+                                        alpha=1.5)    
+        if "fit_reg" in kws and not "seed" in kws:
+            kws['seed']=0
+        if verbose:
+            ## methods
+            logging.info('sns.regplot:'+('; '.join([f"{k}={kws[k]}" for k in ["ci", "n_boot", "order", "logistic", "lowess", "robust", "logx", "x_partial", "y_partial","units", "seed",] if k in kws])))
+        ax=sns.regplot(data=data,
+                       x=x,y=y,
+                       ax=ax,
+                       scatter_kws=scatter_kws,
+                       line_kws=line_kws,
+                       **kws,
+                      )
+    ## stats
+    from roux.viz.annot import show_scatter_stats
+    show_scatter_stats(
+        ax,
+        data=data,
+        x=x,y=y,z=z,
+        method=stat_method,
+        zorder=5,
+        **stat_kws,
+        )    
     return ax
     
 def plot_qq(
@@ -479,6 +386,7 @@ def plot_volcano(
                 legend=False,
             )
         else:
+            from roux.viz.annot import annot_outlines
             ax=annot_outlines(
                 data1,
                 colx,

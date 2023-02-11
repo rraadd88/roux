@@ -374,7 +374,7 @@ def plot_dists(
           f"{axis_cont}lim":axis_cont_lim,
         },
     )
-    ticklabel2position=get_ticklabel2position(ax,axis_desc)
+    ticklabel2position=get_ticklabel_position(ax,axis_desc)
     d3=get_axlims(ax)
     ## show p-value
     if isinstance(show_p,(bool,dict)):

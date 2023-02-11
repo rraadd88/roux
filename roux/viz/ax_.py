@@ -33,6 +33,65 @@ def set_axes_minimal(
             rotation=90,ha='right',va='bottom')    
     return ax
 
+# labels
+def set_label(
+    s: str,
+    ax: plt.Axes,
+    x: float= 0,
+    y: float= 0,
+    ha: str='left',
+    va: str='top',
+    loc=None,
+    off_loc=0.01,
+    title: bool=False,
+    **kws,
+    ) -> plt.Axes:
+    """Set label on a plot.
+
+    Args:
+        x (float): x position.
+        y (float): y position.
+        s (str): label.
+        ax (plt.Axes): `plt.Axes` object.
+        ha (str, optional): horizontal alignment. Defaults to 'left'.
+        va (str, optional): vertical alignment. Defaults to 'top'.
+        loc (int, optional): location of the label. 1:'upper right', 2:'upper left', 3:'lower left':3, 4:'lower right'
+        offs_loc (tuple,optional): x and y location offsets.
+        title (bool, optional): set as title. Defaults to False.
+        
+    Returns:
+        plt.Axes: `plt.Axes` object.
+    """
+    if title:
+        ax.set_title(s,**kws)
+    elif not loc is None:
+        if loc==1 or loc=='upper right':
+            x=1-off_loc
+            y=1-off_loc
+            ha='right'
+            va='top'
+        elif loc==2 or loc=='upper left':
+            x=0+off_loc
+            y=1-off_loc
+            ha='left'
+            va='top'
+        elif loc==3 or loc=='lower left':
+            x=0+off_loc
+            y=0+off_loc
+            ha='left'
+            va='bottom'            
+        elif loc in [0,4] or loc=='lower right':
+            x=1-off_loc
+            y=0+off_loc
+            ha='right'
+            va='bottom'            
+        else:
+            raise ValueError(loc)
+    ax.text(s=s,
+            x=x,y=y,ha=ha,va=va,
+            transform=ax.transAxes,
+            **kws)
+    return ax
 
 def set_ylabel(
     ax: plt.Axes,
@@ -60,8 +119,6 @@ def set_ylabel(
     ax.set_ylabel(ax.get_ylabel(),rotation=0,ha='right',va='center')
     ax.yaxis.set_label_coords(x+xoff,y+yoff) 
     return ax
-#     return set_label(x=x,y=y,s=ax.get_ylabel() if s is None else s,
-#                                                        ha='right',va='bottom',ax=ax)
 
 def format_labels(
     ax,
