@@ -8,15 +8,16 @@ General-purpose convenience functions in Python.
 pip install roux
 ```
 # Examples
-**[Tables/Dataframes.]('https://github.com/rraadd88/roux/blob/master/examples/roux_lib_df.ipynb')**  
-**[General Input/Output.]('https://github.com/rraadd88/roux/blob/master/examples/roux_lib_io.ipynb')**  
-**[Strings encoding/decoding.]('https://github.com/rraadd88/roux/blob/master/examples/roux_lib_str.ipynb')**  
-**[File paths Input/Output.]('https://github.com/rraadd88/roux/blob/master/examples/roux_lib_sys.ipynb')**  
-**[Clustering.]('https://github.com/rraadd88/roux/blob/master/examples/roux_stat_cluster.ipynb')**  
-**[Annotating visualisations.]('https://github.com/rraadd88/roux/blob/master/examples/roux_viz_annot.ipynb')**  
-**[Visualizations Input/Output.]('https://github.com/rraadd88/roux/blob/master/examples/roux_viz_io.ipynb')**  
-**[Line plots.]('https://github.com/rraadd88/roux/blob/master/examples/roux_viz_line.ipynb')**  
-**[Scatter plots.]('https://github.com/rraadd88/roux/blob/master/examples/roux_viz_scatter.ipynb')**  
+
+[Tables/Dataframes.]('https://github.com/rraadd88/roux/blob/master/examples/roux_lib_df.ipynb')  
+[General Input/Output.]('https://github.com/rraadd88/roux/blob/master/examples/roux_lib_io.ipynb')  
+[Strings encoding/decoding.]('https://github.com/rraadd88/roux/blob/master/examples/roux_lib_str.ipynb')  
+[File paths Input/Output.]('https://github.com/rraadd88/roux/blob/master/examples/roux_lib_sys.ipynb')  
+[Clustering.]('https://github.com/rraadd88/roux/blob/master/examples/roux_stat_cluster.ipynb')  
+[Annotating visualisations.]('https://github.com/rraadd88/roux/blob/master/examples/roux_viz_annot.ipynb')  
+[Visualizations Input/Output.]('https://github.com/rraadd88/roux/blob/master/examples/roux_viz_io.ipynb')  
+[Line plots.]('https://github.com/rraadd88/roux/blob/master/examples/roux_viz_line.ipynb')  
+[Scatter plots.]('https://github.com/rraadd88/roux/blob/master/examples/roux_viz_scatter.ipynb')  
 
 # API
 <!-- markdownlint-disable -->
@@ -7307,7 +7308,7 @@ get_stat(
     subsets=None,
     cols_subsets=['subset1', 'subset2'],
     df2=None,
-    stats=[<function mean at 0x7fd8e4582050>, <function median at 0x7fd8e4f15560>, <function var at 0x7fd8e45824d0>, <built-in function len>],
+    stats=[<function mean at 0x7fa7c75c2050>, <function median at 0x7fa7c7f75560>, <function var at 0x7fa7c75c24d0>, <built-in function len>],
     coff_samples_min=None,
     verb=False,
     **kws
@@ -7365,7 +7366,7 @@ get_stats(
     subsets=None,
     df2=None,
     cols_subsets=['subset1', 'subset2'],
-    stats=[<function mean at 0x7fd8e4582050>, <function median at 0x7fd8e4f15560>, <function var at 0x7fd8e45824d0>, <built-in function len>],
+    stats=[<function mean at 0x7fa7c75c2050>, <function median at 0x7fa7c7f75560>, <function var at 0x7fa7c75c24d0>, <built-in function len>],
     axis=0,
     test=False,
     **kws
@@ -10011,7 +10012,7 @@ TODOs: 1. Sort categories. 2. Change alpha of the boxplot rather than changing s
 
 ---
 
-<a href="https://github.com/rraadd88/roux/blob/master/roux/viz/dist.py#L456"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="https://github.com/rraadd88/roux/blob/master/roux/viz/dist.py#L457"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ### <kbd>function</kbd> `pointplot_groupbyedgecolor`
 

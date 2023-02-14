@@ -435,9 +435,10 @@ def plot_dists(
             )
         o1.get_frame().set_edgecolor((0.95,0.95,0.95))
     if show_outlines:
+        column_outlines=show_outlines
         ## get jitter positions and plot outlines
-        from roux.viz.scatter import annot_outlines
-        annot_outlines(
+        from roux.viz.scatter import show_outlines
+        show_outlines(
             get_jitter_positions(
                 ax,
                 df1,
@@ -447,7 +448,7 @@ def plot_dists(
                 ),
             colx='x' if axis_desc=='x' else 'y',
             coly=y if axis_desc=='x' else x,
-            column_outlines=show_outlines,
+            column_outlines=column_outlines,
             **kws_outlines,
             ax=ax,
             )        
