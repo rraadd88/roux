@@ -168,8 +168,9 @@ def show_outlines(
     """
     if isinstance(outline_colors,list):
         outline_colors=dict(zip(data[column_outlines].unique(),outline_colors))
-        logging.warning(f"Mapping between the categories and the colors of the coutlines: {outline_colors}.")
+        logging.info(f"Mapping between the categories and the colors of the coutlines: {outline_colors}.")
     for (cat, df_) in data.groupby(column_outlines):
+        import seaborn as sns
         ax=sns.scatterplot(
             data=df_,
             x=colx,

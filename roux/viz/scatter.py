@@ -386,12 +386,13 @@ def plot_volcano(
                 legend=False,
             )
         else:
-            from roux.viz.annot import annot_outlines
-            ax=annot_outlines(
+            column_outlines=show_outlines
+            from roux.viz.annot import show_outlines
+            ax=show_outlines(
                 data1,
                 colx,
                 coly,
-                column_outlines=show_outlines,
+                column_outlines=column_outlines,
                 outline_colors= outline_colors,
                 style=style,
                 style_order=style_order,
