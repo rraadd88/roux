@@ -537,6 +537,7 @@ def set_suptitle(
     axs,
     title,
     offy=0,
+    **kws_text,
     ):
     """
     Combined title for a list of subplots.
@@ -549,6 +550,7 @@ def set_suptitle(
               y=np.max(a1[:,1])+offy,
               s=title,
               ha='center',
-              fontdict=dict(fontsize=15),
+              # fontdict=dict(fontsize=15),
               transform= plt.gcf().transFigure,
+              **kws_text,
     )
