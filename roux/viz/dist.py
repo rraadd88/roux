@@ -437,7 +437,7 @@ def plot_dists(
     if show_outlines:
         column_outlines=show_outlines
         ## get jitter positions and plot outlines
-        from roux.viz.scatter import show_outlines
+        from roux.viz.annot import show_outlines
         show_outlines(
             get_jitter_positions(
                 ax,

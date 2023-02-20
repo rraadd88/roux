@@ -213,7 +213,8 @@ def merge_dfs(
     Notes:
         For example, reduce(lambda x, y: x.merge(y), [1, 2, 3, 4, 5]) merges ((((1.merge(2)).merge(3)).merge(4)).merge(5)). 
     """ 
-    if kws['how']!='outer': logging.warning("Drop-outs may occur if on!='outer'. Make sure that the dataframes are ordered properly from left to right.")
+    if kws['how']!='outer': 
+        logging.warning("Drop-outs may occur if on!='outer'. Make sure that the dataframes are ordered properly from left to right.")        
     from functools import reduce
     logging.info(f"merge_dfs: shape changed from : dfs shape={[df.shape for df in dfs]}")
     df3=reduce(lambda df1,df2: pd.merge(df1,df2,**kws), dfs)

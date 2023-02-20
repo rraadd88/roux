@@ -74,6 +74,7 @@ def corr_to_str(
         s0+=f"\n({num2str(num=n,magnitude=False)})"
     return s0
 
+## TODOs: combine different methods of correlation, with a common preprocessing
 def get_spearmanr(
     x: np.array,
     y: np.array,
@@ -112,7 +113,7 @@ def get_kendalltaur(
     x: np.array,
     y: np.array,
     ) -> tuple:
-    """Get Pearson correlation coefficient.
+    """Get Kendall rank correlation coefficient.
 
     Args:
         x (np.array): x vector.
@@ -126,6 +127,29 @@ def get_kendalltaur(
     
     return sc.stats.kendalltau(x,y)
 
+def get_cosine(
+    x: np.array,
+    y: np.array,
+    ) -> tuple:
+    """Get cosine distance.
+
+    Args:
+        x (np.array): x vector.
+        y (np.array): y vector.
+
+    Returns:
+        tuple: rs, np.nan
+        
+    Notes:
+        1. No p-value for the distances.
+        2. distance can be greater than 1 if the dot product is negative (anticorrelation).
+    """
+    assert x.dtype in [int,float]
+    assert y.dtype in [int,float]
+    
+    return sc.spatial.distance.cosine(x,y),np.nan
+
+## Wrapper aroung the correlations
 def get_corr(
     x: np.array,
     y: np.array,
@@ -140,6 +164,9 @@ def get_corr(
     **kws_boots,
     ):
     """Correlation between vectors (wrapper).
+    
+    Usage:
+        1. Linear table with paired values. For a matrix, use `pd.DataFrame.corr` instead.
 
     Args:
         x (np.array): x.

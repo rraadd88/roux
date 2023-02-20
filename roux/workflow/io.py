@@ -134,6 +134,7 @@ def read_nb_md(
 def read_config(
     p: str,
     config_base=None,
+    append_to_key=None,
     convert_dtype:bool=True,
     ):
     """
@@ -141,13 +142,21 @@ def read_config(
 
     Parameters:
         p (str): input path. 
+        config_base: base config with the inputs for the interpolations
     """
-    from omegaconf import OmegaConf,listconfig,dictconfig
+    from omegaconf import OmegaConf
+    if isinstance(config_base,str):
+        if exists(config_base):
+            config_base=OmegaConf.create(read_dict(config_base))
+            # logging.info(f"Base config read from: {config_base}")
+        else:
+            logging.warning(f"Base config path not found: {config_base}")
     ## read config
-    d1=OmegaConf.create(read_dict(p))
-    
+    d1=read_dict(p)
     ## merge
     if not config_base is None:
+        if not append_to_key is None:
+            d1={append_to_key:{**config_base[append_to_key],**d1}}
         d1=OmegaConf.merge(
                 ## parent
                 config_base,
@@ -155,16 +164,18 @@ def read_config(
                 d1,
                 )
         
-    ## convert data dypes
+    d1=OmegaConf.create(d1)
+    # ## convert data dypes
     if convert_dtype:
         d1=OmegaConf.to_object(d1)
     return d1
 
 ## metadata-related
-def read_metadata(
+def read_configs(
     p: str='./metadata.yaml',
     ind: str=None,
     max_paths: int= 30,
+    config_path_key:str='config_path',
     config_paths: list=[],
     config_paths_auto=False,
     verbose: bool=False,
@@ -179,8 +190,6 @@ def read_metadata(
     Returns:
         dict: output.
 
-    TODOs:
-        1. Metadata files include colors.yaml, database.yaml, constants.yaml etc.
     """
     if not exists(p):
         logging.warning(f'not found: {p}')
@@ -196,6 +205,15 @@ def read_metadata(
                 d1=read_config(
                     d1[k],
                     config_base=d1,
+                    )
+        elif isinstance(d1[k],dict):
+            ## read `config_path`s
+            if len(d1[k])==1 and list(d1[k].keys())[0]==config_path_key:
+                if verbose: logging.info(f"Appending config to {k}")
+                d1=read_config(
+                    p=d1[k][config_path_key],
+                    config_base=d1,
+                    append_to_key=k,
                     )
         elif isinstance(d1[k],list):
             ## read list of files
@@ -240,6 +258,8 @@ def read_metadata(
     if (len(d1)-config_size)!=0:
         logging.info(f"metadata appended from "+str(len(d1)-config_size)+" separate config/s.")    
     return d1
+## alias
+read_metadata=read_configs
 
 ## create documentation
 def to_info(

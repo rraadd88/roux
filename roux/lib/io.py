@@ -268,8 +268,7 @@ def download(
         import urllib.request
         makedirs(path,exist_ok=True)
         urllib.request.urlretrieve(url, path)
-    elif verbose:
-        logging.info(f"downloaded on: {get_download_date(path)}")
+    logging.info(f"downloaded on: {get_download_date(path)}")
     return path
 
 ## text file
