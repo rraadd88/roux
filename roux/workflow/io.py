@@ -134,6 +134,7 @@ def read_nb_md(
 def read_config(
     p: str,
     config_base=None,
+    inputs=None, #overwrite with
     append_to_key=None,
     convert_dtype:bool=True,
     ):
@@ -156,23 +157,27 @@ def read_config(
     ## merge
     if not config_base is None:
         if not append_to_key is None:
-            d1={append_to_key:{**config_base[append_to_key],**d1}}
+            d1={append_to_key:{**config_base[append_to_key],**d1}}        
         d1=OmegaConf.merge(
-                ## parent
-                config_base,
-                ## child
-                d1,
+                config_base, ## parent
+                d1, ## child overwrite with
                 )
-        
-    d1=OmegaConf.create(d1)
+    elif not inputs is None:
+        d1=OmegaConf.merge(
+                d1, ## parent
+                inputs, ## child overwrite with
+                )
+    else:
+        ## no-merging
+        d1=OmegaConf.create(d1)
     # ## convert data dypes
     if convert_dtype:
         d1=OmegaConf.to_object(d1)
     return d1
 
 ## metadata-related
-def read_configs(
-    p: str='./metadata.yaml',
+def read_metadata(
+    p: str,
     ind: str=None,
     max_paths: int= 30,
     config_path_key:str='config_path',
@@ -258,8 +263,6 @@ def read_configs(
     if (len(d1)-config_size)!=0:
         logging.info(f"metadata appended from "+str(len(d1)-config_size)+" separate config/s.")    
     return d1
-## alias
-read_metadata=read_configs
 
 ## create documentation
 def to_info(

@@ -2,7 +2,11 @@
 
 # from roux.global_imports import *
 import matplotlib.pyplot as plt
+
 from roux.lib.io import *#read_ps,to_outp
+
+## logging
+logging.getLogger("fontTools.subset").setLevel(logging.ERROR)
 
 ## matplotlib plots
 def to_plotp(

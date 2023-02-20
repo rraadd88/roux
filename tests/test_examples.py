@@ -26,7 +26,12 @@ def test_stdout(tb):
 @testbook('examples/roux_viz_annot.ipynb', execute=True)
 def test_stdout(tb):
     assert 'data/biomart/01_dedup.tsv' in tb.cell_output_text('to_table'), tb.cell_output_text('to_table')    
-
+    
 # @testbook('examples/roux_viz_io.ipynb', execute=True)
 # def test_stdout(tb):
 #     assert "title={'center':'modified'}" in tb.cell_output_text('read_plot_modified'), tb.cell_output_text('read_plot_modified')
+
+@testbook('examples/roux_workflow_io.ipynb', execute=True)
+def test_stdout(tb):
+    assert tb.cell_output_text('read_configs')=='value interpolated in config1 = value from metaconfig = value1', tb.cell_output_text('read_configs')
+    assert tb.cell_output_text('read_configs_with_inputs')=='value interpolated in config1 = value from metaconfig = modified', tb.cell_output_text('read_configs_with_inputs')
