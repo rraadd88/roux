@@ -355,26 +355,31 @@ def read_dict(
     if p.endswith('.yml') or p.endswith('.yaml') or fmt=='yml' or fmt=='yaml':
         import yaml    
         with open(p,'r') as f:
-            return yaml.safe_load(f,**kws)
-    
+            d1=yaml.safe_load(f,**kws)
+        return d1 if not d1 is None else {}
+         
     elif p.endswith('.json') or fmt=='json':
         import json    
         with open(p,'r') as p:
             return json.load(p,**kws)
+        
     elif p.startswith('https'):
         from urllib.request import urlopen
         try:
             return json.load(urlopen(p))
         except:
             print(logging.error(p))
-#         return read_json(p,**kws)    
+#         return read_json(p,**kws)
+
     elif p.endswith('.pickle'):
         import pickle
         return pickle.load(open(p,
                    'rb'))
+    
     elif p.endswith('.joblib'):
         import joblib
         return joblib.load(p,**kws)
+    
     else:
         logging.error(f'supported extensions: .yml .yaml .json .pickle .joblib')
         

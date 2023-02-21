@@ -157,7 +157,11 @@ def read_config(
     ## merge
     if not config_base is None:
         if not append_to_key is None:
+            # print(config_base)
+            # print(d1)            
             d1={append_to_key:{**config_base[append_to_key],**d1}}        
+        # print(config_base)
+        # print(d1)
         d1=OmegaConf.merge(
                 config_base, ## parent
                 d1, ## child overwrite with
@@ -204,38 +208,40 @@ def read_metadata(
     ## read dicts
     keys=d1.keys()
     for k in keys:
-        if isinstance(d1[k],str):
-            ## merge configs
-            if d1[k].endswith('.yaml'):
-                d1=read_config(
-                    d1[k],
-                    config_base=d1,
-                    )
-        elif isinstance(d1[k],dict):
+        # if isinstance(d1[k],str):
+        #     ## merge configs
+        #     if d1[k].endswith('.yaml'):
+        #         d1=read_config(
+        #             d1[k],
+        #             config_base=d1,
+        #             )
+        # el
+        if isinstance(d1[k],dict):
             ## read `config_path`s
-            if len(d1[k])==1 and list(d1[k].keys())[0]==config_path_key:
+            # if len(d1[k])==1 and list(d1[k].keys())[0]==config_path_key:
+            if config_path_key in list(d1[k].keys()):
                 if verbose: logging.info(f"Appending config to {k}")
                 d1=read_config(
                     p=d1[k][config_path_key],
                     config_base=d1,
                     append_to_key=k,
                     )
-        elif isinstance(d1[k],list):
-            ## read list of files
-            ### check 1st path
-            if len(d1[k])<max_paths:
-                if not exists(d1[k][0]):
-                    logging.error(f"file not found: {p}; ignoring a list of `{k}`s.")
-                d_={}
-                for p_ in d1[k]:
-                    if isinstance(p_,str):
-                        if is_dict(p_):
-                            d_[basenamenoext(p_)]=read_dict(p_)
-                        else:
-                            d_[basenamenoext(p_)]=p_
-                            logging.error(f"file not found: {p_}")
-                if len(d_)!=0:
-                    d1[k]=d_
+        # elif isinstance(d1[k],list):
+        #     ## read list of files
+        #     ### check 1st path
+        #     if len(d1[k])<max_paths:
+        #         if not exists(d1[k][0]):
+        #             logging.error(f"file not found: {p}; ignoring a list of `{k}`s.")
+        #         d_={}
+        #         for p_ in d1[k]:
+        #             if isinstance(p_,str):
+        #                 if is_dict(p_):
+        #                     d_[basenamenoext(p_)]=read_dict(p_)
+        #                 else:
+        #                     d_[basenamenoext(p_)]=p_
+        #                     logging.error(f"file not found: {p_}")
+        #         if len(d_)!=0:
+        #             d1[k]=d_
     ## read files from directory containing specific setings and other data to be incorporated into metadata
     if config_paths_auto:
         if ind is None:
