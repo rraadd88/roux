@@ -37,14 +37,9 @@ def get_cols_x_for_comparison(
     .drop(cols_drop,axis=1)
     .rd.dropby_patterns(cols_dropby_patterns)
     .log.dropna(how='all',axis=1)
-    )
-
     ## drop single value columns
-    drop_cols=df1.rd.check_nunique().loc[lambda x: x==1].index.tolist()#+df1.filter(like='coexp').columns.tolist()
-    df1=df1.log.drop(
-            labels=drop_cols,
-            axis=1,
-            )
+    .rd.drop_constants()
+    )
     
     ## make the dictionary with column names
     columns=dict(cols_y={
@@ -86,7 +81,7 @@ def get_cols_x_for_comparison(
             info(ds1_)
     
     ## get descrete x columns
-    ds2_=df1.rd.check_nunique().sort_values()
+    ds2_=df1.nunique().sort_values()
     l1=ds2_.loc[lambda x: (x==2)].index.tolist()
     if test: print('l1',l1)
     

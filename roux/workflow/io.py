@@ -221,11 +221,14 @@ def read_metadata(
             # if len(d1[k])==1 and list(d1[k].keys())[0]==config_path_key:
             if config_path_key in list(d1[k].keys()):
                 if verbose: logging.info(f"Appending config to {k}")
-                d1=read_config(
-                    p=d1[k][config_path_key],
-                    config_base=d1,
-                    append_to_key=k,
-                    )
+                if exists(d1[k][config_path_key]):
+                    d1=read_config(
+                        p=d1[k][config_path_key],
+                        config_base=d1,
+                        append_to_key=k,
+                        )
+                else:
+                    logging.warning(f"not exists: {d1[k][config_path_key]}")
         # elif isinstance(d1[k],list):
         #     ## read list of files
         #     ### check 1st path

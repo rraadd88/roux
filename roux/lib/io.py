@@ -345,7 +345,8 @@ def read_dict(
         
     Returns:
         d (dict): output dictionary.
-    """    
+    """
+    assert isinstance(p,(str,list)), p
     if '*' in p:
         d1={p:read_dict(p) for p in read_ps(p)}
         if not apply_on_keys is None:

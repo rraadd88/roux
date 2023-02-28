@@ -500,7 +500,7 @@ def encode(
         from roux.lib.str import dict2str
         data=dict2str(data,reversible=True)
         
-    assert isinstance(data,str)
+    assert isinstance(data,str), data
     if not isinstance(data,bytes):
         data=data.encode(encoding='utf8')
     if not short:

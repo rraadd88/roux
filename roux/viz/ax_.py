@@ -120,6 +120,21 @@ def set_ylabel(
     ax.yaxis.set_label_coords(x+xoff,y+yoff) 
     return ax
 
+def get_ax_labels(
+    ax: plt.Axes,
+    ):
+    labels=[]
+    for k in ['get_xlabel','get_ylabel','get_title','legend_']: 
+        if hasattr(ax,k):
+            if k!='legend_':
+                # plotp=f"{plotp}_"+(getattr(ax,k)()).replace('.','_')
+                labels.append(getattr(ax,k)())
+            else:
+                if not ax.legend_ is None:
+                    # plotp=f"{plotp}_"+(ax.legend_.get_title().get_text()).replace('.','_')
+                    labels.append(ax.legend_.get_title().get_text())
+    return labels
+
 def format_labels(
     ax,
     fmt='cap1',

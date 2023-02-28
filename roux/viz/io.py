@@ -6,9 +6,9 @@ import matplotlib.pyplot as plt
 from roux.lib.io import *#read_ps,to_outp
 
 ## logging
-logging.getLogger("fontTools.subset").setLevel(logging.ERROR)
 
 ## matplotlib plots
+
 def to_plotp(
     ax: plt.Axes=None,
     prefix: str='plot/plot_',
@@ -33,16 +33,16 @@ def to_plotp(
     if isinstance(suffix,(list,tuple)):
         suffix='_'.join(suffix)
     suffix=suffix.replace('/','_')
-    plotp=prefix
-    for k in ['get_xlabel','get_ylabel','get_title','legend_']: 
-        if hasattr(ax,k):
-            if k!='legend_':
-                plotp=f"{plotp}_"+(getattr(ax,k)()).replace('.','_')
-            else:
-                if not ax.legend_ is None:
-                    plotp=f"{plotp}_"+(ax.legend_.get_title().get_text()).replace('.','_')
-    plotp=f"{plotp} {suffix}"+(f".{fmts[0]}" if len(fmts)==1 else '')
-    logging.warning(f"Inferred path of the plot (plotp): '{plotp}'")
+    from roux.lib.sys import to_path
+    # plotp=prefix
+    from roux.viz.ax_ import get_ax_labels
+    labels=get_ax_labels(ax)
+    # print(prefix)
+    # print('_' if not prefix.endswith('_') else '')
+    # print(to_path('_'.join([s for s in labels if not (s.replace(' ','')=='')])))
+    plotp=f"{prefix}{to_path('_'.join([s for s in labels if not (s.replace(' ','')=='')])).lower()}{suffix}"+(f".{fmts[0]}" if len(fmts)==1 else '')
+    # logging.warning(f"Inferred path of the plot (plotp): '{plotp}'")
+    print(f"Inferred path of the plot (plotp): '{plotp}'")
     return plotp
 
 def savefig(
@@ -103,11 +103,11 @@ def savefig(
         return
     
     ## warnings
-    from roux.lib.sys import is_interactive_notebook
     plt.set_loglevel("warning")
     import fontTools
     fontTools.logging.disable()
     del fontTools
+    logging.getLogger("fontTools.subset").setLevel(logging.ERROR)
     
     if '.' in plotp:
         plt.savefig(plotp,
@@ -127,6 +127,7 @@ def savefig(
                         bbox_inches=bbox_inches if (not bbox_inches is None) else 'tight' if tight_layout else None,
                        **kws_savefig,
                        )
+    from roux.lib.sys import is_interactive_notebook
     if not is_interactive_notebook():
         plt.clf();plt.close()
     return plotp
@@ -409,6 +410,7 @@ def to_plot(
         print({'plot':plotp,'data':df1p,'param':paramp})
     if validate:
         read_plot(srcp)
+    logging.info(plotp)
     return plotp
 
 def read_plot(
