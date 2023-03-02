@@ -1071,16 +1071,23 @@ def to_excel(
             items.insert(0, ('description', dict2df(comments,colkey='column name',colvalue='description')))
             sheetname2df = dict(items)
     
-    outp=to_path(outp)
+    outp=makedirs(to_path(outp))
     writer = pd.ExcelWriter(outp)
     startrow=0
-    for sn in sheetname2df:
+    for k,df_ in sheetname2df.items():
         if not append:
-            sheetname2df[sn].to_excel(writer,sn,index=False,**kws)
+            df_.to_excel(writer,k,index=False,**kws)
         else:
-            sheetname2df[sn].to_excel(writer,startrow=startrow,index=False,**kws)  
-            startrow+=len(sheetname2df[sn])+2
-    writer.save()
+            df_.to_excel(writer,startrow=startrow,index=False,**kws)  
+            startrow+=len(df_)+2
+        # auto-adjust column widths
+        for c in df_:
+            col_idx = df_.columns.get_loc(c)
+            writer.sheets[k].set_column(col_idx, col_idx, 
+                                        max(df_[c].astype(str).map(len).max(), len(c)),
+                                       # 30,
+                                       )
+    writer.save()    
     ## save in tsv format
     if save_input:
         for k in sheetname2df:

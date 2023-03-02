@@ -7,10 +7,31 @@ import scipy as sc
 import logging
 from roux.lib.sys import info
 
-def get_corr_resampled(
+def _pre(x,y,
+         df=None,
+         sample_size_min=10,
+         verbose=False):
+    if not (isinstance(x,str) and isinstance(y,str) and not df is None):
+        ## get columns
+        df=pd.DataFrame({'x':x,'y':y})
+        x,y='x','y'
+    else:
+        df=df.rename(columns={x:'x',y:'y'},errors='raise')
+    if len(df)<sample_size_min:
+        if verbose:
+            logging.error("low sample size")
+        return
+    assert df['x'].dtype in [int,float], df['x'].dtype
+    assert df['y'].dtype in [int,float], df['y'].dtype
+    # clean
+    df=df.dropna()
+    return df
+
+def resampled(
     x: np.array,
     y: np.array,
-    method='spearman',
+    method_fun,
+    method_kws={},
     ci_type='max',
     cv:int=5,
     random_state=1,
@@ -32,20 +53,109 @@ def get_corr_resampled(
     from roux.stat.classify import get_cvsplits
     from roux.stat.variance import get_ci
     cv2xy=get_cvsplits(x,y,cv=cv,outtest=False,random_state=random_state)
-    rs=[globals()[f"get_{method}r"](**cv2xy[k])[0] for k in cv2xy]
-    if verbose: info(cv,ci_type)
-    return np.mean(rs), get_ci(rs,ci_type=ci_type)
+    rs=[method_fun(*cv2xy[k].values(),**method_kws)[0] for k in cv2xy]
+    if verbose:
+        logging.info(f"resampling: cv={cv},ci_type={ci_type}")
+    return {'rr':np.mean(rs), 'ci':get_ci(rs,ci_type=ci_type),'ci_type':ci_type}
 
-def corr_to_str(
-    method: str,
-    r: float,
-    p: float,
+## post-process
+# @staticmethod
+def _post(res,method,n):
+    """
+    uniform output
+    get r,p,ci,n
+    """
+    if isinstance(res,float):
+        return {'r':res,'n':n}
+    elif isinstance(res,tuple):
+        if len(res)==2:
+            return {'r':res[0],'p':res[1],'n':n}
+        else:
+            raise ValueError(res)
+    elif isinstance(res,dict):
+        ## resampled
+        res['n']=n
+        res['method']=method
+        return res
+    elif isinstance(res,object):
+        if hasattr(res,'correlation') and hasattr(res,'pvalue'):
+            return {'r':res.correlation,'p':res.pvalue,'n':n}                
+        else:
+            raise ValueError(res)
+    else:
+        raise ValueError(res)
+
+def corr(
+    x,y,
+    df=None,
+    pval=True,
+    method=None,
+    method_kws={},
+    preprocess=True,
+    preprocess_kws={},
+    resample=False,
+    resample_kws={},
+    # out_str=False,
+    # out_str_kws={},
+    verbose=False,
+    ):
+    """Correlation between vectors (wrapper).
+
+    Usage:
+        1. Linear table with paired values. For a matrix, use `pd.DataFrame.corr` instead.
+
+    Args:
+        x (np.array): x.
+        y (np.array): y.
+        method (str, optional): method name. Defaults to 'spearman'.
+        resample (bool, optional): resampling. Defaults to False.
+        ci_type (str, optional): confidence interval type. Defaults to 'max'.
+        magnitide (bool, optional): show magnitude. Defaults to True.
+        outstr (bool, optional): output as string. Defaults to False.
+
+    Keyword arguments:
+        kws: parameters provided to `get_corr_resampled` function.
+
+    """
+    if verbose:
+        preprocess_kws['verbose']=True
+        resample_kws['verbose']=True
+    if preprocess:
+        df=_pre(x,y,df)
+        if df is None: 
+            return
+        x,y,n=df['x'],df['y'],len(df)
+    if hasattr(sc.stats,method+'r'):
+        get_corr=getattr(sc.stats,method+'r')
+    elif hasattr(sc.spatial.distance,method):
+        ## no-pvalue
+        get_corr=getattr(sc.spatial.distance,method)
+    else:
+        raise ValueError(method)
+    if pval:
+        res=get_corr(x,y,**method_kws)
+        res=_post(res,method,n)
+    else:
+        res={}
+    if resample:
+        res_=resampled(
+            x=x,y=y,
+            method_fun=get_corr,
+            method_kws=method_kws,
+            **resample_kws,
+        )
+        res_=_post(res_,method,n)
+        res={**res_,**res}
+        if verbose:
+            logging.info(f"r={res['rr']} (resampled), r={res['r']} and P={res['p']} (collective)")
+    return res
+        
+def to_string(
+    res,
+    # method: str,
     show_n: bool=True,
-    n:int=None,
     show_n_prefix: str='',    
     fmt='<',
-    ci=None,
-    ci_type=None, 
     magnitide=True,
     ) -> str:
     """Correlation to string
@@ -65,156 +175,225 @@ def corr_to_str(
     """
     from roux.viz.annot import pval2annot
     from roux.lib.str import num2str
-    s0=(f"$r_{method[0]}$" if not 'tau' in method else '$\\tau$')+f"={r:.2f}"
-    if not ci is None:
-        s0+=f"$\pm${ci:.2f}{ci_type if ci_type!='max' else ''}"
-    s0+=f"\n{pval2annot(p,fmt='<',linebreak=False, alpha=0.05)}"
+    method=res['method']
+    s0=(f"$r_{method[0]}$" if not 'tau' in method else '$\\tau$')+f"={res['rr' if 'rr' in res else 'r']:.2f}" ##prefer the resampled r value
+    if 'ci' in res:
+        s0+=f"$\pm${res['ci']:.2f}{res['ci_type'] if res['ci_type']!='max' else ''}"
+    s0+=f"\n{pval2annot(res['p'],fmt='<',linebreak=False, alpha=0.05)}"
     if show_n:
-        assert not n is None, n
-        s0+=f"\n({num2str(num=n,magnitude=False)})"
+        s0+=f"\n({num2str(num=res['n'],magnitude=False)})"
     return s0
 
-## TODOs: combine different methods of correlation, with a common preprocessing
-def get_spearmanr(
-    x: np.array,
-    y: np.array,
-    ) -> tuple:
-    """Get Spearman correlation coefficient.
+## to be deprecated in favor of the new `corr`
+# def get_corr_resampled(
+#     x: np.array,
+#     y: np.array,
+#     method='spearman',
+#     ci_type='max',
+#     cv:int=5,
+#     random_state=1,
+#     verbose=False,
+#     ) -> tuple:
+#     """Get correlations after resampling.
 
-    Args:
-        x (np.array): x vector.
-        y (np.array): y vector.
+#     Args:
+#         x (np.array): x vector.
+#         y (np.array): y vector.
+#         method (str, optional): method name. Defaults to 'spearman'.
+#         ci_type (str, optional): confidence interval type. Defaults to 'max'.
+#         cv (int, optional): number of resamples. Defaults to 5.
+#         random_state (int, optional): random state. Defaults to 1.
 
-    Returns:
-        tuple: rs, p-value
-    """
-    assert x.dtype in [int,float]
-    assert y.dtype in [int,float]
+#     Returns:
+#         tuple: mean correlation coefficient, confidence interval
+#     """
+#     from roux.stat.classify import get_cvsplits
+#     from roux.stat.variance import get_ci
+#     cv2xy=get_cvsplits(x,y,cv=cv,outtest=False,random_state=random_state)
+#     rs=[globals()[f"get_{method}r"](**cv2xy[k])[0] for k in cv2xy]
+#     if verbose: info(cv,ci_type)
+#     return np.mean(rs), get_ci(rs,ci_type=ci_type)
+
+# def corr_to_str(
+#     method: str,
+#     r: float,
+#     p: float,
+#     show_n: bool=True,
+#     n:int=None,
+#     show_n_prefix: str='',    
+#     fmt='<',
+#     ci=None,
+#     ci_type=None, 
+#     magnitide=True,
+#     ) -> str:
+#     """Correlation to string
+
+#     Args:
+#         method (str): method name.
+#         r (float): correlation coefficient.
+#         p (float): p-value
+#         fmt (str, optional): format of the p-value. Defaults to '<'.
+#         n (bool, optional): sample size. Defaults to True.
+#         ci (_type_, optional): confidence interval. Defaults to None.
+#         ci_type (_type_, optional): confidence interval type. Defaults to None.
+#         magnitide (bool, optional): show magnitude of the sample size. Defaults to True.
+
+#     Returns:
+#         str: string with the correation stats. 
+#     """
+#     from roux.viz.annot import pval2annot
+#     from roux.lib.str import num2str
+#     s0=(f"$r_{method[0]}$" if not 'tau' in method else '$\\tau$')+f"={r:.2f}"
+#     if not ci is None:
+#         s0+=f"$\pm${ci:.2f}{ci_type if ci_type!='max' else ''}"
+#     s0+=f"\n{pval2annot(p,fmt='<',linebreak=False, alpha=0.05)}"
+#     if show_n:
+#         assert not n is None, n
+#         s0+=f"\n({num2str(num=n,magnitude=False)})"
+#     return s0
+
+# ## TODOs: combine different methods of correlation, with a common preprocessing
+# def get_spearmanr(
+#     x: np.array,
+#     y: np.array,
+#     ) -> tuple:
+#     """Get Spearman correlation coefficient.
+
+#     Args:
+#         x (np.array): x vector.
+#         y (np.array): y vector.
+
+#     Returns:
+#         tuple: rs, p-value
+#     """
+#     assert x.dtype in [int,float]
+#     assert y.dtype in [int,float]
     
-    t=sc.stats.spearmanr(x,y,nan_policy='omit')
-    return t.correlation,float(t.pvalue)
+#     t=sc.stats.spearmanr(x,y,nan_policy='omit')
+#     return t.correlation,float(t.pvalue)
 
-def get_pearsonr(
-    x: np.array,
-    y: np.array,
-    ) -> tuple:
-    """Get Pearson correlation coefficient.
+# def get_pearsonr(
+#     x: np.array,
+#     y: np.array,
+#     ) -> tuple:
+#     """Get Pearson correlation coefficient.
 
-    Args:
-        x (np.array): x vector.
-        y (np.array): y vector.
+#     Args:
+#         x (np.array): x vector.
+#         y (np.array): y vector.
 
-    Returns:
-        tuple: rs, p-value
-    """
-    return sc.stats.pearsonr(x,y)
+#     Returns:
+#         tuple: rs, p-value
+#     """
+#     return sc.stats.pearsonr(x,y)
 
-def get_kendalltaur(
-    x: np.array,
-    y: np.array,
-    ) -> tuple:
-    """Get Kendall rank correlation coefficient.
+# def get_kendalltaur(
+#     x: np.array,
+#     y: np.array,
+#     ) -> tuple:
+#     """Get Kendall rank correlation coefficient.
 
-    Args:
-        x (np.array): x vector.
-        y (np.array): y vector.
+#     Args:
+#         x (np.array): x vector.
+#         y (np.array): y vector.
 
-    Returns:
-        tuple: rs, p-value
-    """
-    assert x.dtype in [int,float]
-    assert y.dtype in [int,float]
+#     Returns:
+#         tuple: rs, p-value
+#     """
+#     assert x.dtype in [int,float]
+#     assert y.dtype in [int,float]
     
-    return sc.stats.kendalltau(x,y)
+#     return sc.stats.kendalltau(x,y)
 
-def get_cosine(
-    x: np.array,
-    y: np.array,
-    ) -> tuple:
-    """Get cosine distance.
+# def get_cosine(
+#     x: np.array,
+#     y: np.array,
+#     ) -> tuple:
+#     """Get cosine distance.
 
-    Args:
-        x (np.array): x vector.
-        y (np.array): y vector.
+#     Args:
+#         x (np.array): x vector.
+#         y (np.array): y vector.
 
-    Returns:
-        tuple: rs, np.nan
+#     Returns:
+#         tuple: rs, np.nan
         
-    Notes:
-        1. No p-value for the distances.
-        2. distance can be greater than 1 if the dot product is negative (anticorrelation).
-    """
-    assert x.dtype in [int,float]
-    assert y.dtype in [int,float]
+#     Notes:
+#         1. No p-value for the distances.
+#         2. distance can be greater than 1 if the dot product is negative (anticorrelation).
+#     """
+#     assert x.dtype in [int,float]
+#     assert y.dtype in [int,float]
     
-    return sc.spatial.distance.cosine(x,y),np.nan
+#     return sc.spatial.distance.cosine(x,y),np.nan
 
-## Wrapper aroung the correlations
-def get_corr(
-    x: np.array,
-    y: np.array,
-    method='spearman',
-    resample=False,
-    ci_type='max',
-    sample_size_min=10,
-    magnitide=True,
-    outstr=False,
-    kws_to_str={},
-    verbose: bool= False,
-    **kws_boots,
-    ):
-    """Correlation between vectors (wrapper).
+# ## Wrapper aroung the correlations
+# def get_corr(
+#     x: np.array,
+#     y: np.array,
+#     method='spearman',
+#     resample=False,
+#     ci_type='max',
+#     sample_size_min=10,
+#     magnitide=True,
+#     outstr=False,
+#     kws_to_str={},
+#     verbose: bool= False,
+#     **kws_boots,
+#     ):
+#     """Correlation between vectors (wrapper).
     
-    Usage:
-        1. Linear table with paired values. For a matrix, use `pd.DataFrame.corr` instead.
+#     Usage:
+#         1. Linear table with paired values. For a matrix, use `pd.DataFrame.corr` instead.
 
-    Args:
-        x (np.array): x.
-        y (np.array): y.
-        method (str, optional): method name. Defaults to 'spearman'.
-        resample (bool, optional): resampling. Defaults to False.
-        ci_type (str, optional): confidence interval type. Defaults to 'max'.
-        magnitide (bool, optional): show magnitude. Defaults to True.
-        outstr (bool, optional): output as string. Defaults to False.
+#     Args:
+#         x (np.array): x.
+#         y (np.array): y.
+#         method (str, optional): method name. Defaults to 'spearman'.
+#         resample (bool, optional): resampling. Defaults to False.
+#         ci_type (str, optional): confidence interval type. Defaults to 'max'.
+#         magnitide (bool, optional): show magnitude. Defaults to True.
+#         outstr (bool, optional): output as string. Defaults to False.
     
-    Keyword arguments:
-        kws: parameters provided to `get_corr_resampled` function.
+#     Keyword arguments:
+#         kws: parameters provided to `get_corr_resampled` function.
 
-    """
-    n=len(x)
-    if n<sample_size_min:
-        if verbose:
-            logging.error("low sample size")
-        return
-    if resample:
-        r,ci=get_corr_resampled(x,y,method=method,ci_type=ci_type,**kws_boots)
-        _,p=globals()[f"get_{method}r"](x, y)
-        if verbose:
-            logging.info(f"r={r} (resampled), P={p} (collective)")
-        if not outstr:
-            return r,p,ci,n
-        else:
-            if 'show_n' in kws_to_str:
-                if kws_to_str['show_n']==True:
-                    kws_to_str['show_n']=n
-            return corr_to_str(method,r,p,n=n,
-                               ci=ci,ci_type=ci_type, 
-                               magnitide=magnitide,
-                               **kws_to_str),r
-    else:
-        r,p=globals()[f"get_{method}r"](x, y)
-        if verbose:
-            logging.info(f"r={r},P={p}")
-        if not outstr:
-            return r,p,n
-        else:
-            if 'show_n' in kws_to_str:
-                if kws_to_str['show_n']==True:
-                    kws_to_str['show_n']=n
-            return corr_to_str(method,r,p,n=n,
-                               ci=None,ci_type=None, 
-                               magnitide=magnitide,
-                               **kws_to_str),r
+#     """
+#     n=len(x)
+#     if n<sample_size_min:
+#         if verbose:
+#             logging.error("low sample size")
+#         return
+#     if resample:
+#         r,ci=get_corr_resampled(x,y,method=method,ci_type=ci_type,**kws_boots)
+#         _,p=globals()[f"get_{method}r"](x, y)
+#         if verbose:
+#             logging.info(f"r={r} (resampled), P={p} (collective)")
+#         if not outstr:
+#             return r,p,ci,n
+#         else:
+#             if 'show_n' in kws_to_str:
+#                 if kws_to_str['show_n']==True:
+#                     kws_to_str['show_n']=n
+#             return corr_to_str(method,r,p,n=n,
+#                                ci=ci,ci_type=ci_type, 
+#                                magnitide=magnitide,
+#                                **kws_to_str),r
+#     else:
+#         r,p=globals()[f"get_{method}r"](x, y)
+#         if verbose:
+#             logging.info(f"r={r},P={p}")
+#         if not outstr:
+#             return r,p,n
+#         else:
+#             if 'show_n' in kws_to_str:
+#                 if kws_to_str['show_n']==True:
+#                     kws_to_str['show_n']=n
+#             return corr_to_str(method,r,p,n=n,
+#                                ci=None,ci_type=None, 
+#                                magnitide=magnitide,
+#                                **kws_to_str),r
+## to be deprecated
 
 def get_corrs(
     df1: pd.DataFrame,
@@ -327,53 +506,6 @@ def get_corrs(
         .sort_values(['Q',f"$r_{method[0]}$"],ascending=[True,False])
         )
     return df2
-
-## partial 
-def get_partial_corrs(
-    df: pd.DataFrame,
-    xs: list,
-    ys: list, 
-    method='spearman',
-    splits=5
-    ) -> pd.DataFrame:
-    """Get partial correlations.
-
-    Args:
-        df (DataFrame): input dataframe.
-        xs (list): columns used as x variables.
-        ys (list): columns used as y variables.
-        method (str, optional): method name. Defaults to 'spearman'.
-        splits (int, optional): number of splits. Defaults to 5.
-
-    Returns:
-        DataFrame: output dataframe.
-    """
-    import pingouin as pg
-    import itertools
-    chunks=np.array_split(df.sample(frac=1,random_state=88),splits)
-    dn2df={}
-    for chunki,chunk in enumerate(chunks):
-        dn2df_={}
-        for x,y in list(itertools.product(xs,ys)):
-            if (x if isinstance(x,str) else x[0])!=(y if isinstance(y,str) else y[0]): 
-                params=dict(
-                        x=(x if isinstance(x,str) else x[0]),x_covar=(None if isinstance(x,str) else x[1:]), 
-                        y=(y if isinstance(y,str) else y[0]),y_covar=(None if isinstance(y,str) else y[1:]), )
-                label=str(params)#+(x if isinstance(x,str) else f"{x[0]} (corrected for {' '.join(x[1:])})")+" versus "+(y if isinstance(y,str) else f"{y[0]} (corrected for {' '.join(y[1:])})")
-                dn2df_[label]=pg.partial_corr(data=chunk, 
-                                        tail='two-sided', method=method,
-                                         **params)
-#                 print(dn2df_[label])
-#                 print(params)
-                for k in params:
-                    dn2df_[label].loc[method,k]=params[k] if isinstance(params[k],str) else str(params[k])
-        dn2df[chunki]=pd.concat(dn2df_,axis=0)
-    df1=pd.concat(dn2df,axis=0)
-    df1.index.names=['chunk #','correlation name','correlation method']
-    for c in ['x','y']:
-        if f"{c}_covar" in df1:
-            df1[f"{c}_covar"]=df1[f"{c}_covar"].apply(eval)
-    return df1.reset_index()
 
 def check_collinearity(
     df1: pd.DataFrame,
