@@ -117,13 +117,14 @@ def get_cvsplits(
     outtest: bool=True
     ) -> dict:
     """Get cross-validation splits.
+    A friendly wrapper around `sklearn.model_selection.KFold`.
 
     Args:
         X (np.array): X matrix.
         y (np.array): y vector.
         cv (int, optional): cross validations. Defaults to 5.
         random_state (int, optional): random state. Defaults to None.
-        outtest (bool, optional): output testing. Defaults to True.
+        outtest (bool, optional): output test data. Defaults to True.
 
     Returns:
         dict: output.

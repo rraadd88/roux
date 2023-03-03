@@ -358,23 +358,33 @@ def show_scatter_stats(
             resample (bool, optional): resample data. Defaults to False.
     """
     if 'spearman' in method or 'pearson' in method or 'kendalltau' in method:
-        from roux.stat.corr import get_corr
-        label,r=get_corr(data[x],data[y],
-                         method=method[0],
-                         outstr=True,
-                         resample=resample,
-                         kws_to_str=dict(
-                             show_n=show_n,
-                             show_n_prefix=show_n_prefix,
-                         ),
-                         verbose=verbose,
+        # label,r=get_corr(data[x],data[y],
+                         # method=method[0],
+                         # outstr=True,
+                         # resample=resample,
+                         # kws_to_str=dict(
+                         #     show_n=show_n,
+                         #     show_n_prefix=show_n_prefix,
+                         # ),
+                         # verbose=verbose,
                          # **kws_stat,
-                         )
+                         # )
+        from roux.stat.corr import get_corr,_to_string
+        res=get_corr(
+                data[x],data[y],
+                method=method,
+                resample=resample,
+                verbose=verbose,
+                )
+        label=_to_string(res,
+                 show_n=show_n,
+                 show_n_prefix=show_n_prefix,                 
+                 )
         if loc is None:
             ## infer
-            if r>=0:
+            if res['r']>=0:
                 loc=2
-            elif r<0:
+            elif res['r']<0:
                 loc=3
     if 'mlr' in method:
         from roux.stat.fit import get_mlr_2_str

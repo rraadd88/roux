@@ -148,7 +148,7 @@ def plot_scatter(
         ax,
         data=data,
         x=x,y=y,z=z,
-        method=stat_method,
+        method=stat_method[0],
         zorder=5,
         **stat_kws,
         )    

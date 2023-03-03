@@ -216,3 +216,6 @@ def classify_sharing(
         info(df1[f'{prefix}sharing type'].value_counts())
         info(df1[f'{prefix}sharing bin'].value_counts())
     return df1
+
+## apply on columns
+

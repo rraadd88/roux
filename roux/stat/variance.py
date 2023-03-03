@@ -14,7 +14,10 @@ def confidence_interval_95(x: np.array) -> float:
 
 def get_ci(rs,ci_type,outstr=False):
     if ci_type.lower()=='max':
-        ci=max([abs(r-np.mean(rs)) for r in rs])
+        if np.isfinite(rs).all():
+            ci=max([abs(r-np.mean(rs)) for r in rs])
+        else:
+            ci=None
     elif ci_type.lower()=='sd':
         ci=np.std(rs)
     elif ci_type.lower()=='ci':
