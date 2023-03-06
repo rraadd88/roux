@@ -13,6 +13,7 @@ def _pre(
     df:pd.DataFrame=None,
     n_min: int=10,
     verbose: bool=False,
+    test: bool=False,
     )-> pd.DataFrame:
     """
     Preprocess correlation inputs.
@@ -26,21 +27,23 @@ def _pre(
     
     Returns:
         df: preprocessed table.
-    """    
+    """
+    if test:
+        print(x.name,y.name)
     if not (isinstance(x,str) and isinstance(y,str) and not df is None):
         ## get columns
         df=pd.DataFrame({'x':x,'y':y})
         x,y='x','y'
     else:
         df=df.rename(columns={x:'x',y:'y'},errors='raise')
-    if len(df)<n_min:
-        if verbose:
-            logging.error("low sample size")
-        return
     assert df['x'].dtype in [int,float], df['x'].dtype
     assert df['y'].dtype in [int,float], df['y'].dtype
     # clean
     df=df.replace([np.inf, -np.inf], np.nan).dropna()
+    if len(df)<n_min:
+        if verbose:
+            logging.error("low sample size")
+        return
     return df
 
 def resampled(
@@ -92,7 +95,7 @@ def _post(
     Returns:
         res: dictionary containing the results.
     """    
-    if isinstance(res,float):
+    if isinstance(res,(float,int)): # int if 0
         res={'r':res,'n':n}
     elif isinstance(res,tuple):
         if len(res)==2:
@@ -106,9 +109,9 @@ def _post(
         if hasattr(res,'correlation') and hasattr(res,'pvalue'):
             res={'r':res.correlation,'P':res.pvalue,'n':n}                
         else:
-            raise ValueError(res)
+            raise ValueError((res,type(res)))
     else:
-        raise ValueError(res)
+        raise ValueError((res,type(res)))
     res['method']=method
     return res
 
@@ -120,10 +123,13 @@ def get_corr(
     method_kws: dict={},
     pval: bool=True,
     preprocess: bool=True,
+    n_min=10,
     preprocess_kws: dict={},
     resample: bool=False,
+    cv=5,
     resample_kws: dict={},
     verbose: bool=False,
+    test: bool=False,
     ) -> dict:
     """Correlation between vectors. 
     A unifying wrapper around `scipy`'s functions to calculate correlations and distances. Allows application of resampling on those functions.
@@ -158,30 +164,36 @@ def get_corr(
             ci: CI 
             ci_type: CI type
     """
+    ## check inputs
+    assert n_min>cv, f"n_min={n_min} !> cv={cv}"
+    
     if verbose:
         preprocess_kws['verbose']=True
         resample_kws['verbose']=True
     if preprocess:
-        df=_pre(x,y,df)
+        df=_pre(x,y,df,
+                n_min=n_min,
+                test=test,**preprocess_kws)
         if df is None: 
-            return
+            return {}
         x,y,n=df['x'],df['y'],len(df)
     if hasattr(stats,method+'r'):
-        get_corr=getattr(stats,method+'r')
+        method_fun=getattr(stats,method+'r')
     elif hasattr(spatial.distance,method):
         ## no-pvalue
-        get_corr=getattr(spatial.distance,method)
+        method_fun=getattr(spatial.distance,method)
     else:
         raise ValueError(method)
     if pval:
-        res=_post(get_corr(x,y,**method_kws),method,n)
+        res=_post(method_fun(x,y,**method_kws),method,n)
     else:
         res={}
     if resample:
         res_=resampled(
             x=x,y=y,
-            method_fun=get_corr,
+            method_fun=method_fun,
             method_kws=method_kws,
+            cv=cv,
             **resample_kws,
         )
         res_=_post(res_,method,n)
@@ -248,11 +260,20 @@ def get_corrs(
         
     Returns:
         DataFrame: output dataframe.
+        
+    Notes:
+        In the fast mode (fast=True), to set the number of processes, before executing the `get_corrs` command, run
+        
+            from pandarallel import pandarallel
+            pandarallel.initialize(nb_workers={},progress_bar=True,use_memory_fs=False)
     """
     # check inflation/over-representations
     if not inflation_min is None:
         from roux.lib.df import check_inflation
-        ds_=check_inflation(df1,subset=cols+cols_with)
+        ds_=check_inflation(
+            df1,
+            subset=cols+cols_with,
+            )
         ds_=ds_.loc[lambda x: x>=coff_inflation_min]
         info(ds_)
         # remove inflated
@@ -267,15 +288,26 @@ def get_corrs(
             items=cols if not cols is None else data.columns.tolist(),
             items_with= cols_with,
             **get_pairs_kws,
-            ).add_prefix('variable')
+            )
+        .add_prefix('variable')
+        .log.dropna()
     )
+    if verbose:
+        logging.info(df0.shape)
     ## get correlations
-    df1=(getattr(df0,'apply' if not fast else 'parallel_apply')
-        (lambda x: pd.Series({**{"variable1":x["variable1"],"variable2":x["variable2"]},
-                                  **get_corr(data[x["variable1"]],data[x["variable2"]],
-                                  method=method,**kws_get_corr)}),
+    df1=(
+        getattr(df0,'progress_apply' if not fast else 'parallel_apply')
+        (lambda x: pd.Series({**{"variable1":x["variable1"],
+                                 "variable2":x["variable2"]},
+                              **get_corr(
+                                  data[x["variable1"]],
+                                  data[x["variable2"]],
+                                  method=method,
+                                  **kws_get_corr,
+                                  ),
+                             }),
        axis=1,
-          )
+        )
         )
     if 'P' in df1:
         ## FDR

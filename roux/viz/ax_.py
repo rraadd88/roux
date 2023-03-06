@@ -4,6 +4,7 @@ import matplotlib.pyplot as plt
 # import seaborn as sns
 import pandas as pd
 import numpy as np
+import logging
 
 def set_axes_minimal(
     ax,
@@ -283,16 +284,19 @@ def format_ticklabels(
 
 def split_ticklabels(
     ax: plt.Axes,
+    fmt: str,
     axis='x',
-    fmt: str='paired',
-    group_x=0.01,
+    group_x=-0.5, # x-position of the group labels
     group_prefix=None,
-    group_loc='left',
+    group_suffix=False,
+    group_loc='center',
     # group_pad=0.02,
     group_colors=None,
     group_alpha=0.2,
     show_group_line=True,
-    show_group_span=True,
+    group_line_off_x=0.2,
+    show_group_span=False,
+    group_span_kws={},
     sep: str='-',
     pad_major=6,
     off: float=0.2,    
@@ -302,11 +306,17 @@ def split_ticklabels(
 
     Args:
         ax (plt.Axes): `plt.Axes` object.
+        fmt (str): 'group'-wise or 'pair'-wise splitting of the ticklabels.
+        axis (str): name of the axis: x or y.
         sep (str, optional): separator within the tick labels. Defaults to ' '.
 
     Returns:
         plt.Axes: `plt.Axes` object.
     """
+    logging.warning('Under development.')
+    ax.set(**{f"{axis}label":None})
+    if group_x==-0.5:
+        logging.warning(f'manual adjustment might be needed: group_x={group_x}, # x-position of the group labels')
     ticklabels=getattr(ax,f'get_{axis}ticklabels')()
     if fmt.startswith('pair'):
         from roux.lib.set import flatten
@@ -314,20 +324,20 @@ def split_ticklabels(
             f"{axis}ticks":flatten([[i-off,i+off] for i in range(0,len(ticklabels))]),
             f"{axis}ticklabels":flatten([t.get_text().split('-') for t in ticklabels]),
         }
-        ax.set(**kws)
+        # ax.set(**kws)
     elif fmt.startswith('group'):
+        axlims=get_axlims(ax)
         if axis=='x':logging.warning(f'axis={axis} is not tested.')
         from roux.lib.df import dict2df
-        df0_=dict2df(get_ticklabel2position(ax=ax,axis=axis),
+        df0_=dict2df(get_ticklabel_position(ax=ax,axis=axis),
                    colkey=axis+'ticklabel',colvalue=axis)
         df0_[axis+'ticklabel major']=df0_[axis+'ticklabel'].str.split(sep,1,expand=True)[0]
         df0_[axis+'ticklabel minor']=df0_[axis+'ticklabel'].str.split(sep,1,expand=True)[1]
         df_=(df0_
-        .groupby(axis+'ticklabel major')
-        .agg({axis:[min,max,len],})
-        .rd.flatten_columns()
+            .groupby(axis+'ticklabel major')
+            .agg({axis:[min,max,len],})
+            .rd.flatten_columns()
         )
-        axlims=get_axlims(ax)
         # if group_loc=='left':
         #     group_x=group_x
         #     group_x=axlims[axis]['min']-(axlims[axis]['len']*group_pad)
@@ -336,40 +346,45 @@ def split_ticklabels(
         #     group_x=axlims[axis]['max']+(axlims[axis]['len']*group_pad)
         #     group_xlabel=axlims[axis]['max']+(axlims[axis]['len']*group_pad+0.1)
         # print(axlims[axis]['min']-(group_pad*5.5))
-        if show_group_span:
-            # print(axlims[axis]['min']-(group_pad*5.5))
-            # print(group_x)
-            df_.apply(lambda x: ax.axhspan(
-            # xmin=(group_x/axlims[axis]['len'])*0.5,
-            # xmin=axlims[axis]['min']-(group_pad*5.5),
-            xmin=group_x,
-            xmax=axlims[axis]['min'], 
-            ymin=x[axis+' min']-0.5,
-            ymax=x[axis+' max']+0.5, 
-            transform="axes",
-            clip_on=False,
-            zorder=0,
-            color=None if group_colors is None else group_colors[x.name],
-            edgecolor='none',
-            alpha=group_alpha,
-            ),
-            axis=1)
+        import matplotlib.transforms as transforms
         if show_group_line:
+            # print(group_x)
             df_.apply(lambda x: ax.plot(
-                [group_x,group_x],
-                [x[axis+' min']-0.2,x[axis+' max']+0.2],
+                [group_x+group_line_off_x,group_x+group_line_off_x],
+                [x[axis+' min']-0.3,x[axis+' max']+0.3],
                 clip_on=False,
                 lw=0.5,
                 color='k',
-                # transform="axes",
+                transform=transforms.blended_transform_factory(ax.transAxes,ax.transData),
                 ),
                 axis=1)
+        if show_group_span:
+            # print(axlims[axis]['min']-(group_pad*5.5))
+            # print(axlims[axis]['min'])
+            axhspan_kws=dict(zip(['xmin','xmax'],sorted([group_x,axlims[axis]['min']])))
+            # print(axhspan_kws)
+            df_.apply(lambda x: ax.axhspan(
+                # xmin=(group_x/axlims[axis]['len'])*0.5,
+                # xmin=axlims[axis]['min']-(group_pad*5.5),
+                # xmin=group_x,
+                # xmax=axlims[axis]['min'], 
+                **dict(zip(['xmin','xmax'],sorted([group_x,axlims[axis]['min']]))), 
+                ymin=x[axis+' min']-0.5,
+                ymax=x[axis+' max']+0.5, 
+                transform="axes",
+                clip_on=False,
+                zorder=0,
+                color=None if group_colors is None else group_colors[x.name],
+                edgecolor='none',
+                alpha=group_alpha,
+                **{**group_span_kws},
+            ),
+            axis=1)
         from roux.lib.set import get_alt
-        import matplotlib.transforms as transforms
         df_.apply(lambda x: ax.text(
                                     x=group_x,#label,
                                     y=np.mean([x[axis+' min'],x[axis+' max']]),
-                                    s=(group_prefix+'\n' if not group_prefix is None else '')+f"{x.name}".replace(' ','\n')+'\n'+f"(n={int(x[axis+' len'])})",
+                                    s=(group_prefix+'\n' if not group_prefix is None else '')+f"{x.name}".replace(' ','\n')+(('\n'+f"(n={int(x[axis+' len'])})") if group_suffix else ""),
                                     color='k',
                                     # ha=get_alt(['left','right'],group_loc),
                                     ha=group_loc,
