@@ -71,7 +71,7 @@ extras_require['all']=list(set(extras_require['all']))
 
 setuptools.setup(
     name='roux',
-    version='0.0.7',
+    version='0.0.8',
     description='Helper functions.',
     long_description=long_description,
     long_description_content_type="text/markdown",

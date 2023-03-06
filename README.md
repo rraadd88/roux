@@ -1,7 +1,7 @@
 # `roux`
 Convenience functions in Python.  
 [![PyPI](https://img.shields.io/pypi/v/roux?style=flat-square&colorB=blue)![PyPI](https://img.shields.io/pypi/pyversions/roux?style=flat-square&colorB=blue)](https://pypi.org/project/roux)  
-[![build](https://img.shields.io/github/workflow/status/rraadd88/roux/build?style=flat-square&colorB=blue)](https://github.com/rraadd88/roux/actions/workflows/build.yml)  
+[![build](https://github.com/rraadd88/roux/actions/workflows/build.yml/badge.svg)](https://github.com/rraadd88/roux/actions/workflows/build.yml)  
 # Installation
     
 ```
@@ -7189,7 +7189,7 @@ get_stat(
     subsets=None,
     cols_subsets=['subset1', 'subset2'],
     df2=None,
-    stats=[<function mean at 0x7fa8847f4680>, <function median at 0x7fa8846b3680>, <function var at 0x7fa8847f4b00>, <built-in function len>],
+    stats=[<function mean at 0x7fb42a8abd40>, <function median at 0x7fb42a52dd40>, <function var at 0x7fb42a8b3200>, <built-in function len>],
     coff_samples_min=None,
     verb=False,
     **kws
@@ -7247,7 +7247,7 @@ get_stats(
     subsets=None,
     df2=None,
     cols_subsets=['subset1', 'subset2'],
-    stats=[<function mean at 0x7fa8847f4680>, <function median at 0x7fa8846b3680>, <function var at 0x7fa8847f4b00>, <built-in function len>],
+    stats=[<function mean at 0x7fb42a8abd40>, <function median at 0x7fb42a52dd40>, <function var at 0x7fb42a8b3200>, <built-in function len>],
     axis=0,
     test=False,
     **kws
