@@ -296,7 +296,7 @@ def get_corrs(
         logging.info(df0.shape)
     ## get correlations
     df1=(
-        getattr(df0,'progress_apply' if not fast else 'parallel_apply')
+        getattr(df0,'parallel_apply' if fast else 'progress_apply' if hasattr(df0,'progress_apply') else 'apply')
         (lambda x: pd.Series({**{"variable1":x["variable1"],
                                  "variable2":x["variable2"]},
                               **get_corr(
