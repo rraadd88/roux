@@ -1,10 +1,12 @@
 """For input/output of data files."""
-# io_df -> io_dfs -> io_files
 
 # paths
-from roux.lib.dfs import *
 from roux.lib.sys import * #is_interactive_notebook,basenamenoext,makedirs,get_all_subpaths
 from roux.lib.str import replace_many
+
+# import path: df -> dfs -> io
+import roux.lib.dfs as rd
+
 import logging
 
 ## operate

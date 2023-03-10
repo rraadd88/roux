@@ -1,5 +1,5 @@
 """For enrichment related stats."""
-from roux.global_imports import *
+import roux.lib.dfs as rd
 
 # set enrichment
 def get_enrichment(

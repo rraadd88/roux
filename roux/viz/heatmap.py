@@ -1,6 +1,6 @@
 """For heatmaps."""
-
-from roux.global_imports import *
+import pandas as pd
+import roux.lib.dfs as rd
 from roux.viz.ax_ import *
 
 def plot_table(

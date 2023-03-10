@@ -1,5 +1,6 @@
 """For set related stats."""
-from roux.global_imports import *
+import pandas as pd
+import roux.lib.dfs as rd
 
 # set enrichment
 def get_intersection_stats(df,coltest,colset,background_size=None):

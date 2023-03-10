@@ -1,5 +1,6 @@
 """For processing multiple pandas DataFrames/Series"""
-from roux.lib.df import *
+import pandas as pd
+import roux.lib.df as rd
 from roux.lib import to_rd
         
 def filter_dfs(
@@ -188,7 +189,8 @@ def merge_paired(
         validate=validate,
         **kws,
         )
-    d1['to']=df3.shape        
+    d1['to']=df3.shape    
+    from roux.lib.df import log_shape_change
     if verb:log_shape_change(d1)        
     return df3
 

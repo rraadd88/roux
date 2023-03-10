@@ -1,6 +1,6 @@
 """For paired stats."""
-# import pandas as pd
-from roux.global_imports import *
+import pandas as pd
+import roux.lib.dfs as rd
 
 # difference between values
 def get_ratio_sorted(

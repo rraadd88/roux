@@ -1,6 +1,6 @@
 """For comparative plots."""
-
-from roux.global_imports import * # TODOs: import only the required packages
+import pandas as pd
+import roux.lib.dfs as rd
 
 def plot_comparisons(
     plot_data,

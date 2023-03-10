@@ -1,5 +1,6 @@
 """For clustering data."""
-from roux.lib.dfs import *
+import pandas as pd
+import roux.lib.dfs as rd
 import matplotlib.pyplot as plt
 import scipy as sc
 

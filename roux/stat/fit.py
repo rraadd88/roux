@@ -1,5 +1,6 @@
 """For fitting data."""
-from roux.global_imports import * ## todos: list imports
+import pandas as pd
+import roux.lib.dfs as rd
 
 def fit_curve_fit(func,
                   xdata: np.array = None,
