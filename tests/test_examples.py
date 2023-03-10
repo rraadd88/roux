@@ -12,7 +12,8 @@ def test_stdout(tb):
 @testbook('examples/roux_lib_df.ipynb', execute=True)
 def test_stdout(tb):
     # assert tb.cell_output_text(1) == 'hello world!'
-    assert 'False' in tb.cell_output_text('validate_no_dups'), tb.cell_output_text('validate_no_dups') # 0-based
+    assert '118' in tb.cell_output_text('check_na'), tb.cell_output_text('check_na') # 0-based
+    assert '3' in tb.cell_output_text('check_nunique'), tb.cell_output_text('check_nunique') # 0-based
     assert 'sepal_length_x' in tb.cell_output_text('merge'), tb.cell_output_text('merge') # 0-based
     
 @testbook('examples/roux_lib_io.ipynb', execute=True)

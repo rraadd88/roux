@@ -159,7 +159,7 @@ def merge_paired(
         common=[common]
         
     if isinstance(left_ons[0],list):
-        logging.erorr(f'groupby on common index instead')
+        logging.error(f'Merge `on` lists not supported. Suggestion: Use groupby on one of the `on` columns of the left dataframe.')
         return 
     if suffixes is None:
         from roux.lib.str import get_suffix

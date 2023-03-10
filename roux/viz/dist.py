@@ -217,8 +217,7 @@ def plot_dists(
     offx_n: float=0,
     axis_cont_lim: tuple=None,
     axis_cont_scale: str='linear',
-    offx_pval: float=0.05,
-    offy_pval: float=None,
+    offs_pval: dict=None,
     alpha: float=0.5,
     # saturate_color_alpha: float=1.5,
     ax: plt.Axes = None,
@@ -242,8 +241,7 @@ def plot_dists(
         show_n_prefix (str, optional): show prefix of sample size label i.e. `n=`. Defaults to ''.
         offx_n (float, optional): x-offset for the sample size label. Defaults to 0.
         axis_cont_lim (tuple, optional): x-axis limits. Defaults to None.
-        offx_pval (float, optional): x-offset for the p-value labels. Defaults to 0.05.
-        offy_pval (float, optional): y-offset for the p-value labels. Defaults to None.
+        offs_pval (float, optional): x and y offsets for the p-value labels.
         # saturate_color_alpha (float, optional): saturation of the color. Defaults to 1.5.
         ax (plt.Axes, optional): `plt.Axes` object. Defaults to None.
         test (bool, optional): test mode. Defaults to False.
@@ -317,27 +315,30 @@ def plot_dists(
             d1=df2.rd.to_dict(['subset2','P (MWU test)'])
     elif (not hue is None) and (isinstance(show_p,bool) and show_p):
         from roux.stat.diff import get_stats_groupby
-        df2=get_stats_groupby(df1.loc[df1[hue].isin(hue_order),:],
-                          cols_group=[y],
-                          colsubset=hue,
-                          cols_value=[x],
-                          colindex=colindex,
-                          alpha=0.05,
-                          axis=0,
-                          **kws_stats,
-                         ).reset_index()
+        df2=get_stats_groupby(
+                df1.loc[df1[hue].isin(hue_order),:],
+                cols_group=[y],
+                colsubset=hue,
+                cols_value=[x],
+                colindex=colindex,
+                alpha=0.05,
+                axis=0,
+                **kws_stats,
+                ).reset_index()
         # df1=df1.rd.renameby_replace({f"{} ":''})
-        if test:
-            print(df2['subset1'])
         # df2=df2.loc[(df2['subset1']==hue_order[1]),:]
         # d1=df2.rd.to_dict([y,'P (MWU test)'])
         d1=df2.set_index(y)['P (MWU test)'].to_dict()
         if test:
-            print(d1)
-            
+            info(d1)
+    # print(df2.set_index(['subset1','subset2']).T)
+    ## stats printing
+    stats=df2.set_index(['subset1','subset2']).rd.dropby_patterns(['median ','mean ','var ','variable'],verbose=False)
+    info(stats)
+    del stats
     ## axes
     if ax is None:
-        _,ax=plt.subplots(figsize=[2,2])
+        ax=plt.gca()
         
     ## distributions
     if isinstance(kind,str):
@@ -354,6 +355,7 @@ def plot_dists(
             # from roux.viz.colors import saturate_color
             # kws['palette']=[saturate_color(color=c, alpha=saturate_color_alpha+0.5) for c in kws['palette']]
         if k=='box' and (('swarm' in kind) or ('strip' in kind)):
+            kws_['showfliers']=False
             kws_['boxprops']=dict(alpha=alpha)
         if k in ['swarm','strip'] and ('box' in kind):
             kws_['alpha']=alpha
@@ -386,17 +388,19 @@ def plot_dists(
                             ) for k in d1}
         else:
             d1=show_p
-        if offy_pval is None and hue is None:
-            offy_pval=-0.5
-        else:
-            offy_pval=0            
+        if offs_pval is None:
+            offs_pval={}
+        offs_pval={**{'x':0,'y':0},**offs_pval}
+        if hue is None and len(d1)==1:
+            offs_pval[axis_desc]+=-0.5
+        if test:info(offs_pval)
         if isinstance(d1,dict):
             if test:
                 info(d1,ticklabel2position,d3)
             for k,s in d1.items():
                 ax.text(**{
-                    axis_cont:d3[axis_cont]['max'],#+((d3[axis_cont]['len']*offx_pval) if axis_desc=='y' else 0),
-                    axis_desc:ticklabel2position[k]+offy_pval,
+                    axis_cont:d3[axis_cont]['max']+offs_pval[axis_cont],#+((d3[axis_cont]['len']*offx_pval) if axis_desc=='y' else 0),
+                    axis_desc:ticklabel2position[k]+offs_pval[axis_desc],
                     },
                     s=s,
                     va='center' if axis_desc=='y' else 'top',

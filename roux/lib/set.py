@@ -5,6 +5,7 @@ import pandas as pd
 import logging
 
 from functools import reduce
+
 def union(l):
     """Union of lists.
     
@@ -15,6 +16,7 @@ def union(l):
         l (list): list.
     """
     return reduce(np.union1d, (l))
+
 def intersection(l):
     """Intersections of lists.
     
@@ -52,6 +54,25 @@ def nintersection(l):
     """
     return len(intersection(l))
 
+def check_non_overlapwith(l1,l2):
+    return set(l1) - set(l2)
+
+def validate_overlapwith(l1,l2):
+    return len(check_non_overlapwith(l1,l2))==0
+    
+def assert_overlapwith(l1,l2):
+    assert validate_overlapwith(l1,l2), f'Non-ovelapping item/s: {check_non_overlapwith(l1,l2)}'    
+    
+def jaccard_index(l1,l2):
+    # if len(l1)==0 or len(l2)==0:
+    #     return 0,0,0
+    x1=len(set(l1).intersection(set(l2)))
+    x2=len(set(l1).union(set(l2)))
+    if x1==0 or len(l1)==0 or len(l2)==0:
+        return 0,x1,x2
+    else:
+        return x1/x2,x1,x2
+    
 # lists mostly for agg
 def dropna(x):
     """Drop `np.nan` items from a list.
@@ -145,16 +166,6 @@ def get_alt(l1,s,):
     """
     assert(s in l1)
     return [i for i in l1 if i!=s][0]
-
-def jaccard_index(l1,l2):
-    # if len(l1)==0 or len(l2)==0:
-    #     return 0,0,0
-    x1=len(set(l1).intersection(set(l2)))
-    x2=len(set(l1).union(set(l2)))
-    if x1==0 or len(l1)==0 or len(l2)==0:
-        return 0,x1,x2
-    else:
-        return x1/x2,x1,x2
     
 def intersections(dn2list,jaccard=False,count=True,fast=False,test=False):
     """Get intersections between lists.

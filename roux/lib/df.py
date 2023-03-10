@@ -120,6 +120,7 @@ def dropby_patterns(
     patterns=None,
     strict=False,
     test=False,
+    verbose=True,
     ):
     """Deletes columns containing substrings i.e. patterns.
 
@@ -140,7 +141,7 @@ def dropby_patterns(
     cols=df1.filter(regex=s1).columns.tolist()
     if test: info(s1)
     assert(len(cols)!=0)
-    logging.info('columns dropped:'+','.join(cols))
+    if verbose: logging.info('columns dropped:'+','.join(cols))
     return df1.log.drop(labels=cols,axis=1)
 
 ## columns reformatting
@@ -615,7 +616,7 @@ def validate_1_1_mappings(
 def get_mappings(
     df1: pd.DataFrame,
     subset=None,
-    keep='1:1',
+    keep='all',
     clean=False,
     cols=None,
     ) -> pd.DataFrame:
