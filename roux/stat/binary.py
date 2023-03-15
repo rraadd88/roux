@@ -1,5 +1,7 @@
 """For processing binary data."""
-from roux.lib.df import *
+import logging
+import numpy as np
+import pandas as pd
 
 ## overlap
 def compare_bools_jaccard(x,y):
@@ -181,7 +183,7 @@ def get_cutoff(
                 cutoff_index=np.where(ratios == ratio)[0][0]
             else:
                 # TODOs: test for sensitivity
-                raise ValueError(maximize)
+                raise ValueError(show_cutoff['maximize'])
             cutoff=df1.iloc[cutoff_index,:]#.iloc[0,:]
         else:
             df1=df1.loc[(df1['recall']!=0),:]

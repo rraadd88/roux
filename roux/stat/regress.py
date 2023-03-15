@@ -1,12 +1,16 @@
 """For regression."""
+## logging
+import logging
 from argparse import ArgumentError
+from icecream import ic as info
+## data
 import pandas as pd
 import numpy as np
-import scipy as sc
+## viz
 import matplotlib.pyplot as plt
-import logging
-from icecream import ic as info
-from roux.lib.set import *
+## stats
+import scipy as sc
+import itertools
 
 ## Correcting confounding effects
 def to_columns_renamed_for_regression(
@@ -213,6 +217,7 @@ def get_stats_regression(
     """
     if not '~' in list(formulas.keys())[0]:
         ## back-compatibility warning
+        from roux.lib.dict import flip_dict
         formulas=flip_dict(formulas)
         logging.warning('parameter `formulas` should contain formulas as keys (Opposite to the previous version where formulas were the values).')
         
@@ -501,12 +506,12 @@ def run_lr_test(
     print(f'stat {stat:.2e} pval {pval:.2e}')
     
     # results
-    dres=delunnamedcol(pd.concat({
+    dres=pd.concat({
         False:get_model_summary(modelf),
         True:get_model_summary(modelf_covariate)},
         axis=0,
         names=['covariate included','Unnamed'],
-        ).reset_index())
+        ).reset_index().rd.clean()
     return stat, pval,dres
 
 ## model QCs

@@ -1,14 +1,15 @@
 """For input/output of data files."""
 import pandas as pd
+import logging
 
 # paths
-from roux.lib.sys import * #is_interactive_notebook,basenamenoext,makedirs,get_all_subpaths
+from roux.lib.sys import (basename, basenamenoext, dirname, exists, get_datetime, glob, info,
+                          is_interactive_notebook, isdir, makedirs, read_ps, shutil, splitext,
+                          to_path) #is_interactive_notebook,basenamenoext,makedirs,get_all_subpaths
 from roux.lib.str import replace_many
-
 # import path: df -> dfs -> io
 import roux.lib.dfs as rd
 
-import logging
 
 ## operate
 def read_zip(
@@ -680,7 +681,7 @@ def apply_on_paths(
         if read_path:
             if save_table:
                 outp=replace_many(p, replaces=replaces_outp, replacewith='', ignore=False)
-                if dbug: ic(outp)
+                if dbug: logging.debug(outp)
 #                 if exists(outp):
 #                     if 'force' in kws:
 #                         if kws['force']:
@@ -882,6 +883,7 @@ def to_manytables(
     if isinstance(colgroupby,str):
         colgroupby=[colgroupby]
     if colgroupby=='chunk':
+        from roux.lib.df import get_chunks
         if not ignore:
             if exists(outd):
                 logging.error(f"can not overwrite existing chunks: {outd}/")
@@ -1072,6 +1074,7 @@ def to_excel(
         if not any([k.lower().startswith('descr') for k in sheetname2df]):
             ## insert a table with the description
             items = list(sheetname2df.items())
+            from roux.lib.df import dict2df
             items.insert(0, ('description', dict2df(comments,colkey='column name',colvalue='description')))
             sheetname2df = dict(items)
     

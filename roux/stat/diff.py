@@ -1,12 +1,18 @@
 """For difference related stats."""
-from argparse import ArgumentError
-import pandas as pd
-import numpy as np
-import scipy as sc
-import matplotlib.pyplot as plt
+## logging
 import logging
 from icecream import ic as info
-from roux.lib.set import *
+from argparse import ArgumentError
+## data
+import pandas as pd
+import numpy as np
+## stats
+import scipy as sc
+import itertools
+## viz
+import matplotlib.pyplot as plt
+## internal
+from roux.lib.set import nunique
 
 ## for linear dfs
 def get_demo_data(

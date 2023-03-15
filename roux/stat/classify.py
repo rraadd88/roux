@@ -1,6 +1,19 @@
 """For classification."""
-from roux.lib.df import *
-import  matplotlib.pyplot as plt 
+## logging
+import logging
+from icecream import ic as info
+from tqdm import tqdm
+## data
+import numpy as np
+import pandas as pd
+## viz
+import matplotlib.pyplot as plt
+import seaboorn as sns
+
+## internal
+import roux.lib.dfs as rd
+from roux.lib.df import groupby_sort_values
+from roux.lib.io import (read_dict, to_dict, read_table, to_table)
 
 # curate data 
 def drop_low_complexity(
@@ -236,6 +249,8 @@ def get_test_scores(d1: dict) -> pd.DataFrame:
     TODOs: 
         Get best param index.
     """
+    from roux.lib.str import dict2str
+    import re
     d2={}
     for k1 in d1:
 #             info(k1,dict2str(d1[k1].best_params_))
@@ -263,7 +278,7 @@ def plot_metrics(outd: str,plot: bool=False) -> pd.DataFrame:
         pd.DataFrame: output data.
     """
     d0=read_dict(f'{outd}/input.json')
-    d1=read_pickle(f'{outd}/estimatorn2grid_search.pickle')
+    d1=read_dict(f'{outd}/estimatorn2grid_search.pickle')
     df01=read_table(f'{outd}/input.pqt')
     df2=get_test_scores(d1)
     df2.loc[(df2['variable']=='average precision'),'value reference']=sum(df01[d0['coly']])/len(df01[d0['coly']])

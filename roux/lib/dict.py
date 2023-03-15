@@ -1,6 +1,6 @@
 """For processing dictionaries."""
 
-from roux.lib.set import *
+from roux.lib.set import intersections, itertools, logging, np, pd
 from roux.lib.str import dict2str,str2dict
 
 def head_dict(d, lines=5):
@@ -93,11 +93,11 @@ def flip_dict(d):
             return pd.Series(d).reset_index().groupby(0)['index'].agg(list).to_dict()
         else:
             return {d[k]:k for k in d}
-    else:
-        if not get_offdiagonal_values(intersections(d)).sum().sum()==0:
-            raise ValueError('dict values should be mutually exclusive.') 
-        d_={}
-        for k in d:
-            for v in d[k]:
-                d_[v]=k
-        return d_
+    # else:
+    #     if not get_offdiagonal_values(intersections(d)).sum().sum()==0:
+    #         raise ValueError('dict values should be mutually exclusive.') 
+    #     d_={}
+    #     for k in d:
+    #         for v in d[k]:
+    #             d_[v]=k
+    #     return d_
