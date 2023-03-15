@@ -1,7 +1,12 @@
 """For task management."""
-
-from roux.lib.io import *
-from roux.lib.sys import is_interactive_notebook
+## logging
+import logging
+from icecream import ic as info
+from tqdm import tqdm
+## internal
+from roux.lib.io import to_dict
+from roux.lib.sys import (basenamenoext, dirname, exists, get_datetime, makedirs,
+                         splitext, is_interactive_notebook)
 
 if not is_interactive_notebook():
     ## progress bar
@@ -21,7 +26,7 @@ def run_task(
     **kws_papermill,
     ):
     """
-    [UNDER DEVELOPMENT] Execute a single task.
+    Execute a single task.
     """
     if not output_notebook_path:
         ## save report i.e. output notebook
@@ -32,7 +37,7 @@ def run_task(
     ## save parameters
     to_dict(parameters,f"{dirname(output_notebook_path)}/parameters.yaml")
 
-    if verbose: info(d1)
+    if verbose: info(parameters)
     import papermill as pm
     pm.execute_notebook(
         input_path=input_notebook_path,
@@ -58,15 +63,18 @@ def run_tasks(
     test: bool=False,
     verbose: bool=False,
     **kws_papermill,
-    ):
+    )-> list:
     """
-    [UNDER DEVELOPMENT] Execute a list of tasks e.g. finding optimal settings.
+    Execute a list of tasks e.g. finding optimal settings.
     
     Parameters:
         inputs (list): list of parameters without the output paths, which would be inferred by encoding.  
         output_path_base (str): output path with a placeholder e.g. 'path/to/{KEY}/file'.  
         parameters_list (list): list of parameters including the output paths.  
     
+    Returns:
+        parameters_list (list): list of parameters including the output paths, inferred if not provided.
+        
     TODOs: 
         0. Ignore temporary parameters e.g test, verbose etc while encoding inputs. 
         1. Integrate with apply_on_paths for parallel processing etc.
@@ -96,6 +104,7 @@ def run_tasks(
         if not force:
             logging.info(f"parameters_list reduced because force=False: {before} -> {len(parameters_list)}")
     ## run tasks
+    import pandas as pd
     ds1=pd.Series(parameters_list)
     if len(ds1)!=0:
         if test1:

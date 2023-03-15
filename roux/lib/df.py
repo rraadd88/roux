@@ -1,8 +1,11 @@
 """For processing individual pandas DataFrames/Series"""
-import pandas as pd
-import numpy as np
+## logging
 import logging
 from icecream import ic as info
+## data
+import pandas as pd
+import numpy as np
+## internal
 from roux.lib import to_rd
 
 @to_rd

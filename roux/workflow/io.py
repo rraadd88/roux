@@ -1,7 +1,10 @@
 """For input/output of workflow."""
-
+## logging
+import logging
+## data
 import pandas as pd
-from roux.lib.sys import *
+from roux.lib.sys import (Path, abspath, basename, basenamenoext, create_symlink, exists, glob,
+                          info, isdir, makedirs, splitext)
 from roux.lib.io import read_ps,read_dict,is_dict
 from roux.lib.set import flatten
 
@@ -104,6 +107,7 @@ def to_parameters(
     Returns:
         dict: output.
     """
+    import inspect
     sign=inspect.signature(f)
     params={}
     for arg in sign.parameters:
