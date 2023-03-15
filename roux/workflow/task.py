@@ -24,9 +24,23 @@ def run_task(
     test=False,
     verbose=False,
     **kws_papermill,
-    ):
+    ) -> str:
     """
-    Execute a single task.
+    Run a single task.
+    
+    Prameters:
+        parameters (dict): parameters including `output_path`s.
+        input_notebook_path (dict): path to the input notebook which is parameterized.
+        kernel (str): kernel to be used.
+        output_notebook_path: path to the output notebook which is used as a report. 
+        test (bool): test-mode.
+        verbose (bool): verbose.
+        
+    Keyword parameters:
+        kws_papermill: parameters provided to the `pm.execute_notebook` function.
+    
+    Returns:
+        Output path.
     """
     if not output_notebook_path:
         ## save report i.e. output notebook
@@ -65,12 +79,22 @@ def run_tasks(
     **kws_papermill,
     )-> list:
     """
-    Execute a list of tasks e.g. finding optimal settings.
+    Run a list of tasks.
     
-    Parameters:
+    Prameters:
+        input_notebook_path (dict): path to the input notebook which is parameterized.
+        kernel (str): kernel to be used.
         inputs (list): list of parameters without the output paths, which would be inferred by encoding.  
         output_path_base (str): output path with a placeholder e.g. 'path/to/{KEY}/file'.  
         parameters_list (list): list of parameters including the output paths.  
+        fast (bool): enable parallel-processing.
+        fast_workers (bool): number of parallel-processes.
+        force (bool): overwrite the outputs.
+        test (bool): test-mode.
+        verbose (bool): verbose.
+        
+    Keyword parameters:
+        kws_papermill: parameters provided to the `pm.execute_notebook` function.
     
     Returns:
         parameters_list (list): list of parameters including the output paths, inferred if not provided.
@@ -78,7 +102,6 @@ def run_tasks(
     TODOs: 
         0. Ignore temporary parameters e.g test, verbose etc while encoding inputs. 
         1. Integrate with apply_on_paths for parallel processing etc.
-        2. Diff using `nbdime` or reporting by `quarto`.
     """
     ## save task in unique directories
     if parameters_list is None:
