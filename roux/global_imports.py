@@ -1,4 +1,4 @@
-"""For the use in interactive session only e.g. jupyter notebook."""
+"""For usage strictly in interactive sessions e.g. jupyter notebooks."""
 ## logging
 import logging
 logger = logging.getLogger()
