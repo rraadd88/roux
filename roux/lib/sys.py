@@ -373,7 +373,12 @@ def runbash_tmp(s1: str,
         else:
             logging.error(f"output file not found: {outp} ({tmp_outp})")
             
-def create_symlink(p: str,outp: str,test=False):
+def create_symlink(
+    p: str,
+    outp: str,
+    test=False,
+    force=False,
+    ):
     """Create symbolic links.
 
     Args:
@@ -383,23 +388,28 @@ def create_symlink(p: str,outp: str,test=False):
 
     Returns:
         outp (str): output path.
+        
+    TODOs:
+        Use `pathlib`: `Path(p).symlink_to(Path(outp))`
     """
     import os
-    p,outp=abspath(p),abspath(outp)
-    com=f"ln -s {p} {dirname(outp)}"
-    if os.path.islink(outp):
-        if os.readlink(outp)==abspath(p):
-            return com
-        else:
-            logging.error(f"skipped: wrong symlink {os.readlink(outp)} not {outp}")
-            return
-    if exists(outp):
-        logging.error(f"skipped: file exists {outp}")
-        return
     if not exists(p):
         logging.error(f"skipped: file does not exists {p}")
         return 
-    makedirs(abspath(dirname(outp)))
+    if exists(outp) and not force:
+        if os.path.islink(outp):
+            if os.readlink(outp)==abspath(p):
+                logging.error(f"skipped: symlink exists {outp}")
+                return
+            else:
+                logging.error(f"skipped: wrong symlink {os.readlink(outp)} not {outp}")
+                return
+        else:
+            logging.error(f"skipped: file exists {outp}")
+            return
+    p,outp=abspath(p),abspath(outp)
+    com=f"ln -s {p} {outp}"
+    makedirs(outp)
     if test: print(com)
     os.system(com)
     return outp

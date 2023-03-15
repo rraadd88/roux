@@ -2,6 +2,8 @@
 import pandas as pd
 import roux.lib.dfs as rd
 from roux.viz.ax_ import *
+import seaborn as sns
+import matplotlib.pyplot as plt
 
 def plot_table(
     df1: pd.DataFrame,

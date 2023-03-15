@@ -539,11 +539,31 @@ def assert_dense(
     return df01
 
 ## mappings
+def _post_classify_mappings(
+    df1: pd.DataFrame,
+    subset: list,
+    )->pd.DataFrame:
+    """
+    Post-process `classify_mappings`.    
+    """
+    def call_m_m(df1):
+        if df1['mapping'].nunique()!=1:
+            # multiple classes
+            from roux.lib.set import validate_overlapwith
+            if validate_overlapwith(df1['mapping'].unique(),['m:m','1:m','m:1']):
+                df1['mapping']='m:m'
+            else:
+                print(set(df1['mapping'].unique()) & set(['m:m','m:1']))
+                raise ValueError(df1['mapping'].unique())
+        return df1
+    for k in subset:
+        df1=df1.groupby(k).apply(call_m_m)
+    return df1
+
 @to_rd
 def classify_mappings(
     df1: pd.DataFrame,
-    col1: str,
-    col2: str,
+    subset,
     clean: bool=False,
     ) -> pd.DataFrame:
     """Classify mappings between items in two columns.
@@ -557,12 +577,25 @@ def classify_mappings(
     Returns:
         (pd.DataFrame): output.
     """    
-    df1[col2+' count']=df1.groupby(col1)[col2].transform('nunique')
-    df1[col1+' count']=df1.groupby(col2)[col1].transform('nunique')
-    df1['mapping']=df1.apply(lambda x: "1:1" if (x[col1+' count']==1) and (x[col2+' count']==1) else \
-                                        "1:m" if (x[col1+' count']==1) else \
-                                        "m:1" if (x[col2+' count']==1) else "m:m",
-                                        axis=1)
+    assert len(subset)==2
+    col1,col2=subset
+    df1=(df1
+    .assign(
+        **{ 
+        col1+' count':lambda df: df.groupby(col2)[col1].transform('nunique'),
+        col2+' count':lambda df: df.groupby(col1)[col2].transform('nunique'),
+        'mapping':lambda df: df.apply(lambda x: "1:1" if (x[col1+' count']==1) and (x[col2+' count']==1) else \
+                                            "1:m" if (x[col1+' count']==1) else \
+                                            "m:1" if (x[col2+' count']==1) else "m:m",
+                                            axis=1),
+        }
+        )
+    )
+    ## post-process
+    df1=_post_classify_mappings(
+        df1,
+        subset,
+        )
     if clean:
         df1=df1.drop([col1+' count',col2+' count'],axis=1)
     return df1
@@ -571,7 +604,6 @@ def classify_mappings(
 def check_mappings(
     df: pd.DataFrame,
     subset: list=None,
-    out: str='full',
     ) -> pd.DataFrame:
     """Mapping between items in two columns.
     
@@ -584,18 +616,11 @@ def check_mappings(
         ds (Series): output stats.
     """
     if subset is None: subset=df.columns.tolist()
-    import itertools
-    d={}
-    for t in list(itertools.permutations(subset,2)):
-        d[t]=df.groupby(t[0])[t[1]].nunique().value_counts()
-    df2=pd.concat(d,axis=0,ignore_index=False,names=['from','to','map to']).to_frame('map from').sort_index().reset_index(-1).loc[:,['map from','map to']]
-    if out=='full':
-        return df2
-    else:
-        return df2.loc[tuple(subset),:]#'map to'].item()
-
+    df2=classify_mappings(df,subset=subset,clean=False)
+    return df2.drop_duplicates(subset=subset).groupby(['mapping',f'{subset[0]} count',f'{subset[1]} count']).size().to_frame('mappings count')
+    
 @to_rd        
-def validate_1_1_mappings(
+def assert_1_1_mappings(
     df: pd.DataFrame,
     subset: list=None,
     ) -> pd.DataFrame:
@@ -607,10 +632,10 @@ def validate_1_1_mappings(
         out (str): format of the output.
         
     """
-    df1=check_mappings(df,
+    df1=classify_mappings(df,
                    subset=subset,
                   )
-    assert all(df1['map to']==1), df1
+    assert all(df1['mapping']=="1:1"), df1.columns
     
 @to_rd
 def get_mappings(
@@ -639,42 +664,20 @@ def get_mappings(
     if cols is None: cols=df1.columns.tolist()
     if not df1.rd.validate_no_dups(cols):
         df1=df1.loc[:,cols].log.drop_duplicates()
-    if len(cols)==2:
-        from roux.lib.set import get_alt
-        df2=df1.copy()
-        cols2=[]
-        for c in cols:
-            d1=df2.groupby(c)[get_alt(cols,c)].nunique().to_dict()
-            c2=f"{c}:{get_alt(cols,c)}"
-            df2[c2]=df2[c].map(d1)
-            cols2.append(c2)
-        df2['mapping']=df2.loc[:,cols2].apply(lambda x: ':'.join(["1" if i==1 else 'm' for i in x]),axis=1)
-        if keep=='1:1':
-            df2=df2.rd.filter_rows({'mapping':'1:1'})
+    query_expr=None
+    if isinstance(keep,str) and keep!='all':
+        ## filter
+        if  keep in ['1:1','1:m','m:1','m:m']:
+            query_expr=f"`mapping` == '{keep}'"
+        elif ":" in keep:            
+            query_expr=f"`{subset[0]} count`=={keep.split(':')[0]} and `{subset[1]} count`=={keep.split(':')[1]}"
+            clean=False # override
         else:
-            logging.info(df2['mapping'].value_counts())
-        if clean:
-            df2=df2.drop(cols2+['mapping'],axis=1)
-        return df2
-    else:
-        d1={'1:1':df1.copy(),
-           }
-        if keep!='1:1':
-            d1['not']=pd.DataFrame()
-        import itertools
-    #     for t in list(itertools.permutations(cols,2)):
-        for c in cols:
-            d1['1:1']=d1['1:1'].groupby(c).filter(lambda df: len(df)==1)
-            if keep!='1:1':
-                d1['not']=d1['not'].append(df1.copy().groupby(c).filter(lambda df: len(df)!=1))
-        if keep=='1:1':
-            logging.info(df1.shape)
-            logging.info(d1['1:1'].shape)
-            return d1['1:1']
-        else:
-            assert(len(df1)==len(d1['1:1'])+len(d1['not']))
-            return pd.concat(d1,axis=0,names=['mapping']).reset_index()
-
+            raise ValueError(keep)
+    df2=classify_mappings(df1,subset=cols,clean=clean)
+    if not query_expr is None:
+        df2=df2.log.query(expr=query_expr)
+    return df2
 
 @to_rd
 def groupby_filter_fast(
@@ -1312,7 +1315,13 @@ def sort_columns_by_values(
     
 ## ids
 @to_rd
-def make_ids(df,cols,ids_have_equal_length,sep='--',sort=False):
+def make_ids(
+    df: pd.DataFrame,
+    cols:list,
+    ids_have_equal_length: bool,
+    sep: str='--',
+    sort: bool=False,
+    ) -> pd.Series:
     """Make ids by joining string ids in more than one columns.
     
     Parameters:
@@ -1334,7 +1343,13 @@ def make_ids(df,cols,ids_have_equal_length,sep='--',sort=False):
         return df.loc[:,cols].agg(lambda x: sep.join(x if not sort else sorted(x)),axis=1)
 
 @to_rd
-def make_ids_sorted(df,cols,ids_have_equal_length,sep='--'):
+def make_ids_sorted(
+    df: pd.DataFrame,
+    cols:list,
+    ids_have_equal_length: bool,
+    sep: str='--',
+    sort: bool=False,
+    ) -> pd.Series:    
     """Make sorted ids by joining string ids in more than one columns.
     
     Parameters:
@@ -1348,7 +1363,11 @@ def make_ids_sorted(df,cols,ids_have_equal_length,sep='--'):
     """    
     return make_ids(df,cols,ids_have_equal_length,sep=sep,sort=True)
     
-def get_alt_id(s1='A--B',s2='A',sep='--'): 
+def get_alt_id(
+    s1: str,
+    s2: str,
+    sep: str='--',
+    ): 
     """Get alternate/partner id from a paired id.
     
     Parameters:

@@ -1,13 +1,15 @@
-"""For the use in jupyter notebook for example."""
+"""For the use in interactive session only e.g. jupyter notebook."""
 ## logging
 import logging
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
+import pandas as pd
 
 # helper functions
 from roux.lib.str import get_bracket, replace_many,get_suffix,get_prefix
 from roux.lib.dict import *
 from roux.lib.set import *
+import roux.lib.dfs as rd
 from roux.lib.io import * #df -> dfs -> io
 from roux.lib.dict import * # to replace df to_dict
 from roux.workflow.io import read_metadata, read_config, to_diff_notebooks

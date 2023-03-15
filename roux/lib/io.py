@@ -1,4 +1,5 @@
 """For input/output of data files."""
+import pandas as pd
 
 # paths
 from roux.lib.sys import * #is_interactive_notebook,basenamenoext,makedirs,get_all_subpaths
@@ -369,6 +370,7 @@ def read_dict(
     elif p.startswith('https'):
         from urllib.request import urlopen
         try:
+            import json
             return json.load(urlopen(p))
         except:
             print(logging.error(p))
