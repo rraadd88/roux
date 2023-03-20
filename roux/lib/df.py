@@ -582,7 +582,7 @@ def classify_mappings(
     """    
     assert len(subset)==2
     col1,col2=subset
-    df1=(df1
+    df1=(df1.copy()
     .assign(
         **{ 
         col1+' count':lambda df: df.groupby(col2)[col1].transform('nunique'),
@@ -1278,16 +1278,18 @@ def swap_paired_cols(df_,suffixes=['gene1', 'gene2']):
 @to_rd
 def sort_columns_by_values(
     df: pd.DataFrame,
-    cols_sortby=['mutation gene1','mutation gene2'],
-    suffixes=['gene1','gene2'], # no spaces
+    subset: list,
+    suffixes: list=None, # no spaces
+    order: list=None,
     clean=False,
     ) -> pd.DataFrame:
     """Sort the values in columns in ascending order.
     
     Parameters:
         df (DataFrame): input dataframe.
-        cols_sortby (list): (['mutation gene1','mutation gene2'])
-        suffixes (list): suffixes, without no spaces. (['gene1','gene2'])
+        subset (list): columns.
+        suffixes (list): suffixes.
+        order (list): ordered list.
         
     Returns:
         df (DataFrame): output dataframe.
@@ -1295,14 +1297,32 @@ def sort_columns_by_values(
     Notes:
         In the output dataframe, `sorted` means values are sorted because gene1>gene2.
     """
-    df.rd.assert_no_na(subset=cols_sortby)
+    assert len(subset)==2, subset 
+    if suffixes is None:
+        from roux.lib.str import get_suffix
+        suffixes=get_suffix(*subset,common=False, clean=True)
+        
+    ## data checks
+    df.rd.assert_no_na(subset=subset)
+
+    if not order is None:
+        ## ranks
+        ranks={s:i for i,s in enumerate(order)}
+        df=df.assign(
+            **{
+                f'_rank {subset[0]}': lambda df: df[subset[0]].map(ranks),
+                f'_rank {subset[1]}': lambda df: df[subset[1]].map(ranks),
+            }
+            )
+        subset=[f'_rank {subset[0]}',f'_rank {subset[1]}']
+        
     suffixes=[s.replace(' ','') for s in suffixes]
     dn2df={}
     # keys: (equal, to be sorted)
-    dn2df[(False,False)]=df.loc[(df[cols_sortby[0]]<df[cols_sortby[1]]),:]
-    dn2df[(False,True)]=df.loc[(df[cols_sortby[0]]>df[cols_sortby[1]]),:]
-    dn2df[(True,False)]=df.loc[(df[cols_sortby[0]]==df[cols_sortby[1]]),:]
-    dn2df[(True,True)]=df.loc[(df[cols_sortby[0]]==df[cols_sortby[1]]),:]
+    dn2df[(False,False)]=df.loc[(df[subset[0]]<df[subset[1]]),:]
+    dn2df[(False,True)]=df.loc[(df[subset[0]]>df[subset[1]]),:]
+    dn2df[(True,False)]=df.loc[(df[subset[0]]==df[subset[1]]),:]
+    dn2df[(True,True)]=df.loc[(df[subset[0]]==df[subset[1]]),:]
     ## rename columns of of to be sorted
     ## TODO: use swap_paired_cols
     rename={c:c.replace(suffixes[0],suffixes[1]) if (suffixes[0] in c) else c.replace(suffixes[1],suffixes[0]) if (suffixes[1] in c) else c for c in df}
@@ -1311,9 +1331,12 @@ def sort_columns_by_values(
                                               errors='raise')
         
     df1=pd.concat(dn2df,names=['equal','sorted']).reset_index([0,1])
-    logging.info(df1.groupby(['equal','sorted']).size())
+    logging.info(f"(equal, sorted) items: {df1.groupby(['equal','sorted']).size().to_dict()}")
     if clean:
-        df1=df1.drop(['equal','sorted'],axis=1)
+        df1=df1.drop(
+                ['equal','sorted']+(subset if not order is None else []),
+                axis=1,
+            )            
     return df1
     
 ## ids

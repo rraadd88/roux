@@ -20,45 +20,54 @@ with open('README.md', 'r') as fh:
 
 ## dependencies/requirements
 requirements = {
-'base':  """biopython>=1.71
-            regex>=2018.7.11
-            pandas>=0.25.3
-            pyyaml>=5.1
-            numpy>=1.17.3
-            matplotlib>=2.2
-            seaborn>=0.8
-            requests>=2.19.1
-            scipy>=1.1.0
-            tqdm>=4.38.0
-            fastparquet
-            pandarallel
-            xlrd
-            openpyxl
-            argh
-            icecream
-            watermark
-            omegaconf""".split('\n'),
-'stat':['statsmodels',
-        'networkx',
-        # 'pingouin',
+'base':[
+    'numpy>=1.17.3',
+    'pandas>=0.25.3',
+    'pyyaml>=5.1',
+    'matplotlib>=2.2',
+    'tqdm>=4.38.0', # logging
+    # 'regex>=2018.7.11',
+    ],
+'i':[
+    'watermark', # session info
+    'icecream', # logging
+    # 'argh',
+    'jupyter','ipywidgets','ipykernel',
+],
+'data':[
+    'pandarallel', # fast
+    'fastparquet', # fast
+    'openpyxl', # special io
+    # 'xlrd',
+],
+'stat':[
+    'scipy>=1.1.0',
+    'statsmodels',
+    'networkx',
+    # 'pingouin',
         ],
-# 'viz':['',
-#       ],
-'workflow':['snakemake',
-            'gitpython',
-            'networkx',
-            'pygraphviz'],
+'viz':[
+    'seaborn>=0.8',    
+      ],
+'workflow':[
+    'omegaconf',
+    # 'snakemake',
+    # 'gitpython',
+    # 'networkx',
+    # 'pygraphviz'
+],
+## development and maintenance
 'dev':[
     'pytest',
-    'ipython','ipywidgets','jupyter',
+    'jupyter','ipywidgets','ipykernel',
     # 'sphinx','recommonmark',
-    'lazydocs',
     'black',
     'coveralls == 3.*',
     'flake8',
     'isort',
     'pytest-cov == 2.*',
     'testbook',
+    'lazydocs', ## docs
 ],
 }
 extras_require={k:l for k,l in requirements.items() if not k=='base'}
@@ -72,7 +81,7 @@ extras_require['all']=list(set(extras_require['all']))
 setuptools.setup(
     name='roux',
     version='0.0.8',
-    description='Helper functions.',
+    description='Convenience functions.',
     long_description=long_description,
     long_description_content_type="text/markdown",
     url='http://github.com/rraadd88/roux',

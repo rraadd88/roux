@@ -232,7 +232,7 @@ def read_metadata(
                         append_to_key=k,
                         )
                 else:
-                    logging.warning(f"not exists: {d1[k][config_path_key]}")
+                    if verbose: logging.warning(f"not exists: {d1[k][config_path_key]}")
         # elif isinstance(d1[k],list):
         #     ## read list of files
         #     ### check 1st path

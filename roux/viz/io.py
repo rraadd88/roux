@@ -1,14 +1,20 @@
 """For input/output of plots."""
+## logging
+import logging
+from icecream import ic as info
+## data
+import pandas as pd
+import numpy as np
 
-# from roux.global_imports import *
+## internal
+from roux.lib.io import (read_dict, read_list, read_ps, read_table,to_dict, to_table)
+from roux.lib.sys import (basenamenoext, is_interactive_notebook, splitext, to_path, abspath, runbash, get_env, remove_exts, to_output_path)
+from roux.lib.str import replace_many
+
+## viz
 import matplotlib.pyplot as plt
 
-from roux.lib.io import *#read_ps,to_outp
-
-## logging
-
 ## matplotlib plots
-
 def to_plotp(
     ax: plt.Axes=None,
     prefix: str='plot/plot_',
@@ -226,6 +232,7 @@ def get_plot_inputs(
 def log_code():
     """Log the code.
     """
+    from IPython import get_ipython
     if is_interactive_notebook():
         logp=f'log_notebook.log'
         # if exists(logp):
@@ -233,6 +240,7 @@ def log_code():
             # logging.info(f'{logp} emptied')
         get_ipython().run_line_magic('logstart',f'{logp} over')        
         return
+# alias
 begin_plot=log_code    
 
 def get_lines(
@@ -462,7 +470,7 @@ def to_concat(
     Returns:
         str: path of the output.
     """
-    outp=to_outp(ps,**kws_outp)
+    outp=to_output_path(ps,**kws_outp)
     if use_imagemagick:
         com=f"convert {'+' if how=='h' else '-'}append {' '.join(ps)} {outp}"
         if use_conda_env:

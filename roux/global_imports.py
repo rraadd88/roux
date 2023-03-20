@@ -1,11 +1,20 @@
 """For usage strictly in interactive sessions e.g. jupyter notebooks."""
 ## logging
+try:
+    import watermark.watermark as watermark ## session info
+except ImportError:
+    raise ImportError('Install interactive-mode dependencies: pip install roux[i]')
+
 import logging
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
+## data
 import pandas as pd
 
-# helper functions
+## system
+import sys
+
+## internal functions
 from roux.lib.str import get_bracket, replace_many,get_suffix,get_prefix
 from roux.lib.dict import *
 from roux.lib.set import *
@@ -93,8 +102,6 @@ else:
     # if not get_ipython() is None:
     #     get_ipython().run_line_magic('config', "InlineBackend.figure_formats = ['svg']")
 
-## session info
-import watermark.watermark as watermark
 logging.info(watermark(python=True)+watermark(iversions=True,globals_=globals()))
 
 ## parallel processing
