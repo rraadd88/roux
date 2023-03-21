@@ -5,7 +5,6 @@ import seaborn as sns
 import pandas as pd
 import numpy as np
 from os.path import exists, basename,dirname
-from icecream import ic as info
 from roux.viz.ax_ import *
 
 def plot_range(df00: pd.DataFrame,
@@ -200,7 +199,7 @@ def plot_kinetics(
     from roux.viz.ax_ import rename_legends
     from roux.viz.colors import get_ncolors
     df1=df1.sort_values(hue,ascending=False)
-    info(df1[hue].unique())
+    logging.info(df1[hue].unique())
     if ax is None: fig,ax=plt.subplots(figsize=[2.5,2.5])
     label2color=dict(zip(df1[hue].unique(),get_ncolors(df1[hue].nunique(),
                                                             ceil=False,
@@ -209,7 +208,7 @@ def plot_kinetics(
     df2=df1.groupby([hue,x],sort=False).agg({c:[np.mean,np.std] for c in [y]}).rd.flatten_columns().reset_index()
     d1=df1.groupby([hue,x],sort=False,as_index=False).size().groupby(hue)['size'].agg([min,max]).T.to_dict()
     d2={str(k):str(k)+'\n'+(f"(n={d1[k]['min']})" if d1[k]['min']==d1[k]['max'] else f"(n={d1[k]['min']}-{d1[k]['max']})") for k in d1}
-    if test:info(d2)
+    if test:logging.info(d2)
     df2.groupby(hue,sort=False).apply(lambda df: df.sort_values(x).plot(x=x,
                                                             y=f"{y} mean",
                                                             yerr=f"{y} std",

@@ -1,7 +1,6 @@
 """For input/output of plots."""
 ## logging
 import logging
-from icecream import ic as info
 ## data
 import pandas as pd
 import numpy as np
@@ -404,7 +403,7 @@ def to_plot(
     outd=plotp
     outd=remove_exts(outd)
     if test:
-        info(outd)
+        logging.info(outd)
     df1p=f"{outd}/data.tsv"
     paramp=f"{outd}/config.yaml"    
     srcp=f"{outd}/plot.py"
@@ -441,7 +440,7 @@ def read_plot(
         if not p.endswith('.py'):
             ## remove suffixes
             p=f"{remove_exts(p)}/plot.py"
-            if test:info(p)
+            if test: logging.info(p)
         from roux.workflow.io import import_from_file
         ax=import_from_file(p).plot_(**kws)
         return ax

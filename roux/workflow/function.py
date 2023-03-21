@@ -49,7 +49,7 @@ def get_path(
     l0=[s_ for s_ in s.split(',') if '/' in s_]
     l0=[dirname(s.split('{')[0]) if (('{' in s) and (not "{metadata" in s)) else s for s in l0]
     l0=[dirname(s.split('*')[0]) if '*' in s else s for s in l0]
-    if test:info(l0)
+    if test:logging.info(l0)
     if len(l0)!=1:
         if validate:
             assert(len(l0)==1)
@@ -67,7 +67,7 @@ def get_path(
             s1=s
         else:
             s1=''
-    if test:info(s1)
+    if test:logging.info(s1)
     s1=get_quoted_path(s1)
     s1=replace_many(s1,{'//':'/','///':'/'},ignore=True)
     return s1
@@ -106,7 +106,7 @@ def get_ios(
         tuple: paths of inputs and outputs.
     """
     ios=[s_ for s_ in l if (('data/' in s_) or ('plot/' in s_) or ('figs/' in s_))]
-    if test:info(ios)
+    if test:logging.info(ios)
     inputs=[f'{get_path(s,validate=False,test=test)}' for s in ios if ('read_' in s) or (s.lstrip().startswith('p='))]
     outputs=[f'{get_path(s,validate=False,test=test)}' for s in ios if (('to_' in s) or (s.lstrip().startswith('outp='))) and (not 'prefix' in s)]
     outputs=remove_dirs_from_outputs(outputs,test=test)
@@ -154,7 +154,7 @@ def get_step(
         dict: step name to code map. 
     """
     # to_fun():
-    if test:info(name,l[-1])
+    if test:logging.info(name,l[-1])
     docs=[]
     code_with_comments=[]
     get_docs=True
@@ -172,7 +172,7 @@ def get_step(
         if get_code:
             code_with_comments.append(s)
             
-    if test:info(docs)
+    if test:logging.info(docs)
     ## [X: gets commented code] steps marked as '## #1', '## #2' ..
     # docs+=[s for s in l if s.startswith('## #')]
     ## remove leading #
@@ -185,7 +185,7 @@ def get_step(
         inputs=[s for s in inputs if not s in outputs]
 #     if name.endswith('network_networkx'):
 #         info(inputs,outputs)
-    if test:info(inputs,outputs)
+    if test:logging.info(inputs,outputs)
     if 'plot' in name:
         output_type='plots'
     elif 'figure' in name:
@@ -223,7 +223,7 @@ def get_step(
     f"    {quotes}",
     "    "+'\n    '.join(code_with_comments),
     ]
-    if test:info(function[0])
+    if test:logging.info(function[0])
     function='\n'.join(function)
     return {'function':function,'config':config_str,'inputs':inputs,'outputs':outputs,}
 
@@ -264,7 +264,7 @@ def to_task(
     # info(notebookp,pyp)
     # brk
     if exists(pyp) and not force and not test: return 
-    if verbose: info(basename(notebookp))
+    if verbose: logging.info(basename(notebookp))
     from roux.workflow.io import to_py, get_lines
     if not test:
         to_py(notebookp,
@@ -276,7 +276,7 @@ def to_task(
     if not path_prefix is None:
         l0=[replace_many(s,{'data/':'../data/'},ignore=True) for s in l0]
     taskn=basenamenoext(pyp)
-    if test: info(taskn)
+    if test: logging.info(taskn)
     d0={}
     get=False
     get_header=True

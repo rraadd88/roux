@@ -3,8 +3,7 @@
 import logging
 ## data
 import pandas as pd
-from roux.lib.sys import (Path, abspath, basename, basenamenoext, create_symlink, exists, glob,
-                          info, isdir, makedirs, splitext)
+from roux.lib.sys import (Path, abspath, basename, basenamenoext, create_symlink, exists, glob, isdir, makedirs, splitext)
 from roux.lib.io import read_ps,read_dict,is_dict
 from roux.lib.set import flatten
 

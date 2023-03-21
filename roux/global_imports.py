@@ -8,6 +8,10 @@ except ImportError:
 import logging
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
+
+from icecream import ic as info
+info.configureOutput(prefix='INFO:icrm:')
+
 ## data
 import pandas as pd
 

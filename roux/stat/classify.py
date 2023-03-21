@@ -1,7 +1,6 @@
 """For classification."""
 ## logging
 import logging
-from icecream import ic as info
 from tqdm import tqdm
 ## data
 import numpy as np
@@ -48,15 +47,15 @@ def drop_low_complexity(
     df_=pd.concat([df1.rd.check_nunique(cols),df1.rd.check_inflation(cols)],axis=1,)
     df_.columns=['nunique','% inflation']
     if verbose:
-        info(df_)
+        logging.info(df_)
     df_=df_.sort_values(df_.columns.tolist(),ascending=False)
     df1_=df_.loc[((df_['nunique']<=min_nunique) | (df_['% inflation']>=max_inflation)),:]
     l1=df1_.index.tolist()
-    info(df1_)
+    logging.info(df1_)
     if not max_nunique is None:
         df2_=df_.loc[(df_['nunique']>max_nunique),:]
         l1+=df2_.index.tolist()
-        info(df2_)
+        logging.info(df2_)
     
 #     def apply_(x,df1,min_nunique,max_inflation):
 #         ds1=x.value_counts()
@@ -66,7 +65,7 @@ def drop_low_complexity(
     if len(cols_keep)!=0:
         assert all([c in df1 for c in cols_keep]), ([c for c in cols_keep if not c in df1])
         cols_kept=[c for c in l1 if c in cols_keep]
-        info(cols_kept)
+        logging.info(cols_kept)
         l1=[c for c in l1 if not c in cols_keep]
         
     return df1.log.drop(labels=l1,axis=1)
@@ -107,7 +106,7 @@ def get_Xy_for_classification(
         df1[coly]=df1.progress_apply(lambda x: True if x[coly]>=lims[0] else False if x[coly]<lims[1] else np.nan,axis=1)
         df1=df1.log.dropna()
     df1[coly]=df1[coly].apply(bool)
-    info(df1[coly].value_counts())
+    logging.info(df1[coly].value_counts())
     y=df1[coly]
     X=df1.loc[:,cols_X]
     # remove low complexity features
@@ -206,8 +205,8 @@ def get_grid_search(modeln: str,
                                scoring=scoring,
                                **kws)
     grid_search.fit(X, y)
-    info(modeln,grid_search.best_params_)
-    info(modeln,grid_search.best_score_)
+    logging.info(modeln,grid_search.best_params_)
+    logging.info(modeln,grid_search.best_score_)
     return grid_search
 
 def get_estimatorn2grid_search(estimatorn2param_grid: dict,
@@ -434,7 +433,7 @@ def run_grid_search(df: pd.DataFrame,
         for k in estimatorn2param_grid:
             if 'n_estimators' not in estimatorn2param_grid[k]:
                 estimatorn2param_grid[k]['n_estimators']=[n_estimators]
-        if test: info(estimatorn2param_grid)
+        if test: logging.info(estimatorn2param_grid)
         d={}
         for k1 in estimatorn2param_grid:
             d[k1]={}
@@ -442,7 +441,7 @@ def run_grid_search(df: pd.DataFrame,
                 if isinstance(estimatorn2param_grid[k1][k2],list):
                     d[k1][k2]=estimatorn2param_grid[k1][k2]
         estimatorn2param_grid=d
-    if test: info(estimatorn2param_grid)
+    if test: logging.info(estimatorn2param_grid)
     params=get_Xy_for_classification(df.set_index(colindex),coly=coly,
                                     qcut=qcut,drop_xs_low_complexity=drop_xs_low_complexity,
                                     min_nunique=min_nunique,

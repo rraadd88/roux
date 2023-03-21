@@ -1,7 +1,6 @@
 """For processing individual pandas DataFrames/Series"""
 ## logging
 import logging
-from icecream import ic as info
 ## data
 import pandas as pd
 import numpy as np
@@ -142,7 +141,7 @@ def dropby_patterns(
     s0='|'.join(patterns).replace('(','\(').replace(')','\)')
     s1=f"{'^' if strict else ''}.*({s0}).*{'$' if strict else ''}"
     cols=df1.filter(regex=s1).columns.tolist()
-    if test: info(s1)
+    if test: logging.info(s1)
     assert(len(cols)!=0)
     if verbose: logging.info('columns dropped:'+','.join(cols))
     return df1.log.drop(labels=cols,axis=1)

@@ -5,10 +5,8 @@ import pandas as pd
 import numpy as np
 import logging
 
-try:
-    import matplotlib.pyplot as plt
-except ImportError:
-    raise ImportError('Install roux-viz dependencies: pip install roux[viz]')
+## viz basic
+import matplotlib.pyplot as plt
 
 def set_axes_minimal(
     ax,

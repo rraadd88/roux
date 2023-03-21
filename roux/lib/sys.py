@@ -563,7 +563,3 @@ def get_logger(program='program',argv=None,level=None,dp=None):
     handler.setFormatter(formatter)
     logger.addHandler(handler)
     return logp
-
-# log
-from icecream import ic as info
-info.configureOutput(prefix='INFO:icrm:')

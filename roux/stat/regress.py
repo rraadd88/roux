@@ -2,7 +2,6 @@
 ## logging
 import logging
 from argparse import ArgumentError
-from icecream import ic as info
 ## data
 import pandas as pd
 import numpy as np
@@ -40,7 +39,7 @@ def to_columns_renamed_for_regression(
                         df1=df1.assign(
                             **{c:lambda df: (df[c]==columns['desc_test_values'][c]).astype(int)}
                         )
-                        info(df1[c].value_counts())
+                        logging.info(df1[c].value_counts())
                         
     from roux.lib.dict import merge_dicts
     rename_columns=merge_dicts(rename_columns)                       
@@ -73,7 +72,7 @@ def check_covariates(
         )
 
     for c in covariates:
-        info(df1.groupby(c)[colindex].nunique())
+        logging.info(df1.groupby(c)[colindex].nunique())
 
     from roux.stat.classify import drop_low_complexity
     df2=drop_low_complexity(
@@ -222,7 +221,7 @@ def get_stats_regression(
         logging.warning('parameter `formulas` should contain formulas as keys (Opposite to the previous version where formulas were the values).')
         
     if test and hasattr(data,'name'):
-        info(data.name)
+        logging.info(data.name)
     ## functions
     def to_df(res):
         if isinstance(res.summary().tables[1],pd.DataFrame):
@@ -273,13 +272,13 @@ def get_stats_regression(
         else:
             logging.error(model)
             return
-        if verb or test: info(str(model))
+        if verb or test: logging.info(str(model))
         ### label for the model
         modeln=str(model).split('.')[-1].split("'")[0]
         
         ## construct full formula
         # formula=formula_base+formula_covariates
-        if verb or test: info(formula)
+        if verb or test: logging.info(formula)
         try:
             fitted_models[(modeln,formula)]=model(
                 data=data,
@@ -381,7 +380,7 @@ def to_filteredby_variable(
         
     if not coff_q is None:
         df3[f"Q<{coff_q}"]=df3['Q']<coff_q
-        info(sum(df3['P']<coff_q),sum(df3['Q']<coff_q)) 
+        logging.info(sum(df3['P']<coff_q),sum(df3['Q']<coff_q)) 
     else:
         logging.warning(f"coff_q={coff_q}")
     if not coff_p_covariates is None:
@@ -402,9 +401,9 @@ def to_filteredby_variable(
                 .loc[:,[colindex]]
                 )
         except:
-            info(df5['value'].unique())
+            logging.info(df5['value'].unique())
         df3[f'no covariate significant (P<{coff_p_covariates})']=df3[colindex].isin(df6[colindex])
-        info(sum(df3[f'no covariate significant (P<{coff_p_covariates})']))
+        logging.info(sum(df3[f'no covariate significant (P<{coff_p_covariates})']))
     else:
         logging.warning(f"coff_p_covariates={coff_p_covariates}")
     return df3

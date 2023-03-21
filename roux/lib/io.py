@@ -3,9 +3,7 @@ import pandas as pd
 import logging
 
 # paths
-from roux.lib.sys import (basename, basenamenoext, dirname, exists, get_datetime, glob, info,
-                          is_interactive_notebook, isdir, makedirs, read_ps, shutil, splitext,
-                          to_path) #is_interactive_notebook,basenamenoext,makedirs,get_all_subpaths
+from roux.lib.sys import (basename, basenamenoext, dirname, exists, get_datetime, glob,is_interactive_notebook, isdir, makedirs, read_ps, shutil, splitext,to_path) #is_interactive_notebook,basenamenoext,makedirs,get_all_subpaths
 from roux.lib.str import replace_many
 # import path: df -> dfs -> io
 import roux.lib.dfs as rd

@@ -3,7 +3,6 @@ import numpy as np
 
 import matplotlib.pyplot as plt
 import logging
-from icecream import ic as info
 
 def labelplots(
     axes: list=None,

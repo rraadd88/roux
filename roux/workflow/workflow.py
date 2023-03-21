@@ -1,6 +1,7 @@
 """For workflow management."""
+import logging
 from pathlib import Path
-from roux.lib.sys import logging,exists,dirname,basename,makedirs,basenamenoext,info,abspath
+from roux.lib.sys import logging,exists,dirname,basename,makedirs,basenamenoext,abspath
 from roux.lib.io import read_ps,read_dict,to_dict
 import pandas as pd
 import numpy as np
@@ -37,7 +38,7 @@ def get_scripts(
     import re
     d1={k:v for k,v in d1.items() if re.match(notebook_prefix+'.*'+notebook_suffix,k)}    
     # print(d1)
-    if test: info(d1)
+    if test: logging.info(d1)
     assert len(d1)!=0, f'no notebooks with the {notebook_prefix} prefix and {notebook_suffix} suffix found'
     if notebook_suffix!='':
         ## remove suffix
@@ -152,18 +153,18 @@ def to_scripts(
         else:
             ps=read_ps(f'{notebooksdp}/*ipynb')[::-1]
             make_all=True
-        if test: info(len(ps))
+        if test: logging.info(len(ps))
         if exists(f'{notebooksdp}/.workflow/config.yaml'):
             cfg=read_dict(f'{notebooksdp}/.workflow/config.yaml')
             if 'exclude' in cfg:
                 ps=[p for p in ps if not basename(p) in cfg['exclude']]
-                info(f"remaining few paths after excluding: {len(ps)}")
+                logging.info(f"remaining few paths after excluding: {len(ps)}")
         df2=get_scripts(ps,force=force,
                         notebook_prefix=notebook_prefix,
                         notebook_suffix=notebook_suffix,
                         sep_step=sep_step,
                         **kws)
-        if test: info(df2.shape)
+        if test: logging.info(df2.shape)
         if not make_all and exists(df_outp):
             df_=pd.read_csv(df_outp,sep='\t').rd.clean()
             df2=df_.loc[~(df_['notebook path'].isin(ps)),:].append(df2).drop_duplicates()
@@ -171,7 +172,7 @@ def to_scripts(
             # else:
             #     logging.warning('likely incomplete workflow')
         df2.to_csv(df_outp,sep='\t')
-        if test: info(df_outp)
+        if test: logging.info(df_outp)
         ## make __init__.py if not exists
         initp=Path(f'{notebooksdp}/lib/__init__.py')
         if not initp.exists(): initp.touch()

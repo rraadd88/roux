@@ -1,7 +1,6 @@
 """For task management."""
 ## logging
 import logging
-from icecream import ic as info
 from tqdm import tqdm
 ## internal
 from roux.lib.io import to_dict
@@ -47,11 +46,11 @@ def run_task(
         output_notebook_path=f"{splitext(parameters['output_path'])[0]}_reports/{get_datetime()}_{basenamenoext(input_notebook_path)}.ipynb"
         makedirs(output_notebook_path)
     if test:
-        info(parameters['output_path'],output_notebook_path)
+        logging.info(parameters['output_path'],output_notebook_path)
     ## save parameters
     to_dict(parameters,f"{dirname(output_notebook_path)}/parameters.yaml")
 
-    if verbose: info(parameters)
+    if verbose: logging.info(parameters)
     import papermill as pm
     pm.execute_notebook(
         input_path=input_notebook_path,

@@ -25,6 +25,7 @@ def plot_venn(
     """
     # if ds1.dtypes!='int':
     if isinstance(ds1,dict):
+        from roux.lib.df import dict2df
         df_=to_map_binary(dict2df(ds1).explode('value'),colgroupby='key',colvalue='value')
         ds2=df_.groupby(df_.columns.tolist()).size()
     elif isinstance(ds1,pd.Series):

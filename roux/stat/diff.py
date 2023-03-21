@@ -1,7 +1,6 @@
 """For difference related stats."""
 ## logging
 import logging
-from icecream import ic as info
 from argparse import ArgumentError
 ## data
 import pandas as pd
@@ -330,7 +329,7 @@ def get_significant_changes(
         ## call change if both mean and median are changed
         # df1.loc[((df1.filter(like=f'difference between {changeby}')>0).T.sum()==2),'change']='increase'
         # df1.loc[((df1.filter(like=f'difference between {changeby}')<0).T.sum()==2),'change']='decrease'
-        info(changeby)
+        logging.info(changeby)
         df1.loc[(df1[f'difference between {changeby} (subset1-subset2)']>0),'change']='increase'
         df1.loc[(df1[f'difference between {changeby} (subset1-subset2)']<0),'change']='decrease'
         df1['change']=df1['change'].fillna('ns')
@@ -445,7 +444,7 @@ def get_diff(
                   names=['variable x'],
                  ).reset_index().rd.clean().log.dropna()
     if test:
-        info(df2.iloc[0,:])
+        logging.info(df2.iloc[0,:])
     ## calculate the differences
     df3=get_stats_groupby(
         df1=df2,

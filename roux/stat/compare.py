@@ -1,6 +1,6 @@
 """For comparison related stats."""
 ## logging
-from icecream import ic as info
+import logging
 ## data
 import numpy as np
 import pandas as pd
@@ -77,7 +77,7 @@ def get_cols_x_for_comparison(
             coff_pval=0.05,
         )
         if verbose:
-            info(ds1_)
+            logging.info(ds1_)
     
     ## get descrete x columns
     ds2_=df1.nunique().sort_values()
@@ -144,19 +144,19 @@ def to_preprocessed_data(
             import scipy as sc
             for c in columns['cols_x']['cont']: 
                 df1[c]=sc.stats.zscore(df1[c],nan_policy='omit')
-            if verbose: info(df1.loc[:,columns['cols_x']['cont']].describe().loc[['mean','std'],:])
+            if verbose: logging.info(df1.loc[:,columns['cols_x']['cont']].describe().loc[['mean','std'],:])
 
     ## Fill missing values
     if fill_missing_cont_value!=False:
         for c in columns['cols_x']['cont']: 
             if df1[c].isnull().any():
-                if verbose: info(df1[c].isnull().sum()) 
+                if verbose: logging.info(df1[c].isnull().sum()) 
                 df1[c]=df1[c].fillna(fill_missing_cont_value)
             
     if fill_missing_desc_value!=False:
         for c in columns['cols_x']['desc']: 
             if df1[c].isnull().any():
-                if verbose: info(df1[c].isnull().sum()) 
+                if verbose: logging.info(df1[c].isnull().sum()) 
                 df1[c]=df1[c].fillna(fill_missing_desc_value) 
     return df1
 
@@ -195,7 +195,7 @@ def get_comparison(
             **kws,
             )
         if verbose:
-            info(d1)
+            logging.info(d1)
     
     ## gather stats in a dictionary
     if between_ys:

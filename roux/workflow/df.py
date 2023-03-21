@@ -2,7 +2,6 @@
 
 import logging
 import pandas as pd
-from icecream import ic as info
 
 ## metadata to process the data
 def exclude_items(
