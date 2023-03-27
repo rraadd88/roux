@@ -402,6 +402,8 @@ def to_diff_notebooks(
     """
     "Diff" notebooks using `nbdiff` (https://nbdime.readthedocs.io/en/latest/)
     
+    Start the nb-diff session by running: `nbdiff-web`
+    
     Todos:
         1. Deprecate if functionality added to `nbdiff-web`.
     """
@@ -415,3 +417,110 @@ def to_diff_notebooks(
         logging.info('Differences between notebooks:')
         logging.info('\n'.join(urls_output))
     return urls_output
+
+## post-processing
+def removestar(
+    nb_path,
+    output_path=None,
+    replace_from='from roux.global_imports import *',
+    py_path=None,
+    in_place: bool=False,
+    return_replacements: bool=True,
+    attributes={
+        'pandarallel':['parallel_apply'],
+        'rd':['.rd.','.log.']
+    },
+    verbose: bool=False,
+    test: bool=False,
+    **kws_fix_code,
+    ):
+    """
+    Post-development in jupyter notebook, remove wildcard (global) import of from roux i.e. 'from roux.global_imports import *'.
+    
+    Parameters
+        nb_path (str): path to the notebook.
+        output_path (str): path to the output.
+        py_path (str): path to the intermediate .py file.
+        in_place (bool): whether to carry out the modification in place.
+        return_replacements (bool): return dict with strings to be replaced.
+        attributes (dict): attribute names mapped to their keywords for searching.
+        verbose (bool): verbose toggle.
+        test (bool): test-mode if output file not provided and in-place modification not allowed.
+    
+    Returns:
+        output_path (str): path to the modified notebook.            
+    """
+    from roux.workflow.function import get_global_imports
+    ## infer input parameters
+    if output_path is None:
+        if in_place:
+            output_path=nb_path
+        else:
+            test=True
+            verbose=True
+    if py_path is None:
+        import tempfile
+        py_fh=tempfile.NamedTemporaryFile()
+        py_path=py_fh.name
+        py_path_temp=True
+    else:
+        py_fh=open(py_path, 'w+')
+        py_path_temp=False
+
+    try:
+        from removestar.removestar import removestar_nb, replace_in_nb
+    except ImportError as error:
+        logging.error(f'Installed requirements using command: pip install git+https://github.com/rraadd88/removestar.git@nb')
+
+    replaces=removestar_nb(
+        nb_path=nb_path,
+        output_path=None,
+        py_path=py_path,
+        return_replacements=return_replacements,
+        **kws_fix_code,
+        )
+    
+    if replace_from in replaces:
+        imports=replaces[replace_from]
+        if imports!='':
+            imports=imports.split(' import ')[1].split(', ')
+            if verbose: logging.info(f"imports={imports}")            
+        else:
+            imports=[]
+            logging.warning(f"no function imports found in '{nb_path}'")    
+    else:
+        logging.warning(f"'{replace_from}' not found in '{nb_path}'")    
+        return 
+
+    code=open(py_path,'r').read()
+    imports_attrs=[k for k,v in attributes.items() if any([s in code for s in v])]
+    if len(imports_attrs)==0:
+        logging.warning(f"no function imports found in '{nb_path}'")    
+        
+    if len(imports+imports_attrs)==0:
+        logging.warning(f"no imports found in '{nb_path}'")    
+        return 
+    
+    df2=get_global_imports()
+    def get_lines_replace_with(imports,df2): 
+        ds=df2.query(expr=f"`function name` in {imports}").apply(lambda x: f"## {x['function comment']}\n{x['import statement']}",axis=1)
+        # print(ds)
+        lines=ds.tolist()
+        return '\n'.join(lines)
+    
+    replace_with=''
+    if len(imports)!=0:
+        replace_with+=get_lines_replace_with(imports,df2.query("`attribute`==False"))
+
+    if len(imports_attrs)!=0:
+        replace_with+='\n'+get_lines_replace_with(imports_attrs,df2.query("`attribute`==True"))
+        
+    replace_with=replace_with.strip()
+    if verbose:logging.info(f"replace_with:\n{replace_with}")
+
+    replace_in_nb(
+            nb_path,
+            replaces={replace_from:replace_with},
+            cell_type='code',
+            output_path=output_path,
+            )

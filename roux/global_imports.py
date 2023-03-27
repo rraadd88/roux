@@ -1,7 +1,15 @@
-"""For usage strictly in interactive sessions e.g. jupyter notebooks."""
-## logging
+"""
+For importing commonly used functions.
+
+Usage: in interactive sessions (e.g. in jupyter notebooks) to facilitate faster code development.
+
+Note: Post-development, to remove *s from the code, use removestar (pip install removestar).
+    
+    removestar file.py
+"""
+## logging functions
 try:
-    import watermark.watermark as watermark ## session info
+    import watermark.watermark as watermark # session info
 except ImportError:
     raise ImportError('Install interactive-mode dependencies: pip install roux[i]')
 
@@ -12,36 +20,42 @@ logger.setLevel(logging.INFO)
 from icecream import ic as info
 info.configureOutput(prefix='INFO:icrm:')
 
-## data
+## data functions
+import numpy as np
 import pandas as pd
 
-## system
+## system functions
 import sys
-
-## internal functions
-from roux.lib.str import get_bracket, replace_many,get_suffix,get_prefix
-from roux.lib.dict import *
-from roux.lib.set import *
-import roux.lib.dfs as rd
-from roux.lib.io import * #df -> dfs -> io
-from roux.lib.dict import * # to replace df to_dict
-from roux.workflow.io import read_metadata, read_config, to_diff_notebooks
-from roux.workflow.df import *
+from pathlib import Path
+from os.path import exists,dirname,basename,abspath,isdir,splitext
+from glob import glob
+## system functions from roux
+from roux.lib.sys import read_ps, basenamenoext, to_path, makedirs, get_datetime
+from roux.lib.io import read_dict, to_dict, read_table, to_table
+## data functions from roux
+from roux.lib.str import get_bracket, replace_many, get_suffix, get_prefix
+from roux.lib.set import dropna, flatten, assert_overlaps_with
+from roux.lib.dict import merge_dicts
+import roux.lib.dfs as rd # attributes
+## workflow functions from roux
+from roux.workflow.io import read_metadata #, read_config, to_diff_notebooks
 
 # diplay tables
 # from functools import partialmethod
 # pd.DataFrame.head = partialmethod(pd.DataFrame.head, n=1)
 # pd.set_option('display.max_rows', 2)
 
-# commonly used stats functions
+## stats functions
 import scipy as sc
+
+## stats functions from roux
 from roux.stat.binary import perc
 from roux.stat.io import perc_label
 
-# plots
+## visualization functions
 import matplotlib.pyplot as plt
 import seaborn as sns
-## settings
+# settings
 FONTSIZE=12
 PAD=2
 plt.set_loglevel('error')
@@ -60,7 +74,7 @@ plt.rcParams['axes.prop_cycle']= cycler('color',[
     "#046C9A",#blue
     "#00A08A", "#F2AD00", "#F98400", "#5BBCD6", "#ECCBAE", "#D69C4E", "#ABDDDE", "#000000"])
 # plt.rc('grid', lw=0.2,linestyle="-", color=[0.98,0.98,0.98])
-## ticks
+# ticks
 # plt.rcParams['xtick.color']=[0.95,0.95,0.95]
 plt.rc('axes', grid=False,axisbelow=True,unicode_minus=False,
        labelsize=FONTSIZE,
@@ -80,35 +94,33 @@ plt.rcParams["xtick.major.pad"] = PAD
 plt.rcParams["ytick.major.pad"] = PAD
 plt.rcParams["xtick.direction"] = "in"
 plt.rcParams["ytick.direction"] = "in"
-## scale
+# scale
 plt.rc('figure',figsize = (3, 3))
 plt.rc('figure.subplot',wspace= 0.3,hspace= 0.3)
 # sns.set_context('notebook') # paper < notebook < talk < poster
 
-## helper functions
-from roux.viz.figure import labelplots
-from roux.viz.io import begin_plot,get_plot_inputs,to_plot,read_plot
-from roux.viz.ax_ import *
-from roux.viz.annot import *
+## visualization functions from roux
+from roux.viz.io import begin_plot,to_plot,read_plot
 from roux.viz.colors import get_colors_default
 
+## logging functions
 from tqdm import tqdm
-# from roux.lib.sys import is_interactive_notebook
+## system functions from roux
+from roux.lib.sys import is_interactive_notebook
 if not is_interactive_notebook():
-    ## progress bar
+    # progress bar
     tqdm.pandas()
 else:
+    ## logging functions
     from tqdm import notebook
     notebook.tqdm().pandas()
-    ## markdown in jupyter containing variables
     from IPython.display import Markdown as info_nb
-    ## display vector graphics in jupyter
+    # display vector graphics in jupyter
     # if not get_ipython() is None:
     #     get_ipython().run_line_magic('config', "InlineBackend.figure_formats = ['svg']")
 
 logging.info(watermark(python=True)+watermark(iversions=True,globals_=globals()))
 
-## parallel processing
-from pandarallel import pandarallel
-pandarallel.initialize(nb_workers=6,progress_bar=True,use_memory_fs=False)
+## parallel-pocessing functions
+from pandarallel import pandarallel;pandarallel.initialize(nb_workers=6,progress_bar=True,use_memory_fs=False) # attributes
 # logging.info("pandarallel.initialize(nb_workers=4,progress_bar=True)")

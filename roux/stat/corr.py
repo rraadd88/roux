@@ -5,7 +5,6 @@ import numpy as np
 from scipy import stats,spatial
 
 import logging
-from roux.lib.sys import info
 
 def _pre(
     x:str,
@@ -275,7 +274,7 @@ def get_corrs(
             subset=cols+cols_with,
             )
         ds_=ds_.loc[lambda x: x>=coff_inflation_min]
-        info(ds_)
+        logging.info(ds_)
         # remove inflated
         cols=[c for c in cols if not c in ds_.index.tolist()]
         cols_with=[c for c in cols_with if not c in ds_.index.tolist()]

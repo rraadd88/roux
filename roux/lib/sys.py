@@ -1,7 +1,7 @@
 """For processing file paths for example."""
 #(str ->) sys -> io
 ## for file paths
-from os.path import exists,dirname,basename,abspath,isdir,realpath,splitext ## prefer `pathlib` over `os.path`
+from os.path import exists,dirname,basename,abspath,isdir,splitext ## prefer `pathlib` over `os.path`
 from pathlib import Path
 from glob import glob
 from roux.lib.str import replace_many, encode

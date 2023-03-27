@@ -54,14 +54,14 @@ def nintersection(l):
     """
     return len(intersection(l))
 
-def check_non_overlapwith(l1,l2):
+def check_non_overlaps_with(l1,l2):
     return set(l1) - set(l2)
 
-def validate_overlapwith(l1,l2):
-    return len(check_non_overlapwith(l1,l2))==0
+def validate_overlaps_with(l1,l2):
+    return len(check_non_overlaps_with(l1,l2))==0
     
-def assert_overlapwith(l1,l2):
-    assert validate_overlapwith(l1,l2), f'Non-ovelapping item/s: {check_non_overlapwith(l1,l2)}'    
+def assert_overlaps_with(l1,l2):
+    assert validate_overlaps_with(l1,l2), f'Non-ovelapping item/s: {check_non_overlaps_with(l1,l2)}'    
     
 def jaccard_index(l1,l2):
     # if len(l1)==0 or len(l2)==0:

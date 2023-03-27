@@ -22,6 +22,7 @@ def run_task(
     # force=False,
     test=False,
     verbose=False,
+    force=False,
     **kws_papermill,
     ) -> str:
     """
@@ -41,6 +42,8 @@ def run_task(
     Returns:
         Output path.
     """
+    if exists(parameters['output_path']) and not force:
+        return parameters['output_path']
     if not output_notebook_path:
         ## save report i.e. output notebook
         output_notebook_path=f"{splitext(parameters['output_path'])[0]}_reports/{get_datetime()}_{basenamenoext(input_notebook_path)}.ipynb"
@@ -139,6 +142,7 @@ def run_tasks(
                     input_notebook_path=input_notebook_path,
                     kernel=kernel,
                     **kws_papermill,
+                    force=force,
                     ))            
         else:
             from pandarallel import pandarallel
@@ -149,5 +153,6 @@ def run_tasks(
                     input_notebook_path=input_notebook_path,
                     kernel=kernel,
                     **kws_papermill,
+                    force=force,
                     ))
     return parameters_list

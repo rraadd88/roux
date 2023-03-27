@@ -311,28 +311,41 @@ def clean_compress(df,kws_compress={},**kws_clean):
 
 ## nans:    
 @to_rd
-def check_na(df,
-             subset=None,
-             perc=False,
-            ):
-    """Number/percentage of missing values in columns.
+def check_na(
+    df,
+    subset=None,
+    out=True,
+    perc=False,
+    log=True,
+    ):
+    """Number of missing values in columns.
     
     Parameters:
         df (DataFrame): input dataframe.
         subset (list): list of columns.
-        perc (bool): output percentages.
+        out (bool): output, else not which can be applicable in chained operations.
         
     Returns:
         ds (Series): output stats.
-    """    
+    """
+    ## input parameters
     if subset is None: subset=df.columns.tolist()
-    if not perc:
-        return df.loc[:,subset].isnull().sum()
+    if isinstance(subset,str):
+        subset=[subset]
+        
+    ds=df.loc[:,subset].isnull().sum()
+    if perc:
+        ds=(ds/len(df))*100
+    if not out:
+        str_log=to_str(ds)
+        if log:
+            logging.info(str_log)
+            return df
+        else:
+            return str_log
     else:
-        from roux.stat.io import perc_label
-        return perc_label(df.loc[:,subset].isnull().sum(),len(df))
-        # return (df.loc[:,subset].isnull().sum()/df.loc[:,subset].agg(len))*100
-
+        return ds
+        
 @to_rd
 def validate_no_na(df,subset=None):
     """Validate no missing values in columns.
@@ -444,7 +457,11 @@ def check_inflation(df1,subset=None):
     
 ## duplicates:
 @to_rd
-def check_dups(df,subset=None,perc=False):
+def check_dups(
+    df,
+    subset=None,
+    perc=False,
+    ):
     """Check duplicates.
     
     Parameters:

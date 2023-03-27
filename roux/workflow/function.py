@@ -1,9 +1,9 @@
 """For function management."""
-
-from roux.lib.sys import isdir,exists,dirname,basename,makedirs,basenamenoext,info,logging
+import logging
+from roux.lib.sys import isdir,exists,dirname,basename,makedirs,basenamenoext
 from roux.lib.str import replace_many
 from roux.lib.io import to_path
-from roux.lib.set import unique
+from roux.lib.set import unique,dropna
 import pandas as pd
 
 def get_quoted_path(
@@ -326,3 +326,76 @@ def to_task(
         with open(pyp,'w') as f:
             f.write('\n'.join(l3)+'\n\n'+'\n\n'.join(df0['function'].tolist()))
     return '\n'.join(df0['config'].tolist()).replace('\n    ','\n').replace('    rule','rule'),df0['outputs'].tolist()
+
+def get_global_imports()-> pd.DataFrame:
+    """
+    Get the metadata of the functions imported from `from roux import global_imports`.
+    """
+    from roux import global_imports 
+
+    lines=open(global_imports.__file__,'r').read().split('\n')
+    def clean_(s):
+        if ('import ' in s or s.startswith('## ')) and not s.startswith('# '):
+            # s=s.split(' # ')[0].strip()
+            if not s in ['']:
+                return s.strip()   
+    # lines=
+    lines=dropna(list(map(clean_,lines)))
+
+    lines_grouped={}
+    k=None
+    i=0
+    for s in lines:
+        if s.startswith('## '):
+            i+=1
+            k=(i,f"{s[3:]}")
+            lines_grouped[k]=[]
+            continue
+        else:
+            lines_grouped[k].append(s)
+
+    df1=pd.Series(lines_grouped).explode().to_frame('import statement').rename_axis(['rank','function comment']).reset_index()
+    # df1
+
+    def get_function_name(s):
+        try:
+            s=s.split('import ')[1]
+            if ' as ' in s:
+                s=s.split(' as ')[1]
+            s=s.split(';')[0].split('#')[0]
+            if not ',' in s:
+                return s.strip()
+            else:
+                return [s_.strip() for s_ in s.split(',')]            
+        except:
+            print(s)
+    def clean_import_statements(s,attribute,function_name):
+        if not attribute:
+            s=s.split('# ')[0]
+            if ',' in s:
+                s=f"{s.split(' import ')[0]} import {function_name}"
+        return s
+    df2=(df1
+    .assign(
+        **{
+            'internal':lambda df: df['function comment'].apply(lambda x: 'roux' in x),
+            'function type':lambda df: df['function comment'].str.split(' ',expand=True)[0],
+            'rank':lambda df: df.groupby('function type')['rank'].transform(min),
+            'attribute':lambda df: df['import statement'].apply(lambda x: '# attribute' in x),
+            'function name':lambda df: df['import statement'].apply(get_function_name),
+          }
+    )
+    .explode('function name')
+    .assign(
+        **{
+            'import statement':lambda df: df.apply(lambda x: clean_import_statements(
+                x['import statement'],
+                x['attribute'],
+                x['function name'],
+                ),
+                axis=1),
+          }
+    )
+    .sort_values(['rank','function type','internal','attribute','function name'])
+    )
+    return df2
