@@ -1,9 +1,13 @@
 """For heatmaps."""
+import logging
 import pandas as pd
-import roux.lib.dfs as rd
-from roux.viz.ax_ import *
 import seaborn as sns
 import matplotlib.pyplot as plt
+import scipy as sc
+## internal
+import roux.lib.dfs as rd
+from roux.viz.ax_ import *
+from roux.stat.io import pval2annot
 
 def plot_table(
     df1: pd.DataFrame,
@@ -144,7 +148,7 @@ def plot_crosstab(
         if 'not' in dplot.index:
             dplot=dplot.loc[[s for s in dplot.index if s!='not']+['not'],
                             :]
-    info(stat,pval)
+    logging.info(f"stat={stat},pval={pval}")
     # dplot=dplot.sort_index(ascending=False,axis=1).sort_index(ascending=False,axis=0)
     if order_y is None:
         order_y=dplot.index.tolist()

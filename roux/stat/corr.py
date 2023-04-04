@@ -237,7 +237,7 @@ def get_corrs(
     method: str,
     cols: list=None,
     cols_with: list = None,
-    inflation_min: float=None,
+    coff_inflation_min: float=None,
     get_pairs_kws={},
     fast: bool=False,
     test: bool=False,
@@ -267,10 +267,10 @@ def get_corrs(
             pandarallel.initialize(nb_workers={},progress_bar=True,use_memory_fs=False)
     """
     # check inflation/over-representations
-    if not inflation_min is None:
+    if not coff_inflation_min is None:
         from roux.lib.df import check_inflation
         ds_=check_inflation(
-            df1,
+            data,
             subset=cols+cols_with,
             )
         ds_=ds_.loc[lambda x: x>=coff_inflation_min]
@@ -323,7 +323,7 @@ def get_corrs(
 def check_collinearity(
     df1: pd.DataFrame,
     threshold: float=0.7,
-    colvalue: str='$r_s$',
+    colvalue: str='r',
     cols_variable: list=['variable1','variable2'],
     coff_pval: float=0.05,
     method: str='spearman',
@@ -337,19 +337,16 @@ def check_collinearity(
 
     Returns:
         DataFrame: output dataframe.
-    
-    TODOs:
-        1. Calculate variance inflation factor (VIF).
     """
     cols=df1.columns.tolist()
-    df2=get_corrs(df1=df1,
+    df2=get_corrs(
+        df1,
         method=method,
         cols=cols,
         cols_with=cols,
         coff_inflation_min=coff_inflation_min,
         )
     df2=df2.loc[(df2['P']<coff_pval),:]
-
     df2['is collinear']=df2[colvalue].abs().apply(lambda x: x>=threshold)
     perc=(df2['is collinear'].sum()/len(df2))*100
     logging.info(f"collinear vars: {perc:.1f}% ({df2['is collinear'].sum()}/{len(df1.columns)})")
@@ -357,17 +354,19 @@ def check_collinearity(
         logging.info(f"max corr={df2[colvalue].max()}")
         return
     df2=df2.loc[(df2['is collinear']),:]
+    ## find subgraphs (communities) variables with correalted values
     from roux.stat.network import get_subgraphs
     df3=get_subgraphs(df2.loc[df2['is collinear'],:],cols_variable[0],cols_variable[1])
     df3=df3.groupby('subnetwork name').agg({'node name':list}).reset_index()
-    return (df3
-            .groupby('subnetwork name')
-            .progress_apply(lambda df: df2.apply(lambda x: \
-                                                 x[colvalue] if len(set([x[cols_variable[0]],x[cols_variable[1]]]) - set(df['node name'].tolist()[0]))==0 else \
-                                                 np.nan,
-                                                 axis=1).min())
-            .sort_values(ascending=False)
-           )    
+    return (
+        df3
+        .groupby('subnetwork name')
+        .apply(lambda df: df2.apply(lambda x: \
+        x[colvalue] if len(set([x[cols_variable[0]],x[cols_variable[1]]]) - set(df['node name'].tolist()[0]))==0 else \
+                                         np.nan,
+                                         axis=1).min())
+        .sort_values(ascending=False)
+        )    
 
 def pairwise_chi2(
     df1: pd.DataFrame,

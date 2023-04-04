@@ -7,7 +7,7 @@ import numpy as np
 import pandas as pd
 ## viz
 import matplotlib.pyplot as plt
-import seaboorn as sns
+import seaborn as sns
 
 ## internal
 import roux.lib.dfs as rd

@@ -143,9 +143,12 @@ def dropby_patterns(
     cols=df1.filter(regex=s1).columns.tolist()
     if test: logging.info(s1)
     assert(len(cols)!=0)
-    if verbose: logging.info('columns dropped:'+','.join(cols))
-    return df1.log.drop(labels=cols,axis=1)
-
+    if verbose: 
+        logging.info('columns dropped:'+','.join(cols))
+        return df1.log.drop(labels=cols,axis=1)
+    else:
+        return df1.drop(labels=cols,axis=1)
+        
 ## columns reformatting
 @to_rd
 def flatten_columns(

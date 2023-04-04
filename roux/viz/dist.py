@@ -1,5 +1,6 @@
 """For distribution plots."""
 
+import logging
 from roux.lib.df import *
 from roux.lib.set import dropna
 from roux.viz.colors import *
@@ -271,7 +272,7 @@ def plot_dists(
         axis_desc,axis_cont='x','y'
         
     if test:
-        info(x_stat,y_stat)
+        logging.info(x_stat,y_stat)
     
     ## formatting the table
     df1=(df1
@@ -287,7 +288,7 @@ def plot_dists(
                 order=l
                 break
     if test:
-        info(order)        
+        logging.info(order)        
     ## set order of the colors
     if not hue is None and hue_order is None:
         hue_order=df1[hue].unique().tolist()
@@ -330,11 +331,11 @@ def plot_dists(
         # d1=df2.rd.to_dict([y,'P (MWU test)'])
         d1=df2.set_index(y)['P (MWU test)'].to_dict()
         if test:
-            info(d1)
+            logging.info(d1)
     # print(df2.set_index(['subset1','subset2']).T)
     ## stats printing
     stats=df2.set_index(['subset1','subset2']).rd.dropby_patterns(['median ','mean ','var ','variable'],verbose=False)
-    info(stats)
+    logging.info(stats)
     del stats
     ## axes
     if ax is None:
@@ -393,10 +394,10 @@ def plot_dists(
         offs_pval={**{'x':0,'y':0},**offs_pval}
         if hue is None and len(d1)==1:
             offs_pval[axis_desc]+=-0.5
-        if test:info(offs_pval)
+        if test:logging.info(offs_pval)
         if isinstance(d1,dict):
             if test:
-                info(d1,ticklabel2position,d3)
+                logging.info(d1,ticklabel2position,d3)
             for k,s in d1.items():
                 ax.text(**{
                     axis_cont:d3[axis_cont]['max']+offs_pval[axis_cont],#+((d3[axis_cont]['len']*offx_pval) if axis_desc=='y' else 0),
@@ -412,7 +413,7 @@ def plot_dists(
     if show_n:
         df1_=df1.groupby(y_stat).apply(lambda df: df.groupby(colindex).ngroups).to_frame('n').reset_index()
         df1_[axis_desc]=df1_[y_stat].map(ticklabel2position)
-        if test: info(df1_)
+        if test: logging.info(df1_)
         if show_n_ticklabels:
             df1_['label']=df1_.apply(lambda x: f"{x[y_stat]}\n({show_n_prefix}{x['n']})" ,axis=1)
             ax=rename_ticklabels(ax=ax,axis=axis_desc,rename=df1_.rd.to_dict([y_stat,'label']))

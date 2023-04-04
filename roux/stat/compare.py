@@ -14,12 +14,14 @@ def get_cols_x_for_comparison(
     ## drop columns
     cols_drop: list=[],
     cols_dropby_patterns: list=[],    
-    ## collinearity
-    coff_rs: float=0.7,
     ## complexity
+    drop_low_complexity: bool=True,
     min_nunique: int =5,
     max_inflation: int =50,
-
+    ## collinearity
+    check_collinearity: bool=True,
+    coff_rs: float=0.7,    
+    check_variance_inflation: bool=True,
     verbose: bool=False,
     test: bool=False,
     ) -> dict:
@@ -32,12 +34,13 @@ def get_cols_x_for_comparison(
     
     """
     ## drop columns
-    df1=(df1
-    .drop(cols_drop,axis=1)
-    .rd.dropby_patterns(cols_dropby_patterns)
-    .log.dropna(how='all',axis=1)
-    ## drop single value columns
-    .rd.drop_constants()
+    df1=(
+        df1
+        .drop(cols_drop,axis=1)
+        .rd.dropby_patterns(cols_dropby_patterns)
+        .log.dropna(how='all',axis=1)
+        ## drop single value columns
+        .rd.drop_constants()
     )
     
     ## make the dictionary with column names
@@ -50,35 +53,46 @@ def get_cols_x_for_comparison(
     columns['cols_x']={}
         
     ## get continuous cols_x
-    from roux.stat.classify import drop_low_complexity
-    df_=drop_low_complexity(
-        df1=df1,
-        min_nunique=min_nunique,
-        max_inflation=max_inflation,
-        cols=list(set(df1.select_dtypes((int,float)).columns.tolist()) - set(columns['cols_y']['cont'])),
-        cols_keep=columns['cols_y']['cont'],
-        verbose=verbose,
-        )
+    if drop_low_complexity:
+        from roux.stat.classify import drop_low_complexity
+        df_=drop_low_complexity(
+            df1=df1,
+            min_nunique=min_nunique,
+            max_inflation=max_inflation,
+            cols=list(set(df1.select_dtypes((int,float)).columns.tolist()) - set(columns['cols_y']['cont'])),
+            cols_keep=columns['cols_y']['cont'],
+            verbose=verbose,
+            )
     # except:
     #     logging.warning('skipped `drop_low_complexity`, possibly because of a single x variable')
     #     df_=df1.copy()
         
     columns['cols_x']['cont']=df_.drop(columns['cols_y']['cont'],axis=1).select_dtypes((int,float)).columns.tolist()
-    
-    if len(columns['cols_x']['cont'])>1: 
-        ## check collinearity 
-        logging.info("checking collinearity..")
-        from roux.stat.corr import check_collinearity
-        ds1_=check_collinearity(
-            df1=df1.loc[:,columns['cols_x']['cont']],
-            threshold=coff_rs,
-            colvalue='$r_s$',
-            cols_variable=['variable1','variable2'],
-            coff_pval=0.05,
-        )
-        if verbose:
-            logging.info(ds1_)
-    
+
+    if check_collinearity:
+        if len(columns['cols_x']['cont'])>1: 
+            ## check collinearity 
+            logging.info("checking collinearity..")
+            from roux.stat.corr import check_collinearity
+            ds1_=check_collinearity(
+                df1=df1.loc[:,columns['cols_x']['cont']],
+                threshold=coff_rs,
+                # colvalue='$r_s$',
+                cols_variable=['variable1','variable2'],
+                coff_pval=0.05,
+            )
+            if verbose:logging.info(ds1_)
+    if check_variance_inflation: 
+        vifs={}
+        for coly in columns['cols_y']['cont']:            
+            from roux.stat.variance import check_variance_inflation
+            vifs[coly]=check_variance_inflation(
+                        df1,
+                        coly=coly,
+                        )
+        ds2_=pd.concat(vifs,axis=0).sort_values(ascending=False)    
+        if verbose:logging.info(ds2_)
+        
     ## get descrete x columns
     ds2_=df1.nunique().sort_values()
     l1=ds2_.loc[lambda x: (x==2)].index.tolist()

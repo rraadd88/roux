@@ -540,3 +540,25 @@ def decode(s,out=None,**kws):
             return dict2df(d1,**kws)
     else:
         return s2
+    
+def to_formula(
+    replaces={
+        ' ':'SPACE',
+        '(': 'LEFTBRACKET',
+        ')': 'RIGHTTBRACKET',
+        '.':'DOT',
+        ',':'COMMA',
+        '%':'PERCENT',
+        "'":'INVCOMMA',
+        "+":'PLUS',
+        "-":'MINUS',
+        },
+    reverse=False,
+    ) -> dict:
+    """
+    Converts strings to the formula format, compatible with `patsy` for example.
+    """
+    replaces={k: f"_{v}_" for k,v in replaces.items()}
+    if reverse:
+        replaces={v:k for k,v in replaces.items()}
+    return replaces

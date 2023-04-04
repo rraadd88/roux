@@ -342,14 +342,15 @@ def show_n_legend(
 
 def show_scatter_stats(
     ax: plt.Axes,
-    data,
+    data: pd.DataFrame,
     x,y,z,
-    method,
-    resample=False,
-    show_n=True,
-    show_n_prefix='',
+    method:str,
+    resample:bool=False,
+    show_n:bool=True,
+    show_n_prefix:str='',
+    prefix:str='',
     loc=None,
-    zorder=5,
+    zorder:int=5,
     # kws_stat={},
     verbose:bool=True,
     **kws_set_label,
@@ -357,6 +358,7 @@ def show_scatter_stats(
     """
             resample (bool, optional): resample data. Defaults to False.
     """
+    label=prefix
     if 'spearman' in method or 'pearson' in method or 'kendalltau' in method:
         # label,r=get_corr(data[x],data[y],
                          # method=method[0],
@@ -376,19 +378,20 @@ def show_scatter_stats(
                 resample=resample,
                 verbose=verbose,
                 )
-        label=_to_string(res,
-                 show_n=show_n,
-                 show_n_prefix=show_n_prefix,                 
-                 )
-        if loc is None:
-            ## infer
-            if res['r']>=0:
-                loc=2
-            elif res['r']<0:
-                loc=3
+        if not res is None and len(res)!=0:
+            label+=_to_string(res,
+                     show_n=show_n,
+                     show_n_prefix=show_n_prefix,                 
+                     )
+            if loc is None:
+                ## infer
+                if res['r']>=0:
+                    loc=2
+                elif res['r']<0:
+                    loc=3
     if 'mlr' in method:
         from roux.stat.fit import get_mlr_2_str
-        label=get_mlr_2_str(
+        label+=get_mlr_2_str(
             data.loc[:,[x,y,z,]].dropna(),
             z,[x,y],
             **kws_stat,

@@ -1,4 +1,6 @@
 """For paired stats."""
+import logging
+import numpy as np
 import pandas as pd
 import roux.lib.dfs as rd
 
@@ -81,6 +83,7 @@ def get_paired_sets_stats(l1: list,l2: list,test: bool=False) -> list:
     Returns:
         list: tuple (overlap, intersection, union, ratio).
     """
+    from roux.lib.set import jaccard_index 
     if all([isinstance(l, list) for l  in [l1,l2]]):
         if test: print(l1,l2)
         l=list(jaccard_index(l1,l2))
@@ -113,8 +116,9 @@ def get_stats_paired(
     """
     assert(len(cols)==2)
     if prefix is None:
+        from roux.lib.str import get_fix
         prefix=get_fix(*cols,common=True,clean=True)
-        info(prefix)
+        logging.info(prefix)
     # from roux.stat.diff import get_ratio_sorted,get_diff_sorted
     df1[f"{prefix} {'ratio' if not input_logscale else 'diff'}"]=getattr(
         df1,'parallel_apply' if fast else "apply"
@@ -210,11 +214,11 @@ def classify_sharing(
       }
     )
     if verbose:
-        info(df1[f'{prefix}shared (>=1)'].value_counts())
-        info(df1[f'{prefix}shared (>=50%)'].value_counts())
-        info(df1[f'{prefix}shared (==100%)'].value_counts())
-        info(df1[f'{prefix}sharing type'].value_counts())
-        info(df1[f'{prefix}sharing bin'].value_counts())
+        logging.info(df1[f'{prefix}shared (>=1)'].value_counts())
+        logging.info(df1[f'{prefix}shared (>=50%)'].value_counts())
+        logging.info(df1[f'{prefix}shared (==100%)'].value_counts())
+        logging.info(df1[f'{prefix}sharing type'].value_counts())
+        logging.info(df1[f'{prefix}sharing bin'].value_counts())
     return df1
 
 ## apply on columns

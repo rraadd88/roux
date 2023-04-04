@@ -21,6 +21,7 @@ from icecream import ic as info
 info.configureOutput(prefix='INFO:icrm:')
 
 ## data functions
+import itertools
 import numpy as np
 import pandas as pd
 
@@ -34,7 +35,7 @@ from roux.lib.sys import read_ps, basenamenoext, to_path, makedirs, get_datetime
 from roux.lib.io import read_dict, to_dict, read_table, to_table
 ## data functions from roux
 from roux.lib.str import get_bracket, replace_many, get_suffix, get_prefix
-from roux.lib.set import dropna, flatten, assert_overlaps_with
+from roux.lib.set import dropna, flatten, unique, assert_overlaps_with
 from roux.lib.dict import merge_dicts
 import roux.lib.dfs as rd # attributes
 ## workflow functions from roux
@@ -100,7 +101,7 @@ plt.rc('figure.subplot',wspace= 0.3,hspace= 0.3)
 # sns.set_context('notebook') # paper < notebook < talk < poster
 
 ## visualization functions from roux
-from roux.viz.io import begin_plot,to_plot,read_plot
+from roux.viz.io import begin_plot,get_plot_inputs,to_plot,read_plot
 from roux.viz.colors import get_colors_default
 
 ## logging functions
