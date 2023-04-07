@@ -37,7 +37,15 @@ def remove_exts(
     Returns:
         s (str): output.
     """
-    return str(p).rstrip(''.join(Path(p).suffixes) if exts is None else exts)
+    if not isinstance(p,str):
+        p=str(p)
+    if exts is None:
+        exts=Path(p).suffixes
+    if isinstance(exts,(list,tuple)):
+        e=''.join(Path(p).suffixes)
+    if p.endswith(e):
+        p=p[:-len(e)]
+    return p
 
 def read_ps(
     ps,

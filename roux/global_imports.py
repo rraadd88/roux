@@ -32,7 +32,7 @@ from os.path import exists,dirname,basename,abspath,isdir,splitext
 from glob import glob
 ## system functions from roux
 from roux.lib.sys import read_ps, basenamenoext, to_path, makedirs, get_datetime
-from roux.lib.io import read_dict, to_dict, read_table, to_table
+from roux.lib.io import read_dict, to_dict, read_table, to_table, backup
 ## data functions from roux
 from roux.lib.str import get_bracket, replace_many, get_suffix, get_prefix
 from roux.lib.set import dropna, flatten, unique, assert_overlaps_with
