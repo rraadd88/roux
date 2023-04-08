@@ -8,14 +8,15 @@ Note: Post-development, to remove *s from the code, use removestar (pip install 
     removestar file.py
 """
 ## logging functions
-try:
-    import watermark.watermark as watermark # session info
-except ImportError:
-    raise ImportError('Install interactive-mode dependencies: pip install roux[i]')
-
 import logging
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
+
+try:
+    import watermark.watermark as watermark # session info
+except ImportError:
+    logger.warning('Install interactive-mode dependencies: pip install roux[interactive]')
+
 
 from icecream import ic as info
 info.configureOutput(prefix='INFO:icrm:')

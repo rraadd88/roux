@@ -28,7 +28,7 @@ requirements = {
     'tqdm>=4.38.0', # logging
     # 'regex>=2018.7.11',
     ],
-'i':[
+'interactive':[
     'watermark', # session info
     'icecream', # logging
     # 'argh',
@@ -47,7 +47,7 @@ requirements = {
     'scikit-learn',
         ],
 'viz':[
-    'seaborn>=0.8',    
+    'seaborn>=0.8',
       ],
 'workflow':[
     'omegaconf',
