@@ -1,8 +1,15 @@
 """For clustering data."""
+## logging
+import logging
+## data
+import numpy as np
 import pandas as pd
-import roux.lib.dfs as rd
+## viz
 import matplotlib.pyplot as plt
+## stats
 import scipy as sc
+## internal
+import roux.lib.dfs as rd
 
 # scikit learn       
 def check_clusters(df: pd.DataFrame):

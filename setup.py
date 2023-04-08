@@ -44,13 +44,14 @@ requirements = {
     'scipy>=1.1.0',
     'statsmodels',
     'networkx',
-    # 'pingouin',
+    'scikit-learn',
         ],
 'viz':[
     'seaborn>=0.8',    
       ],
 'workflow':[
     'omegaconf',
+    'papermill',
     # 'snakemake',
     # 'gitpython',
     # 'networkx',
