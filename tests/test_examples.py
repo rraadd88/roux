@@ -87,7 +87,8 @@ def test_roux_workflow_io(tb):
     assert tb.cell_output_text('read_configs')=='value interpolated in config1 = value from metaconfig = value1', tb.cell_output_text('read_configs')
     assert tb.cell_output_text('read_configs_with_inputs')=='value interpolated in config1 = value from metaconfig = modified', tb.cell_output_text('read_configs_with_inputs')
 
-@testbook("examples/roux_workflow_task.ipynb", execute=True)
-def test_roux_workflow_task(tb):
-    pass # execute only because tests are present in the notebook itself
-    return
+# @testbook("examples/roux_workflow_task.ipynb", execute=True)
+# def test_roux_workflow_task(tb):
+#   """TODOs: set kernel for testing."""
+#     pass # execute only because tests are present in the notebook itself
+#     return

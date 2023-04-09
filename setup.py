@@ -11,7 +11,7 @@
 
 import sys
 if (sys.version_info[0]) != (3):
-     raise RuntimeError('Python 3 required ')
+    raise RuntimeError('Python 3 required ')
 
 import setuptools
 
@@ -35,10 +35,12 @@ requirements = {
     'jupyter','ipywidgets','ipykernel',
 ],
 'data':[
-    'pandarallel', # fast
-    'fastparquet', # fast
     'openpyxl', # special io
     # 'xlrd',
+],
+'fast':[
+    'pandarallel', # fast
+    'fastparquet', # fast
 ],
 'stat':[
     'scipy>=1.1.0',

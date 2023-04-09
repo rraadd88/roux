@@ -604,8 +604,8 @@ def classify_mappings(
     df1=(df1.copy()
     .assign(
         **{ 
-        col1+' count':lambda df: df.groupby(col2)[col1].transform('nunique'),
-        col2+' count':lambda df: df.groupby(col1)[col2].transform('nunique'),
+        col1+' count':lambda df: df.groupby(col2)[col1].transform('nunique').reset_index(drop=True),
+        col2+' count':lambda df: df.groupby(col1)[col2].transform('nunique').reset_index(drop=True),
         'mapping':lambda df: df.apply(lambda x: "1:1" if (x[col1+' count']==1) and (x[col2+' count']==1) else \
                                             "1:m" if (x[col1+' count']==1) else \
                                             "m:1" if (x[col2+' count']==1) else "m:m",
