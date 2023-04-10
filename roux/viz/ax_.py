@@ -315,7 +315,6 @@ def split_ticklabels(
     Returns:
         plt.Axes: `plt.Axes` object.
     """
-    logging.warning('Under development.')
     ax.set(**{f"{axis}label":None})
     if group_x==-0.5:
         logging.warning(f'manual adjustment might be needed: group_x={group_x}, # x-position of the group labels')
@@ -333,8 +332,8 @@ def split_ticklabels(
         from roux.lib.df import dict2df
         df0_=dict2df(get_ticklabel_position(ax=ax,axis=axis),
                    colkey=axis+'ticklabel',colvalue=axis)
-        df0_[axis+'ticklabel major']=df0_[axis+'ticklabel'].str.split(sep,1,expand=True)[0]
-        df0_[axis+'ticklabel minor']=df0_[axis+'ticklabel'].str.split(sep,1,expand=True)[1]
+        df0_[axis+'ticklabel major']=df0_[axis+'ticklabel'].str.split(sep,n=1,expand=True)[0]
+        df0_[axis+'ticklabel minor']=df0_[axis+'ticklabel'].str.split(sep,n=1,expand=True)[1]
         df_=(df0_
             .groupby(axis+'ticklabel major')
             .agg({axis:[min,max,len],})

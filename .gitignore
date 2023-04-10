@@ -41,3 +41,6 @@ examples/debug_*
 examples/test_*
 log_notebook.log
 tests/output/*
+.devcontainer/*
+tests/input/*
+coverage.xml

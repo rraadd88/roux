@@ -245,7 +245,7 @@ def plot_volcano(
     **kws_scatterplot,
     ) -> plt.Axes:
     """
-    [UNDER DEVELOPMENT]Volcano plot.
+    Volcano plot.
 
     Parameters:
 
@@ -346,15 +346,19 @@ def plot_volcano(
     if not show_outlines is None:
         if isinstance(show_outlines,int): 
             ## show_outlines top n
-            data1=(data
-                .query(expr="`significance direction bin` != 'ns'"))
-            data1=(data1
-                .sort_values(colx)
-                .head(show_outlines)
-                .append(
-                data1.sort_values(colx)
-                .tail(show_outlines)
-                ))        
+            data1=(
+                data
+                    .query(expr="`significance direction bin` != 'ns'")
+                    .sort_values(colx)
+                )
+            ## sort the data
+            data1=pd.concat(
+                [
+                    data1.head(show_outlines), # left
+                    data1.tail(show_outlines) # right
+                ],
+                axis=0,
+                )        
         elif isinstance(show_outlines, dict):
             ## subset
             data1=data.rd.filter_rows(show_outlines)

@@ -579,7 +579,7 @@ def _post_classify_mappings(
                 raise ValueError(df1['mapping'].unique())
         return df1
     for k in subset:
-        df1=df1.groupby(k).apply(call_m_m)
+        df1=df1.groupby(k,as_index=False).apply(call_m_m)
     return df1
 
 @to_rd
@@ -601,17 +601,20 @@ def classify_mappings(
     """    
     assert len(subset)==2
     col1,col2=subset
-    df1=(df1.copy()
-    .assign(
-        **{ 
-        col1+' count':lambda df: df.groupby(col2)[col1].transform('nunique').reset_index(drop=True),
-        col2+' count':lambda df: df.groupby(col1)[col2].transform('nunique').reset_index(drop=True),
-        'mapping':lambda df: df.apply(lambda x: "1:1" if (x[col1+' count']==1) and (x[col2+' count']==1) else \
-                                            "1:m" if (x[col1+' count']==1) else \
-                                            "m:1" if (x[col2+' count']==1) else "m:m",
-                                            axis=1),
-        }
-        )
+    df1=(
+        df1
+        .copy()
+        .assign(
+            **{ 
+            col1+' count':lambda df: df.groupby(col2)[col1].transform('nunique').values,
+            col2+' count':lambda df: df.groupby(col1)[col2].transform('nunique').values,
+            'mapping':lambda df: df.apply(lambda x: "1:1" if (x[col1+' count']==1) and (x[col2+' count']==1) else \
+                                                "1:m" if (x[col1+' count']==1) else \
+                                                "m:1" if (x[col2+' count']==1) else "m:m",
+                                                axis=1),
+            }
+            )
+        .reset_index(drop=True)
     )
     ## post-process
     df1=_post_classify_mappings(
