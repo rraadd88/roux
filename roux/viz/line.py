@@ -7,13 +7,15 @@ import numpy as np
 from os.path import exists, basename,dirname
 from roux.viz.ax_ import *
 
-def plot_range(df00: pd.DataFrame,
-               colvalue: str,
-               colindex: str,
-               k: str,
-               headsize: int=15,
-               headcolor: str='lightgray',
+def plot_range(
+    df00: pd.DataFrame,
+    colvalue: str,
+    colindex: str,
+    k: str,
+    headsize: int=15,
+    headcolor: str='lightgray',
     ax: plt.Axes=None,
+    **kws_area,
     ) -> plt.Axes:
     """Plot range/intervals e.g. genome coordinates as lines.
 
@@ -26,6 +28,9 @@ def plot_range(df00: pd.DataFrame,
         headcolor (str, optional): color of the margin. Defaults to 'lightgray'.
         ax (plt.Axes, optional): `plt.Axes` object. Defaults to None.
 
+    Keyword args:
+        kws: keyword parameters provided to `area` function.
+        
     Returns:
         plt.Axes: `plt.Axes` object.
     """
@@ -33,7 +38,7 @@ def plot_range(df00: pd.DataFrame,
     x,y=df00.rd.filter_rows({colindex:k}).iloc[0,:]['rank'],df00.rd.filter_rows({colindex:k}).iloc[0,:][colvalue]
     if ax is None:
         fig,ax=plt.subplots(figsize=[1,1])
-    ax=df00.set_index('rank').sort_index(0)[colvalue].plot.area(ax=ax)
+    ax=df00.set_index('rank').sort_index(0)[colvalue].plot.area(ax=ax,**kws_area)
     ax.annotate('', xy=(x, y),  xycoords='data',
                 xytext=(x, ax.get_ylim()[1]), textcoords='data',
                 arrowprops=dict(facecolor=headcolor, shrink=0,

@@ -238,15 +238,15 @@ def read_url(url):
 
 def download(
     url: str,
-    outd:str,
     path: str=None,
+    outd:str=None,
     force: bool=False,
     verbose: bool=True,
     )->str:
     """Download a file.
     
     Parameters:
-        url (str): URL. 
+        url (str): URL.
         path (str): custom output path (None)
         outd (str): output directory ('data/database').
         force (bool): overwrite output (False).
@@ -261,6 +261,7 @@ def download(
         t = os.path.getctime(path)
         return str(datetime.datetime.fromtimestamp(t))
     if path is None:
+        assert not outd is None
         path=replace_many(url,
                {'https://':'',
                 'http://':'',
@@ -270,7 +271,7 @@ def download(
         import urllib.request
         makedirs(path,exist_ok=True)
         urllib.request.urlretrieve(url, path)
-    logging.info(f"downloaded on: {get_download_date(path)}")
+    if verbose: logging.info(f"downloaded on: {get_download_date(path)}")
     return path
 
 ## text file

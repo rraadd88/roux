@@ -1,4 +1,5 @@
 """For processing multiple pandas DataFrames/Series"""
+import logging
 import pandas as pd
 import roux.lib.df as rd
 from roux.lib import to_rd
