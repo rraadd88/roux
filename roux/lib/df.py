@@ -571,8 +571,8 @@ def _post_classify_mappings(
     def call_m_m(df1):
         if df1['mapping'].nunique()!=1:
             # multiple classes
-            from roux.lib.set import validate_overlapwith
-            if validate_overlapwith(df1['mapping'].unique(),['m:m','1:m','m:1']):
+            from roux.lib.set import validate_overlaps_with
+            if validate_overlaps_with(df1['mapping'].unique(),['m:m','1:m','m:1']):
                 df1['mapping']='m:m'
             else:
                 print(set(df1['mapping'].unique()) & set(['m:m','m:1']))
@@ -1385,7 +1385,7 @@ def make_ids(
     get_ids=lambda x: '--'.join(x)
     get_ids_sorted=lambda x: '--'.join(sorted(x))
     if ids_have_equal_length:
-        logging.warning("ids should be of equal character length and should not contain non-alphanumeric characters e.g. '.'")
+        logging.debug("the ids should be of equal character length and should not contain non-alphanumeric characters e.g. '.'")
         return np.apply_along_axis(get_ids if not sort else get_ids_sorted, 1, df.loc[:,cols].values)
     else:
         return df.loc[:,cols].agg(lambda x: sep.join(x if not sort else sorted(x)),axis=1)

@@ -104,6 +104,7 @@ plt.rc('figure.subplot',wspace= 0.3,hspace= 0.3)
 ## visualization functions from roux
 from roux.viz.io import begin_plot,get_plot_inputs,to_plot,read_plot
 from roux.viz.colors import get_colors_default
+from roux.viz.diagram import diagram_nb
 
 ## logging functions
 from tqdm import tqdm
