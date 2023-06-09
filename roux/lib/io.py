@@ -467,6 +467,7 @@ def read_table(
     tables: int=1,
     test: bool=False,
     verbose: bool=True,
+    engine: str='fastparquet',
     **kws_read_tables: dict,
     ):
     """
@@ -562,8 +563,16 @@ def read_table(
         if ext is None:
             ext=basename(p).rsplit('.',1)[1]
         if any([s==ext for s in ['pqt','parquet']]):#p.endswith('.pqt') or p.endswith('.parquet'):
-            return post_read_table(pd.read_parquet(p,engine='fastparquet',**params),
-                                   clean=clean,tables=tables,verbose=verbose,**kws_clean)        
+            return post_read_table(
+                    pd.read_parquet(
+                        p,
+                        engine=engine,
+                        **params),
+                    clean=clean,
+                    tables=tables,
+                    verbose=verbose,
+                    **kws_clean,
+                    )        
         params['compression']='gzip' if ext.endswith('.gz') else 'zip' if ext.endswith('.zip') else None
         
         if not params['compression'] is None:
@@ -857,7 +866,8 @@ def to_manytables(
     colgroupby: str,
     fmt: str='',
     ignore: bool=False,
-    **kws_get_chunks,
+    kws_get_chunks={},
+    **kws_to_table,
     ):
     """
     Save many table.
@@ -907,8 +917,25 @@ def to_manytables(
         d1=dict(zip(colgroupby,names))
         s1='/'.join([(f"{k}{fmt}" if fmt!='' else fmt)+f"{str(v)}" for k,v in d1.items()])
         return to_path(f"{outd}/{s1}{ext}")                
-    df2=df.groupby(colgroupby).progress_apply(lambda x: to_table(x,to_outp(x.name,outd,colgroupby,fmt))).to_frame('path').reset_index()
-    to_table(df2,p)
+    df2=(
+        df
+        .groupby(colgroupby)
+        .progress_apply(lambda x: to_table(
+            x,
+            to_outp(
+                names=x.name,
+                outd=outd,
+                colgroupby=colgroupby,
+                fmt=fmt,
+            ),
+            **kws_to_table))
+        .to_frame('path')
+        .reset_index()
+        )
+    to_table(
+        df2,
+        p,
+        )
     
 def to_table_pqt(
     df: pd.DataFrame,

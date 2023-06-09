@@ -15,6 +15,7 @@ def diagram_nb(
         1. https://mermaid.js.org/config/Tutorials.html#jupyter-integration-with-mermaid-js
         
     Examples:
+    
         graph LR;
             N1[("Step1")]
             ---> N2["Step2"]
