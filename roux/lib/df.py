@@ -443,7 +443,10 @@ def check_nunique(
     
 ## nunique:
 @to_rd
-def check_inflation(df1,subset=None):
+def check_inflation(
+    df1,
+    subset=None,
+    ):
     """Occurances of values in columns.
     
     Parameters:
@@ -464,6 +467,7 @@ def check_dups(
     df,
     subset=None,
     perc=False,
+    out=True,
     ):
     """Check duplicates.
     
@@ -479,16 +483,21 @@ def check_dups(
     df1=df.loc[df.duplicated(subset=subset,keep=False),:].sort_values(by=subset)
     from roux.viz.annot import perc_label
     logging.info("duplicate rows: "+perc_label(len(df1),len(df)))
-    if not perc:
+    if not out:
+        return df
+    elif not perc:
         return df1
     else:
         return 100*(len(df1)/len(df))
 
 @to_rd
-def check_duplicated(df,subset=None,perc=False):
+def check_duplicated(
+    df,
+    **kws,
+    ):
     """Check duplicates (alias of `check_dups`)    
     """
-    return check_dups(df,subset=subset,perc=perc)
+    return check_dups(df,**kws)
 
 @to_rd
 def validate_no_dups(df,subset=None,):
@@ -629,6 +638,7 @@ def classify_mappings(
 def check_mappings(
     df: pd.DataFrame,
     subset: list=None,
+    out=True,
     ) -> pd.DataFrame:
     """Mapping between items in two columns.
     
@@ -641,8 +651,14 @@ def check_mappings(
         ds (Series): output stats.
     """
     if subset is None: subset=df.columns.tolist()
-    df2=classify_mappings(df,subset=subset,clean=False)
-    return df2.drop_duplicates(subset=subset).groupby(['mapping',f'{subset[0]} count',f'{subset[1]} count']).size().to_frame('mappings count')
+    df1=(
+        classify_mappings(df,subset=subset,clean=False)
+        .drop_duplicates(subset=subset).groupby(['mapping',f'{subset[0]} count',f'{subset[1]} count']).size().to_frame('mappings count')
+        )
+    if out: 
+        return df1
+    else:
+        return logging.info(f"mappings: {df1.to_string()}")
     
 @to_rd        
 def assert_1_1_mappings(

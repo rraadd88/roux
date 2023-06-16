@@ -17,9 +17,13 @@ def diagram_nb(
     Examples:
     
         graph LR;
-            N1[("Step1")]
-            ---> N2["Step2"]
-        
+            i1(["input1"]) & d1[("data1")]
+            --> 
+                p1[["process1"]] 
+                    --> o1(["output1"])
+                p1 
+                    --> o2["output2"]:::ends
+        classDef ends fill:#fff,stroke:#fff
     """
     import base64
     from IPython.display import Image, display
