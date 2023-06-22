@@ -114,7 +114,7 @@ def list2str(x,ignore=False):
     """
     x=list(x)
     if not ignore:
-        assert(len(x)==1)        
+        assert len(x)==1, x
     if len(x)>1:
         logging.warning('more than 1 str value encountered, returning list')
         return x
@@ -164,7 +164,7 @@ def get_alt(l1,s,):
     Returns: 
         s (str): alternate item.
     """
-    assert(s in l1)
+    assert s in l1, (s,l1)
     return [i for i in l1 if i!=s][0]
     
 def intersections(dn2list,jaccard=False,count=True,fast=False,test=False):

@@ -40,7 +40,7 @@ from roux.lib.set import dropna, flatten, unique, assert_overlaps_with
 from roux.lib.dict import merge_dicts
 import roux.lib.dfs as rd # attributes
 ## workflow functions from roux
-from roux.workflow.io import read_metadata #, read_config, to_diff_notebooks
+from roux.workflow.io import read_metadata,infer_parameters#, read_config, to_diff_notebooks
 
 # diplay tables
 # from functools import partialmethod

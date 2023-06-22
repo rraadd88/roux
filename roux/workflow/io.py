@@ -56,6 +56,26 @@ def get_lines(
         lines=[s for s in lines if not s.startswith('#')]
     return lines
 
+## io parameters    
+def infer_parameters(
+    input_value,
+    default_value):
+    """
+    Infer the input values and post warning messages.
+    
+    Parameters:
+        input_value: the primary value.
+        default_value: the default/alternative/inferred value.
+    
+    Returns:
+        Inferred value.
+    """
+    if input_value is None:
+        logging.warning(f'input is None; therefore using the the default value i.e. {default_value}.')
+        return default_value
+    else:
+        return input_value
+## io files
 def to_py(
     notebookp: str,
     pyp: str=None,
