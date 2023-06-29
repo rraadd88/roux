@@ -1076,6 +1076,7 @@ def to_excel(
     save_input: bool=False,
     author: str=None,
     append: bool=False,
+    adjust_column_width: bool=True,
     **kws,
     ):
     """Save excel file.
@@ -1113,13 +1114,14 @@ def to_excel(
         else:
             df_.to_excel(writer,startrow=startrow,index=False,**kws)  
             startrow+=len(df_)+2
-        # auto-adjust column widths
-        for c in df_:
-            col_idx = df_.columns.get_loc(c)
-            writer.sheets[k].set_column(col_idx, col_idx, 
-                                        max(df_[c].astype(str).map(len).max(), len(c)),
-                                       # 30,
-                                       )
+        if adjust_column_width:
+            # auto-adjust column widths
+            for c in df_:
+                col_idx = df_.columns.get_loc(c)
+                writer.sheets[k].set_column(col_idx, col_idx, 
+                                            max(df_[c].astype(str).map(len).max(), len(c)),
+                                           # 30,
+                                           )
     writer.save()    
     ## save in tsv format
     if save_input:
