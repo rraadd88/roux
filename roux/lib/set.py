@@ -54,14 +54,18 @@ def nintersection(l):
     """
     return len(intersection(l))
 
-def check_non_overlaps_with(l1,l2):
-    return set(l1) - set(l2)
+def check_non_overlaps_with(l1,l2,out_count=False):
+    l_=set(l1) - set(l2)
+    if not out_count:
+        return l_
+    else: 
+        return len(l_)
 
 def validate_overlaps_with(l1,l2):
     return len(check_non_overlaps_with(l1,l2))==0
     
-def assert_overlaps_with(l1,l2):
-    assert validate_overlaps_with(l1,l2), f'Non-ovelapping item/s: {check_non_overlaps_with(l1,l2)}'    
+def assert_overlaps_with(l1,l2,out_count=False):
+    assert validate_overlaps_with(l1,l2), f'Non-ovelapping item/s: {check_non_overlaps_with(l1,l2,out_count=out_count)}'    
     
 def jaccard_index(l1,l2):
     # if len(l1)==0 or len(l2)==0:
@@ -319,7 +323,7 @@ def get_pairs(
     items: list,
     items_with: list = None,
     size: int = 2,
-    with_self: bool =False, # itertools.combinations does not pair self
+    with_self: bool =False,
     ) -> pd.DataFrame:
     """
     Creates a dataframe with the paired items.
@@ -335,10 +339,13 @@ def get_pairs(
 
     Notes:
         1. the ids of the items are sorted e.g. 'a'-'b' not 'b'-'a'.
+        2. itertools.combinations does not pair self.
     """
     ## get lists
     items=list(set(items)) ## unique, sorted
-    if items_with is None:
+    if with_self:
+        items_with=items
+    elif items_with is None:
         items_with=[]
     else:
         items_with=list(set(items_with))

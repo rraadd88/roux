@@ -36,7 +36,7 @@ from roux.lib.sys import read_ps, basenamenoext, to_path, makedirs, get_datetime
 from roux.lib.io import read_dict, to_dict, read_table, to_table, backup
 ## data functions from roux
 from roux.lib.str import get_bracket, replace_many, get_suffix, get_prefix
-from roux.lib.set import dropna, flatten, unique, assert_overlaps_with
+from roux.lib.set import dropna, flatten, unique, assert_overlaps_with, validate_overlaps_with, check_non_overlaps_with
 from roux.lib.dict import merge_dicts
 import roux.lib.dfs as rd # attributes
 ## workflow functions from roux

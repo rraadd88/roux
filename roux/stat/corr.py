@@ -11,6 +11,7 @@ def _pre(
     y:str,
     df:pd.DataFrame=None,
     n_min: int=10,
+    drop_same_value=None, #e.g. 0
     verbose: bool=False,
     test: bool=False,
     )-> pd.DataFrame:
@@ -35,6 +36,11 @@ def _pre(
         x,y='x','y'
     else:
         df=df.rename(columns={x:'x',y:'y'},errors='raise')
+    if not drop_same_value is None:
+        _before=len(df)
+        df=df.query(f"~(`x` == {drop_same_value} & `y` == {drop_same_value})")
+        if verbose:
+            logging.info(f"drop_same_value={drop_same_value}; {len(df)-_before} samples dropped")
     assert df['x'].dtype in [int,float], df['x'].dtype
     assert df['y'].dtype in [int,float], df['y'].dtype
     # clean

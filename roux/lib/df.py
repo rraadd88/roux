@@ -617,10 +617,12 @@ def classify_mappings(
             **{ 
             col1+' count':lambda df: df.groupby(col2)[col1].transform('nunique').values,
             col2+' count':lambda df: df.groupby(col1)[col2].transform('nunique').values,
-            'mapping':lambda df: df.apply(lambda x: "1:1" if (x[col1+' count']==1) and (x[col2+' count']==1) else \
-                                                "1:m" if (x[col1+' count']==1) else \
-                                                "m:1" if (x[col2+' count']==1) else "m:m",
-                                                axis=1),
+            'mapping':lambda df: df.apply(lambda x: 
+                                              "1:1" if (x[col1+' count']==1 and x[col2+' count']==1) else \
+                                              "1:m" if (x[col1+' count']==1 and x[col2+' count']!=1) else \
+                                              "m:1" if (x[col1+' count']!=1 and x[col2+' count']==1) else \
+                                              "m:m",
+                                              axis=1),
             }
             )
         .reset_index(drop=True)
@@ -1072,7 +1074,7 @@ def get_group(
 
     Parameters:
         groups (object): groupby object.
-        i (int): index of the group (None).
+        i (int): index of the group. default None returns the largest group.
         verbose (bool): verbose (True).
         
     Returns: 
@@ -1090,6 +1092,29 @@ def get_group(
     df.name=dn
     return df
 
+@to_rd
+def sample_group(
+    df: pd.DataFrame,
+    groupby: list,
+    i: int=None,
+    **kws_get_group,
+    ) -> pd.DataFrame:
+    """
+    Samples a group (similar to .sample)
+    
+    parameters:
+        df (pd.DataFrame): input dataframe.
+        groupby (list): columns to group by.
+        i (int): index of the group. default None returns the largest group.
+    
+    keyword parameters:
+        keyword parameters provided to the `get_group` function
+
+    returns:
+        pd.DataFrame
+    """
+    return get_group(df.groupby(by=groupby),**kws_get_group)
+    
 # index
 @to_rd
 def infer_index(

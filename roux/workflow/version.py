@@ -1,8 +1,12 @@
 """For version control."""
+import logging
+logging.getLogger().setLevel(logging.INFO)
 
 def git_commit(
     repop: str,
-    suffix_message: str=''):
+    suffix_message: str='',
+    force=False,
+    ):
     """Version control.
 
     Args:
@@ -11,26 +15,34 @@ def git_commit(
     """
     from git import Repo
     repo=Repo(repop,search_parent_directories=True)
-    def commit_changes(repo):
-        """if any"""
+    logging.info(f"Active branch: {repo.active_branch.name}")
+    def commit(repo):
+        logging.info("Modified files:")
+        logging.info([o.b_path for o in repo.index.diff(None)])
+        if not force: 
+            if not input_binary("Continue? [y/n]"):
+                return
         repo.git.add(update=True)
         repo.index.commit('auto-update'+suffix_message)
-
+        logging.info('git-committed')
+    def push(repo):
+        logging.info(f"Remotes: {','.join([o.name for o in repo.remotes])}")
     if len(repo.untracked_files)!=0:
         from roux.lib.sys import input_binary
-        print(len(repo.untracked_files),'untracked file/s in the repo:',repo.untracked_files)
+        logging.info(f'{len(repo.untracked_files)} untracked file/s in the repo.')
+        if len(repo.untracked_files) < 100:
+            logging.info(repo.untracked_files)
+            
         yes=input_binary("add all of them? [y/n]")
         if yes:
             repo.git.add(repo.untracked_files)
         else:
             yes=input_binary("add none of them? [y/n]")
             if yes:
-                commit_changes(repo)
+                commit(repo)
             else:
                 repo.git.add(eval(input('list of files in py syntax:')))
         repo.index.commit('manual-update'+suffix_message)
-    else:
-        commit_changes(repo)
-    print('git-committed')
-    
-    
+    commit(repo)
+    push(repo)
+    return 
