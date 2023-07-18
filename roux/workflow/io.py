@@ -315,43 +315,6 @@ def to_info(
         f.writelines([f"{s}\n" for s in l1])
     return outp
 
-def make_symlinks(
-    d1: dict,
-    d2: dict,
-    project_path: str,
-    data: bool=True,
-    notebook_suffix: str='_v',
-    test: bool=False
-    )->list:
-    """Make symbolic links.
-
-    Args: 
-        d1 (dict): `project name` to `repo name`.
-        d2 (dict): `task name` to tuple containing `from project name` `to project name`.
-        project_path (str): path of the repository.
-        data (bool, optional): make links for the data. Defaults to True.
-        notebook_suffix (str, optional): suffix of the notebook file to be considered as a "task".
-        test (bool, optional): test mode. Defaults to False.
-
-    Returns:
-        list: list of commands.
-    """
-    coms=[]
-    for k in d2:
-        ## notebook
-        p=read_ps(f"{project_path}/{d2[k][0]}/code/{d1[d2[k][0]]}/{d1[d2[k][0]]}/{k.split('/')[0]}*{notebook_suffix}*.ipynb")[0]
-        if test: print(p)
-        outp=f"{project_path}/{d2[k][1]}/code/{d1[d2[k][1]]}/{d1[d2[k][1]]}/{basename(p)}"
-        if test: print(outp)
-        coms.append(create_symlink(p,outp))
-        if data:
-            ## data_analysed
-            p=f"{project_path}/{d2[k][0]}/data/data_analysed/data{k}"
-            outp=f"{project_path}/{d2[k][1]}/data/data_analysed/data{k}"
-            coms.append(create_symlink(p,outp))
-        # break
-    return coms
-
 def to_workflow(
     df2: pd.DataFrame,
     workflowp: str,

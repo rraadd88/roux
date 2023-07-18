@@ -9,8 +9,8 @@ pip install roux
 ```
 # Examples
 
-[⌗ Tables/Dataframes.](https://github.com/rraadd88/roux/blob/master/examples/roux_lib_df.ipynb)  
-[⌗⌗ Paired Tables/Dataframes.](https://github.com/rraadd88/roux/blob/master/examples/roux_lib_dfs.ipynb)  
+[⌗ Dataframes.](https://github.com/rraadd88/roux/blob/master/examples/roux_lib_df.ipynb)  
+[⌗⌗ Paired Dataframes.](https://github.com/rraadd88/roux/blob/master/examples/roux_lib_dfs.ipynb)  
 [💾 General Input/Output.](https://github.com/rraadd88/roux/blob/master/examples/roux_lib_io.ipynb)  
 [⬤⬤ Sets.](https://github.com/rraadd88/roux/blob/master/examples/roux_lib_set.ipynb)  
 [🔤 Strings encoding/decoding.](https://github.com/rraadd88/roux/blob/master/examples/roux_lib_str.ipynb)  
@@ -29,11 +29,20 @@ pip install roux
 
 # Command-line usage 
 
-💾 Backup a directory with a timestamp (ISO).  
-`roux backup path/to/directory`
+🗺️ Read configuration.  
+`roux read-config path/to/file`  
 
-⭐ Backup a directory with a timestamp (ISO).  
-`roux backup path/to/directory`
+🗺️ Read metadata.  
+`roux read-metadata path/to/file`  
+
+📁 Find the latest and the oldest file in a list.  
+`roux read-ps list_of_paths`  
+
+💾 Backup a directory with a timestamp (ISO).  
+`roux backup path/to/directory`  
+
+⭐ Remove *'s from a jupyter notebook'.  
+`roux removestar path/to/notebook`  
 
 ℹ️ Available command line tools and their usage.  
 `roux --help`
@@ -820,7 +829,7 @@ Classify mappings between items in two columns.
 
 ---
 
-<a href="https://github.com/rraadd88/roux/blob/master/roux/lib/df.py#L637"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="https://github.com/rraadd88/roux/blob/master/roux/lib/df.py#L639"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ### <kbd>function</kbd> `check_mappings`
 
@@ -847,7 +856,7 @@ Mapping between items in two columns.
 
 ---
 
-<a href="https://github.com/rraadd88/roux/blob/master/roux/lib/df.py#L663"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="https://github.com/rraadd88/roux/blob/master/roux/lib/df.py#L665"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ### <kbd>function</kbd> `assert_1_1_mappings`
 
@@ -870,7 +879,7 @@ Validate that the papping between items in two columns is 1:1.
 
 ---
 
-<a href="https://github.com/rraadd88/roux/blob/master/roux/lib/df.py#L681"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="https://github.com/rraadd88/roux/blob/master/roux/lib/df.py#L683"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ### <kbd>function</kbd> `get_mappings`
 
@@ -905,7 +914,367 @@ Classify the mapapping between items in two columns.
 
 ---
 
-<a href="https://github.com/rraadd88/roux/blob/master/roux/lib/df.py#L723"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="https://github.com/rraadd88/roux/blob/master/roux/lib/df.py#L726"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+
+### <kbd>function</kbd> `to_map_binary`
+
+```python
+to_map_binary(df: DataFrame, colgroupby=None, colvalue=None) → DataFrame
+```
+
+Convert linear mappings to a binary map 
+
+
+
+**Parameters:**
+ 
+ - <b>`df`</b> (DataFrame):  input dataframe. 
+ - <b>`colgroupby`</b> (str):  name of the column for groupby. 
+ - <b>`colvalue`</b> (str):  name of the column containing values. 
+
+
+
+**Returns:**
+ 
+ - <b>`df1`</b> (DataFrame):  output dataframe. 
+
+
+---
+
+<a href="https://github.com/rraadd88/roux/blob/master/roux/lib/df.py#L754"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+
+### <kbd>function</kbd> `check_intersections`
+
+```python
+check_intersections(
+    df: DataFrame,
+    colindex=None,
+    colgroupby=None,
+    plot=False,
+    **kws_plot
+) → DataFrame
+```
+
+Check intersections. Linear dataframe to is converted to a binary map and then to a series using `groupby`. 
+
+
+
+**Parameters:**
+ 
+ - <b>`df`</b> (DataFrame):  input dataframe. 
+ - <b>`colindex`</b> (str):  name of the index column. 
+ - <b>`colgroupby`</b> (str):  name of the groupby column. 
+ - <b>`plot`</b> (bool):  plot or not. 
+
+
+
+**Returns:**
+ 
+ - <b>`ds1`</b> (Series):  output Series. 
+
+Keyword Arguments: 
+ - <b>`kws_plot`</b> (dict):  parameters provided to the plotting function. 
+
+
+---
+
+<a href="https://github.com/rraadd88/roux/blob/master/roux/lib/df.py#L810"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+
+### <kbd>function</kbd> `get_totals`
+
+```python
+get_totals(ds1)
+```
+
+Get totals from the output of `check_intersections`. 
+
+
+
+**Parameters:**
+ 
+ - <b>`ds1`</b> (Series):  input Series. 
+
+
+
+**Returns:**
+ 
+ - <b>`d`</b> (dict):  output dictionary. 
+
+
+---
+
+<a href="https://github.com/rraadd88/roux/blob/master/roux/lib/df.py#L824"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+
+### <kbd>function</kbd> `filter_rows`
+
+```python
+filter_rows(
+    df,
+    d,
+    sign='==',
+    logic='and',
+    drop_constants=False,
+    test=False,
+    verbose=True
+)
+```
+
+Filter rows using a dictionary. 
+
+
+
+**Parameters:**
+ 
+ - <b>`df`</b> (DataFrame):  input dataframe. 
+ - <b>`d`</b> (dict):  dictionary. 
+ - <b>`sign`</b> (str):  condition within mappings ('=='). 
+ - <b>`logic`</b> (str):  condition between mappings ('and'). 
+ - <b>`drop_constants`</b> (bool):  to drop the columns with single unique value (False). 
+ - <b>`test`</b> (bool):  testing (False). 
+ - <b>`verbose`</b> (bool):  more verbose (True).  
+
+
+
+**Returns:**
+ 
+ - <b>`df`</b> (DataFrame):  output dataframe. 
+
+
+---
+
+<a href="https://github.com/rraadd88/roux/blob/master/roux/lib/df.py#L894"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+
+### <kbd>function</kbd> `get_bools`
+
+```python
+get_bools(df, cols, drop=False)
+```
+
+Columns to bools. One-hot-encoder (`get_dummies`). 
+
+
+
+**Parameters:**
+ 
+ - <b>`df`</b> (DataFrame):  input dataframe.  
+ - <b>`cols`</b> (list):  columns to encode. 
+ - <b>`drop`</b> (bool):  drop the `cols` (False). 
+
+
+
+**Returns:**
+ 
+ - <b>`df`</b> (DataFrame):  output dataframe. 
+
+
+---
+
+<a href="https://github.com/rraadd88/roux/blob/master/roux/lib/df.py#L917"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+
+### <kbd>function</kbd> `agg_bools`
+
+```python
+agg_bools(df1, cols)
+```
+
+Bools to columns. Reverse of one-hot encoder (`get_dummies`).  
+
+
+
+**Parameters:**
+ 
+ - <b>`df1`</b> (DataFrame):  input dataframe. 
+ - <b>`cols`</b> (list):  columns.  
+
+
+
+**Returns:**
+ 
+ - <b>`ds`</b> (Series):  output series. 
+
+
+---
+
+<a href="https://github.com/rraadd88/roux/blob/master/roux/lib/df.py#L936"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+
+### <kbd>function</kbd> `melt_paired`
+
+```python
+melt_paired(
+    df: DataFrame,
+    cols_index: list = None,
+    suffixes: list = None,
+    cols_value: list = None,
+    clean: bool = False
+) → DataFrame
+```
+
+Melt a paired dataframe. 
+
+
+
+**Parameters:**
+ 
+ - <b>`df`</b> (DataFrame):  input dataframe. 
+ - <b>`cols_index`</b> (list):  paired index columns (None). 
+ - <b>`suffixes`</b> (list):  paired suffixes (None). 
+ - <b>`cols_value`</b> (list):  names of the columns containing the values (None). 
+
+
+
+**Notes:**
+
+> Partial melt melts selected columns `cols_value`. 
+>
+
+**Examples:**
+ Paired parameters:  cols_value=['value1','value2'],  suffixes=['gene1','gene2'], 
+
+
+---
+
+<a href="https://github.com/rraadd88/roux/blob/master/roux/lib/df.py#L998"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+
+### <kbd>function</kbd> `get_chunks`
+
+```python
+get_chunks(
+    df1: DataFrame,
+    colindex: str,
+    colvalue: str,
+    bins: int = None,
+    value: str = 'right'
+) → DataFrame
+```
+
+Get chunks of a dataframe. 
+
+
+
+**Parameters:**
+ 
+ - <b>`df1`</b> (DataFrame):  input dataframe. 
+ - <b>`colindex`</b> (str):  name of the index column. 
+ - <b>`colvalue`</b> (str):  name of the column containing values [0-100] 
+ - <b>`bins`</b> (int):  number of bins. 
+ - <b>`value`</b> (str):  value to use as the name of the chunk ('right'). 
+
+
+
+**Returns:**
+ 
+ - <b>`ds`</b> (Series):  output series. 
+
+
+---
+
+<a href="https://github.com/rraadd88/roux/blob/master/roux/lib/df.py#L1041"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+
+### <kbd>function</kbd> `get_group`
+
+```python
+get_group(groups, i: int = None, verbose: bool = True) → DataFrame
+```
+
+Get a dataframe for a group out of the `groupby` object. 
+
+
+
+**Parameters:**
+ 
+ - <b>`groups`</b> (object):  groupby object. 
+ - <b>`i`</b> (int):  index of the group. default None returns the largest group. 
+ - <b>`verbose`</b> (bool):  verbose (True). 
+
+
+
+**Returns:**
+ 
+ - <b>`df`</b> (DataFrame):  output dataframe. 
+
+
+
+**Notes:**
+
+> Useful for testing `groupby`. 
+
+
+---
+
+<a href="https://github.com/rraadd88/roux/blob/master/roux/lib/df.py#L1068"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+
+### <kbd>function</kbd> `groupby_sample`
+
+```python
+groupby_sample(
+    df: DataFrame,
+    groupby: list,
+    i: int = None,
+    **kws_get_group
+) → DataFrame
+```
+
+Samples a group (similar to .sample) 
+
+
+
+**Parameters:**
+ 
+ - <b>`df`</b> (pd.DataFrame):  input dataframe. 
+ - <b>`groupby`</b> (list):  columns to group by. 
+ - <b>`i`</b> (int):  index of the group. default None returns the largest group. 
+
+Keyword arguments: keyword parameters provided to the `get_group` function 
+
+
+
+**Returns:**
+ pd.DataFrame 
+
+
+---
+
+<a href="https://github.com/rraadd88/roux/blob/master/roux/lib/df.py#L1091"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+
+### <kbd>function</kbd> `groupby_agg_nested`
+
+```python
+groupby_agg_nested(
+    df1: DataFrame,
+    groupby: list,
+    subset: list,
+    func: dict = None,
+    cols_value: list = None,
+    verbose: bool = False,
+    **kws_agg
+) → DataFrame
+```
+
+Aggregate serially from the lower level subsets to upper level ones. 
+
+
+
+**Parameters:**
+ 
+ - <b>`df1`</b> (pd.DataFrame):  input dataframe. 
+ - <b>`groupby`</b> (list):  groupby columns i.e. list of columns to be used as ids in the output. 
+ - <b>`subset`</b> (list):  nested groups i.e. subsets. 
+ - <b>`func`</b> (dict):  map betweek columns with value to aggregate and the function for aggregation. 
+ - <b>`cols_value`</b> (list):  columns with value to aggregate, (optional). 
+ - <b>`verbose`</b> (bool):  verbose. 
+
+Keyword arguments: 
+ - <b>`kws_agg `</b>:  keyword arguments provided to pandas's `.agg` function. 
+
+
+
+**Returns:**
+ output dataframe with the aggregated values. 
+
+
+---
+
+<a href="https://github.com/rraadd88/roux/blob/master/roux/lib/df.py#L1154"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ### <kbd>function</kbd> `groupby_filter_fast`
 
@@ -946,294 +1315,7 @@ Groupby and filter fast.
 
 ---
 
-<a href="https://github.com/rraadd88/roux/blob/master/roux/lib/df.py#L751"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
-
-### <kbd>function</kbd> `to_map_binary`
-
-```python
-to_map_binary(df: DataFrame, colgroupby=None, colvalue=None) → DataFrame
-```
-
-Convert linear mappings to a binary map 
-
-
-
-**Parameters:**
- 
- - <b>`df`</b> (DataFrame):  input dataframe. 
- - <b>`colgroupby`</b> (str):  name of the column for groupby. 
- - <b>`colvalue`</b> (str):  name of the column containing values. 
-
-
-
-**Returns:**
- 
- - <b>`df1`</b> (DataFrame):  output dataframe. 
-
-
----
-
-<a href="https://github.com/rraadd88/roux/blob/master/roux/lib/df.py#L779"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
-
-### <kbd>function</kbd> `check_intersections`
-
-```python
-check_intersections(
-    df: DataFrame,
-    colindex=None,
-    colgroupby=None,
-    plot=False,
-    **kws_plot
-) → DataFrame
-```
-
-Check intersections. Linear dataframe to is converted to a binary map and then to a series using `groupby`. 
-
-
-
-**Parameters:**
- 
- - <b>`df`</b> (DataFrame):  input dataframe. 
- - <b>`colindex`</b> (str):  name of the index column. 
- - <b>`colgroupby`</b> (str):  name of the groupby column. 
- - <b>`plot`</b> (bool):  plot or not. 
-
-
-
-**Returns:**
- 
- - <b>`ds1`</b> (Series):  output Series. 
-
-Keyword Arguments: 
- - <b>`kws_plot`</b> (dict):  parameters provided to the plotting function. 
-
-
----
-
-<a href="https://github.com/rraadd88/roux/blob/master/roux/lib/df.py#L835"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
-
-### <kbd>function</kbd> `get_totals`
-
-```python
-get_totals(ds1)
-```
-
-Get totals from the output of `check_intersections`. 
-
-
-
-**Parameters:**
- 
- - <b>`ds1`</b> (Series):  input Series. 
-
-
-
-**Returns:**
- 
- - <b>`d`</b> (dict):  output dictionary. 
-
-
----
-
-<a href="https://github.com/rraadd88/roux/blob/master/roux/lib/df.py#L849"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
-
-### <kbd>function</kbd> `filter_rows`
-
-```python
-filter_rows(
-    df,
-    d,
-    sign='==',
-    logic='and',
-    drop_constants=False,
-    test=False,
-    verbose=True
-)
-```
-
-Filter rows using a dictionary. 
-
-
-
-**Parameters:**
- 
- - <b>`df`</b> (DataFrame):  input dataframe. 
- - <b>`d`</b> (dict):  dictionary. 
- - <b>`sign`</b> (str):  condition within mappings ('=='). 
- - <b>`logic`</b> (str):  condition between mappings ('and'). 
- - <b>`drop_constants`</b> (bool):  to drop the columns with single unique value (False). 
- - <b>`test`</b> (bool):  testing (False). 
- - <b>`verbose`</b> (bool):  more verbose (True).  
-
-
-
-**Returns:**
- 
- - <b>`df`</b> (DataFrame):  output dataframe. 
-
-
----
-
-<a href="https://github.com/rraadd88/roux/blob/master/roux/lib/df.py#L919"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
-
-### <kbd>function</kbd> `get_bools`
-
-```python
-get_bools(df, cols, drop=False)
-```
-
-Columns to bools. One-hot-encoder (`get_dummies`). 
-
-
-
-**Parameters:**
- 
- - <b>`df`</b> (DataFrame):  input dataframe.  
- - <b>`cols`</b> (list):  columns to encode. 
- - <b>`drop`</b> (bool):  drop the `cols` (False). 
-
-
-
-**Returns:**
- 
- - <b>`df`</b> (DataFrame):  output dataframe. 
-
-
----
-
-<a href="https://github.com/rraadd88/roux/blob/master/roux/lib/df.py#L942"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
-
-### <kbd>function</kbd> `agg_bools`
-
-```python
-agg_bools(df1, cols)
-```
-
-Bools to columns. Reverse of one-hot encoder (`get_dummies`).  
-
-
-
-**Parameters:**
- 
- - <b>`df1`</b> (DataFrame):  input dataframe. 
- - <b>`cols`</b> (list):  columns.  
-
-
-
-**Returns:**
- 
- - <b>`ds`</b> (Series):  output series. 
-
-
----
-
-<a href="https://github.com/rraadd88/roux/blob/master/roux/lib/df.py#L961"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
-
-### <kbd>function</kbd> `melt_paired`
-
-```python
-melt_paired(
-    df: DataFrame,
-    cols_index: list = None,
-    suffixes: list = None,
-    cols_value: list = None,
-    clean: bool = False
-) → DataFrame
-```
-
-Melt a paired dataframe. 
-
-
-
-**Parameters:**
- 
- - <b>`df`</b> (DataFrame):  input dataframe. 
- - <b>`cols_index`</b> (list):  paired index columns (None). 
- - <b>`suffixes`</b> (list):  paired suffixes (None). 
- - <b>`cols_value`</b> (list):  names of the columns containing the values (None). 
-
-
-
-**Notes:**
-
-> Partial melt melts selected columns `cols_value`. 
->
-
-**Examples:**
- Paired parameters:  cols_value=['value1','value2'],  suffixes=['gene1','gene2'], 
-
-
----
-
-<a href="https://github.com/rraadd88/roux/blob/master/roux/lib/df.py#L1023"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
-
-### <kbd>function</kbd> `get_chunks`
-
-```python
-get_chunks(
-    df1: DataFrame,
-    colindex: str,
-    colvalue: str,
-    bins: int = None,
-    value: str = 'right'
-) → DataFrame
-```
-
-Get chunks of a dataframe. 
-
-
-
-**Parameters:**
- 
- - <b>`df1`</b> (DataFrame):  input dataframe. 
- - <b>`colindex`</b> (str):  name of the index column. 
- - <b>`colvalue`</b> (str):  name of the column containing values [0-100] 
- - <b>`bins`</b> (int):  number of bins. 
- - <b>`value`</b> (str):  value to use as the name of the chunk ('right'). 
-
-
-
-**Returns:**
- 
- - <b>`ds`</b> (Series):  output series. 
-
-
----
-
-<a href="https://github.com/rraadd88/roux/blob/master/roux/lib/df.py#L1066"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
-
-### <kbd>function</kbd> `get_group`
-
-```python
-get_group(groups, i: int = None, verbose: bool = True) → DataFrame
-```
-
-Get a dataframe for a group out of the `groupby` object. 
-
-
-
-**Parameters:**
- 
- - <b>`groups`</b> (object):  groupby object. 
- - <b>`i`</b> (int):  index of the group (None). 
- - <b>`verbose`</b> (bool):  verbose (True). 
-
-
-
-**Returns:**
- 
- - <b>`df`</b> (DataFrame):  output dataframe. 
-
-
-
-**Notes:**
-
-> Useful for testing `groupby`. 
-
-
----
-
-<a href="https://github.com/rraadd88/roux/blob/master/roux/lib/df.py#L1094"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="https://github.com/rraadd88/roux/blob/master/roux/lib/df.py#L1183"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ### <kbd>function</kbd> `infer_index`
 
@@ -1251,7 +1333,7 @@ Infer the index (id) of the table.
 
 ---
 
-<a href="https://github.com/rraadd88/roux/blob/master/roux/lib/df.py#L1124"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="https://github.com/rraadd88/roux/blob/master/roux/lib/df.py#L1213"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ### <kbd>function</kbd> `to_multiindex_columns`
 
@@ -1278,7 +1360,7 @@ Single level columns to multiindex.
 
 ---
 
-<a href="https://github.com/rraadd88/roux/blob/master/roux/lib/df.py#L1146"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="https://github.com/rraadd88/roux/blob/master/roux/lib/df.py#L1235"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ### <kbd>function</kbd> `to_ranges`
 
@@ -1311,7 +1393,7 @@ Ranges from boolean columns.
 
 ---
 
-<a href="https://github.com/rraadd88/roux/blob/master/roux/lib/df.py#L1168"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="https://github.com/rraadd88/roux/blob/master/roux/lib/df.py#L1257"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ### <kbd>function</kbd> `to_boolean`
 
@@ -1341,7 +1423,7 @@ Boolean from ranges.
 
 ---
 
-<a href="https://github.com/rraadd88/roux/blob/master/roux/lib/df.py#L1187"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="https://github.com/rraadd88/roux/blob/master/roux/lib/df.py#L1276"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ### <kbd>function</kbd> `to_cat`
 
@@ -1368,7 +1450,7 @@ To series containing categories.
 
 ---
 
-<a href="https://github.com/rraadd88/roux/blob/master/roux/lib/df.py#L1203"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="https://github.com/rraadd88/roux/blob/master/roux/lib/df.py#L1292"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ### <kbd>function</kbd> `sort_valuesby_list`
 
@@ -1398,7 +1480,7 @@ Keyword parameters:
 
 ---
 
-<a href="https://github.com/rraadd88/roux/blob/master/roux/lib/df.py#L1222"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="https://github.com/rraadd88/roux/blob/master/roux/lib/df.py#L1311"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ### <kbd>function</kbd> `agg_by_order`
 
@@ -1434,7 +1516,7 @@ Get first item in the order.
 
 ---
 
-<a href="https://github.com/rraadd88/roux/blob/master/roux/lib/df.py#L1244"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="https://github.com/rraadd88/roux/blob/master/roux/lib/df.py#L1333"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ### <kbd>function</kbd> `agg_by_order_counts`
 
@@ -1465,7 +1547,7 @@ Get the aggregated counts by order*.
 
 ---
 
-<a href="https://github.com/rraadd88/roux/blob/master/roux/lib/df.py#L1266"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="https://github.com/rraadd88/roux/blob/master/roux/lib/df.py#L1355"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ### <kbd>function</kbd> `groupby_sort_values`
 
@@ -1504,7 +1586,7 @@ Sort groups.
 
 ---
 
-<a href="https://github.com/rraadd88/roux/blob/master/roux/lib/df.py#L1266"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="https://github.com/rraadd88/roux/blob/master/roux/lib/df.py#L1355"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ### <kbd>function</kbd> `groupby_sort_values`
 
@@ -1543,7 +1625,7 @@ Sort groups.
 
 ---
 
-<a href="https://github.com/rraadd88/roux/blob/master/roux/lib/df.py#L1302"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="https://github.com/rraadd88/roux/blob/master/roux/lib/df.py#L1391"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ### <kbd>function</kbd> `swap_paired_cols`
 
@@ -1569,7 +1651,7 @@ Swap suffixes of paired columns.
 
 ---
 
-<a href="https://github.com/rraadd88/roux/blob/master/roux/lib/df.py#L1316"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="https://github.com/rraadd88/roux/blob/master/roux/lib/df.py#L1405"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ### <kbd>function</kbd> `sort_columns_by_values`
 
@@ -1609,7 +1691,7 @@ Sort the values in columns in ascending order.
 
 ---
 
-<a href="https://github.com/rraadd88/roux/blob/master/roux/lib/df.py#L1381"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="https://github.com/rraadd88/roux/blob/master/roux/lib/df.py#L1470"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ### <kbd>function</kbd> `make_ids`
 
@@ -1644,7 +1726,7 @@ Make ids by joining string ids in more than one columns.
 
 ---
 
-<a href="https://github.com/rraadd88/roux/blob/master/roux/lib/df.py#L1409"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="https://github.com/rraadd88/roux/blob/master/roux/lib/df.py#L1498"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ### <kbd>function</kbd> `make_ids_sorted`
 
@@ -1678,7 +1760,7 @@ Make sorted ids by joining string ids in more than one columns.
 
 ---
 
-<a href="https://github.com/rraadd88/roux/blob/master/roux/lib/df.py#L1430"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="https://github.com/rraadd88/roux/blob/master/roux/lib/df.py#L1519"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ### <kbd>function</kbd> `get_alt_id`
 
@@ -1704,7 +1786,7 @@ Get alternate/partner id from a paired id.
 
 ---
 
-<a href="https://github.com/rraadd88/roux/blob/master/roux/lib/df.py#L1446"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="https://github.com/rraadd88/roux/blob/master/roux/lib/df.py#L1535"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ### <kbd>function</kbd> `split_ids`
 
@@ -1729,7 +1811,7 @@ Return:
 
 ---
 
-<a href="https://github.com/rraadd88/roux/blob/master/roux/lib/df.py#L1468"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="https://github.com/rraadd88/roux/blob/master/roux/lib/df.py#L1557"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ### <kbd>function</kbd> `dict2df`
 
@@ -1756,7 +1838,7 @@ Dictionary to DataFrame.
 
 ---
 
-<a href="https://github.com/rraadd88/roux/blob/master/roux/lib/df.py#L1484"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="https://github.com/rraadd88/roux/blob/master/roux/lib/df.py#L1573"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ### <kbd>function</kbd> `log_shape_change`
 
@@ -1776,7 +1858,7 @@ Report the changes in the shapes of a DataFrame.
 
 ---
 
-<a href="https://github.com/rraadd88/roux/blob/master/roux/lib/df.py#L1500"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="https://github.com/rraadd88/roux/blob/master/roux/lib/df.py#L1589"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ### <kbd>function</kbd> `log_apply`
 
@@ -1821,7 +1903,7 @@ Keyword parameters:
 
 ---
 
-<a href="https://github.com/rraadd88/roux/blob/master/roux/lib/df.py#L1543"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="https://github.com/rraadd88/roux/blob/master/roux/lib/df.py#L1632"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ### <kbd>class</kbd> `log`
 Report (log) the changes in the shapes of the dataframe before and after an operation/s.  
@@ -1831,7 +1913,7 @@ Report (log) the changes in the shapes of the dataframe before and after an oper
 **TODO:**
   Create the attribures (`attr`) using strings e.g. setattr.  import inspect  fun=inspect.currentframe().f_code.co_name 
 
-<a href="https://github.com/rraadd88/roux/blob/master/roux/lib/df.py#L1551"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="https://github.com/rraadd88/roux/blob/master/roux/lib/df.py#L1640"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 #### <kbd>method</kbd> `__init__`
 
@@ -1848,7 +1930,7 @@ __init__(pandas_obj)
 
 ---
 
-<a href="https://github.com/rraadd88/roux/blob/master/roux/lib/df.py#L1628"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="https://github.com/rraadd88/roux/blob/master/roux/lib/df.py#L1718"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 #### <kbd>method</kbd> `check_dups`
 
@@ -1862,7 +1944,7 @@ check_dups(**kws)
 
 ---
 
-<a href="https://github.com/rraadd88/roux/blob/master/roux/lib/df.py#L1624"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="https://github.com/rraadd88/roux/blob/master/roux/lib/df.py#L1714"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 #### <kbd>method</kbd> `check_na`
 
@@ -1876,7 +1958,7 @@ check_na(**kws)
 
 ---
 
-<a href="https://github.com/rraadd88/roux/blob/master/roux/lib/df.py#L1614"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="https://github.com/rraadd88/roux/blob/master/roux/lib/df.py#L1704"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 #### <kbd>method</kbd> `clean`
 
@@ -1890,7 +1972,7 @@ clean(**kws)
 
 ---
 
-<a href="https://github.com/rraadd88/roux/blob/master/roux/lib/df.py#L1577"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="https://github.com/rraadd88/roux/blob/master/roux/lib/df.py#L1667"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 #### <kbd>method</kbd> `drop`
 
@@ -1904,7 +1986,7 @@ drop(**kws)
 
 ---
 
-<a href="https://github.com/rraadd88/roux/blob/master/roux/lib/df.py#L1574"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="https://github.com/rraadd88/roux/blob/master/roux/lib/df.py#L1664"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 #### <kbd>method</kbd> `drop_duplicates`
 
@@ -1918,7 +2000,7 @@ drop_duplicates(**kws)
 
 ---
 
-<a href="https://github.com/rraadd88/roux/blob/master/roux/lib/df.py#L1571"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="https://github.com/rraadd88/roux/blob/master/roux/lib/df.py#L1661"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 #### <kbd>method</kbd> `dropna`
 
@@ -1932,7 +2014,7 @@ dropna(**kws)
 
 ---
 
-<a href="https://github.com/rraadd88/roux/blob/master/roux/lib/df.py#L1601"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="https://github.com/rraadd88/roux/blob/master/roux/lib/df.py#L1691"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 #### <kbd>method</kbd> `explode`
 
@@ -1946,7 +2028,7 @@ explode(**kws)
 
 ---
 
-<a href="https://github.com/rraadd88/roux/blob/master/roux/lib/df.py#L1583"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="https://github.com/rraadd88/roux/blob/master/roux/lib/df.py#L1673"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 #### <kbd>method</kbd> `filter_`
 
@@ -1960,7 +2042,7 @@ filter_(**kws)
 
 ---
 
-<a href="https://github.com/rraadd88/roux/blob/master/roux/lib/df.py#L1617"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="https://github.com/rraadd88/roux/blob/master/roux/lib/df.py#L1707"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 #### <kbd>method</kbd> `filter_rows`
 
@@ -1974,7 +2056,7 @@ filter_rows(**kws)
 
 ---
 
-<a href="https://github.com/rraadd88/roux/blob/master/roux/lib/df.py#L1610"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="https://github.com/rraadd88/roux/blob/master/roux/lib/df.py#L1700"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 #### <kbd>method</kbd> `groupby`
 
@@ -1988,7 +2070,7 @@ groupby(**kws)
 
 ---
 
-<a href="https://github.com/rraadd88/roux/blob/master/roux/lib/df.py#L1607"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="https://github.com/rraadd88/roux/blob/master/roux/lib/df.py#L1697"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 #### <kbd>method</kbd> `join`
 
@@ -2002,7 +2084,7 @@ join(**kws)
 
 ---
 
-<a href="https://github.com/rraadd88/roux/blob/master/roux/lib/df.py#L1592"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="https://github.com/rraadd88/roux/blob/master/roux/lib/df.py#L1682"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 #### <kbd>method</kbd> `melt`
 
@@ -2016,7 +2098,7 @@ melt(**kws)
 
 ---
 
-<a href="https://github.com/rraadd88/roux/blob/master/roux/lib/df.py#L1620"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="https://github.com/rraadd88/roux/blob/master/roux/lib/df.py#L1710"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 #### <kbd>method</kbd> `melt_paired`
 
@@ -2030,7 +2112,7 @@ melt_paired(**kws)
 
 ---
 
-<a href="https://github.com/rraadd88/roux/blob/master/roux/lib/df.py#L1604"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="https://github.com/rraadd88/roux/blob/master/roux/lib/df.py#L1694"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 #### <kbd>method</kbd> `merge`
 
@@ -2044,7 +2126,7 @@ merge(**kws)
 
 ---
 
-<a href="https://github.com/rraadd88/roux/blob/master/roux/lib/df.py#L1586"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="https://github.com/rraadd88/roux/blob/master/roux/lib/df.py#L1676"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 #### <kbd>method</kbd> `pivot`
 
@@ -2058,7 +2140,7 @@ pivot(**kws)
 
 ---
 
-<a href="https://github.com/rraadd88/roux/blob/master/roux/lib/df.py#L1589"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="https://github.com/rraadd88/roux/blob/master/roux/lib/df.py#L1679"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 #### <kbd>method</kbd> `pivot_table`
 
@@ -2072,7 +2154,7 @@ pivot_table(**kws)
 
 ---
 
-<a href="https://github.com/rraadd88/roux/blob/master/roux/lib/df.py#L1580"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="https://github.com/rraadd88/roux/blob/master/roux/lib/df.py#L1670"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 #### <kbd>method</kbd> `query`
 
@@ -2086,7 +2168,7 @@ query(**kws)
 
 ---
 
-<a href="https://github.com/rraadd88/roux/blob/master/roux/lib/df.py#L1595"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="https://github.com/rraadd88/roux/blob/master/roux/lib/df.py#L1685"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 #### <kbd>method</kbd> `stack`
 
@@ -2100,7 +2182,7 @@ stack(**kws)
 
 ---
 
-<a href="https://github.com/rraadd88/roux/blob/master/roux/lib/df.py#L1598"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="https://github.com/rraadd88/roux/blob/master/roux/lib/df.py#L1688"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 #### <kbd>method</kbd> `unstack`
 
@@ -3575,6 +3657,7 @@ to_excel(
     save_input: bool = False,
     author: str = None,
     append: bool = False,
+    adjust_column_width: bool = True,
     **kws
 )
 ```
@@ -3597,7 +3680,7 @@ Keyword parameters:
 
 ---
 
-<a href="https://github.com/rraadd88/roux/blob/master/roux/lib/io.py#L1139"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="https://github.com/rraadd88/roux/blob/master/roux/lib/io.py#L1141"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ### <kbd>function</kbd> `check_chunks`
 
@@ -3875,7 +3958,7 @@ Count the items in intersetion.
 ### <kbd>function</kbd> `check_non_overlaps_with`
 
 ```python
-check_non_overlaps_with(l1, l2)
+check_non_overlaps_with(l1, l2, out_count=False)
 ```
 
 
@@ -3885,7 +3968,7 @@ check_non_overlaps_with(l1, l2)
 
 ---
 
-<a href="https://github.com/rraadd88/roux/blob/master/roux/lib/set.py#L60"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="https://github.com/rraadd88/roux/blob/master/roux/lib/set.py#L64"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ### <kbd>function</kbd> `validate_overlaps_with`
 
@@ -3900,12 +3983,12 @@ validate_overlaps_with(l1, l2)
 
 ---
 
-<a href="https://github.com/rraadd88/roux/blob/master/roux/lib/set.py#L63"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="https://github.com/rraadd88/roux/blob/master/roux/lib/set.py#L67"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ### <kbd>function</kbd> `assert_overlaps_with`
 
 ```python
-assert_overlaps_with(l1, l2)
+assert_overlaps_with(l1, l2, out_count=False)
 ```
 
 
@@ -3915,7 +3998,7 @@ assert_overlaps_with(l1, l2)
 
 ---
 
-<a href="https://github.com/rraadd88/roux/blob/master/roux/lib/set.py#L66"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="https://github.com/rraadd88/roux/blob/master/roux/lib/set.py#L70"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ### <kbd>function</kbd> `jaccard_index`
 
@@ -3930,7 +4013,7 @@ jaccard_index(l1, l2)
 
 ---
 
-<a href="https://github.com/rraadd88/roux/blob/master/roux/lib/set.py#L77"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="https://github.com/rraadd88/roux/blob/master/roux/lib/set.py#L81"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ### <kbd>function</kbd> `dropna`
 
@@ -3955,7 +4038,7 @@ Drop `np.nan` items from a list.
 
 ---
 
-<a href="https://github.com/rraadd88/roux/blob/master/roux/lib/set.py#L92"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="https://github.com/rraadd88/roux/blob/master/roux/lib/set.py#L96"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ### <kbd>function</kbd> `unique`
 
@@ -3986,7 +4069,7 @@ Unique items in a list.
 
 ---
 
-<a href="https://github.com/rraadd88/roux/blob/master/roux/lib/set.py#L106"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="https://github.com/rraadd88/roux/blob/master/roux/lib/set.py#L110"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ### <kbd>function</kbd> `list2str`
 
@@ -4011,7 +4094,7 @@ Returns string if single item in a list.
 
 ---
 
-<a href="https://github.com/rraadd88/roux/blob/master/roux/lib/set.py#L124"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="https://github.com/rraadd88/roux/blob/master/roux/lib/set.py#L128"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ### <kbd>function</kbd> `unique_str`
 
@@ -4036,7 +4119,7 @@ Unique single item from a list.
 
 ---
 
-<a href="https://github.com/rraadd88/roux/blob/master/roux/lib/set.py#L135"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="https://github.com/rraadd88/roux/blob/master/roux/lib/set.py#L139"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ### <kbd>function</kbd> `nunique`
 
@@ -4061,7 +4144,7 @@ Count unique items in a list
 
 ---
 
-<a href="https://github.com/rraadd88/roux/blob/master/roux/lib/set.py#L146"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="https://github.com/rraadd88/roux/blob/master/roux/lib/set.py#L150"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ### <kbd>function</kbd> `flatten`
 
@@ -4086,7 +4169,7 @@ List of lists to list.
 
 ---
 
-<a href="https://github.com/rraadd88/roux/blob/master/roux/lib/set.py#L157"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="https://github.com/rraadd88/roux/blob/master/roux/lib/set.py#L161"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ### <kbd>function</kbd> `get_alt`
 
@@ -4112,7 +4195,7 @@ Get alternate item between two.
 
 ---
 
-<a href="https://github.com/rraadd88/roux/blob/master/roux/lib/set.py#L170"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="https://github.com/rraadd88/roux/blob/master/roux/lib/set.py#L174"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ### <kbd>function</kbd> `intersections`
 
@@ -4143,7 +4226,7 @@ TODOs:  1. feed as an estimator to `df.corr()`. 2. faster processing by filling 
 
 ---
 
-<a href="https://github.com/rraadd88/roux/blob/master/roux/lib/set.py#L214"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="https://github.com/rraadd88/roux/blob/master/roux/lib/set.py#L218"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ### <kbd>function</kbd> `range_overlap`
 
@@ -4169,7 +4252,7 @@ Overlap between ranges.
 
 ---
 
-<a href="https://github.com/rraadd88/roux/blob/master/roux/lib/set.py#L228"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="https://github.com/rraadd88/roux/blob/master/roux/lib/set.py#L232"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ### <kbd>function</kbd> `get_windows`
 
@@ -4214,7 +4297,7 @@ Windows/segments from a range.
 
 ---
 
-<a href="https://github.com/rraadd88/roux/blob/master/roux/lib/set.py#L286"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="https://github.com/rraadd88/roux/blob/master/roux/lib/set.py#L290"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ### <kbd>function</kbd> `bools2intervals`
 
@@ -4239,7 +4322,7 @@ Convert bools to intervals.
 
 ---
 
-<a href="https://github.com/rraadd88/roux/blob/master/roux/lib/set.py#L297"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="https://github.com/rraadd88/roux/blob/master/roux/lib/set.py#L301"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ### <kbd>function</kbd> `list2ranges`
 
@@ -4254,7 +4337,7 @@ list2ranges(l)
 
 ---
 
-<a href="https://github.com/rraadd88/roux/blob/master/roux/lib/set.py#L318"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="https://github.com/rraadd88/roux/blob/master/roux/lib/set.py#L322"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ### <kbd>function</kbd> `get_pairs`
 
@@ -4287,7 +4370,7 @@ Creates a dataframe with the paired items.
 
 **Notes:**
 
-> 1. the ids of the items are sorted e.g. 'a'-'b' not 'b'-'a'. 
+> 1. the ids of the items are sorted e.g. 'a'-'b' not 'b'-'a'. 2. itertools.combinations does not pair self. 
 
 
 <!-- markdownlint-disable -->
@@ -6774,7 +6857,7 @@ For correlation stats.
 
 ---
 
-<a href="https://github.com/rraadd88/roux/blob/master/roux/stat/corr.py#L48"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="https://github.com/rraadd88/roux/blob/master/roux/stat/corr.py#L54"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ### <kbd>function</kbd> `resampled`
 
@@ -6814,7 +6897,7 @@ Get correlations after resampling.
 
 ---
 
-<a href="https://github.com/rraadd88/roux/blob/master/roux/stat/corr.py#L117"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="https://github.com/rraadd88/roux/blob/master/roux/stat/corr.py#L123"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ### <kbd>function</kbd> `get_corr`
 
@@ -6873,7 +6956,7 @@ Usage:  1. Linear table with paired values. For a matrix, use `pd.DataFrame.corr
 
 ---
 
-<a href="https://github.com/rraadd88/roux/blob/master/roux/stat/corr.py#L235"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="https://github.com/rraadd88/roux/blob/master/roux/stat/corr.py#L241"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ### <kbd>function</kbd> `get_corrs`
 
@@ -6923,7 +7006,7 @@ Keyword arguments:
 
 ---
 
-<a href="https://github.com/rraadd88/roux/blob/master/roux/stat/corr.py#L323"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="https://github.com/rraadd88/roux/blob/master/roux/stat/corr.py#L329"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ### <kbd>function</kbd> `check_collinearity`
 
@@ -6957,7 +7040,7 @@ Check collinearity.
 
 ---
 
-<a href="https://github.com/rraadd88/roux/blob/master/roux/stat/corr.py#L371"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="https://github.com/rraadd88/roux/blob/master/roux/stat/corr.py#L377"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ### <kbd>function</kbd> `pairwise_chi2`
 
@@ -7097,7 +7180,7 @@ get_stat(
     subsets=None,
     cols_subsets=['subset1', 'subset2'],
     df2=None,
-    stats=[<function mean at 0x7f254e66bd40>, <function median at 0x7f254e2ddd40>, <function var at 0x7f254e66f200>, <built-in function len>],
+    stats=[<function mean at 0x7fb40e0f9320>, <function median at 0x7fb40dd70320>, <function var at 0x7fb40e0f97a0>, <built-in function len>],
     coff_samples_min=None,
     verb=False,
     **kws
@@ -7155,7 +7238,7 @@ get_stats(
     subsets=None,
     df2=None,
     cols_subsets=['subset1', 'subset2'],
-    stats=[<function mean at 0x7f254e66bd40>, <function median at 0x7f254e2ddd40>, <function var at 0x7f254e66f200>, <built-in function len>],
+    stats=[<function mean at 0x7fb40e0f9320>, <function median at 0x7fb40dd70320>, <function var at 0x7fb40e0f97a0>, <built-in function len>],
     axis=0,
     test=False,
     **kws
@@ -12561,43 +12644,6 @@ Save README.md file.
 
 <a href="https://github.com/rraadd88/roux/blob/master/roux/workflow/io.py#L318"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
-### <kbd>function</kbd> `make_symlinks`
-
-```python
-make_symlinks(
-    d1: dict,
-    d2: dict,
-    project_path: str,
-    data: bool = True,
-    notebook_suffix: str = '_v',
-    test: bool = False
-) → list
-```
-
-Make symbolic links. 
-
-
-
-**Args:**
- 
- - <b>`d1`</b> (dict):  `project name` to `repo name`. 
- - <b>`d2`</b> (dict):  `task name` to tuple containing `from project name` `to project name`. 
- - <b>`project_path`</b> (str):  path of the repository. 
- - <b>`data`</b> (bool, optional):  make links for the data. Defaults to True. 
- - <b>`notebook_suffix`</b> (str, optional):  suffix of the notebook file to be considered as a "task". 
- - <b>`test`</b> (bool, optional):  test mode. Defaults to False. 
-
-
-
-**Returns:**
- 
- - <b>`list`</b>:  list of commands. 
-
-
----
-
-<a href="https://github.com/rraadd88/roux/blob/master/roux/workflow/io.py#L355"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
-
 ### <kbd>function</kbd> `to_workflow`
 
 ```python
@@ -12623,7 +12669,7 @@ Save workflow file.
 
 ---
 
-<a href="https://github.com/rraadd88/roux/blob/master/roux/workflow/io.py#L386"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="https://github.com/rraadd88/roux/blob/master/roux/workflow/io.py#L349"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ### <kbd>function</kbd> `create_workflow_report`
 
@@ -12643,7 +12689,7 @@ Create report for the workflow run.
 
 ---
 
-<a href="https://github.com/rraadd88/roux/blob/master/roux/workflow/io.py#L416"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="https://github.com/rraadd88/roux/blob/master/roux/workflow/io.py#L379"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ### <kbd>function</kbd> `to_diff_notebooks`
 
@@ -12665,7 +12711,7 @@ Todos:  1. Deprecate if functionality added to `nbdiff-web`.
 
 ---
 
-<a href="https://github.com/rraadd88/roux/blob/master/roux/workflow/io.py#L442"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="https://github.com/rraadd88/roux/blob/master/roux/workflow/io.py#L405"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ### <kbd>function</kbd> `removestar`
 
@@ -12895,12 +12941,12 @@ For version control.
 
 ---
 
-<a href="https://github.com/rraadd88/roux/blob/master/roux/workflow/version.py#L3"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="https://github.com/rraadd88/roux/blob/master/roux/workflow/version.py#L5"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ### <kbd>function</kbd> `git_commit`
 
 ```python
-git_commit(repop: str, suffix_message: str = '')
+git_commit(repop: str, suffix_message: str = '', force=False)
 ```
 
 Version control. 

@@ -722,34 +722,7 @@ def get_mappings(
         df2=df2.log.query(expr=query_expr)
     return df2
 
-@to_rd
-def groupby_filter_fast(
-    df1 : pd.DataFrame,
-    col_groupby,
-    fun_agg,
-    expr,
-    col_agg: str='temporary',
-    **kws_query,
-    ) -> pd.DataFrame:
-    """Groupby and filter fast.
-    
-    Parameters:
-        df1 (DataFrame): input dataframe.
-        by (str|list): column name/s to groupby with.
-        fun (object): function to filter with.
-        how (str): greater or less than `coff` (>|<).  
-        coff (float): cut-off.    
-        
-    Returns:
-        df1 (DataFrame): output dataframe.
-    
-    Todo:
-        Deprecation if `pandas.core.groupby.DataFrameGroupBy.filter` is faster.
-    """
-    assert col_agg in expr, f"{col_agg} not found in {expr}"
-    df1[col_agg]=df1.groupby(col_groupby).transform(fun_agg)
-    return df1.log.query(expr=expr,**kws_query)
-        
+## binary
 @to_rd
 def to_map_binary(
     df: pd.DataFrame,
@@ -1087,13 +1060,13 @@ def get_group(
         dn=list(groups.groups.keys())[i]
     else:
         dn=groups.size().sort_values(ascending=False).index.tolist()[0]
-    logging.info(dn)
+    logging.info(f"sampled group name: {dn}")
     df=groups.get_group(dn)
     df.name=dn
     return df
 
 @to_rd
-def sample_group(
+def groupby_sample(
     df: pd.DataFrame,
     groupby: list,
     i: int=None,
@@ -1102,19 +1075,110 @@ def sample_group(
     """
     Samples a group (similar to .sample)
     
-    parameters:
+    Parameters:
         df (pd.DataFrame): input dataframe.
         groupby (list): columns to group by.
         i (int): index of the group. default None returns the largest group.
     
-    keyword parameters:
+    Keyword arguments:
         keyword parameters provided to the `get_group` function
 
-    returns:
+    Returns:
         pd.DataFrame
     """
     return get_group(df.groupby(by=groupby),**kws_get_group)
+
+@to_rd
+def groupby_agg_nested(
+    df1: pd.DataFrame,
+    groupby: list,
+    subset: list,
+    func: dict=None,
+    cols_value: list=None,
+    verbose: bool=False,
+    **kws_agg,
+    ) -> pd.DataFrame:
+    """
+    Aggregate serially from the lower level subsets to upper level ones.
     
+    Parameters:
+        df1 (pd.DataFrame): input dataframe.
+        groupby (list): groupby columns i.e. list of columns to be used as ids in the output.
+        subset (list): nested groups i.e. subsets.
+        func (dict): map betweek columns with value to aggregate and the function for aggregation.
+        cols_value (list): columns with value to aggregate, (optional).
+        verbose (bool): verbose.
+    
+    Keyword arguments:
+        kws_agg : keyword arguments provided to pandas's `.agg` function.
+    
+    Returns:
+        output dataframe with the aggregated values.
+    """
+    def _agg(
+            df2,
+            cols_groupby,
+            func,
+            **kws_agg,
+        ):
+        if df2.loc[:,cols_groupby].duplicated().any():
+            return df2.groupby(cols_groupby).agg(func=func,**kws_agg).reset_index().log(suffix='after a round of aggregation.')
+        else:
+            return df2
+    ## infer inputs
+    if func is None:
+        if not cols_value is None:
+            func={c:np.mean for c in cols_value}
+    else:
+        cols_value=list(func.keys())
+        
+    ds_=df1.log(subset).loc[:,subset].nunique().sort_values(ascending=False)
+    cols_groupby=list(set(groupby + subset))
+    if verbose:
+        logging.info(cols_groupby)
+        
+    df2=_agg(df1,cols_groupby,func,
+            **kws_agg,
+            )
+    for col in ds_.index:
+        cols_groupby=list(set(cols_groupby) - set([col]))
+        if verbose:
+            logging.info(cols_groupby)
+        df2=_agg(
+            df2,cols_groupby,func,
+            **kws_agg,)
+        if set(groupby) == set(cols_groupby):
+            break
+    return df2
+
+@to_rd
+def groupby_filter_fast(
+    df1 : pd.DataFrame,
+    col_groupby,
+    fun_agg,
+    expr,
+    col_agg: str='temporary',
+    **kws_query,
+    ) -> pd.DataFrame:
+    """Groupby and filter fast.
+    
+    Parameters:
+        df1 (DataFrame): input dataframe.
+        by (str|list): column name/s to groupby with.
+        fun (object): function to filter with.
+        how (str): greater or less than `coff` (>|<).  
+        coff (float): cut-off.    
+        
+    Returns:
+        df1 (DataFrame): output dataframe.
+    
+    Todo:
+        Deprecation if `pandas.core.groupby.DataFrameGroupBy.filter` is faster.
+    """
+    assert col_agg in expr, f"{col_agg} not found in {expr}"
+    df1[col_agg]=df1.groupby(col_groupby).transform(fun_agg)
+    return df1.log.query(expr=expr,**kws_query)
+
 # index
 @to_rd
 def infer_index(
@@ -1579,6 +1643,7 @@ class log:
         self,
         subset=None,
         groupby=None,
+        suffix=None,
         **kws_check_nunique,
         ):
         if not subset is None:
@@ -1589,7 +1654,7 @@ class log:
                 log=False,
                 **kws_check_nunique,            
                 )
-        else:
+        elif suffix is None:
             suffix=""
         logging.info(f"shape = {self._obj.shape} {suffix}")
         return self._obj
