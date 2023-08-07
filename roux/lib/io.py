@@ -194,16 +194,18 @@ def backup(
         outd=dirname(commonprefix(ps))
         if isdir(outd):
             outd=dirname(outd)+'/'
+    
     ## add version suffix
     from roux.lib.sys import get_datetime
     outd2=outd+'/.'+get_version(suffix)#'/_v'+get_datetime()+'_'+(suffix+'_' if not suffix is None else '')
-    logging.warning(f"backup direction: {outd} -> {outd2}")
+    logging.warning(f"backup direction: {p} -> {outd2}")
     # create directoried in outd
     # outds=unique([dirname(dirname(p)) if isdir(p) else dirname(p) for p in ps])
-    outds=unique([dirname(p) for p in ps])
-    if verbose: info(outds)
-    outds=list(set([replace_many(p,{outd:outd2})+'/' if not move_only else outd2+p for p in outds]))
-    if verbose: info(outds)
+    ## input directories
+    inds=unique([dirname(p) for p in ps])
+    if verbose: info(inds)
+    inds=list(set([replace_many(p,{outd:outd2})+'/' if not move_only else outd2+p for p in inds]))
+    if verbose: info(inds)
     l1=[(p,replace_many(p,{outd:outd2})) if not move_only else (p,outd2+p) for p in ps]
     if verbose: info(l1)
     l1=list(set([(p1,dirname(dirname(p2)) if p2.endswith('/') else p2) for p1,p2 in l1]))    

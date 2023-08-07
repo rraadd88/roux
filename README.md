@@ -1,11 +1,39 @@
-# `roux`
-Convenience functions in Python.  
-[![PyPI](https://img.shields.io/pypi/v/roux?style=flat-square&colorB=blue)![PyPI](https://img.shields.io/pypi/pyversions/roux?style=flat-square&colorB=blue)](https://pypi.org/project/roux)  
-[![build](https://github.com/rraadd88/roux/actions/workflows/build.yml/badge.svg)](https://github.com/rraadd88/roux/actions/workflows/build.yml)  
+<!-- PROJECT SHIELDS -->
+<!-- [![Contributors][contributors-shield]][contributors-url]
+[![Forks][forks-shield]][forks-url]
+[![Stargazers][stars-shield]][stars-url] -->
+[![PyPI](https://img.shields.io/pypi/v/roux?style=for-the-badge)![Python](https://img.shields.io/pypi/pyversions/roux?style=for-the-badge)](https://pypi.org/project/roux)
+[![build](https://img.shields.io/github/actions/workflow/status/rraadd88/roux/build.yml?style=for-the-badge)](https://github.com/rraadd88/roux/actions/workflows/build.yml)
+[![Issues](https://img.shields.io/github/issues/rraadd88/roux.svg?style=for-the-badge)](https://github.com/rraadd88/roux/issues)
+[![Downloads](https://img.shields.io/pypi/dm/roux?style=for-the-badge)](https://pepy.tech/project/roux)
+[![GNU License](https://img.shields.io/github/license/rraadd88/roux.svg?style=for-the-badge)](https://github.com/rraadd88/roux/blob/master/LICENSE)
+<!-- PROJECT LOGO -->
+<div align="center">
+  <img src="data:image/png;base64,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" alt="logo" />
+  <h1 align="center">roux</h1>
+  <p align="center">
+    Convenience functions in Python.
+    <br />
+    <a href="https://github.com/rraadd88/roux#examples">Examples</a>
+    ·
+    <a href="https://github.com/rraadd88/roux#api">Explore the API</a>
+  </p>
+</div>  
+
 # Installation
     
 ```
-pip install roux
+pip install roux              # with basic dependencies  
+pip install roux[all]         # with all the additional dependencies (recommended). 
+```
+With additional dependencies as required:
+```
+pip install roux[viz]         # for visualizations e.g. seaborn etc.
+pip install roux[data]        # for data operations e.g. reading excel files etc.
+pip install roux[stat]        # for statistics e.g. statsmodels etc.
+pip install roux[fast]        # for faster processing e.g. parallelization etc.
+pip install roux[workflow]    # for workflow operations e.g. omegaconf etc.
+pip install roux[interactive] # for interactive operations in jupyter notebook e.g. watermark, icecream etc.
 ```
 # Examples
 
@@ -24,6 +52,7 @@ pip install roux
 [📈💾 Visualizations Input/Output.](https://github.com/rraadd88/roux/blob/master/examples/roux_viz_io.ipynb)  
 [📈 Line plots.](https://github.com/rraadd88/roux/blob/master/examples/roux_viz_line.ipynb)  
 [📈 Scatter plots.](https://github.com/rraadd88/roux/blob/master/examples/roux_viz_scatter.ipynb)  
+[📈⬤⬤ Plots of sets.](https://github.com/rraadd88/roux/blob/master/examples/roux_viz_sets.ipynb)  
 [⚙️🗺️ Reading multiple configs.](https://github.com/rraadd88/roux/blob/master/examples/roux_workflow_io.ipynb)  
 [⚙️⏩ Running multiple tasks.](https://github.com/rraadd88/roux/blob/master/examples/roux_workflow_task.ipynb)  
 
@@ -54,7 +83,7 @@ pip install roux
 <a href="https://github.com/rraadd88/roux/blob/master/roux.py#L0"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ## <kbd>module</kbd> `roux.global_imports`
-For importing commonly used functions. 
+For importing commonly used functions at the developmental phase. 
 
 Usage: in interactive sessions (e.g. in jupyter notebooks) to facilitate faster code development. 
 
@@ -2961,7 +2990,7 @@ Steps:  0. create version dir in outd  1. move ps to version (time) dir with com
 
 ---
 
-<a href="https://github.com/rraadd88/roux/blob/master/roux/lib/io.py#L225"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="https://github.com/rraadd88/roux/blob/master/roux/lib/io.py#L227"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ### <kbd>function</kbd> `read_url`
 
@@ -2986,7 +3015,7 @@ Read text from an URL.
 
 ---
 
-<a href="https://github.com/rraadd88/roux/blob/master/roux/lib/io.py#L239"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="https://github.com/rraadd88/roux/blob/master/roux/lib/io.py#L241"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ### <kbd>function</kbd> `download`
 
@@ -3021,7 +3050,7 @@ Download a file.
 
 ---
 
-<a href="https://github.com/rraadd88/roux/blob/master/roux/lib/io.py#L278"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="https://github.com/rraadd88/roux/blob/master/roux/lib/io.py#L280"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ### <kbd>function</kbd> `read_text`
 
@@ -3046,7 +3075,7 @@ Read a file.  To be called by other functions
 
 ---
 
-<a href="https://github.com/rraadd88/roux/blob/master/roux/lib/io.py#L294"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="https://github.com/rraadd88/roux/blob/master/roux/lib/io.py#L296"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ### <kbd>function</kbd> `to_list`
 
@@ -3072,7 +3101,7 @@ Save list.
 
 ---
 
-<a href="https://github.com/rraadd88/roux/blob/master/roux/lib/io.py#L314"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="https://github.com/rraadd88/roux/blob/master/roux/lib/io.py#L316"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ### <kbd>function</kbd> `read_list`
 
@@ -3097,7 +3126,7 @@ Read the lines in the file.
 
 ---
 
-<a href="https://github.com/rraadd88/roux/blob/master/roux/lib/io.py#L314"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="https://github.com/rraadd88/roux/blob/master/roux/lib/io.py#L316"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ### <kbd>function</kbd> `read_list`
 
@@ -3122,7 +3151,7 @@ Read the lines in the file.
 
 ---
 
-<a href="https://github.com/rraadd88/roux/blob/master/roux/lib/io.py#L330"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="https://github.com/rraadd88/roux/blob/master/roux/lib/io.py#L332"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ### <kbd>function</kbd> `is_dict`
 
@@ -3137,7 +3166,7 @@ is_dict(p)
 
 ---
 
-<a href="https://github.com/rraadd88/roux/blob/master/roux/lib/io.py#L333"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="https://github.com/rraadd88/roux/blob/master/roux/lib/io.py#L335"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ### <kbd>function</kbd> `read_dict`
 
@@ -3166,7 +3195,7 @@ Keyword Arguments:
 
 ---
 
-<a href="https://github.com/rraadd88/roux/blob/master/roux/lib/io.py#L391"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="https://github.com/rraadd88/roux/blob/master/roux/lib/io.py#L393"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ### <kbd>function</kbd> `to_dict`
 
@@ -3195,7 +3224,7 @@ Keyword Arguments:
 
 ---
 
-<a href="https://github.com/rraadd88/roux/blob/master/roux/lib/io.py#L430"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="https://github.com/rraadd88/roux/blob/master/roux/lib/io.py#L432"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ### <kbd>function</kbd> `post_read_table`
 
@@ -3231,7 +3260,7 @@ Keyword parameters:
 
 ---
 
-<a href="https://github.com/rraadd88/roux/blob/master/roux/lib/io.py#L458"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="https://github.com/rraadd88/roux/blob/master/roux/lib/io.py#L460"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ### <kbd>function</kbd> `read_table`
 
@@ -3299,7 +3328,7 @@ Keyword parameters:
 
 ---
 
-<a href="https://github.com/rraadd88/roux/blob/master/roux/lib/io.py#L604"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="https://github.com/rraadd88/roux/blob/master/roux/lib/io.py#L606"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ### <kbd>function</kbd> `get_logp`
 
@@ -3324,7 +3353,7 @@ Infer the path of the log file.
 
 ---
 
-<a href="https://github.com/rraadd88/roux/blob/master/roux/lib/io.py#L621"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="https://github.com/rraadd88/roux/blob/master/roux/lib/io.py#L623"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ### <kbd>function</kbd> `apply_on_paths`
 
@@ -3381,7 +3410,7 @@ TODOs: Move out of io.
 
 ---
 
-<a href="https://github.com/rraadd88/roux/blob/master/roux/lib/io.py#L772"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="https://github.com/rraadd88/roux/blob/master/roux/lib/io.py#L774"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ### <kbd>function</kbd> `read_tables`
 
@@ -3425,7 +3454,7 @@ TODOs: Parameter to report the creation dates of the newest and the oldest files
 
 ---
 
-<a href="https://github.com/rraadd88/roux/blob/master/roux/lib/io.py#L820"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="https://github.com/rraadd88/roux/blob/master/roux/lib/io.py#L822"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ### <kbd>function</kbd> `to_table`
 
@@ -3462,7 +3491,7 @@ Keyword parameters:
 
 ---
 
-<a href="https://github.com/rraadd88/roux/blob/master/roux/lib/io.py#L863"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="https://github.com/rraadd88/roux/blob/master/roux/lib/io.py#L865"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ### <kbd>function</kbd> `to_manytables`
 
@@ -3505,7 +3534,7 @@ TODOs:
 
 ---
 
-<a href="https://github.com/rraadd88/roux/blob/master/roux/lib/io.py#L940"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="https://github.com/rraadd88/roux/blob/master/roux/lib/io.py#L942"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ### <kbd>function</kbd> `to_table_pqt`
 
@@ -3540,7 +3569,7 @@ Keyword parameters: Parameters provided to `pd.DataFrame.to_parquet`.
 
 ---
 
-<a href="https://github.com/rraadd88/roux/blob/master/roux/lib/io.py#L966"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="https://github.com/rraadd88/roux/blob/master/roux/lib/io.py#L968"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ### <kbd>function</kbd> `tsv2pqt`
 
@@ -3565,7 +3594,7 @@ Convert tab-separated file to Apache parquet.
 
 ---
 
-<a href="https://github.com/rraadd88/roux/blob/master/roux/lib/io.py#L979"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="https://github.com/rraadd88/roux/blob/master/roux/lib/io.py#L981"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ### <kbd>function</kbd> `pqt2tsv`
 
@@ -3590,7 +3619,7 @@ Convert Apache parquet file to tab-separated.
 
 ---
 
-<a href="https://github.com/rraadd88/roux/blob/master/roux/lib/io.py#L993"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="https://github.com/rraadd88/roux/blob/master/roux/lib/io.py#L995"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ### <kbd>function</kbd> `read_excel`
 
@@ -3621,7 +3650,7 @@ Keyword parameters:
 
 ---
 
-<a href="https://github.com/rraadd88/roux/blob/master/roux/lib/io.py#L1033"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="https://github.com/rraadd88/roux/blob/master/roux/lib/io.py#L1035"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ### <kbd>function</kbd> `to_excel_commented`
 
@@ -3645,7 +3674,7 @@ TODOs: 1. Increase the limit on comments can be added to number of columns. Curr
 
 ---
 
-<a href="https://github.com/rraadd88/roux/blob/master/roux/lib/io.py#L1072"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="https://github.com/rraadd88/roux/blob/master/roux/lib/io.py#L1074"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ### <kbd>function</kbd> `to_excel`
 
@@ -3680,7 +3709,7 @@ Keyword parameters:
 
 ---
 
-<a href="https://github.com/rraadd88/roux/blob/master/roux/lib/io.py#L1141"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="https://github.com/rraadd88/roux/blob/master/roux/lib/io.py#L1143"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ### <kbd>function</kbd> `check_chunks`
 
@@ -7076,20 +7105,7 @@ For difference related stats.
 
 ---
 
-<a href="https://github.com/rraadd88/roux/blob/master/roux/stat/diff.py#L17"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
-
-### <kbd>function</kbd> `get_demo_data`
-
-```python
-get_demo_data() → DataFrame
-```
-
-Demo data to test the differences. 
-
-
----
-
-<a href="https://github.com/rraadd88/roux/blob/master/roux/stat/diff.py#L27"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="https://github.com/rraadd88/roux/blob/master/roux/stat/diff.py#L16"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ### <kbd>function</kbd> `compare_classes`
 
@@ -7097,14 +7113,12 @@ Demo data to test the differences.
 compare_classes(x, y, method=None)
 ```
 
- 
-
-
+Compare classes 
 
 
 ---
 
-<a href="https://github.com/rraadd88/roux/blob/master/roux/stat/diff.py#L50"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="https://github.com/rraadd88/roux/blob/master/roux/stat/diff.py#L42"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ### <kbd>function</kbd> `compare_classes_many`
 
@@ -7119,7 +7133,7 @@ compare_classes_many(df1: DataFrame, cols_y: list, cols_x: list) → DataFrame
 
 ---
 
-<a href="https://github.com/rraadd88/roux/blob/master/roux/stat/diff.py#L65"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="https://github.com/rraadd88/roux/blob/master/roux/stat/diff.py#L57"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ### <kbd>function</kbd> `get_pval`
 
@@ -7167,7 +7181,7 @@ Get p-value.
 
 ---
 
-<a href="https://github.com/rraadd88/roux/blob/master/roux/stat/diff.py#L133"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="https://github.com/rraadd88/roux/blob/master/roux/stat/diff.py#L125"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ### <kbd>function</kbd> `get_stat`
 
@@ -7180,7 +7194,7 @@ get_stat(
     subsets=None,
     cols_subsets=['subset1', 'subset2'],
     df2=None,
-    stats=[<function mean at 0x7fb40e0f9320>, <function median at 0x7fb40dd70320>, <function var at 0x7fb40e0f97a0>, <built-in function len>],
+    stats=[<function mean at 0x7f3b14bfa320>, <function median at 0x7f3b14aae320>, <function var at 0x7f3b14bfa7a0>, <built-in function len>],
     coff_samples_min=None,
     verb=False,
     **kws
@@ -7225,7 +7239,7 @@ TODOs: 1. Rename to more specific `get_diff`, also other `get_stat*`/`get_pval*`
 
 ---
 
-<a href="https://github.com/rraadd88/roux/blob/master/roux/stat/diff.py#L230"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="https://github.com/rraadd88/roux/blob/master/roux/stat/diff.py#L222"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ### <kbd>function</kbd> `get_stats`
 
@@ -7238,7 +7252,7 @@ get_stats(
     subsets=None,
     df2=None,
     cols_subsets=['subset1', 'subset2'],
-    stats=[<function mean at 0x7fb40e0f9320>, <function median at 0x7fb40dd70320>, <function var at 0x7fb40e0f97a0>, <built-in function len>],
+    stats=[<function mean at 0x7f3b14bfa320>, <function median at 0x7f3b14aae320>, <function var at 0x7f3b14bfa7a0>, <built-in function len>],
     axis=0,
     test=False,
     **kws
@@ -7282,7 +7296,7 @@ TODOs: 1. No column prefix if `len(cols_value)==1`.
 
 ---
 
-<a href="https://github.com/rraadd88/roux/blob/master/roux/stat/diff.py#L302"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="https://github.com/rraadd88/roux/blob/master/roux/stat/diff.py#L294"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ### <kbd>function</kbd> `get_significant_changes`
 
@@ -7319,7 +7333,7 @@ Get significant changes.
 
 ---
 
-<a href="https://github.com/rraadd88/roux/blob/master/roux/stat/diff.py#L352"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="https://github.com/rraadd88/roux/blob/master/roux/stat/diff.py#L344"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ### <kbd>function</kbd> `apply_get_significant_changes`
 
@@ -7353,7 +7367,7 @@ Apply on dataframe to get significant changes.
 
 ---
 
-<a href="https://github.com/rraadd88/roux/blob/master/roux/stat/diff.py#L388"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="https://github.com/rraadd88/roux/blob/master/roux/stat/diff.py#L380"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ### <kbd>function</kbd> `get_stats_groupby`
 
@@ -7391,7 +7405,7 @@ Iterate over groups, to get the differences.
 
 ---
 
-<a href="https://github.com/rraadd88/roux/blob/master/roux/stat/diff.py#L413"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="https://github.com/rraadd88/roux/blob/master/roux/stat/diff.py#L405"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ### <kbd>function</kbd> `get_diff`
 
@@ -7415,7 +7429,7 @@ Keyword parameters:  cols=['variable x','variable y'],  coff_p=0.05,  coff_q=0.0
 
 ---
 
-<a href="https://github.com/rraadd88/roux/blob/master/roux/stat/diff.py#L463"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="https://github.com/rraadd88/roux/blob/master/roux/stat/diff.py#L455"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ### <kbd>function</kbd> `binby_pvalue_coffs`
 
@@ -8909,6 +8923,52 @@ resample (bool, optional): resample data. Defaults to False.
 
 <a href="https://github.com/rraadd88/roux/blob/master/roux/viz/annot.py#L408"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
+### <kbd>function</kbd> `show_crosstab_stats`
+
+```python
+show_crosstab_stats(
+    data: DataFrame,
+    cols: list,
+    method: str = None,
+    alpha: float = 0.05,
+    loc: str = None,
+    xoff: float = 0,
+    yoff: float = 0,
+    linebreak: bool = False,
+    ax: Axes = None,
+    **kws_set_label
+) → Axes
+```
+
+Annotate a confusion matrix. 
+
+
+
+**Args:**
+ 
+ - <b>`data`</b> (pd.DataFrame):  input data. 
+ - <b>`cols`</b> (list):  list of columns with the categories. 
+ - <b>`method`</b> (str, optional):  method used to calculate the statistical significance. 
+ - <b>`alpha`</b> (float, optional):  alpha for the stats. Defaults to 0.05. 
+ - <b>`loc`</b> (str, optional):  location. Over-rides kws_set_label. Defaults to None. 
+ - <b>`xoff`</b> (float, optional):  x offset. Defaults to 0. 
+ - <b>`yoff`</b> (float, optional):  y offset. Defaults to 0. 
+ - <b>`ax`</b> (plt.Axes, optional):  `plt.Axes` object. Defaults to None. 
+
+Keyword Args: 
+ - <b>`kws_set_label`</b>:  keyword parameters provided to `set_label`. 
+
+
+
+**Returns:**
+ 
+ - <b>`plt.Axes`</b>:  `plt.Axes` object. 
+
+
+---
+
+<a href="https://github.com/rraadd88/roux/blob/master/roux/viz/annot.py#L473"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+
 ### <kbd>function</kbd> `show_confusion_matrix_stats`
 
 ```python
@@ -8938,7 +8998,7 @@ Annotate a confusion matrix.
 
 ---
 
-<a href="https://github.com/rraadd88/roux/blob/master/roux/viz/annot.py#L463"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="https://github.com/rraadd88/roux/blob/master/roux/viz/annot.py#L528"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ### <kbd>function</kbd> `get_logo_ax`
 
@@ -8973,7 +9033,7 @@ Get `plt.Axes` for placing the logo.
 
 ---
 
-<a href="https://github.com/rraadd88/roux/blob/master/roux/viz/annot.py#L493"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="https://github.com/rraadd88/roux/blob/master/roux/viz/annot.py#L558"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ### <kbd>function</kbd> `set_logo`
 
@@ -9016,7 +9076,7 @@ Set logo.
 
 ---
 
-<a href="https://github.com/rraadd88/roux/blob/master/roux/viz/annot.py#L550"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="https://github.com/rraadd88/roux/blob/master/roux/viz/annot.py#L615"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ### <kbd>function</kbd> `set_suptitle`
 
@@ -10781,60 +10841,6 @@ Keyword Args:
  - <b>`plt.Axes`</b>:  `plt.Axes` object. 
 
 
----
-
-<a href="https://github.com/rraadd88/roux/blob/master/roux/viz/heatmap.py#L78"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
-
-### <kbd>function</kbd> `plot_crosstab`
-
-```python
-plot_crosstab(
-    df1: DataFrame,
-    cols: list = None,
-    alpha: float = 0.05,
-    method: str = None,
-    confusion: bool = False,
-    rename_cols: bool = False,
-    sort_cols: tuple = [True, True],
-    order_x: list = None,
-    order_y: list = None,
-    annot_pval: str = 'bottom',
-    cmap: str = 'Reds',
-    ax: Axes = None,
-    **kws
-) → Axes
-```
-
-Plot crosstab table. 
-
-
-
-**Args:**
- 
- - <b>`df1`</b> (pd.DataFrame):  input data 
- - <b>`cols`</b> (list, optional):  columns. Defaults to None. 
- - <b>`alpha`</b> (float, optional):  alpha for the stats. Defaults to 0.05. 
- - <b>`method`</b> (str, optional):  method to check the association ['chi2','FE']. Defaults to None. 
- - <b>`rename_cols`</b> (bool, optional):  rename the columns. Defaults to True. 
- - <b>`annot_pval`</b> (str, optional):  annotate p-values. Defaults to 'bottom'. 
- - <b>`cmap`</b> (str, optional):  colormap. Defaults to 'Reds'. 
- - <b>`ax`</b> (plt.Axes, optional):  `plt.Axes` object. Defaults to None. 
-
-
-
-**Raises:**
- 
- - <b>`ValueError`</b>:  `annot_pval` position should be the allowed one. 
-
-
-
-**Returns:**
- 
- - <b>`plt.Axes`</b>:  `plt.Axes` object. 
-
-TODOs: 1. Use `compare_classes` to get the stats. 
-
-
 <!-- markdownlint-disable -->
 
 <a href="https://github.com/rraadd88/roux/blob/master/roux/viz.py#L0"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
@@ -11936,6 +11942,65 @@ Plot Venn diagram.
 
 <a href="https://github.com/rraadd88/roux/blob/master/roux/viz/sets.py#L66"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
+### <kbd>function</kbd> `plot_intersection_counts`
+
+```python
+plot_intersection_counts(
+    df1: DataFrame,
+    cols: list = None,
+    kind: str = 'table',
+    method: str = None,
+    show_pval: bool = True,
+    confusion: bool = False,
+    rename_cols: bool = False,
+    sort_cols: tuple = [True, True],
+    order_x: list = None,
+    order_y: list = None,
+    cmap: str = 'Reds',
+    ax: Axes = None,
+    kws_show_stats: dict = {},
+    **kws_plot
+) → Axes
+```
+
+Plot counts for the intersection between two sets. 
+
+
+
+**Args:**
+ 
+ - <b>`df1`</b> (pd.DataFrame):  input data 
+ - <b>`cols`</b> (list, optional):  columns. Defaults to None. 
+ - <b>`kind`</b> (str, optional):  kind of plot: table or barplot. Detaults to table. 
+ - <b>`method`</b> (str, optional):  method to check the association ['chi2','FE']. Defaults to None. 
+ - <b>`rename_cols`</b> (bool, optional):  rename the columns. Defaults to True. 
+ - <b>`show_pval`</b> (bool, optional):  annotate p-values. Defaults to True. 
+ - <b>`cmap`</b> (str, optional):  colormap. Defaults to 'Reds'. 
+ - <b>`kws_show_stats`</b> (dict, optional):  arguments provided to stats function. Defaults to {}. 
+ - <b>`ax`</b> (plt.Axes, optional):  `plt.Axes` object. Defaults to None. 
+
+
+
+**Raises:**
+ 
+ - <b>`ValueError`</b>:  `show_pval` position should be the allowed one. 
+
+Keyword Args:  
+ - <b>`kws_plot`</b>:  keyword arguments provided to the plotting function. 
+
+
+
+**Returns:**
+ 
+ - <b>`plt.Axes`</b>:  `plt.Axes` object. 
+
+TODOs: 1. Use `compare_classes` to get the stats. 
+
+
+---
+
+<a href="https://github.com/rraadd88/roux/blob/master/roux/viz/sets.py#L180"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+
 ### <kbd>function</kbd> `plot_intersections`
 
 ```python
@@ -12005,7 +12070,7 @@ Keyword Args:
 
 ---
 
-<a href="https://github.com/rraadd88/roux/blob/master/roux/viz/sets.py#L185"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="https://github.com/rraadd88/roux/blob/master/roux/viz/sets.py#L299"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ### <kbd>function</kbd> `plot_enrichment`
 
@@ -12807,6 +12872,35 @@ Sort steps (functions) of a task (script).
 
 <!-- markdownlint-disable -->
 
+<a href="https://github.com/rraadd88/roux/blob/master/roux/workflow.py#L0"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+
+## <kbd>module</kbd> `roux.workflow.log`
+
+
+
+
+
+---
+
+<a href="https://github.com/rraadd88/roux/blob/master/roux/workflow/log.py#L1"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+
+### <kbd>function</kbd> `print_parameters`
+
+```python
+print_parameters(d: dict)
+```
+
+Print a directory with parameters as lines of code 
+
+
+
+**Parameters:**
+ 
+ - <b>`d`</b> (dict):  directory with parameters 
+
+
+<!-- markdownlint-disable -->
+
 <a href="https://github.com/rraadd88/roux/blob/master/roux/workflow"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ## <kbd>module</kbd> `roux.workflow`
@@ -12817,6 +12911,7 @@ Sort steps (functions) of a task (script).
 **Global Variables**
 ---------------
 - **io**
+- **log**
 
 
 <!-- markdownlint-disable -->

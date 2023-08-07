@@ -32,7 +32,7 @@ requirements = {
     'watermark', # session info
     'icecream', # logging
     # 'argh',
-    'jupyter','ipywidgets','ipykernel',
+    #'jupyter','ipywidgets','ipykernel',
 ],
 'data':[
     'openpyxl', # special io

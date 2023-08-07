@@ -13,40 +13,32 @@ import matplotlib.pyplot as plt
 ## internal
 from roux.lib.set import nunique
 
-## for linear dfs
-def get_demo_data(
-    ) -> pd.DataFrame:
-    """Demo data to test the differences."""
-    subsets=list('abcd')
-    np.random.seed(88)
-    df1=pd.concat({s:pd.Series([np.random.uniform(0,si+1) for _ in range((si+1)*100)]) for si,s in enumerate(subsets)},
-             axis=0).reset_index(0).rename(columns={'level_0':'subset',0:'value'})
-    df1['bool']=df1['value']>df1['value'].quantile(0.5)
-    return df1
-
 def compare_classes(
     x,
     y,
-    method=None
+    method=None,
     ):
     """
+    Compare classes
     """
     if len(x)!=0 and len(y)!=0:# and (nunique(x+y)!=1):
-        dplot=pd.crosstab(x,y)
+        df1=pd.crosstab(x,y)
     else:
         return np.nan,np.nan
-    if len(dplot)==0:
+    if len(df1)==0:
         return np.nan,np.nan
-    if dplot.shape!=(2,2) or method=='chi2':
-        stat,pval,_,_=sc.stats.chi2_contingency(dplot)
-        # stat_label='${\chi}^2$'
-    elif dplot.shape==(2,2):
-        stat,pval=sc.stats.fisher_exact(dplot)
-        # stat_label='OR'
+    if df1.shape!=(2,2) or method=='chi2':
+        stat,pval,_,_=sc.stats.chi2_contingency(df1)
+        if method is None:
+            logging.info('method=chi2_contingency')
+    elif df1.shape==(2,2):
+        stat,pval=sc.stats.fisher_exact(df1)
+        if method is None:
+            logging.info('method=fisher_exact')
     else:
-          raise ValueError(dplot)
+          raise ValueError(df1)
     return stat,pval
-    
+        
 def compare_classes_many(
     df1: pd.DataFrame,
     cols_y: list,

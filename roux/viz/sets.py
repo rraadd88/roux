@@ -63,6 +63,120 @@ def plot_venn(
     else:
         return ax,venn
 
+def plot_intersection_counts(
+    df1: pd.DataFrame,
+    cols: list=None,
+    kind : str = 'table',
+    method: str=None,#'chi2'|fe
+    show_pval: bool= True,
+    confusion: bool=False,
+    rename_cols: bool=False,
+    sort_cols: tuple=[True,True],
+    order_x: list= None,
+    order_y: list= None,
+    cmap: str='Reds',
+    ax: plt.Axes=None,
+    kws_show_stats: dict={},
+    **kws_plot,
+    ) -> plt.Axes:
+    """Plot counts for the intersection between two sets.
+
+    Args:
+        df1 (pd.DataFrame): input data
+        cols (list, optional): columns. Defaults to None.
+        kind (str, optional): kind of plot: table or barplot. Detaults to table.
+        method (str, optional): method to check the association ['chi2','FE']. Defaults to None.
+        rename_cols (bool, optional): rename the columns. Defaults to True.
+        show_pval (bool, optional): annotate p-values. Defaults to True.
+        cmap (str, optional): colormap. Defaults to 'Reds'.
+        kws_show_stats (dict, optional): arguments provided to stats function. Defaults to {}.
+        ax (plt.Axes, optional): `plt.Axes` object. Defaults to None.
+
+    Raises:
+        ValueError: `show_pval` position should be the allowed one.
+
+    Keyword Args: 
+        kws_plot: keyword arguments provided to the plotting function.
+        
+    Returns:
+        plt.Axes: `plt.Axes` object.
+
+    TODOs:
+        1. Use `compare_classes` to get the stats.
+    """                
+    if not cols is None:
+        for i,c in enumerate(cols):
+            df1=(df1
+                 .log.dropna(subset=cols)
+                 .assign(**{c: lambda df: df[c].astype(str)})
+                )        
+            for l in [['True','False'],['yes','no']]:
+                if df1[c].isin(l).all():
+                    sort_cols[i]=False
+                    break        
+        dplot=pd.crosstab(df1[cols[0]],df1[cols[1]])
+    else:
+        dplot=df1.copy()
+        
+    dplot=(dplot
+        .sort_index(axis=0,ascending=sort_cols[0])
+        .sort_index(axis=1,ascending=sort_cols[1])
+          )
+    if dplot.shape==(2,2) and rename_cols:
+        dplot=dplot.rename(columns={True:dplot.columns.name,
+                                   False:'not'},
+                    index={True:dplot.index.name,
+                          False:'not'},)
+        dplot.columns.name=None
+        dplot.index.name=None
+        if 'not' in dplot.columns:
+            dplot=dplot.loc[:,
+                            [s for s in dplot.columns if s!='not']+['not']]
+        if 'not' in dplot.index:
+            dplot=dplot.loc[[s for s in dplot.index if s!='not']+['not'],
+                            :]
+    # dplot=dplot.sort_index(ascending=False,axis=1).sort_index(ascending=False,axis=0)
+    if order_y is None:
+        order_y=dplot.index.tolist()
+    if order_x is None:
+        order_x=dplot.columns.tolist()
+    dplot=dplot.loc[order_y,order_x]
+    if kind=='table':
+        from roux.viz.heatmap import plot_table
+        ax=plot_table(
+            dplot,
+            cmap=cmap,
+            ax=ax,
+            **kws_plot,
+            )      
+    elif kind=='bar':
+        ax=dplot.plot.barh(stacked=True,ax=ax)
+        ax.set(xlabel='count')
+        ## show counts
+        for pa,n in zip(ax.get_children()[:4],dplot.melt()['value'].tolist()):
+            bbox=pa.get_bbox() # left, bottom, width, height
+            x,y=np.mean([bbox.x0,bbox.x1]),np.mean([bbox.y0,bbox.y1])
+            ax.text(s=n,x=x,y=y,va='center',ha='center')  
+        if not 'loc' in kws_show_stats:
+            kws_show_stats['loc']='center'
+    else:
+        raise ValueError(kind)
+    if show_pval:
+        from roux.viz.annot import show_crosstab_stats
+        show_crosstab_stats(
+            df1,
+            cols=cols,
+            ax=ax,
+            **kws_show_stats,
+        )
+    elif confusion:    
+        ax=annot_confusion_matrix(
+            dplot,
+            ax=ax,
+            off=0.5,
+        )
+    return ax
+
 def plot_intersections(
     ds1: pd.Series,
     item_name: str=None,
@@ -312,4 +426,3 @@ def plot_enrichment(
         **kws_annot,
         )
     return locals()[returns]
-

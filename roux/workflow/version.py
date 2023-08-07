@@ -14,6 +14,8 @@ def git_commit(
         suffix_message (str, optional): add suffix to the version (commit) message. Defaults to ''.
     """
     from git import Repo
+    from roux.lib.sys import input_binary
+    
     repo=Repo(repop,search_parent_directories=True)
     logging.info(f"Active branch: {repo.active_branch.name}")
     def commit(repo):
@@ -28,7 +30,6 @@ def git_commit(
     def push(repo):
         logging.info(f"Remotes: {','.join([o.name for o in repo.remotes])}")
     if len(repo.untracked_files)!=0:
-        from roux.lib.sys import input_binary
         logging.info(f'{len(repo.untracked_files)} untracked file/s in the repo.')
         if len(repo.untracked_files) < 100:
             logging.info(repo.untracked_files)
@@ -42,6 +43,9 @@ def git_commit(
                 commit(repo)
             else:
                 repo.git.add(eval(input('list of files in py syntax:')))
+        if suffix_message=='':
+            if not force:
+                suffix_message=input('commit message:')
         repo.index.commit('manual-update'+suffix_message)
     commit(repo)
     push(repo)

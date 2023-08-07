@@ -1,5 +1,5 @@
 """
-For importing commonly used functions.
+For importing commonly used functions at the developmental phase.
 
 Usage: in interactive sessions (e.g. in jupyter notebooks) to facilitate faster code development.
 
@@ -41,6 +41,7 @@ from roux.lib.dict import merge_dicts
 import roux.lib.dfs as rd # attributes
 ## workflow functions from roux
 from roux.workflow.io import read_metadata,infer_parameters#, read_config, to_diff_notebooks
+from roux.workflow.log import print_parameters
 
 # diplay tables
 # from functools import partialmethod

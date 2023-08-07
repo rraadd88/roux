@@ -405,6 +405,71 @@ def show_scatter_stats(
         )
     return ax
 
+def show_crosstab_stats(
+    data: pd.DataFrame,
+    cols: list,
+    method: str= None,
+    alpha: float=0.05,
+    loc: str=None,
+    xoff: float=0,
+    yoff: float=0,
+    linebreak: bool=False,
+    ax: plt.Axes = None,
+    **kws_set_label,
+    ) -> plt.Axes:
+    """Annotate a confusion matrix.
+
+    Args:
+        data (pd.DataFrame): input data.
+        cols (list): list of columns with the categories.
+        method (str, optional): method used to calculate the statistical significance.
+        alpha (float, optional): alpha for the stats. Defaults to 0.05.
+        loc (str, optional): location. Over-rides kws_set_label. Defaults to None.
+        xoff (float, optional): x offset. Defaults to 0.
+        yoff (float, optional): y offset. Defaults to 0.
+        ax (plt.Axes, optional): `plt.Axes` object. Defaults to None.
+
+    Keyword Args:
+        kws_set_label: keyword parameters provided to `set_label`.
+        
+    Returns:
+        plt.Axes: `plt.Axes` object.
+    """
+    from roux.stat.diff import compare_classes
+    stat,pval=compare_classes(data[cols[0]],data[cols[1]],method=method)
+    logging.info(f"stat={stat},pval={pval}")
+    
+    ## get the label for the stat method
+    data_=pd.crosstab(data[cols[0]],data[cols[1]])
+    if data_.shape!=(2,2) or method=='chi2':
+        stat_label='${\chi}^2$'
+    else:
+        stat_label='OR'
+        
+    if loc=='bottom':
+        kws_set_label=dict(
+            x=0.5+xoff,
+            y=-0.2+yoff,
+            ha='center',va='center',)
+    elif loc=='right':
+        kws_set_label=dict(
+            x=1+xoff,
+            y=0+yoff,
+            ha='left',va='bottom',)            
+    elif loc=='center':
+        kws_set_label=dict(
+            x=0.5+xoff,
+            y=0.5+yoff,
+            ha='center',va='center',)            
+        
+    from roux.viz.ax_ import set_label
+    set_label(
+        s=f"{stat_label}={stat:.1f}"+(', ' if not linebreak else '\n')+pval2annot(pval, alternative='two-sided', alpha=alpha, fmt='<', linebreak=False),
+        ax=ax,
+        **kws_set_label,
+        )
+    return ax
+
 def show_confusion_matrix_stats(
     df_: pd.DataFrame,
     ax: plt.Axes=None,
