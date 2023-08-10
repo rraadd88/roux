@@ -23,7 +23,7 @@
     ·
     <a href="https://github.com/rraadd88/roux#api">Explore the API</a>
   </p>
-</div>  
+</div>    
 
 # Installation
     
