@@ -9,8 +9,8 @@ Note: Post-development, to remove *s from the code, use removestar (pip install 
 """
 ## logging functions
 import logging
-logger = logging.getLogger()
-logger.setLevel(logging.INFO)
+logger = logging.getLogger().setLevel(logging.INFO)
+# logging.basicConfig(format='[%(asctime)s] %(levelname)s\tfrom %(filename)s in %(funcName)s(..): %(message)s',level=logging.INFO)
 
 try:
     import watermark.watermark as watermark # session info

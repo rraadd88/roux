@@ -70,7 +70,7 @@ requirements = {
     'isort',
     'pytest-cov == 2.*',
     'testbook',
-    'lazydocs', ## docs
+    'lazydocs', 'regex',## docs
 ],
 }
 extras_require={k:l for k,l in requirements.items() if not k=='base'}
