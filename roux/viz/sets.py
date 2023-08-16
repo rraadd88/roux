@@ -426,3 +426,181 @@ def plot_enrichment(
         **kws_annot,
         )
     return locals()[returns]
+
+## subsets
+def _to_data_plot_pie(
+    data: pd.DataFrame,
+    rename: dict=None,
+    colors: list=None,
+    explode: str =None,
+    show_n: bool=False,
+    order: list=None,
+    ) -> pd.DataFrame:
+    """Preprocess data for the pie plot.
+    
+    Args:
+        data (pd.DataFrame): input data
+        rename (dict, optional): rename the subsets. Defaults to None.
+        colors (list, optional): colors of the subsets. Defaults to None.
+        explode (str, optional): separate subset/s. Defaults to None.
+        show_n (bool, optional): show the sample size. Defaults to False.
+        order (list, optional): order of the subsets. Defaults to None.
+
+    Raises:
+        ValueError: explode parameter should be a either 'first' or 'last'
+
+    Returns:
+        pd.DataFrame: output table
+    """
+    data_=(data
+        .to_frame('count').rename_axis('name').reset_index()
+    )
+    if order is None:
+        if not rename is None:
+            order=list(rename.values())
+        else:
+            order=data_['name'].tolist()
+        logging.warning(f"inferred `order`={order}")
+    if not rename is None:
+        data_=(
+            data_
+            .assign(
+                **{
+                    'name':lambda df: df['name'].map(rename),        
+                }
+                )
+        .rd.sort_valuesby_list(by='name',cats=order)
+        )
+    if not colors is None:
+        if isinstance(colors,list):
+            colors=dict(zip(order,colors))
+        data_=(
+            data_
+            .assign(
+                **{
+                    'color':lambda df: df['name'].map(colors),        
+                }
+                )
+        )        
+    if not explode is None:
+        if explode=='first':
+            explode=order[0]            
+        elif explode=='last':
+            explode=order[-1]
+        else:
+            raise ValueError(explode)
+        data_=(
+            data_
+            .assign(
+                **{
+                    'explode':lambda df: df['name'].apply(lambda x: 0.1 if explode==x else 0),        
+                }
+                )
+        )
+    if show_n:
+        data_['perc']=(100. * data_['count'] / data_['count'].sum())
+        data_=(
+            data_
+            .assign(
+                **{
+                    'name':lambda df: df.apply(lambda x: f"{x['name']}\n{x['perc']:.0f}% ({x['count']})" ,axis=1),        
+                }
+                )
+        ).drop(['perc'],axis=1)
+        
+    return data_.rename(columns={'name':'labels','count':'counts','color':'colors',},errors='ignore')
+
+def plot_pie(
+    counts: list,
+    labels: list,
+    scales_line_xy: tuple=(1.1,1.1),
+    remove_wedges: list=None,
+    remove_wedges_index: list=[],
+    line_color : str ='k',
+    annot_side: bool=False,
+    kws_annot_side: dict={},
+    ax: plt.Axes=None,
+    **kws_pie,
+    ) -> plt.Axes:
+    """Pie plot.
+    
+    Args:
+        counts (list): counts.
+        labels (list): labels. 
+        scales_line_xy (tuple, optional): scales for the lines. Defaults to (1.1,1.1).
+        remove_wedges (list, optional): remove wedge/s. Defaults to None.
+        remove_wedges_index (list, optional): remove wedge/s by index. Defaults to [].
+        line_color (str, optional): line color. Defaults to 'k'.
+        annot_side (bool, optional): annotations on side using the `annot_side` function. Defaults to False.
+        kws_annot_side (dict, optional): keyword arguments provided to the `annot_side` function. Defaults to {}.
+        ax (plt.Axes, optional): subplot. Defaults to None.
+
+    Keyword Args:
+        kws_pie: keyword arguments provided to the `pie` chart function.
+
+    Returns:
+        plt.Axes: subplot
+
+    References: 
+        https://matplotlib.org/stable/gallery/pie_and_polar_charts/pie_and_donut_labels.html
+    """
+    if ax is None:
+        ax=plt.gca()
+    wedges, texts = ax.pie(
+        counts, 
+        startangle=90,
+        counterclock=False,
+        **kws_pie,
+        )
+        
+    kws_annotate = dict(arrowprops=dict(arrowstyle="-",color=line_color,shrinkB=0),
+              zorder=0, va="center")
+    if not remove_wedges is None:
+        remove_wedges_index+=[labels.index(k) for k in remove_wedges]
+    if annot_side:
+        ## collect inputs
+        ks,xs,ys=[],[],[]
+    for i, (p,t) in enumerate(zip(wedges,texts)):
+        ## remove wedge/s
+        if i in remove_wedges_index:
+            p.set_visible(False)
+            t.set_visible(False)
+            continue
+        ## labels
+        ang = (p.theta2 - p.theta1)/2. + p.theta1
+        y = np.sin(np.deg2rad(ang))
+        x = np.cos(np.deg2rad(ang))
+        if not annot_side:
+            horizontalalignment = {-1: "right", 1: "left"}[int(np.sign(x))]
+            # horizontalalignment = 'center'
+            connectionstyle = f"angle,angleA=0,angleB={ang}"
+            kws_annotate["arrowprops"].update({"connectionstyle": connectionstyle})
+            
+            ax.annotate(labels[i], xy=(x, y), xytext=(scales_line_xy[0]*np.sign(x), scales_line_xy[1]*y),
+                        horizontalalignment=horizontalalignment, **kws_annotate)
+        else:
+            ks.append(labels[i])
+            xs.append(x)
+            ys.append(y)
+    if annot_side:
+        df1=pd.DataFrame(dict(labels=ks,xs=xs,ys=ys))
+        from roux.viz.annot import annot_side
+        ax=annot_side(
+            ax=ax,
+            df1=df1.query("`xs` >= 0"),
+            loc='right',
+            colx='xs',coly='ys',cols='labels',
+            color=line_color,
+            kws_line=dict(lw=1),
+            **kws_annot_side,
+        )
+        ax=annot_side(
+            ax=ax,
+            loc='left',
+            df1=df1.query("`xs` < 0"),
+            colx='xs',coly='ys',cols='labels',
+            color=line_color,
+            kws_line=dict(lw=1),
+            **kws_annot_side,
+        )
+    return ax
