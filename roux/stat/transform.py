@@ -115,6 +115,8 @@ def rescale(a: np.array, range1: tuple=None, range2: tuple=[0,1]) -> np.array:
     Returns:
         np.array: output.
     """
+    if not isinstance(a, np.ndarray):
+        a=np.array(a)
     if range1 is None:
         range1=[np.min(a),np.max(a)]
     delta1 = range1[1] - range1[0]

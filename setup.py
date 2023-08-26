@@ -70,7 +70,7 @@ requirements = {
     'isort',
     'pytest-cov == 2.*',
     'testbook',
-    'lazydocs', 'regex',## docs
+    'lazydocs', 'regex', ## docs
 ],
 }
 extras_require={k:l for k,l in requirements.items() if not k=='base'}
@@ -91,7 +91,7 @@ setuptools.setup(
     author='rraadd88',
     author_email='rohanadandage@gmail.com',
     license='General Public License v. 3',
-    packages=setuptools.find_packages('.',exclude=['test', 'unit','deps', 'data']),
+    packages=setuptools.find_packages('.',exclude=['test','tests', 'unit','deps','data','examples']),
     classifiers=[
         'Programming Language :: Python',
         'Programming Language :: Python :: 3',

@@ -303,7 +303,8 @@ def split_ticklabels(
     group_span_kws={},
     sep: str='-',
     pad_major=6,
-    off: float=0.2,    
+    off: float=0.2,   
+    test: bool=False,
     **kws,
     ) -> plt.Axes:
     """Split ticklabels into major and minor. Two minor ticks are created per major tick. 
@@ -313,7 +314,7 @@ def split_ticklabels(
         fmt (str): 'group'-wise or 'pair'-wise splitting of the ticklabels.
         axis (str): name of the axis: x or y.
         sep (str, optional): separator within the tick labels. Defaults to ' '.
-
+        test (bool, optional): test-mode. Defaults to False.
     Returns:
         plt.Axes: `plt.Axes` object.
     """
@@ -336,13 +337,20 @@ def split_ticklabels(
                 axis=axis),
                 colkey=axis+'ticklabel',
             colvalue=axis)
-        df0_[axis+'ticklabel major']=df0_[axis+'ticklabel'].str.split(sep,n=1,expand=True)[0]
-        df0_[axis+'ticklabel minor']=df0_[axis+'ticklabel'].str.split(sep,n=1,expand=True)[1]
+        if not sep is None:
+            df0_[axis+'ticklabel major']=df0_[axis+'ticklabel'].str.split(sep,n=1,expand=True)[0]
+            df0_[axis+'ticklabel minor']=df0_[axis+'ticklabel'].str.split(sep,n=1,expand=True)[1]
+        else:
+            df0_[axis+'ticklabel major']=df0_[axis+'ticklabel'].tolist()
+            df0_[axis+'ticklabel minor']=['' for k in df0_[axis+'ticklabel']]            
         df_=(df0_
             .groupby(axis+'ticklabel major')
             .agg({axis:[min,max,len],})
             .rd.flatten_columns()
         )
+        if test:
+            print(df0_)
+            print(df_)
         # if group_loc=='left':
         #     group_x=group_x
         #     group_x=axlims[axis]['min']-(axlims[axis]['len']*group_pad)

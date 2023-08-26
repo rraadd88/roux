@@ -1290,7 +1290,23 @@ def to_cat(ds1,cats,ordered = True):
     return ds1
 
 @to_rd
-def sort_valuesby_list(df1,by,cats,**kws):
+def astype_cat(
+    df1: pd.DataFrame,
+    col: str,
+    cats: list,
+    ):
+    return df1.assign(
+        **{
+            col:lambda df: to_cat(df[col],cats=cats,ordered = True),
+        })
+    
+@to_rd
+def sort_valuesby_list(
+    df1: pd.DataFrame,
+    by: str,
+    cats: list,
+    by_more: list=[],
+    **kws):
     """Sort dataframe by custom order of items in a column.
         
     Parameters:
@@ -1304,8 +1320,7 @@ def sort_valuesby_list(df1,by,cats,**kws):
     Returns:
         df (DataFrame): output dataframe.
     """
-    df1[by]=to_cat(df1[by],cats,ordered = True)
-    return df1.sort_values(by=by, **kws)
+    return astype_cat(df1,col=by,cats=cats).sort_values(by=by, **kws)
 
 ## apply_agg
 def agg_by_order(x,order):

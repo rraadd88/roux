@@ -585,22 +585,26 @@ def plot_pie(
     if annot_side:
         df1=pd.DataFrame(dict(labels=ks,xs=xs,ys=ys))
         from roux.viz.annot import annot_side
+        ## right
+        df1_=df1.query("`xs` >= 0")
         ax=annot_side(
             ax=ax,
-            df1=df1.query("`xs` >= 0"),
+            df1=df1_,
             loc='right',
             colx='xs',coly='ys',cols='labels',
             color=line_color,
             kws_line=dict(lw=1),
-            **kws_annot_side,
+            **(kws_annot_side if len(df1_)!=1 else {k:v for k,v in kws_annot_side.items() if not k in ['offymin','offymax']}),
         )
+        ## left
+        df1_=df1.query("`xs` < 0")
         ax=annot_side(
             ax=ax,
             loc='left',
-            df1=df1.query("`xs` < 0"),
+            df1=df1_,
             colx='xs',coly='ys',cols='labels',
             color=line_color,
             kws_line=dict(lw=1),
-            **kws_annot_side,
+            **(kws_annot_side if len(df1_)!=1 else {k:v for k,v in kws_annot_side.items() if not k in ['offymin','offymax']}),
         )
     return ax
