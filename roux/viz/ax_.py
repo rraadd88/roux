@@ -322,10 +322,14 @@ def split_ticklabels(
     ticklabels=getattr(ax,f'get_{axis}ticklabels')()
     if fmt.startswith('pair'):
         from roux.lib.set import flatten
-        kws={
-            f"{axis}ticks":flatten([[i-off,i+off] for i in range(0,len(ticklabels))]),
-            f"{axis}ticklabels":flatten([t.get_text().split('-') for t in ticklabels]),
-        }
+        # kws={
+        #     f"{axis}ticks":flatten([[i-off,i+off] for i in range(0,len(ticklabels))]),
+        #     f"{axis}ticklabels":flatten([t.get_text().split('-') for t in ticklabels]),
+        # }
+        # print(kws)
+        getattr(ax,f'set_{axis}ticklabels')([s.get_text().replace(sep,'\n') for s in ticklabels],
+                                            # **kws,
+                                           )        
         # ax.set(**kws)
     elif fmt.startswith('group'):
         axlims=get_axlims(ax)

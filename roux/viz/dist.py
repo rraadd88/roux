@@ -367,8 +367,7 @@ def plot_dists(
                     hue=hue,
                     order=order,
                     hue_order=hue_order,
-                    **kind[k],
-                    **kws_,
+                    **{**kws_,**kind[k]}, ## combine overwrite with user provided
                      ax=ax)
     ax.set(
         **{

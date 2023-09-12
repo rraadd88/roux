@@ -43,7 +43,7 @@ def pval2annot(
         f"$p$={pval:.1g}"
     elif (pval < 0.01):
         annot= "**" if fmt=='*' else \
-        f"$p$<\n{0.01:.0e}" if fmt=='<' else \
+        f"$p$<\n0.01" if fmt=='<' else \
         f"$p$={pval:.1g}" if len(f"$p$={pval:.1g}")<6 else \
         f"$p$=\n{pval:.1g}" if not linebreak else \
         f"$p$={pval:.1g}"
