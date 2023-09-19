@@ -4,6 +4,77 @@ import numpy as np
 import matplotlib.pyplot as plt
 import logging
 
+def get_children(fig):
+    """
+    Get all the individual objects included in the figure.
+    """
+    from roux.lib.set import flatten
+    return flatten([ax.get_children() if isinstance(ax, plt.Subplot) else ax for ax in fig.get_children()])
+
+def get_child_text(
+    search_name,
+    all_children=None,
+    fig=None,
+    ):
+    """
+    Get text object.
+    """
+    if all_children is None:
+        all_children=get_children(fig=fig)
+    child=None
+    for c in all_children:
+        if isinstance(c, plt.Text) and c.get_text() == search_name:
+            child = c
+            break
+    assert not child is None, (search_name,all_children)
+    return child 
+
+def align_texts(
+    fig,
+    texts: list,
+    align: str,
+    test=False,
+    ):
+    """
+    Align text objects.
+    """
+    all_children=get_children(fig=fig)
+    x_px_set,y_px_set=None,None
+    for i,search_name in enumerate(texts):
+        text=get_child_text(
+            search_name=search_name,
+            all_children=all_children,
+            )
+        extent = text.get_window_extent(renderer=fig.canvas.get_renderer())
+        x_px,y_px=np.array(extent)[0][0],np.array(extent)[1][1]
+        if test:
+            print(x_px,y_px)
+        if i==0 and align == 'v':
+            y_px_set=y_px
+            continue
+        elif i==0 and align == 'h':
+            x_px_set=x_px
+            continue
+        else:
+            ## set
+            if not x_px_set is None:
+                x_px=x_px_set
+            if not y_px_set is None:
+                y_px=y_px_set
+            ax_=text.axes
+            x_data, y_data = ax_.transData.inverted().transform((x_px,y_px))
+            if test:
+                print(x_data, y_data)
+            # Add text to the subplot using data coordinates
+            _ = ax_.text(x_data, y_data, s=text.get_text(),
+                         fontsize=text.get_fontsize(),
+                         ha='left',#text.get_ha(),
+                         va='top',#text.get_va(),
+                         color=text.get_color(), ##TODO transfer all the properties
+                        )
+            if not test:
+                text.remove()
+                
 def labelplots(
     axes: list=None,
     fig=None,

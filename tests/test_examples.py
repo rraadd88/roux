@@ -67,6 +67,11 @@ def test_roux_viz_dist(tb):
     pass # execute only because tests are present in the notebook itself
     return
 
+@testbook("examples/roux_viz_figure.ipynb", execute=True)
+def test_roux_viz_figure(tb):
+    pass # execute only because tests are present in the notebook itself
+    return
+
 @testbook('examples/roux_viz_io.ipynb', execute=True)
 def test_roux_viz_io(tb):
     pass # execute only because tests are present in the notebook itself
