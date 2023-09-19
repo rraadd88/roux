@@ -61,10 +61,11 @@ def get_variance_inflation(
     return (
         pd.Series(
             {k:variance_inflation_factor(X.values, i) for i,k in enumerate(X)}
-        ).to_frame('VIF')
-        .rename_axis(['variable'],axis=0).reset_index()
-        .assign(
-        **{'variable': lambda df: df['variable'].apply(lambda x: replace_many(x,to_formula(reverse=True)) if x!='Intercept' else 'Intercept'),
-          },
         )
+            .to_frame('VIF')
+            .rename_axis(['variable'],axis=0).reset_index()
+            .assign(
+            **{'variable': lambda df: df['variable'].apply(lambda x: replace_many(x,to_formula(reverse=True)) if x!='Intercept' else 'Intercept'),
+              },
+            )
         )

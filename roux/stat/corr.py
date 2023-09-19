@@ -75,7 +75,7 @@ def resampled(
     Returns:
         dict: results containing mean correlation coefficient, CI and CI type.
     """
-    from roux.stat.classify import get_cvsplits
+    from roux.stat.preprocess import get_cvsplits
     from roux.stat.variance import get_ci
     cv2xy=get_cvsplits(x,y,cv=cv,outtest=False,random_state=random_state)
     rs=[_post(method_fun(*cv2xy[k].values(),**method_kws))['r'] for k in cv2xy]

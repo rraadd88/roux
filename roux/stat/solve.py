@@ -25,18 +25,3 @@ def get_intersection_locations(y1: np.array,y2: np.array,test: bool=False,x: np.
         ax.legend(bbox_to_anchor=[1,1])
         ax.set(xlabel='x',ylabel='density')
     return idxs
-
-# def get_intersection_of_gaussians(m1, s1, m2, s2):
-#     # coefficients of quadratic equation ax^2 + bx + c = 0
-#     a = (s1**2.0) - (s2**2.0)
-#     b = 2 * (m1 * s2**2.0 - m2 * s1**2.0)
-#     c = m2**2.0 * s1**2.0 - m1**2.0 * s2**2.0 - 2 * s1**2.0 * s2**2.0 * np.log(s1/s2)
-#     x1 = (-b + np.sqrt(b**2.0 - 4.0 * a * c)) / (2.0 * a)
-#     x2 = (-b - np.sqrt(b**2.0 - 4.0 * a * c)) / (2.0 * a)
-#     return x1, x2
-
-# def get_intersection_of_gaussians(m1,m2,std1,std2):
-#     a = 1/(2*std1**2) - 1/(2*std2**2)
-#     b = m2/(std2**2) - m1/(std1**2)
-#     c = m1**2 /(2*std1**2) - m2**2 / (2*std2**2) - np.log(std2/std1)
-#     return np.roots([a,b,c])

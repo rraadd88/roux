@@ -54,7 +54,7 @@ def get_cols_x_for_comparison(
         
     ## get continuous cols_x
     if drop_low_complexity:
-        from roux.stat.classify import drop_low_complexity
+        from roux.stat.preprocess import drop_low_complexity
         df_=drop_low_complexity(
             df1=df1,
             min_nunique=min_nunique,
