@@ -8,8 +8,24 @@ def get_children(fig):
     """
     Get all the individual objects included in the figure.
     """
+    from tqdm import tqdm
     from roux.lib.set import flatten
-    return flatten([ax.get_children() if isinstance(ax, plt.Subplot) else ax for ax in fig.get_children()])
+    ## figure
+    l1=[]
+    for ax in tqdm(fig.get_children()):
+        if isinstance(ax, plt.Subplot):
+            l1+=ax.get_children()
+        else:
+            l1+=[ax]
+    l1=flatten(l1)
+    ## subfigure
+    l2=[]
+    for ax in tqdm(l1):
+        if isinstance(ax, plt.Subplot):
+            l2+=ax.get_children()
+        else:
+            l2+=[ax]
+    return flatten(l2)
 
 def get_child_text(
     search_name,
@@ -27,7 +43,7 @@ def get_child_text(
             child = c
             break
     assert not child is None, (search_name,all_children)
-    return child 
+    return child
 
 def align_texts(
     fig,
