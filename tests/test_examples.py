@@ -52,6 +52,11 @@ def test_roux_stat_corr(tb):
     pass # execute only because tests are present in the notebook itself
     return
 
+@testbook("examples/roux_stat_sets.ipynb", execute=True)
+def test_roux_stat_sets(tb):
+    pass # execute only because tests are present in the notebook itself
+    return
+
 @testbook('examples/roux_viz_annot.ipynb', execute=True)
 def test_roux_viz_annot(tb):
     pass # execute only because tests are present in the notebook itself
