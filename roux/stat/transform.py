@@ -81,7 +81,7 @@ def get_q(
     ds2=ds1.dropna()
     from statsmodels.stats.multitest import fdrcorrection
     ds3=fdrcorrection(pvals=ds2, alpha=0.05, method='indep', is_sorted=False)[1]
-    ds4=ds1.map(pd.DataFrame({'P':ds2,'Q':ds3}).drop_duplicates().rd.to_dict(['P','Q']))
+    ds4=ds1.map(pd.DataFrame({'P':ds2,'Q':ds3}).drop_duplicates().set_index('P')['Q'])
     if verb:
         from roux.viz.annot import perc_label        
         logging.info(f"significant at Q<{test_coff}: {perc_label(ds4<test_coff)}")

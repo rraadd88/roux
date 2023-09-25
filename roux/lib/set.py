@@ -304,21 +304,6 @@ def list2ranges(l):
         ls.append(l)
     return ls
 
-# def dfbool2intervals(df,colbool):
-#     """
-#     ds contains bool values
-#     """
-#     df.index=range(len(df))
-#     intervals=bools2intervals(df[colbool])
-#     for intervali,interval in enumerate(intervals):
-#         df.loc[interval[0]:interval[1],f'{colbool} interval id']=intervali
-#         df.loc[interval[0]:interval[1],f'{colbool} interval start']=interval[0]
-#         df.loc[interval[0]:interval[1],f'{colbool} interval stop']=interval[1]
-#         df.loc[interval[0]:interval[1],f'{colbool} interval length']=interval[1]-interval[0]+1
-#         df.loc[interval[0]:interval[1],f'{colbool} interval within index']=range(interval[1]-interval[0]+1)    
-#     df[f'{colbool} interval index']=df.index    
-#     return df
-
 def get_pairs(
     items: list,
     items_with: list = None,
@@ -330,12 +315,12 @@ def get_pairs(
 
     Parameters:
         items: the list of items to pair.
-	items_with: list of items to pair with.
-	size: size of the combinations.
-	with_self: pair with self or not.
+    items_with: list of items to pair with.
+    size: size of the combinations.
+    with_self: pair with self or not.
 
     Returns:
-	table with pairs of items.
+    table with pairs of items.
 
     Notes:
         1. the ids of the items are sorted e.g. 'a'-'b' not 'b'-'a'.
