@@ -9,13 +9,13 @@ Note: Post-development, to remove *s from the code, use removestar (pip install 
 """
 ## logging functions
 import logging
-logger = logging.getLogger().setLevel(logging.INFO)
+logging.basicConfig(level=logging.INFO)
 # logging.basicConfig(format='[%(asctime)s] %(levelname)s\tfrom %(filename)s in %(funcName)s(..): %(message)s',level=logging.INFO)
 
 try:
     import watermark.watermark as watermark # session info
 except ImportError:
-    logger.warning('Install interactive-mode dependencies: pip install roux[interactive]')
+    logging.warning('Install interactive-mode dependencies: pip install roux[interactive]')
 
 
 from icecream import ic as info
@@ -117,7 +117,10 @@ if not is_interactive_notebook():
 else:
     ## logging functions
     from tqdm import notebook
-    notebook.tqdm().pandas()
+    try:
+        notebook.tqdm().pandas()
+    except:
+        logging.warning("ImportError: IProgress not found. Please update jupyter and ipywidgets. See https://ipywidgets.readthedocs.io/en/stable/user_install.html")
     from IPython.display import Markdown as info_nb
     # display vector graphics in jupyter
     # if not get_ipython() is None:
