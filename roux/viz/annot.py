@@ -175,10 +175,10 @@ def show_outlines(
             data=df_,
             x=colx,
             y=coly,
-            ec=outline_colors[cat],
+            edgecolor=outline_colors[cat],
+            facecolor="none",
             linewidth=1,
             s=50,
-            fc="none",
             style=style,
             ax=ax,
             legend=False,
@@ -263,7 +263,7 @@ def show_box(
     fill: str=None, 
     alpha: float=1,
     lw: float=1.1,
-    ec: str='k',
+    edgecolor: str='k',
     clip_on: bool=False,
     scale_width: float=1,
     scale_height: float=1,
@@ -281,7 +281,7 @@ def show_box(
         fill (str, optional): fill the box with color. Defaults to None.
         alpha (float, optional): alpha of color. Defaults to 1.
         lw (float, optional): line width. Defaults to 1.1.
-        ec (str, optional): edge color. Defaults to 'k'.
+        edgecolor (str, optional): edge color. Defaults to 'k'.
         clip_on (bool, optional): clip the boxes by the axis limit. Defaults to False.
         scale_width (float, optional): scale width. Defaults to 1.
         scale_height (float, optional): scale height. Defaults to 1.
@@ -299,7 +299,7 @@ def show_box(
                             xy=[xy[0]+xoff,xy[1]+yoff], 
                             width=width*scale_width, height=height*scale_height, 
                             fill=fill, alpha=alpha,
-                            lw=lw,ec=ec,clip_on=clip_on,
+                            lw=lw,edgecolor=edgecolor,clip_on=clip_on,
                             **kws,
                             ))
 

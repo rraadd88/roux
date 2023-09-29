@@ -154,6 +154,60 @@ def read_nb_md(
     l1+=[cell.source for cell in nb.cells if cell.cell_type == 'markdown']
     return l1
 
+def replace_in_nb(
+    nb_path,
+    output_path,
+    replaces: dict={},
+    cell_type: str='code',
+    drop_lines_with_substrings=[],
+    test=False,
+    ):
+    """
+    Replace text in a jupyter notebook.
+    
+    Parameters
+        nb: notebook object obtained from `nbformat.reads`.
+        replaces (dict): mapping of text to 'replace from' to the one to 'replace with'.
+        cell_type (str): the type of the cell.
+    
+    Returns:
+        new_nb: notebook object.        
+    """
+    import nbformat
+    from nbconvert import PythonExporter, NotebookExporter
+    ## read nb
+    with open(nb_path) as fh:
+        nb = nbformat.reads(fh.read(), nbformat.NO_CONVERT)
+    
+    new_nb=nb.copy()
+    if test:
+        print(f"len(new_nb['cells'])={len(new_nb['cells'])}")
+    # break_early= str(nb).count(replace_from)==1
+    for i,d in enumerate(new_nb['cells']):
+        if d['cell_type']==cell_type:
+            for replace_from, replace_to in replaces.items():
+                if replace_from in d['source']:
+                    d['source']=d['source'].replace(replace_from,replace_to)
+            for k in drop_lines_with_substrings:
+                if k in d['source']:
+                    _lines=d['source'].split('\n')
+                    _lines_flt=[s for s in _lines if not k in s]
+                    # if len(_lines_flt)<len(_lines):
+                    #     print(_lines)
+                    d['source']='\n'.join(_lines_flt)
+            new_nb['cells'][i]=d
+            # if break_early:
+                # break
+    ## save new nb
+    to_nb=NotebookExporter()
+    source_nb,_=to_nb.from_notebook_node(new_nb)
+    print(f"saving: {output_path}")
+    if not test:
+        with open(output_path, 'w+') as fh:
+            fh.writelines(source_nb)
+        return output_path                        
+    return output_path
+
 def read_config(
     p: str,
     config_base=None,
