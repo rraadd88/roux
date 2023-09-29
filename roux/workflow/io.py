@@ -402,13 +402,11 @@ def to_diff_notebooks(
     return urls_output
 
 ## post-processing
-def removestar(
-    nb_path,
+def replacestar(
+    input_path,
     output_path=None,
     replace_from='from roux.global_imports import *',
-    py_path=None,
     in_place: bool=False,
-    return_replacements: bool=True,
     attributes={
         'pandarallel':['parallel_apply'],
         'rd':['.rd.','.log.']
@@ -418,10 +416,10 @@ def removestar(
     **kws_fix_code,
     ):
     """
-    Post-development in jupyter notebook, remove wildcard (global) import of from roux i.e. 'from roux.global_imports import *'.
+    Post-development, replace wildcard (global) import from roux i.e. 'from roux.global_imports import *' with individual imports with accompanying documentation.
     
     Parameters
-        nb_path (str): path to the notebook.
+        input_path (str): path to the .py or .ipynb file.
         output_path (str): path to the output.
         py_path (str): path to the intermediate .py file.
         in_place (bool): whether to carry out the modification in place.
@@ -437,57 +435,57 @@ def removestar(
     ## infer input parameters
     if output_path is None:
         if in_place:
-            output_path=nb_path
+            output_path=input_path
         else:
-            test=True
             verbose=True
-    if py_path is None:
-        import tempfile
-        py_fh=tempfile.NamedTemporaryFile()
-        py_path=py_fh.name
-        py_path_temp=True
-    else:
-        py_fh=open(py_path, 'w+')
-        py_path_temp=False
-
     try:
-        from removestar.removestar import removestar_nb, replace_in_nb
+        from removestar.removestar import fix_code, replace_in_nb
     except ImportError as error:
-        logging.error(f'Installed requirements using command: pip install git+https://github.com/rraadd88/removestar.git@nb')
+        logging.error(f'{error.message}: Install needed requirement using command: pip install removestar')
 
-    replaces=removestar_nb(
-        nb_path=nb_path,
-        output_path=None,
-        py_path=py_path,
-        return_replacements=return_replacements,
-        **kws_fix_code,
-        )
+    if input_path.endswith(".py"):    
+        with open(input_path, encoding="utf-8") as f:
+            code = f.read()
+    elif input_path.endswith(".ipynb"):
+        with open(input_path) as f:
+            import nbformat
+            nb = nbformat.reads(f.read(), nbformat.NO_CONVERT)
+
+        ## save as py
+        from nbconvert import PythonExporter
+        exporter = PythonExporter()
+        code, _ = exporter.from_notebook_node(nb)
+
+    import tempfile
+    replaces = fix_code(
+            code=code,
+            file=tempfile.NamedTemporaryFile().name,
+            return_replacements=True,
+            )
     
     if replace_from in replaces:
         imports=replaces[replace_from]
         if imports!='':
             imports=imports.split(' import ')[1].split(', ')
-            if verbose: logging.info(f"imports={imports}")            
+            if test: logging.info(f"imports={imports}")            
         else:
             imports=[]
-            logging.warning(f"no function imports found in '{nb_path}'")    
+            if verbose: logging.warning(f"no function imports found in '{input_path}'")    
     else:
-        logging.warning(f"'{replace_from}' not found in '{nb_path}'")    
+        logging.warning(f"'{replace_from}' not found in '{input_path}'")    
         return 
 
-    code=open(py_path,'r').read()
     imports_attrs=[k for k,v in attributes.items() if any([s in code for s in v])]
     if len(imports_attrs)==0:
-        logging.warning(f"no function imports found in '{nb_path}'")    
+        if verbose: logging.warning(f"no attribute imports found in '{input_path}'")
         
     if len(imports+imports_attrs)==0:
-        logging.warning(f"no imports found in '{nb_path}'")    
+        logging.warning(f"no imports found in '{input_path}'")    
         return 
     
     df2=get_global_imports()
     def get_lines_replace_with(imports,df2): 
         ds=df2.query(expr=f"`function name` in {imports}").apply(lambda x: f"## {x['function comment']}\n{x['import statement']}",axis=1)
-        # print(ds)
         lines=ds.tolist()
         return '\n'.join(lines)
     
@@ -497,13 +495,37 @@ def removestar(
 
     if len(imports_attrs)!=0:
         replace_with+='\n'+get_lines_replace_with(imports_attrs,df2.query("`attribute`==True"))
-        
-    replace_with=replace_with.strip()
-    if verbose:logging.info(f"replace_with:\n{replace_with}")
+    ## remove duplicate lines
+    replace_with='\n'.join(pd.Series(replace_with.split('\n')).drop_duplicates(keep='first').tolist())
 
-    replace_in_nb(
-            nb_path,
-            replaces={replace_from:replace_with},
-            cell_type='code',
-            output_path=output_path,
-            )
+    replace_with=replace_with.strip()
+    replaces_={**replaces,**{replace_from:replace_with}}
+
+    if verbose:logging.info(f"replace     :\n"+('\n'.join([k for k in replaces_.keys()])))
+    if verbose:logging.info(f"replace_with:\n"+('\n'.join([v for v in replaces_.values()])))
+
+    from roux.lib.str import replace_many
+    new_code=replace_many(code,replaces_)
+    if not output_path is None:
+        # save files
+        if input_path.endswith(".py"):
+            open(output_path,'w').write(new_code)        
+        elif input_path.endswith(".ipynb"):
+            with open(input_path) as f:
+                nb = nbformat.reads(f.read(), nbformat.NO_CONVERT)
+                fixed_code = replace_in_nb(
+                    nb,
+                    new_code,
+                    cell_type="code",
+                )
+
+            with open(input_path, "w+") as f:
+                f.writelines(fixed_code)
+
+            replace_in_nb(
+                    input_path,
+                    replaces={replace_from:replace_with},
+                    cell_type='code',
+                    output_path=output_path,
+                    )
+    return output_path
