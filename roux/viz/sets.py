@@ -169,12 +169,6 @@ def plot_intersection_counts(
             ax=ax,
             **kws_show_stats,
         )
-    elif confusion:    
-        ax=annot_confusion_matrix(
-            dplot,
-            ax=ax,
-            off=0.5,
-        )
     return ax
 
 def plot_intersections(

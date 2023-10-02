@@ -270,7 +270,7 @@ def plot_barh_stacked_percentage_intersections(
         coff=np.quantile(df.loc[df[colybool],colvalue],coffgroup)
         df[colybool]=df[colvalue]<coff
         return df
-    df1=df0.groupby(colgroupby).progress_apply(apply_)
+    df1=df0.groupby(colgroupby).apply(apply_)
     ##2 % 
     df2=df1.groupby([colid,colxbool]).agg({colybool: perc}).reset_index().rename(columns={colybool:f'% {colgroupby}s with {colybool}'},
                                                                                         errors='raise')

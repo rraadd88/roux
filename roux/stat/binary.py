@@ -76,7 +76,9 @@ def perc(x: list) -> float:
     return frac(x)*100
 
 ## confusion_matrix
-def get_stats_confusion_matrix(df_: pd.DataFrame) -> pd.DataFrame:
+def get_stats_confusion_matrix(
+    df_: pd.DataFrame,
+    ) -> pd.DataFrame:
     """Get stats confusion matrix.
 
     Args:

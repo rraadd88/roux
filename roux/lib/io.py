@@ -901,8 +901,7 @@ def to_manytables(
             assert not exists(outd), outd
         df[colgroupby]=get_chunks(df1=df,value='right',
                                   **kws_get_chunks)
-#     print(df.groupby(colgroupby).progress_apply(lambda x: f"{outd}/{x.name if not isinstance(x.name, tuple) else '/'.join(x.name)}{ext}"))
-    
+#   
     if (df.loc[:,colgroupby].dtypes=='float').any():        
         logging.error('columns can not be float')
         info(df.loc[:,colgroupby].dtypes)
@@ -918,11 +917,10 @@ def to_manytables(
             names=[names]
         d1=dict(zip(colgroupby,names))
         s1='/'.join([(f"{k}{fmt}" if fmt!='' else fmt)+f"{str(v)}" for k,v in d1.items()])
-        return to_path(f"{outd}/{s1}{ext}")                
+        return to_path(f"{outd}/{s1}{ext}") 
+    groupby=df.groupby(colgroupby)
     df2=(
-        df
-        .groupby(colgroupby)
-        .progress_apply(lambda x: to_table(
+        getattr(groupby,'progress_apply' if hasattr(groupby,'progress_apply') else 'apply')(lambda x: to_table(
             x,
             to_outp(
                 names=x.name,

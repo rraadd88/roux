@@ -137,7 +137,7 @@ def run_tasks(
             ds1=ds1.head(1)
             logging.warning("testing only the first input.")
         if not fast: 
-            _=ds1.progress_apply(
+            _=getattr(ds1,'progress_apply' if hasattr(ds1,'progress_apply') else 'apply')(
                 lambda x: run_task(
                     x,
                     input_notebook_path=input_notebook_path,
