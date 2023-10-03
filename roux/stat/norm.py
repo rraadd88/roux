@@ -69,6 +69,11 @@ def zscore(
 
     Returns:
         pd.DataFrame: output table.
+        
+    TODOs:
+        1. Use scipy's zscore because of it's additional options
+            from scipy.stats import zscore
+            df.apply(zscore)
     """
     if isinstance(df, pd.Series):
         logging.warning('isinstance(df, pd.Series)==True')

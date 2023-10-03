@@ -734,9 +734,8 @@ def apply_on_paths(
         logging.info('no paths remained to be processed.')
         return df1
     if fast and not progress_bar: progress_bar=True
-    df2=getattr(df1.groupby('path',as_index=True),
-                            f"{'parallel' if fast else 'progress'}_apply" if progress_bar else "apply"
-               )(lambda df: func(*(read_table_(df,read_path=read_path,
+    _groupby=df1.groupby('path',as_index=True)
+    df2=getattr(_groupby,'progress_apply' if fast else 'progress_apply' if hasattr(_groupby,'progress_apply') else 'apply')(lambda df: func(*(read_table_(df,read_path=read_path,
                                                  save_table=save_table,
                                                  replaces_outp=replaces_outp,
                                                  filter_rows=filter_rows,
@@ -918,9 +917,9 @@ def to_manytables(
         d1=dict(zip(colgroupby,names))
         s1='/'.join([(f"{k}{fmt}" if fmt!='' else fmt)+f"{str(v)}" for k,v in d1.items()])
         return to_path(f"{outd}/{s1}{ext}") 
-    groupby=df.groupby(colgroupby)
+    _groupby=df.groupby(colgroupby)
     df2=(
-        getattr(groupby,'progress_apply' if hasattr(groupby,'progress_apply') else 'apply')(lambda x: to_table(
+        getattr(_groupby,'progress_apply' if hasattr(_groupby,'progress_apply') else 'apply')(lambda x: to_table(
             x,
             to_outp(
                 names=x.name,
