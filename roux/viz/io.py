@@ -109,10 +109,13 @@ def savefig(
     
     ## warnings
     plt.set_loglevel("warning")
-    import fontTools
-    fontTools.logging.disable()
-    del fontTools
-    logging.getLogger("fontTools.subset").setLevel(logging.ERROR)
+    try:
+        import fontTools
+        fontTools.logging.disable()
+        del fontTools
+        logging.getLogger("fontTools.subset").setLevel(logging.ERROR)
+    except:
+        pass
     
     if '.' in plotp:
         plt.savefig(plotp,

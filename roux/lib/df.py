@@ -113,9 +113,12 @@ def drop_constants(df):
         df (DataFrame): output dataframe.
     """    
     cols_del=get_constants(df)
-    logging.warning(f"dropped columns: {', '.join(cols_del)}")
-    return df.drop(cols_del,axis=1)
-
+    if len(cols_del)>0:
+        logging.warning(f"dropped columns: {', '.join(cols_del)}")
+        return df.drop(cols_del,axis=1)
+    else:
+        return df
+    
 @to_rd
 def dropby_patterns(
     df1,
@@ -1368,10 +1371,15 @@ def agg_by_order_counts(x,order):
     return ds.to_frame('').T
 
 @to_rd
-def groupby_sort_values(df,col_groupby,col_sortby,
-                 subset=None,
-                 col_subset=None,
-                 func='mean',ascending=True):
+def groupby_sort_values(
+    df: pd.DataFrame,
+    col_groupby: list,
+    col_sortby: list,
+    subset: list=None,
+    col_subset: list=None,
+    func: str='mean',
+    ascending: bool=True,
+    ):
     """Sort groups. 
     
     Parameters:

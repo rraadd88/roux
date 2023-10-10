@@ -6,6 +6,8 @@ import numpy as np
 import pandas as pd
 ## internal
 import roux.lib.dfs as rd
+from roux.stat.corr import check_collinearity
+from roux.stat.variance import get_variance_inflation
 
 # curate data 
 def drop_low_complexity(
@@ -42,9 +44,10 @@ def drop_low_complexity(
     if verbose:
         logging.info(df_)
     df_=df_.sort_values(df_.columns.tolist(),ascending=False)
-    df1_=df_.loc[((df_['nunique']<=min_nunique) | (df_['% inflation']>=max_inflation)),:]
+    df1_=df_.loc[((df_['nunique']<min_nunique) | (df_['% inflation']>=max_inflation)),:]
     l1=df1_.index.tolist()
-    logging.info(df1_)
+    if len(l1)!=0:
+        logging.info(df1_)
     if not max_nunique is None:
         df2_=df_.loc[(df_['nunique']>max_nunique),:]
         l1+=df2_.index.tolist()
@@ -55,13 +58,205 @@ def drop_low_complexity(
 #         return (len(ds1)<=min_nunique) or ((ds1.values[0]/len(df1))>=max_inflation)
 #     l1=df1.loc[:,cols].apply(lambda x: apply_(x,df1,min_nunique=min_nunique,max_inflation=max_inflation)).loc[lambda x: x].index.tolist()
     logging.info(f"{len(l1)}(/{len(cols)}) columns {'could be ' if test else ''}dropped:")
-    if len(cols_keep)!=0:
-        assert all([c in df1 for c in cols_keep]), ([c for c in cols_keep if not c in df1])
-        cols_kept=[c for c in l1 if c in cols_keep]
-        logging.info(cols_kept)
-        l1=[c for c in l1 if not c in cols_keep]
+    if l1==0:
+        return df1
+    else:
+        if len(cols_keep)!=0:
+            assert all([c in df1 for c in cols_keep]), ([c for c in cols_keep if not c in df1])
+            cols_kept=[c for c in l1 if c in cols_keep]
+            logging.info(cols_kept)
+            l1=[c for c in l1 if not c in cols_keep]
+
+        return df1.log.drop(labels=l1,axis=1)
+
+def get_cols_x_for_comparison(
+    df1: pd.DataFrame,
+    cols_y: list,
+    cols_index: list,
+    ## drop columns
+    cols_drop: list=[],
+    cols_dropby_patterns: list=[],    
+    ## complexity
+    dropby_low_complexity: bool=True,
+    min_nunique: int =5,
+    max_inflation: int =50,
+    ## collinearity
+    dropby_collinearity: bool=True,
+    coff_rs: float=0.7,    
+    dropby_variance_inflation: bool=True,
+    verbose: bool=False,
+    test: bool=False,
+    ) -> dict:
+    """
+    Identify X columns.
+    
+    Parameters:
+        df1 (pd.DataFrame): input table.
+        cols_y (list): y columns.
+    
+    """
+    ## drop columns
+    df1=(
+        df1
+        .drop(cols_drop,axis=1)
+        .rd.dropby_patterns(cols_dropby_patterns)
+        .log.dropna(how='all',axis=1)
+        ## drop single value columns
+        .rd.drop_constants()
+    )
+    ## columns to drop after identifying them
+    cols_drop=[]
+    ## make the dictionary with column names
+    columns=dict(cols_y={
+            'cont':df1.loc[:,cols_y].select_dtypes((int,float)).columns.tolist(),
+            },
+            cols_index=cols_index,
+        )
+    columns['cols_y']['desc']=list(set(cols_y) - set(columns['cols_y']['cont']))
+    columns['cols_x']={}
         
-    return df1.log.drop(labels=l1,axis=1)
+    ## get continuous cols_x
+    if dropby_low_complexity:
+        logging.info("[1] Checking complexity..")
+        df1=drop_low_complexity(
+            df1=df1,
+            min_nunique=min_nunique,
+            max_inflation=max_inflation,
+            cols=list(set(df1.select_dtypes((int,float)).columns.tolist()) - set(columns['cols_y']['cont'])),
+            cols_keep=columns['cols_y']['cont'],
+            verbose=verbose,
+            )
+    # except:
+    #     logging.warning('skipped `drop_low_complexity`, possibly because of a single x variable')
+    #     df_=df1.copy()
+    
+    columns['cols_x']['cont']=df1.drop(columns['cols_y']['cont'],axis=1).select_dtypes((int,float)).columns.tolist()        
+    if dropby_collinearity:
+        if len(columns['cols_x']['cont'])>1: 
+            ## check collinearity 
+            logging.info("[2] Checking collinearity..")
+            ds1_=check_collinearity(
+                df1=df1.loc[:,columns['cols_x']['cont']],
+                threshold=coff_rs,
+                # colvalue='$r_s$',
+                cols_variable=['variable1','variable2'],
+                coff_pval=0.05,
+            )
+            if not ds1_ is None:
+                if verbose:logging.info(f"Minimum correlation among group of variables: {ds1_.to_dict()}")
+                from roux.lib.set import flatten,unique
+                cols_drop+=unique(flatten([s.split('--') for s in ds1_.index.tolist()]))
+                if verbose:logging.info(f"Columns to be dropped: {cols_drop}")
+    if dropby_variance_inflation: 
+        logging.info("[3] Checking variance inflation..")
+        vifs={}
+        for coly in columns['cols_y']['cont']:
+            vifs[coly]=get_variance_inflation(
+                        df1,
+                        coly=coly,
+                        )
+        if len(vifs)!=0:
+            ds2_=pd.concat(vifs,axis=0).replace([np.inf, -np.inf], np.nan).dropna().sort_values('VIF',ascending=False)    
+            if verbose:logging.info(ds2_)
+    
+    df1=df1.log.drop(labels=cols_drop,axis=1)
+    columns['cols_x']['cont']=list(sorted(set(columns['cols_x']['cont']) - set(cols_drop)))
+        
+    ## get descrete x columns
+    ds2_=df1.nunique().sort_values()
+    l1=ds2_.loc[lambda x: (x==2)].index.tolist()
+    if test: print('l1',l1)
+    
+    ds2_=df1.select_dtypes((int,float)).nunique().sort_values()
+    l2=ds2_.loc[lambda x: (x==2)].index.tolist()
+    if test: print('l2',l2)
+    
+    columns['cols_x']['desc']=sorted(list(set(l1+l2) - set(columns['cols_y']['desc'])))   
+    return columns
+
+def to_preprocessed_data(
+    df1: pd.DataFrame,
+    columns: dict,
+    fill_missing_desc_value: bool=False,
+    fill_missing_cont_value: bool=False,
+    normby_zscore: bool=False,
+    verbose: bool=False,
+    test: bool=False,    
+    ) -> pd.DataFrame:
+    """
+    Preprocess data.
+    """
+    ## Filtering by the provided columns
+    ### collecting all the columns
+    cols=[]
+    for d1 in columns.values():
+        if isinstance(d1,dict):
+            cols+=list(d1.values())
+        elif isinstance(d1,list):
+            cols+=list(d1)
+    from roux.lib.set import flatten,unique
+    df1=df1.loc[:,unique(flatten(cols))]
+    
+    if normby_zscore:
+        ## Normalise continuous variables by calculating Z-score
+        if len(columns['cols_x']['cont'])!=0:
+            import scipy as sc
+            for c in columns['cols_x']['cont']: 
+                df1[c]=sc.stats.zscore(df1[c],nan_policy='omit')
+            if verbose: logging.info(df1.loc[:,columns['cols_x']['cont']].describe().loc[['mean','std'],:])
+
+    ## Fill missing values
+    if fill_missing_cont_value!=False:
+        for c in columns['cols_x']['cont']: 
+            if df1[c].isnull().any():
+                if verbose: logging.info(df1[c].isnull().sum()) 
+                df1[c]=df1[c].fillna(fill_missing_cont_value)
+            
+    if fill_missing_desc_value!=False:
+        for c in columns['cols_x']['desc']: 
+            if df1[c].isnull().any():
+                if verbose: logging.info(df1[c].isnull().sum()) 
+                df1[c]=df1[c].fillna(fill_missing_desc_value) 
+    return df1
+
+## filter
+def to_filteredby_samples(
+    df1: pd.DataFrame,
+    colindex: str,
+    colsample: str,
+    coff_samples_min: int,
+    colsubset: str, 
+    coff_subsets_min: int=2,
+    ) -> pd.DataFrame:
+    """Filter table before calculating differences.
+    (1) Retain minimum number of samples per item representing a subset and
+    (2) Retain minimum number of subsets per item.
+    
+    Parameters:        
+        df1 (pd.DataFrame): input table.
+        colindex (str): column containing items.
+        colsample (str): column containing samples.
+        coff_samples_min (int): minimum number of samples.
+        colsubset (str): column containing subsets.
+        coff_subsets_min (int): minimum number of subsets. Defaults to 2.
+        
+    Returns:
+        pd.DataFrame
+        
+    Examples:
+        Parameters:
+            colindex='genes id',
+            colsample='sample id',
+            coff_samples_min=3,
+            colsubset= 'pLOF or WT' 
+            coff_subsets_min=2,  
+    """
+    
+    df1=df1.reset_index(drop=True)
+    df1=df1.loc[(df1.groupby([colindex,colsubset])[colsample].transform('nunique')>=coff_samples_min),:].log(colindex)
+    df1=df1.loc[(df1.groupby(colindex)[colsubset].transform('nunique')==coff_subsets_min),:].log(colindex)
+    assert df1.groupby([colindex,colsubset])[colsample].nunique().min()>=coff_samples_min
+    return df1
 
 def get_cvsplits(
     X: np.array,

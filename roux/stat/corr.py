@@ -280,7 +280,8 @@ def get_corrs(
             subset=cols+cols_with,
             )
         ds_=ds_.loc[lambda x: x>=coff_inflation_min]
-        logging.info(ds_)
+        if len(ds_)!=0:
+            logging.info(f"columns dropped because of inflation: {ds_.index.tolist()}")
         # remove inflated
         cols=[c for c in cols if not c in ds_.index.tolist()]
         cols_with=[c for c in cols_with if not c in ds_.index.tolist()]
@@ -342,7 +343,7 @@ def check_collinearity(
         threshold (float): minimum threshold for the colinearity.
 
     Returns:
-        DataFrame: output dataframe.
+        DataFrame: output dataframe with minimum correlation among correlated subnetwork of columns.
     """
     cols=df1.columns.tolist()
     df2=get_corrs(
@@ -355,11 +356,12 @@ def check_collinearity(
     df2=df2.loc[(df2['P']<coff_pval),:]
     df2['is collinear']=df2[colvalue].abs().apply(lambda x: x>=threshold)
     perc=(df2['is collinear'].sum()/len(df2))*100
-    logging.info(f"collinear vars: {perc:.1f}% ({df2['is collinear'].sum()}/{len(df1.columns)})")
     if df2['is collinear'].sum()==0:
         logging.info(f"max corr={df2[colvalue].max()}")
         return
     df2=df2.loc[(df2['is collinear']),:]
+    logging.info(f"collinear vars: {perc:.1f}% ({df2['variable1'].nunique()}/{len(df1.columns)})")
+    
     ## find subgraphs (communities) variables with correalted values
     from roux.stat.network import get_subgraphs
     df3=get_subgraphs(df2.loc[df2['is collinear'],:],cols_variable[0],cols_variable[1])

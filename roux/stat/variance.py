@@ -57,7 +57,7 @@ def get_variance_inflation(
     # print(df1.columns)
     # print(f'{replace_many(coly,to_formula())} ~' + "+".join(cols_x))
     #design matrix 
-    y, X = dmatrices(f'{replace_many(coly,to_formula())} ~' + "+".join([replace_many(s,to_formula()) for s in cols_x]), df1, return_type='dataframe')
+    y, X = dmatrices(f'{replace_many(coly,to_formula(),ignore=True)} ~' + "+".join([replace_many(s,to_formula(),ignore=True) for s in cols_x]), df1, return_type='dataframe')
     return (
         pd.Series(
             {k:variance_inflation_factor(X.values, i) for i,k in enumerate(X)}
@@ -65,7 +65,7 @@ def get_variance_inflation(
             .to_frame('VIF')
             .rename_axis(['variable'],axis=0).reset_index()
             .assign(
-            **{'variable': lambda df: df['variable'].apply(lambda x: replace_many(x,to_formula(reverse=True)) if x!='Intercept' else 'Intercept'),
+            **{'variable': lambda df: df['variable'].apply(lambda x: replace_many(x,to_formula(reverse=True),ignore=True) if x!='Intercept' else 'Intercept'),
               },
             )
         )

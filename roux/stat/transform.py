@@ -123,9 +123,11 @@ def rescale(a: np.array, range1: tuple=None, range2: tuple=[0,1]) -> np.array:
     delta2 = range2[1] - range2[0]
     return (delta2 * (a - range1[0]) / delta1) + range2[0]
 
-def rescale_divergent(df1: pd.DataFrame,col: str,
+def rescale_divergent(
+    df1: pd.DataFrame,
+    col: str,
 #                       rank=True,
-                     ) -> pd.DataFrame:
+    ) -> pd.DataFrame:
     """Rescale divergently i.e. two-sided.
 
     Args:
@@ -143,7 +145,7 @@ def rescale_divergent(df1: pd.DataFrame,col: str,
               ):
         sign=df2.name
 #         from roux.stat.transform import rescale
-        df2[f'{col} rescaled']=rescale(df2[col],range2=[0, 1] if sign=='+' else [-1,0])
+        df2[f'{col} rescaled']=rescale(df2[col],range2=[1, 0] if sign=='+' else [0,-1])
         df2[f'{col} rank']=df2[col].rank(ascending=True if sign=='+' else False)*(1 if sign=='+' else -1)
         return df2
     assert(not any(df1[col]==0))
