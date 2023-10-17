@@ -54,9 +54,16 @@ def nintersection(l):
     """
     return len(intersection(l))
 
-def check_non_overlaps_with(l1,l2,out_count=False):
+def check_non_overlaps_with(
+    l1: list,
+    l2: list,
+    out_count: bool=False,
+    log=False,
+    ):
     l_=set(l1) - set(l2)
-    if not out_count:
+    if log:
+        return f"{len(l_)} non overlapping items found {l_}"
+    elif not out_count:
         return l_
     else: 
         return len(l_)
