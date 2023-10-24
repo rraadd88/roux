@@ -1,26 +1,28 @@
 """For normalisation."""
-import pandas as pd
+import logging
+
 import numpy as np
+import pandas as pd
+
 from scipy import stats
 
+## variance normalization
 def norm_by_quantile(X: np.array) -> np.array:
-    """Normalize the columns of X to each have the same distribution.
-
-    Notes:
-        Given an expression matrix (microarray data, read counts, etc) of M genes
-        by N samples, quantile normalization ensures all samples have the same
-        spread of data (by construction).
-
-        The data across each row are averaged to obtain an average column. Each
-        column quantile is replaced with the corresponding quantile of the average
-        column.
+    """Quantile normalize the columns of X.
 
     Parameters:
         X : 2D array of float, shape (M, N). The input data, with M rows (genes/features) and N columns (samples).
 
     Returns:
         Xn : 2D array of float, shape (M, N). The normalized data.
+        
+    Notes:
+        Faster processing (~5 times compared to other function tested) because of the use of numpy arrays.
+        
+    TODOs: 
+        Use `from sklearn.preprocessing import QuantileTransformer` with `output_distribution` parameter allowing rescaling back to the same distribution kind. 
     """
+    
     # compute the quantiles
     quantiles = np.mean(np.sort(X, axis=0), axis=1)
 
@@ -40,7 +42,9 @@ def norm_by_quantile(X: np.array) -> np.array:
     else:
         return(Xn)
 
-def norm_by_gaussian_kde(values: np.array) -> np.array:
+def norm_by_gaussian_kde(
+    values: np.array
+    ) -> np.array:
     """Normalise matrix by gaussian KDE.
 
     Args:
@@ -71,7 +75,7 @@ def zscore(
         pd.DataFrame: output table.
         
     TODOs:
-        1. Use scipy's zscore because of it's additional options
+        1. Use scipy or sklearn's zscore because of it's additional options
             from scipy.stats import zscore
             df.apply(zscore)
     """
@@ -107,6 +111,84 @@ def zscore_robust(a: np.array) -> np.array:
         logging.error('mad==0')
     return [get_zscore_robust(x,median,mad) for x in a]
 
+## co-variance normalization
+def norm_covariance_PCA(
+    X: np.array,
+    use_svd: bool=True,
+    use_sklearn: bool=True,
+    rescale_centered: bool=True,
+    random_state: int=0,
+    test: bool=False,
+    verbose: bool=False,
+    ) -> np.array:
+    """Covariance normalization by PCA whitening.
 
+    Args:
+        X (np.array): input array
+        use_svd (bool, optional): use SVD method. Defaults to True.
+        use_sklearn (bool, optional): use `skelearn` for SVD method. Defaults to True.
+        rescale_centered (bool, optional): rescale to centered input. Defaults to True.
+        random_state (int, optional): random state. Defaults to 0.
+        test (bool, optional): test mode. Defaults to False.
+        verbose (bool, optional): verbose. Defaults to False.
 
+    Returns:
+        np.array: transformed data.
+    """
+    if test: verbose=True
+    np.random.seed(random_state)
+    if verbose: logging.info(f"Covariance of the original data: {np.cov(X.T).round(2).tolist()}")    
+    if test:
+        import matplotlib.pyplot as plt
+        _,axs=plt.subplots(1,2,figsize=[6,3])
+        from roux.viz.scatter import plot_scatter
+        plot_scatter(
+            data=pd.DataFrame(X).rename(columns={i:f"{i}" for i in range(2)},errors='raise'),
+            x='0',
+            y='1',
+            stat_method='pearson',
+            ax=axs[0],
+        ).set(title='raw')
+
+    X_centered = X - np.mean(X, axis = 0)
+    if verbose: logging.info(f"Covariance of the centered data: {np.cov(X_centered.T).round(2).tolist()}")    
+
+    if use_svd:
+        if use_sklearn:
+            from sklearn.decomposition import PCA
+            X_transformed = PCA(
+                n_components = X.shape[1],
+                whiten = True,
+                svd_solver='full',
+                random_state=random_state,
+                ).fit_transform(X_centered)      
+        else:
+            cov = np.dot(X_centered.T, X_centered) / X_centered.shape[0]
+            eigen_values, eigen_vectors, _ = np.linalg.svd(cov)
+            mult = np.dot(np.diag(1.0 / np.sqrt(eigen_vectors + 1e-5)), eigen_values.T)
+            if verbose: logging.info(f"Covariance of the mult data: {np.cov(mult.T).round(2).tolist()}") 
+            X_transformed=np.dot(X_centered, mult.T)
+    else:
+        cov = np.cov(X_centered.T)
+        eigen_values, eigen_vectors = np.linalg.eig(cov)
+        if rescale_centered==True:
+            X_decorrelated = X_centered.dot(eigen_vectors)
+        elif rescale_centered==False:
+            X_decorrelated = X.dot(eigen_vectors)
+        X_transformed = X_decorrelated / np.sqrt(eigen_values + 1e-5)
+        if verbose: logging.info(f"Covariance of the X_decorrelated data: {np.cov(X_decorrelated.T).round(2).tolist()}") 
+        
+    if verbose: logging.info(f"Covariance of the white data: {np.cov(X_transformed.T).round(2).tolist()}")
+    assert X_transformed.shape==X.shape
+    assert np.allclose(np.cov(X_transformed.T).round(2),np.identity(X.shape[1]))
+
+    if test:
+        plot_scatter(
+            data=pd.DataFrame(X_transformed).rename(columns={i:f"{i}" for i in range(2)},errors='raise'),
+            x='0',
+            y='1',
+            stat_method='pearson',
+            ax=axs[1],
+        ).set(title='transformed')
+    return X_transformed
 

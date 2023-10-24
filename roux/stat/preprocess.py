@@ -9,6 +9,74 @@ import roux.lib.dfs as rd
 from roux.stat.corr import check_collinearity
 from roux.stat.variance import get_variance_inflation
 
+## attach functions as attributes of dataframes
+import roux.lib.df as rd
+from roux.lib import to_rd
+
+# matrix data
+@to_rd
+def dropna_matrix(
+    df1,
+    coff_cols_min_perc_na=5,
+    coff_rows_min_perc_na=5,    
+    test=False,
+    verbose=False,
+    ):
+    if test:
+        verbose=True
+    assert not df1.columns.name is None
+    assert not df1.index.name is None
+    
+    d1={
+        df1.columns.name:df1.rd.check_na(perc=True).sort_values(ascending=False),
+        df1.index.name:df1.T.rd.check_na(perc=True).sort_values(ascending=False),
+        }
+
+    if test:
+        import matplotlib.pyplot as plt
+        fig,axs=plt.subplots(1,2,figsize=[5,2.5])
+        for k,ax in zip(d1,axs):
+            d1[k].hist(ax=ax).set(title=k)
+
+    d2={k:len(v) for k,v in d1.items()}
+    if verbose: logging.info(d2)
+    l1=sorted(d2,key=d2.get,reverse = False)
+    if verbose: logging.info(l1)
+
+    ## dropna axis
+    d3={
+        df1.columns.name:1,
+        df1.index.name:0,
+    }
+    ## cutoffs
+    d4={
+        df1.columns.name:coff_cols_min_perc_na,
+        df1.index.name:coff_rows_min_perc_na,
+    }
+    if verbose: logging.info(d3)
+
+    if verbose: 
+        for k in l1:
+            logging.info(f"min. percent of '{k}'s to be dropped={perc(d1[k]>=d4[k])}")
+
+    return (df1
+        .log.drop(
+            labels=d1[l1[0]][d1[l1[0]]>=d4[l1[0]]].index.tolist(),
+            axis=d3[l1[0]]        
+        )
+        .log.drop(
+            labels=d1[l1[1]][d1[l1[1]]>=d4[l1[1]]].index.tolist(),
+            axis=d3[l1[1]]        
+        ) 
+        .log.dropna(
+            axis=d3[l1[0]]
+            )
+        .log.dropna(
+            axis=d3[l1[1]]
+            )
+         .rd.assert_no_na()
+    )
+
 # curate data 
 def drop_low_complexity(
     df1: pd.DataFrame,

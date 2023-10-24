@@ -183,8 +183,8 @@ def get_enrichment(
     df2: pd.DataFrame,
     colid: str,
     colset: str, 
-    coltest: str, 
     background: int,
+    coltest: str=None, 
     verbose: bool=False,
     ) -> pd.DataFrame:
     """Calculate the enrichments.
@@ -204,6 +204,9 @@ def get_enrichment(
     assert isinstance(background,int) 
     ## calculate the background for the Fisher's test that is compatible with the contigency tables
     background_fisher_test = len(set(df1[colid].tolist()+df2[colid].tolist()))
+    if coltest is None:
+        coltest='Unnamed'
+        df1=df1.assign(**{coltest:1})
     df3=(df1
         .groupby(coltest) # iterate over the groups of items to test
         .apply(lambda df1_: (df2.groupby(colset) # iterate over the groups of item sets
@@ -259,16 +262,19 @@ def get_enrichment(
         },
         ))))
     ).reset_index()
+    
     def get_qs(df):
         from roux.stat.transform import get_q
         ## Multiple test correction. Calculate adjusted P values i.e. Q values
-        from statsmodels.stats.multitest import fdrcorrection
+        # from statsmodels.stats.multitest import fdrcorrection
         for col in df.filter(regex='^P.*'):
+            logging.info(col)
             df[col.replace('P','Q')]=get_q(ds1=df[col], verb=verbose)
         return df
     df4=(df3
         .query(expr="`overlap size` != 0")
         .groupby(coltest) # iterate over tests
-        .apply(get_qs)
+            .apply(get_qs)
+            .rd.clean()
         )
     return df4.sort_values(df4.filter(regex='^Q.*').columns.tolist())
