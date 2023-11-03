@@ -9,17 +9,17 @@ Note: Post-development, to remove *s from the code, use removestar (pip install 
 """
 ## logging functions
 import logging
-logging.basicConfig(level=logging.INFO)
-# logging.basicConfig(format='[%(asctime)s] %(levelname)s\tfrom %(filename)s in %(funcName)s(..): %(message)s',level=logging.INFO)
+logging.basicConfig(
+    level=logging.INFO,
+    # format='[%(asctime)s] %(levelname)s\tfrom %(filename)s in %(funcName)s(..): %(message)s'
+    )
 
 try:
-    import watermark.watermark as watermark # session info
+    from icecream import ic as info
+    info.configureOutput(prefix='INFO:icrm:')
 except ImportError:
-    logging.warning('Install interactive-mode dependencies: pip install roux[interactive]')
+    logging.warning('Optional dependency icecream missing, install by running: pip install roux[interactive]')
 
-
-from icecream import ic as info
-info.configureOutput(prefix='INFO:icrm:')
 
 ## data functions
 import itertools
@@ -125,9 +125,15 @@ else:
     # display vector graphics in jupyter
     # if not get_ipython() is None:
     #     get_ipython().run_line_magic('config', "InlineBackend.figure_formats = ['svg']")
-
-logging.info(watermark(python=True)+watermark(iversions=True,globals_=globals()))
-
-## parallel-pocessing functions
-from pandarallel import pandarallel;pandarallel.initialize(nb_workers=6,progress_bar=True,use_memory_fs=False) # attributes
-# logging.info("pandarallel.initialize(nb_workers=4,progress_bar=True)")
+try:
+    import watermark.watermark as watermark # session info
+    logging.info(watermark(python=True)+watermark(iversions=True,globals_=globals()))
+except ImportError:
+    logging.warning('Optional dependency watermark missing, install by running: pip install roux[interactive]')
+    
+try:
+    ## parallel-pocessing functions
+    from pandarallel import pandarallel;pandarallel.initialize(nb_workers=6,progress_bar=True,use_memory_fs=False) # attributes
+    # logging.info("pandarallel.initialize(nb_workers=4,progress_bar=True)")
+except ImportError:
+    logging.warning('Optional dependency pandarallel missing, install by running: pip install roux[fast]')

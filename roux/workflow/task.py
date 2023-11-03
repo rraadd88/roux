@@ -1,19 +1,22 @@
 """For task management."""
 ## logging
 import logging
-from tqdm import tqdm
 ## internal
 from roux.lib.io import to_dict
-from roux.lib.sys import (basenamenoext, dirname, exists, get_datetime, makedirs,
-                         splitext, is_interactive_notebook)
+from roux.lib.sys import (basenamenoext, dirname, exists, get_datetime, makedirs, splitext)
 
-if not is_interactive_notebook():
-    ## progress bar
-    tqdm.pandas()
-else:
-    from tqdm import notebook
-    notebook.tqdm().pandas()
-
+try:
+    from tqdm import tqdm
+    from roux.lib.sys import is_interactive_notebook
+    if not is_interactive_notebook():
+        ## progress bar
+        tqdm.pandas()
+    else:
+        from tqdm import notebook
+        notebook.tqdm().pandas()
+except ImportError:
+    logging.warning('ImportError: IProgress not found. Please update jupyter and ipywidgets. See https://ipywidgets.readthedocs.io/en/stable/user_install.html')
+    
 ## execution
 def run_task(
     parameters: dict,
@@ -123,15 +126,21 @@ def run_tasks(
             output_dir_path=output_path_base.split('{KEY}')[0]
             to_dict(parameters,
                     f"{output_dir_path}/{k.split(output_dir_path)[1].split('/')[0]}/.parameters.yaml")
-    else:
+    elif isinstance(parameters_list,list):
         before=len(parameters_list)
         ## TODO: use `to_outp`?
         parameters_list=[d for d in parameters_list if (force if force else not exists(d['output_path']))]
         if not force:
             logging.info(f"parameters_list reduced because force=False: {before} -> {len(parameters_list)}")
+    else:
+        raise ValueError(parameters_list)
+    ## chech for duplicate output paths
+    assert len(set([d['output_path'] for d in parameters_list]))==len(parameters_list), (len(set([d['output_path'] for d in parameters_list])),len(parameters_list))
+    
     ## run tasks
     import pandas as pd
     ds1=pd.Series(parameters_list)
+    
     if len(ds1)!=0:
         if test1:
             ds1=ds1.head(1)

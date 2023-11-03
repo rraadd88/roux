@@ -57,6 +57,7 @@ def dropna_matrix(
 
     if verbose: 
         for k in l1:
+            from roux.stat.binary import perc
             logging.info(f"min. percent of '{k}'s to be dropped={perc(d1[k]>=d4[k])}")
 
     return (df1

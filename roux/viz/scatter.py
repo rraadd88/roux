@@ -231,7 +231,8 @@ def plot_volcano(
     collabel:str=None,
     show_line=True,
     line_pvalue=0.1,
-    line_x=0.0,
+    line_x:float=0.0,
+    line_x_min:float=None,
     show_text: bool=True,
     text_increase: str=None,
     text_decrease: str=None,
@@ -281,10 +282,11 @@ def plot_volcano(
     assert not data['significance bin'].isnull().any()
     data=(data
           .assign(
-        **{'significance direction bin':lambda df: df.apply(lambda x: 'increase' if x[coly]>log_pval(line_pvalue) and x[colx]>=line_x else \
-                                                                      'decrease' if x[coly]>log_pval(line_pvalue) and x[colx]<=-1*line_x else \
-                                                                      'ns',
-                                   axis=1),
+        **{'significance direction bin':lambda df: df.apply(
+            lambda x: 'increase' if x[coly]>log_pval(line_pvalue) and (x[colx]>line_x if not line_x_min is None else x[colx]>=line_x) else \
+                      'decrease' if x[coly]>log_pval(line_pvalue) and (x[colx]<line_x_min if not line_x_min is None else x[colx]<=-1*line_x) else \
+                      'ns',
+                       axis=1),
                        })
          .sort_values('significance direction bin',ascending=False) # put 'ns' at the background
          )
@@ -335,8 +337,9 @@ def plot_volcano(
     xlim=ax.get_xlim()
     ylim=ax.get_ylim()
     for side in [-1,1]:
+        print([xlim[0 if side==-1 else 1],line_x*side,line_x*side], [log_pval(line_pvalue),log_pval(line_pvalue),ylim[1]])
         ax.plot(
-            [xlim[0 if side==-1 else 1],line_x*side,line_x*side],
+            [xlim[0 if side==-1 else 1],(line_x_min if not line_x_min is None else line_x*side),(line_x_min if not line_x_min is None else line_x*side)],
             [log_pval(line_pvalue),log_pval(line_pvalue),ylim[1]],
             color='gray',linestyle=':',
             )
