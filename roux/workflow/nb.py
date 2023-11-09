@@ -1,5 +1,7 @@
 """For operations on jupyter notebooks."""
+import logging
 import nbformat
+from roux.lib.sys import basenamenoext
 
 def get_lines(
     p: str,
@@ -65,7 +67,7 @@ def to_info(
         f.writelines([f"{s}\n" for s in l1])
     return outp
 
-def replace_in_nb(
+def to_replaced_nb(
     nb_path,
     output_path,
     replaces: dict={},
@@ -84,7 +86,6 @@ def replace_in_nb(
     Returns:
         new_nb: notebook object.      
     """
-    logging.warning("Prefer from removestar.removestar import replace_in_nb")
     from nbconvert import PythonExporter, NotebookExporter
     ## read nb
     with open(nb_path) as fh:
@@ -112,18 +113,18 @@ def replace_in_nb(
     ## save new nb
     to_nb=NotebookExporter()
     source_nb,_=to_nb.from_notebook_node(new_nb)
-    print(f"saving: {output_path}")
     if not test:
         with open(output_path, 'w+') as fh:
             fh.writelines(source_nb)
         return output_path                        
     return output_path
 
-def filter_nb(
+def to_filtered_nb(
     p: str,
     outp: str,
     h: str,
     kind: str='include',
+    validate_diff: int=None,
     ):
     """
     Filter a notebook based on markdown heading.        
@@ -149,12 +150,17 @@ def filter_nb(
                             new_cells.append(next_cell)
                 elif kind=='exclude':
                     new_cells = notebook.cells[:notebook.cells.index(cell)]
+                    skip=True
                     for next_cell in notebook.cells[notebook.cells.index(cell) + 1:]:
-                        if next_cell.cell_type == 'markdown' and get_hlevel(next_cell.source.split('\n')[0])>hlevel:
-                            continue
-                        else:
+                        if next_cell.cell_type == 'markdown' and get_hlevel(next_cell.source.split('\n')[0])<=hlevel:
+                            skip=False
+                        if not skip:
                             new_cells.append(next_cell)
     print(f"notebook length change: {len(notebook.cells):>2}->{len(new_cells):>2} cells")
+    if not validate_diff is None:
+        assert len(notebook.cells)-len(new_cells)==validate_diff
+    else:
+        assert len(notebook.cells)>len(new_cells)
     notebook.cells = new_cells
 
     # Save the modified notebook
@@ -162,7 +168,7 @@ def filter_nb(
         nbformat.write(notebook, new_notebook_file)
     return outp
 
-def clear_outputs(
+def to_clear_outputs(
     notebook_path,
     new_notebook_path,
     ):

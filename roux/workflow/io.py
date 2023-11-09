@@ -354,7 +354,7 @@ def replacestar(
     try:
         from removestar.removestar import fix_code, replace_in_nb
     except ImportError as error:
-        logging.error(f'{error.message}: Install needed requirement using command: pip install removestar')
+        logging.error(f'{error}: Install needed requirement using command: pip install removestar')
 
     if input_path.endswith(".py"):    
         with open(input_path, encoding="utf-8") as f:
@@ -417,28 +417,19 @@ def replacestar(
 
     if verbose:logging.info(f"replace     :\n"+('\n'.join([k for k in replaces_.keys()])))
     if verbose:logging.info(f"replace_with:\n"+('\n'.join([v for v in replaces_.values()])))
-
-    from roux.lib.str import replace_many
-    new_code=replace_many(code,replaces_)
+    
     if not output_path is None:
         # save files
         if input_path.endswith(".py"):
+            from roux.lib.str import replace_many
+            new_code=replace_many(code,replaces_)
+            
             open(output_path,'w').write(new_code)        
         elif input_path.endswith(".ipynb"):
-            with open(input_path) as f:
-                nb = nbformat.reads(f.read(), nbformat.NO_CONVERT)
-                fixed_code = replace_in_nb(
-                    nb,
-                    new_code,
-                    cell_type="code",
-                )
-
-            with open(input_path, "w+") as f:
-                f.writelines(fixed_code)
-
-            replace_in_nb(
+            from roux.workflow.nb import to_replaced_nb
+            to_replaced_nb(
                     input_path,
-                    replaces={replace_from:replace_with},
+                    replaces=replaces_,
                     cell_type='code',
                     output_path=output_path,
                     )
