@@ -43,26 +43,46 @@ def read_nb_md(
     """
     from sys import argv
     l1=[]
-    l1.append("# "+basenamenoext(p))
     nb = nbformat.read(p, nbformat.NO_CONVERT)
     l1+=[cell.source for cell in nb.cells if cell.cell_type == 'markdown']
     return l1
 
 ## create documentation
 def to_info(
-    p: str='*_*_v*.ipynb',
-    outp: str='README.md') -> str:
+    p: str,
+    outp: str,
+    linkd: str='',
+    ) -> str:
     """Save README.md file.
 
     Args:
-        p (str, optional): path of the notebook files that would be converted to "tasks". Defaults to '*_*_v*.ipynb'.
-        outp (str, optional): path of the output file. Defaults to 'README.md'.
+        p (str, optional): path of the notebook files that would be converted to "tasks".
+        outp (str, optional): path of the output file, e.g. 'README.md'.
 
     Returns:
         str: path of the output file.
     """
+    from os.path import basename
+    from roux.lib.sys import read_ps
+    from roux.lib.set import flatten
     ps=read_ps(p)
-    l1=flatten([read_nb_md(p) for p in ps])
+    
+    l1=[]
+    for p in ps:
+        l_=read_nb_md(p)
+        ## get title if available
+        title=None
+        if 'title:' in l_[0]:
+            title=l_[0].split('title:')[1].split('\n')[0].strip(' ').strip('"')
+            l_=l_[1:]
+        elif l_[0].startswith('# '):
+            title=l_[0].split('# ')[1]
+            l_=l_[1:]
+        if title is None:
+            logging.warning(f'title is None for {p}')
+            l1+=[f"# {basename(p)}"]+l_
+        else:
+            l1+=[f"# [{title}]({linkd}{basename(p)})"]+l_
     with open(outp,'w') as f:
         f.writelines([f"{s}\n" for s in l1])
     return outp

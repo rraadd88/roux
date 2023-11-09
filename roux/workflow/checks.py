@@ -1,9 +1,12 @@
 """For workflow checks."""
-
+from os.path import basename
+from roux.lib.set import flatten
 def grep(
     p,
     checks,
     exclude=[],
+    exclude_str=[],
+    verbose=True,
     ):
     """
     Get the output of grep as a list of strings.
@@ -19,11 +22,15 @@ def grep(
 
         lines=[s.replace('"',"").strip() for s in completed_process.stdout.split('\\n",\n')]
         lines=[s for s in lines if s!='' and not '#noqa' in s]# and not s.startswith('#')]
+        for k in exclude_str:
+            lines=[s for s in lines if not k in s]# and not s.startswith('#')]
+        lines=flatten([s.split('\n') for s in lines])
         lines=list(set(lines)-set(exclude))
         lines=list(set(lines)-set(l2))
         if len(lines)>0:
             # print(completed_process.stdout)
             # print(f"'{s}'")
-            print(basename(p),f"{s}: {lines}")
+            if verbose:
+                print(basename(p),f"{s}: {lines}")
             l2+=lines#[f"{s}: {lines}"]
     return l2
