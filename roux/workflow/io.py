@@ -7,6 +7,7 @@ from roux.lib.sys import (Path, abspath, basename, basenamenoext, create_symlink
 from roux.lib.io import read_ps,read_dict,is_dict
 from roux.lib.set import flatten
 
+## variables
 def clear_variables(
     dtype=None,
     variables=None,
@@ -29,52 +30,6 @@ def clear_dataframes():
     variables=None,
     )
 
-def get_lines(
-    p: str,
-    keep_comments: bool=True
-    ) -> list:
-    """Get lines of code from notebook.
-
-    Args:
-        p (str): path to notebook.
-        keep_comments (bool, optional): keep comments. Defaults to True.
-
-    Returns:
-        list: lines.
-    """
-    import nbformat
-    from nbconvert import PythonExporter
-    import os
-    if os.path.islink(p):
-        p=os.readlink(p)
-    nb = nbformat.read(p, nbformat.NO_CONVERT)
-    exporter = PythonExporter()
-    source, meta = exporter.from_notebook_node(nb)
-    lines=source.split('\n')
-    lines=[s for s in lines if (isinstance(s,str) and s!='' and len(s)<1000)]
-    if not keep_comments:
-        lines=[s for s in lines if not s.startswith('#')]
-    return lines
-
-## io parameters    
-def infer_parameters(
-    input_value,
-    default_value):
-    """
-    Infer the input values and post warning messages.
-    
-    Parameters:
-        input_value: the primary value.
-        default_value: the default/alternative/inferred value.
-    
-    Returns:
-        Inferred value.
-    """
-    if input_value is None:
-        logging.warning(f'input is None; therefore using the the default value i.e. {default_value}.')
-        return default_value
-    else:
-        return input_value
 ## io files
 def to_py(
     notebookp: str,
@@ -95,6 +50,7 @@ def to_py(
     if pyp is None: pyp=notebookp.replace('.ipynb','.py')
     if exists(pyp) and not force: return 
     makedirs(pyp)
+    from roux.workflow.nb import get_lines
     l1=get_lines(notebookp, **kws_get_lines)
     l1='\n'.join(l1).encode('ascii', 'ignore').decode('ascii')
     with open(pyp, 'w+') as fh:
@@ -113,6 +69,26 @@ def import_from_file(
     from importlib.machinery import SourceFileLoader
     return SourceFileLoader(abspath(pyp), abspath(pyp)).load_module()
 
+## io parameters    
+def infer_parameters(
+    input_value,
+    default_value):
+    """
+    Infer the input values and post warning messages.
+    
+    Parameters:
+        input_value: the primary value.
+        default_value: the default/alternative/inferred value.
+    
+    Returns:
+        Inferred value.
+    """
+    if input_value is None:
+        logging.warning(f'input is None; therefore using the the default value i.e. {default_value}.')
+        return default_value
+    else:
+        return input_value
+    
 def to_parameters(
     f: object,
     test: bool=False
@@ -134,79 +110,6 @@ def to_parameters(
         params[argo.name]=argo.default
     #     break
     return params
-
-def read_nb_md(
-    p: str
-    ) -> list:
-    """Read notebook's documentation in the markdown cells.
-
-    Args:
-        p (str): path of the notebook.
-
-    Returns:
-        list: lines of the strings.
-    """
-    import nbformat
-    from sys import argv
-    l1=[]
-    l1.append("# "+basenamenoext(p))
-    nb = nbformat.read(p, nbformat.NO_CONVERT)
-    l1+=[cell.source for cell in nb.cells if cell.cell_type == 'markdown']
-    return l1
-
-def replace_in_nb(
-    nb_path,
-    output_path,
-    replaces: dict={},
-    cell_type: str='code',
-    drop_lines_with_substrings=[],
-    test=False,
-    ):
-    """
-    Replace text in a jupyter notebook.
-    
-    Parameters
-        nb: notebook object obtained from `nbformat.reads`.
-        replaces (dict): mapping of text to 'replace from' to the one to 'replace with'.
-        cell_type (str): the type of the cell.
-    
-    Returns:
-        new_nb: notebook object.        
-    """
-    import nbformat
-    from nbconvert import PythonExporter, NotebookExporter
-    ## read nb
-    with open(nb_path) as fh:
-        nb = nbformat.reads(fh.read(), nbformat.NO_CONVERT)
-    
-    new_nb=nb.copy()
-    if test:
-        print(f"len(new_nb['cells'])={len(new_nb['cells'])}")
-    # break_early= str(nb).count(replace_from)==1
-    for i,d in enumerate(new_nb['cells']):
-        if d['cell_type']==cell_type:
-            for replace_from, replace_to in replaces.items():
-                if replace_from in d['source']:
-                    d['source']=d['source'].replace(replace_from,replace_to)
-            for k in drop_lines_with_substrings:
-                if k in d['source']:
-                    _lines=d['source'].split('\n')
-                    _lines_flt=[s for s in _lines if not k in s]
-                    # if len(_lines_flt)<len(_lines):
-                    #     print(_lines)
-                    d['source']='\n'.join(_lines_flt)
-            new_nb['cells'][i]=d
-            # if break_early:
-                # break
-    ## save new nb
-    to_nb=NotebookExporter()
-    source_nb,_=to_nb.from_notebook_node(new_nb)
-    print(f"saving: {output_path}")
-    if not test:
-        with open(output_path, 'w+') as fh:
-            fh.writelines(source_nb)
-        return output_path                        
-    return output_path
 
 def read_config(
     p: str,
@@ -350,25 +253,6 @@ def read_metadata(
         logging.info(f"metadata appended from "+str(len(d1)-config_size)+" separate config/s.")    
     return d1
 
-## create documentation
-def to_info(
-    p: str='*_*_v*.ipynb',
-    outp: str='README.md') -> str:
-    """Save README.md file.
-
-    Args:
-        p (str, optional): path of the notebook files that would be converted to "tasks". Defaults to '*_*_v*.ipynb'.
-        outp (str, optional): path of the output file. Defaults to 'README.md'.
-
-    Returns:
-        str: path of the output file.
-    """
-    ps=read_ps(p)
-    l1=flatten([read_nb_md(p) for p in ps])
-    with open(outp,'w') as f:
-        f.writelines([f"{s}\n" for s in l1])
-    return outp
-
 def to_workflow(
     df2: pd.DataFrame,
     workflowp: str,
@@ -429,31 +313,6 @@ def create_workflow_report(
     
     runbash(f"dot -Tpng {workflowdp}/workflow.dot > {workflowdp}/workflow.png",env=env)
     runbash(f"snakemake -s workflow.py --report {workflowdp}/report.html",env=env)
-
-def to_diff_notebooks(
-    notebook_paths,
-    url_prefix="https://localhost:8888/nbdime/difftool?",
-    remove_prefix='file://', # for bash
-    verbose=True,
-    ) -> list:
-    """
-    "Diff" notebooks using `nbdiff` (https://nbdime.readthedocs.io/en/latest/)
-    
-    Start the nb-diff session by running: `nbdiff-web`
-    
-    Todos:
-        1. Deprecate if functionality added to `nbdiff-web`.
-    """
-    import itertools
-    logging.warning('to_diff_notebooks is under development.')
-    urls_input=[Path(p).absolute().as_uri() for p in notebook_paths]
-    urls_output=[]
-    for url_base,url_remote in list(itertools.product(urls_input[:1],urls_input[1:])):
-        urls_output.append(f"{url_prefix}base={url_base.replace('file://','')}&remote={url_remote.replace('file://','')}")
-    if verbose:
-        logging.info('Differences between notebooks:')
-        logging.info('\n'.join(urls_output))
-    return urls_output
 
 ## post-processing
 def replacestar(
@@ -538,6 +397,7 @@ def replacestar(
         return 
     
     df2=get_global_imports()
+    from roux.workflow.nb import get_lines
     def get_lines_replace_with(imports,df2): 
         ds=df2.query(expr=f"`function name` in {imports}").apply(lambda x: f"## {x['function comment']}\n{x['import statement']}",axis=1)
         lines=ds.tolist()
