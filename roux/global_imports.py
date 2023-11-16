@@ -1,11 +1,11 @@
 """
-For importing commonly used functions at the developmental phase.
+For importing commonly used functions at the development phase.
 
 Usage: in interactive sessions (e.g. in jupyter notebooks) to facilitate faster code development.
 
 Note: Post-development, to remove *s from the code, use removestar (pip install removestar).
     
-    removestar file.py
+    removestar file
 """
 ## logging functions
 import logging

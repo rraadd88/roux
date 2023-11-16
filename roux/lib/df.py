@@ -1039,6 +1039,24 @@ def get_chunks(
     df1['chunk']=df1[colindex].map(d2)
     return df1['chunk']
 
+@to_rd
+def sample_near_quantiles(
+    data: pd.DataFrame,
+    col: str,
+    n:int,
+    clean:bool=False,
+    ):
+    """
+    Get rows with values closest to the quantiles.
+    """
+    dfs={}
+    for q in np.linspace(0,1,n):
+        dfs[q]=data.iloc[(data[col]-data[col].quantile(q)).abs().argsort()[:1]]
+    df1=pd.concat(dfs,axis=0,names=['q'])
+    if clean:
+        df1=df1.reset_index(drop=True)
+    return df1
+
 ## GROUPBY
 # aggregate dataframes
 def get_group(

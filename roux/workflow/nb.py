@@ -206,6 +206,24 @@ def to_clear_outputs(
         nbformat.write(notebook, new_notebook_file)
     return new_notebook_path
 
+def to_clear_unused_cells(
+    notebook_path,
+    new_notebook_path,
+    ):
+    # Load the Jupyter Notebook
+    with open(notebook_path, 'r', encoding='utf-8') as notebook_file:
+        notebook = nbformat.read(notebook_file, as_version=4)
+
+    # Clear all outputs in code cells
+    for cell in notebook.cells:
+        if cell.cell_type == 'code':
+            cell.outputs = []
+
+    # Save the modified notebook
+    with open(new_notebook_path, 'w', encoding='utf-8') as new_notebook_file:
+        nbformat.write(notebook, new_notebook_file)
+    return new_notebook_path
+
 def to_diff_notebooks(
     notebook_paths,
     url_prefix="https://localhost:8888/nbdime/difftool?",
