@@ -2,6 +2,7 @@
 import logging
 import nbformat
 from roux.lib.sys import basenamenoext
+from roux.workflow.io import to_nb_cells
 
 def get_lines(
     p: str,
@@ -16,7 +17,6 @@ def get_lines(
     Returns:
         list: lines.
     """
-    import nbformat
     from nbconvert import PythonExporter
     import os
     if os.path.islink(p):
@@ -31,12 +31,14 @@ def get_lines(
     return lines
 
 def read_nb_md(
-    p: str
+    p: str,
+    n: int=None,
     ) -> list:
     """Read notebook's documentation in the markdown cells.
 
     Args:
         p (str): path of the notebook.
+        n (int): number of the markdown cells to extract.
 
     Returns:
         list: lines of the strings.
@@ -44,7 +46,13 @@ def read_nb_md(
     from sys import argv
     l1=[]
     nb = nbformat.read(p, nbformat.NO_CONVERT)
-    l1+=[cell.source for cell in nb.cells if cell.cell_type == 'markdown']
+    l1=[] 
+    for cell in nb.cells:
+        if cell.cell_type == 'markdown':
+            l1.append(cell.source)
+        if not n is None:
+            if len(l1)==n:
+                break
     return l1
 
 ## create documentation
@@ -176,17 +184,41 @@ def to_filtered_nb(
                             skip=False
                         if not skip:
                             new_cells.append(next_cell)
-    print(f"notebook length change: {len(notebook.cells):>2}->{len(new_cells):>2} cells")
-    if not validate_diff is None:
-        assert len(notebook.cells)-len(new_cells)==validate_diff
-    else:
-        assert len(notebook.cells)>len(new_cells)
-    notebook.cells = new_cells
 
+    return to_nb_cells(
+        notebook=notebook,
+        outp=outp,
+        new_cells=new_cells,
+        validate_diff=validate_diff,
+        )
+
+def to_clear_unused_cells(
+    notebook_path,
+    new_notebook_path,
+    validate_diff: int=None,    
+    ):
+    """
+    Remove code cells with all lines commented.
+    """
+    # Load the Jupyter Notebook
+    with open(notebook_path, 'r', encoding='utf-8') as notebook_file:
+        notebook = nbformat.read(notebook_file, as_version=4)
+
+    # Clear all outputs in code cells
+    new_cells=[]
+    for cell in notebook.cells:
+        if cell.cell_type == 'code':
+            if all([s.lstrip(' ').startswith('#') for s in cell.source.split('\n')]):
+                continue ## do not append
+        new_cells.append(cell)   
+        
     # Save the modified notebook
-    with open(outp, 'w', encoding='utf-8') as new_notebook_file:
-        nbformat.write(notebook, new_notebook_file)
-    return outp
+    return to_nb_cells(
+        notebook=notebook,
+        outp=new_notebook_path,
+        new_cells=new_cells,
+        validate_diff=validate_diff,
+        )
 
 def to_clear_outputs(
     notebook_path,
@@ -206,23 +238,36 @@ def to_clear_outputs(
         nbformat.write(notebook, new_notebook_file)
     return new_notebook_path
 
-def to_clear_unused_cells(
-    notebook_path,
-    new_notebook_path,
+def to_filtered_outputs(
+    input_path,
+    output_path,
     ):
-    # Load the Jupyter Notebook
-    with open(notebook_path, 'r', encoding='utf-8') as notebook_file:
-        notebook = nbformat.read(notebook_file, as_version=4)
-
-    # Clear all outputs in code cells
-    for cell in notebook.cells:
-        if cell.cell_type == 'code':
-            cell.outputs = []
-
-    # Save the modified notebook
-    with open(new_notebook_path, 'w', encoding='utf-8') as new_notebook_file:
-        nbformat.write(notebook, new_notebook_file)
-    return new_notebook_path
+    nb = nbformat.read(input_path, nbformat.NO_CONVERT)
+    for celli,cell in enumerate(nb['cells']):
+        if cell['cell_type']=='code':
+            ois_remove=[]
+            for oi,o in enumerate(cell['outputs']):
+                if 'name' in o:
+                    if o['name'] in ['stderr','stdout']: ## warnings in red
+                        ois_remove.append(oi)
+                elif 'data' in o:
+                    if 'text/plain' in o['data']:
+                        if 'output_type' in o:
+                            if o['output_type']=="execute_result" and ('text/html' in o['data'] or "image/png" in o['data']):
+                                # table/image/plot
+                                continue
+                            elif o['output_type']=="display_data" and ('text/html' in o['data'] or "image/png" in o['data']):
+                                # table/image/plot
+                                continue
+                            else:
+                                # any strings
+                                ois_remove.append(oi)
+                        else:
+                            ois_remove.append(oi)
+            ## remove outputs
+            nb['cells'][celli]['outputs']=[o for oi,o in enumerate(cell['outputs']) if not oi in ois_remove]
+    nbformat.write(nb,output_path)
+    return output_path
 
 def to_diff_notebooks(
     notebook_paths,

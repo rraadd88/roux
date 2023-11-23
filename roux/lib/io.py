@@ -854,7 +854,10 @@ def to_table(
     if not colgroupby is None:
         to_manytables(df,p,colgroupby,**kws)
     elif p.endswith('.tsv') or p.endswith('.tab'):
-        df.to_csv(p,sep='\t',**kws)
+        df.to_csv(
+            p,sep='\t',
+            **{**dict(index=False),**kws},
+        )
     elif p.endswith('.pqt'):
         to_table_pqt(df,p,**kws)
     else: 

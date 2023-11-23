@@ -3,6 +3,9 @@
 import logging
 ## data
 import pandas as pd
+
+import shutil # for copying files
+
 from roux.lib.sys import (Path, abspath, basename, basenamenoext, create_symlink, exists, glob, isdir, makedirs, splitext)
 from roux.lib.io import read_ps,read_dict,is_dict
 from roux.lib.set import flatten
@@ -56,6 +59,29 @@ def to_py(
     with open(pyp, 'w+') as fh:
         fh.writelines(l1)
     return pyp
+
+def to_nb_cells(
+    notebook,
+    outp,
+    new_cells,
+    validate_diff=None,
+    ):
+    """
+    Replace notebook cells.
+    """
+    import nbformat
+    print(f"notebook length change: {len(notebook.cells):>2}->{len(new_cells):>2} cells")
+    if not validate_diff is None:
+        assert len(notebook.cells)-len(new_cells)==validate_diff
+    elif validate_diff == '>': # filtering
+        assert len(notebook.cells)>len(new_cells)
+    elif validate_diff == '<': # appending
+        assert len(notebook.cells)<len(new_cells)
+    notebook.cells = new_cells
+    # Save the modified notebook
+    with open(outp, 'w', encoding='utf-8') as new_notebook_file:
+        nbformat.write(notebook, new_notebook_file)
+    return outp
 
 def import_from_file(
     pyp: str
@@ -385,16 +411,18 @@ def replacestar(
             imports=[]
             if verbose: logging.warning(f"no function imports found in '{input_path}'")    
     else:
-        logging.warning(f"'{replace_from}' not found in '{input_path}'")    
-        return 
+        logging.warning(f"'{replace_from}' not found in '{input_path}'; copying the file, as it is.")
+        shutil.copy(input_path,output_path)
+        return output_path
 
     imports_attrs=[k for k,v in attributes.items() if any([s in code for s in v])]
     if len(imports_attrs)==0:
         if verbose: logging.warning(f"no attribute imports found in '{input_path}'")
         
     if len(imports+imports_attrs)==0:
-        logging.warning(f"no imports found in '{input_path}'")    
-        return 
+        logging.warning(f"no imports found in '{input_path}'; copying the file, as it is.")    
+        shutil.copy(input_path,output_path)
+        return output_path
     
     df2=get_global_imports()
     from roux.workflow.nb import get_lines
