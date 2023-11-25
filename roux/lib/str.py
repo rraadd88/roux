@@ -57,6 +57,32 @@ def replace_many(
 # alias
 replacemany=replace_many
 
+def filter_list(
+    l: list,
+    patterns: list,
+    ) -> list:
+    """
+    Filter a list of strings.
+    
+    Args:
+        l (list): list of strings.
+        patterns (list): list of regex patterns. patterns are applied after stripping the whitespaces.
+    
+    Returns:
+        (list) list of filtered strings.
+    """
+    filtered_lines=[]
+    for line in l:
+        include=True
+        for p in patterns:
+            if re.compile(p).match(line.strip()):
+                include=False
+                break
+        if include:
+            filtered_lines.append(line)
+    return filtered_lines
+
+## conversions
 def tuple2str(tup,sep=' '):
     """Join tuple items.
     

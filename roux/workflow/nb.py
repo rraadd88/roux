@@ -100,7 +100,7 @@ def to_replaced_nb(
     output_path,
     replaces: dict={},
     cell_type: str='code',
-    drop_lines_with_substrings=[],
+    drop_lines_with_substrings: list=None,
     test=False,
     ):
     """
@@ -128,13 +128,13 @@ def to_replaced_nb(
             for replace_from, replace_to in replaces.items():
                 if replace_from in d['source']:
                     d['source']=d['source'].replace(replace_from,replace_to)
-            for k in drop_lines_with_substrings:
-                if k in d['source']:
-                    _lines=d['source'].split('\n')
-                    _lines_flt=[s for s in _lines if not k in s]
-                    # if len(_lines_flt)<len(_lines):
-                    #     print(_lines)
-                    d['source']='\n'.join(_lines_flt)
+            if not drop_lines_with_substrings is None:
+                from roux.lib.str import filter_list
+                d['source']='\n'.join(
+                    filter_list(
+                        d['source'].split('\n'),
+                        drop_lines_with_substrings,
+                    ))
             new_nb['cells'][i]=d
             # if break_early:
                 # break
