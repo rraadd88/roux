@@ -24,10 +24,11 @@
     <a href="https://github.com/rraadd88/roux#api">Explore the API</a>
   </p>
 </div>  
+
 ![image](./examples/image.png)   
+
 # Examples  
-[⚙️⏩ Running multiple tasks.](https://github.com/rraadd88/roux/blob/master/examples/dev_roux_workflow_task.ipynb)  
-[Examples](https://github.com/rraadd88/roux/blob/master/examples/dev_workflow.ipynb)  
+
 [⌗ Dataframes.](https://github.com/rraadd88/roux/blob/master/examples/roux_lib_df.ipynb)  
 [⌗⌗ Paired Dataframes.](https://github.com/rraadd88/roux/blob/master/examples/roux_lib_dfs.ipynb)  
 [💾 General Input/Output.](https://github.com/rraadd88/roux/blob/master/examples/roux_lib_io.ipynb)  
@@ -47,8 +48,10 @@
 [📈 Scatter plots.](https://github.com/rraadd88/roux/blob/master/examples/roux_viz_scatter.ipynb)  
 [📈⬤⬤ Plots of sets.](https://github.com/rraadd88/roux/blob/master/examples/roux_viz_sets.ipynb)  
 [⚙️🗺️ Reading multiple configs.](https://github.com/rraadd88/roux/blob/master/examples/roux_workflow_io.ipynb)  
-[✨ Differences.](https://github.com/rraadd88/roux/blob/master/examples/test_roux_stat_diff.ipynb)  
+[⚙️⏩ Running multiple tasks.](https://github.com/rraadd88/roux/blob/master/examples/dev_roux_workflow_task.ipynb)  
+[⚙️⏩ Workflow using notebooks](https://github.com/rraadd88/roux/blob/master/examples/dev_workflow.ipynb)  
   
+
 # Installation  
 ```
 pip install roux              # with basic dependencies  
@@ -62,7 +65,28 @@ pip install roux[stat]        # for statistics e.g. statsmodels etc.
 pip install roux[fast]        # for faster processing e.g. parallelization etc.
 pip install roux[workflow]    # for workflow operations e.g. omegaconf etc.
 pip install roux[interactive] # for interactive operations in jupyter notebook e.g. watermark, icecream etc.
-```  
+```
+
+# Command-line usage 
+
+🗺️ Read configuration.  
+`roux read-config path/to/file`  
+
+🗺️ Read metadata.  
+`roux read-metadata path/to/file`  
+
+📁 Find the latest and the oldest file in a list.  
+`roux read-ps list_of_paths`  
+
+💾 Backup a directory with a timestamp (ISO).  
+`roux backup path/to/directory`  
+
+⭐ Remove *'s from a jupyter notebook'.  
+`roux removestar path/to/notebook`  
+
+ℹ️ Available command line tools and their usage.  
+`roux --help`
+  
 # How to cite?  
 1. Using BibTeX:   
 ```
@@ -81,7 +105,7 @@ pip install roux[interactive] # for interactive operations in jupyter notebook e
   
 
 # Future directions, for which contributions are welcome:  
-- [ ] Declarative visualization API for matplotlib and seaborn.  
+- [ ] Addition of visualization function as attributes to `rd` dataframes.  
 - [ ] Refactoring of the workflow functions.  
   
 # Similar projects:  
@@ -6668,7 +6692,7 @@ get_stat(
     subsets=None,
     cols_subsets=['subset1', 'subset2'],
     df2=None,
-    stats=[<function mean at 0x7fe035babb00>, <function median at 0x7fe035a72b00>, <function var at 0x7fe035babf80>, <built-in function len>],
+    stats=[<function mean at 0x7f72a85a7b00>, <function median at 0x7f72a8471b00>, <function var at 0x7f72a85a7f80>, <built-in function len>],
     coff_samples_min=None,
     verb=False,
     **kws
@@ -6726,7 +6750,7 @@ get_stats(
     subsets=None,
     df2=None,
     cols_subsets=['subset1', 'subset2'],
-    stats=[<function mean at 0x7fe035babb00>, <function median at 0x7fe035a72b00>, <function var at 0x7fe035babf80>, <built-in function len>],
+    stats=[<function mean at 0x7f72a85a7b00>, <function median at 0x7f72a8471b00>, <function var at 0x7f72a85a7f80>, <built-in function len>],
     axis=0,
     test=False,
     **kws
