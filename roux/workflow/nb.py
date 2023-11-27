@@ -241,16 +241,18 @@ def to_clear_outputs(
 def to_filtered_outputs(
     input_path,
     output_path,
+    warnings=True,
+    strings=True,
     ):
     nb = nbformat.read(input_path, nbformat.NO_CONVERT)
     for celli,cell in enumerate(nb['cells']):
         if cell['cell_type']=='code':
             ois_remove=[]
             for oi,o in enumerate(cell['outputs']):
-                if 'name' in o:
+                if 'name' in o and warnings:
                     if o['name'] in ['stderr','stdout']: ## warnings in red
                         ois_remove.append(oi)
-                elif 'data' in o:
+                elif 'data' in o and strings:
                     if 'text/plain' in o['data']:
                         if 'output_type' in o:
                             if o['output_type']=="execute_result" and ('text/html' in o['data'] or "image/png" in o['data']):

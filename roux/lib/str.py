@@ -60,6 +60,7 @@ replacemany=replace_many
 def filter_list(
     l: list,
     patterns: list,
+    kind='out',
     ) -> list:
     """
     Filter a list of strings.
@@ -73,10 +74,10 @@ def filter_list(
     """
     filtered_lines=[]
     for line in l:
-        include=True
+        include=(kind=='out')
         for p in patterns:
             if re.compile(p).match(line.strip()):
-                include=False
+                include=(kind!='out')
                 break
         if include:
             filtered_lines.append(line)
