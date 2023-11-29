@@ -58,7 +58,9 @@ def read_zip(
 def to_zip(
     p: str,
     outp: str=None,
+    func_rename=None,
     fmt: str='zip',
+    test: bool=False,
     ):
     """Compress a file/directory.
     
@@ -101,9 +103,11 @@ def to_zip(
     ps=read_ps(p)
     import tempfile
     with tempfile.TemporaryDirectory() as outd:
-        _=[shutil.copyfile(p,f"{outd}/{basename(p)}") for p in ps]
+        if test:
+            return {p:f"{outd}/{basename(p) if func_rename is None else func_rename(p)}" for p in ps}
+        _=[shutil.copyfile(p,f"{outd}/{basename(p) if func_rename is None else func_rename(p)}") for p in ps]
         return _to_zip(outd+'/', destination=outp, fmt=fmt)
-        
+    
 def get_version(
     suffix: str='',
     ) -> str:

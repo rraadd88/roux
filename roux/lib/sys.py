@@ -49,13 +49,15 @@ def remove_exts(
 
 def read_ps(
     ps,
-    test=True,
+    test: bool=True,
+    verbose: bool=True,
     ) -> list:
     """Read a list of paths.
     
     Parameters:
         ps (list|str): list of paths or a string with wildcard/s.
         test (bool): testing.
+        verbose (bool): verbose.
 
     Returns:
         ps (list): list of paths.
@@ -64,9 +66,11 @@ def read_ps(
         if '*' in ps:
             ps=glob(ps)
         else:
+            if Path(ps).is_dir() and verbose:
+                tree(ps)
             ps=[ps]
     ps=sorted(ps)
-    if test:
+    if test or verbose:
         import pandas as pd
         ds1=pd.Series({p:p2time(p) if exists(p) else None for p in ps}).sort_values().dropna()
         if len(ds1)>1:
@@ -526,7 +530,7 @@ def ps2time(ps: list,**kws_p2time):
             ps=glob(f"{ps}/*")
     return pd.Series({p:p2time(p,**kws_p2time) for p in ps}).sort_values().reset_index().rename(columns={'index':'p',0:'time'})
     
-
+## logging
 def get_logger(program='program',argv=None,level=None,dp=None):
     """Get the logging object.
 
@@ -571,3 +575,16 @@ def get_logger(program='program',argv=None,level=None,dp=None):
     handler.setFormatter(formatter)
     logger.addHandler(handler)
     return logp
+
+def tree(
+    folder_path: str,
+    log=True,
+    ):
+    # Run the tree command and capture the output
+    result = subprocess.run(f'tree {folder_path}', shell=True, capture_output=True, text=True)
+    ## clean
+    out=result.stdout.replace('\n\n','\n').strip('\n')
+    if log:
+        logging.info(out)
+    else:
+        return out

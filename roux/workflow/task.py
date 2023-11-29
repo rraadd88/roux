@@ -108,6 +108,11 @@ def run_tasks(
     TODOs: 
         0. Ignore temporary parameters e.g test, verbose etc while encoding inputs. 
         1. Integrate with apply_on_paths for parallel processing etc.
+        
+    Notes:
+    1. To resolve `RuntimeError: This event loop is already running in python` from `multiprocessing`, execute
+        import nest_asyncio
+        nest_asyncio.apply()
     """
     ## save task in unique directories
     if parameters_list is None:
