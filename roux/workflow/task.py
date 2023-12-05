@@ -63,7 +63,7 @@ def run_task(
         input_path=input_notebook_path,
         output_path=output_notebook_path,
         parameters=parameters,
-        kernel=kernel,
+        kernel_name=kernel,
         report=True,
         start_timeout=480,
         **kws_papermill,
@@ -78,6 +78,8 @@ def run_tasks(
     parameters_list: list=None,
     fast: bool=False,
     fast_workers:int=6,
+    to_filter_nbby_patterns_kws={},
+    input_notebook_temp_path=None,
     test1: bool=False,
     force: bool=False,
     test: bool=False,
@@ -137,11 +139,30 @@ def run_tasks(
         parameters_list=[d for d in parameters_list if (force if force else not exists(d['output_path']))]
         if not force:
             logging.info(f"parameters_list reduced because force=False: {before} -> {len(parameters_list)}")
+            if len(parameters_list)==0:
+                return parameters_list
     else:
         raise ValueError(parameters_list)
     ## chech for duplicate output paths
     assert len(set([d['output_path'] for d in parameters_list]))==len(parameters_list), (len(set([d['output_path'] for d in parameters_list])),len(parameters_list))
     
+    if len(to_filter_nbby_patterns_kws)!=0:
+        from roux.workflow.nb import to_filter_nbby_patterns
+        if input_notebook_temp_path is None:
+            import tempfile
+            input_notebook_temp_file = tempfile.NamedTemporaryFile(delete=False)
+            input_notebook_temp_path=input_notebook_temp_file.name
+        logging.info(f"temporary notebook file path: {input_notebook_temp_path}")
+        
+        input_notebook_path=to_filter_nbby_patterns(
+            input_notebook_path,
+            input_notebook_temp_path,
+            **to_filter_nbby_patterns_kws,
+           )
+        clean=True
+    else:
+        clean=False
+        
     ## run tasks
     import pandas as pd
     ds1=pd.Series(parameters_list)
@@ -170,4 +191,6 @@ def run_tasks(
                     **kws_papermill,
                     force=force,
                     ))
+    # if clean:
+    #     input_notebook_temp_file.close()
     return parameters_list

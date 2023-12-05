@@ -1,7 +1,7 @@
 """For operations on jupyter notebooks."""
 import logging
 import nbformat
-from roux.lib.sys import basenamenoext
+from roux.lib.sys import basenamenoext, exists
 from roux.workflow.io import to_nb_cells
 
 def get_lines(
@@ -192,6 +192,22 @@ def to_filtered_nb(
         validate_diff=validate_diff,
         )
 
+def to_filter_nbby_patterns(
+    p,
+    outp,
+    patterns=None,
+    **kws, # to_filtered_nb
+    ):
+    hs=[s for s in read_nb_md(p)[1:] if any([s1.lower() in s.lower() for s1 in patterns])]
+    if p!=outp:
+        import shutil
+        shutil.copyfile(p,outp)
+    for h in hs:
+        if h in read_nb_md(outp)[1:]:
+            print('header to be dropped: ',h)
+            to_filtered_nb(outp,outp,h=h,kind='exclude',**kws)
+    return outp
+    
 def to_clear_unused_cells(
     notebook_path,
     new_notebook_path,
@@ -208,7 +224,7 @@ def to_clear_unused_cells(
     new_cells=[]
     for cell in notebook.cells:
         if cell.cell_type == 'code':
-            if all([s.lstrip(' ').startswith('#') for s in cell.source.split('\n')]):
+            if all([s.lstrip(' ').startswith('#') for s in cell.source.split('\n') if s.strip(' ')!='']):
                 continue ## do not append
         new_cells.append(cell)   
         
