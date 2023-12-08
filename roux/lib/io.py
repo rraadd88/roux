@@ -54,7 +54,34 @@ def read_zip(
             return file.open(file_open).read()
         else:
             return fun_read(file.open(file_open).read())
-        
+
+def to_zip_dir(
+    source,
+    destination=None,
+    fmt='zip'):
+    """
+    Zip a folder.
+    Ref:
+    https://stackoverflow.com/a/50381250/3521099
+    """
+    if destination is None:
+        destination=source.rsplit('/')+"."+fmt
+    from os import sep
+    base = basename(destination)
+    fmt = base.split('.')[-1]
+    name = base.replace('.'+fmt,'')
+#     print(base,name,fmt)
+    archive_from = dirname(source)
+    if archive_from=='':
+        archive_from='./'
+#     archive_to = basename(source.strip(sep))
+#     print(archive_from,archive_to)
+    shutil.make_archive(name, fmt, archive_from, 
+#                         archive_to
+                       )
+    shutil.move(f'{name}.{fmt}', destination)
+    return destination
+    
 def to_zip(
     p: str,
     outp: str=None,
@@ -72,31 +99,6 @@ def to_zip(
     Returns:
         outp (str): path of the compressed file.
     """
-    def _to_zip(source, destination=None,
-          fmt='zip'):
-        """
-        Zip a folder.
-        Ref:
-        https://stackoverflow.com/a/50381250/3521099
-        """
-        if destination is None:
-            destination=source.rsplit('/')+"."+fmt
-        from os import sep
-        base = basename(destination)
-        fmt = base.split('.')[-1]
-        name = base.replace('.'+fmt,'')
-    #     print(base,name,fmt)
-        archive_from = dirname(source)
-        if archive_from=='':
-            archive_from='./'
-    #     archive_to = basename(source.strip(sep))
-    #     print(archive_from,archive_to)
-        shutil.make_archive(name, fmt, archive_from, 
-    #                         archive_to
-                           )
-        shutil.move(f'{name}.{fmt}', destination)
-        return destination
-    
     if isinstance(p,str):
         if isdir(p):
             return _to_zip(p, destination=outp, fmt=fmt)        
@@ -106,8 +108,36 @@ def to_zip(
         if test:
             return {p:f"{outd}/{basename(p) if func_rename is None else func_rename(p)}" for p in ps}
         _=[shutil.copyfile(p,f"{outd}/{basename(p) if func_rename is None else func_rename(p)}") for p in ps]
-        return _to_zip(outd+'/', destination=outp, fmt=fmt)
-    
+        return to_zip_dir(outd+'/', destination=outp, fmt=fmt)
+
+def to_dir(
+    paths: dict,
+    output_dir_path: str,
+    rename_basename= None,
+    force=False,
+    test=False,    
+    ):
+    ## expand paths
+    paths={k:read_ps(v) for k,v in paths.items()}
+
+    import shutil
+    makedirs(output_dir_path)
+    copy_paths={}
+    for d,ps in paths.items():
+        for p in ps:
+            if rename_basename is None:
+                outb=basename(p)
+            else:
+                outb=rename_basename(p)
+            copy_paths[p]=f"{output_dir_path}/{d}/{outb}"
+    assert len(list(set(copy_paths.keys())))==len(list(set(copy_paths.values()))), copy_paths
+    if test: 
+        return copy_paths
+    for p,outp in copy_paths.items():
+        if not exists(outp) or force:
+            shutil.copyfile(p,makedirs(outp))
+    return copy_paths
+
 def get_version(
     suffix: str='',
     ) -> str:
@@ -136,7 +166,10 @@ def version(
         kws (dict): provided to `get_version`.
     
     Returns: 
-        version (string): version.        
+        version (string): version.
+        
+    TODOs:
+        1. Use `to_dir`.
     """
     p=p.rstrip("/")
     if outd is None:
@@ -176,8 +209,8 @@ def backup(
         test (bool): testing (True).
         no_test (bool): no testing. Usage in command line (False).
                 
-    TODO:
-        1. Chain to if exists and force.
+    TODOs:
+        1. Use `to_dir`.
         2. Option to remove dirs
             find and move/zip
             "find -regex .*/_.*"
