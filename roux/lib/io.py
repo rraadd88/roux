@@ -528,9 +528,7 @@ def read_table(
                 
     Keyword parameters:
         kws_read_tables (dict): parameters provided to `read_tables` function. For example:
-            drop_index (bool): whether to drop the index column e.g. `path` (default: True).
-            replaces_index (object|dict|list|str): for example, 'basenamenoext' if path to basename.
-            colindex (str): the name of the column containing the paths (default: 'path')
+            to_col={colindex: replaces_index}
     
     Returns:
         df (DataFrame): output dataframe. 
@@ -538,11 +536,9 @@ def read_table(
     Examples:
         1. For reading specific columns only set `params=dict(columns=list)`.
         
-        2. While reading many files, convert paths to a column with corresponding values:
+        2. For reading many files, convert paths to a column with corresponding values:
         
-                drop_index=False,
-                colindex='parameter',   
-                replaces_index=lambda x: Path(x).parent
+                to_col={colindex: replaces_index}
         
         3. Reading a vcf file.
                 p='*.vcf|vcf.gz'
@@ -662,6 +658,7 @@ def apply_on_paths(
     func,
     replaces_outp: str=None,
     # path=None,
+    to_col: dict=None,
     replaces_index=None,
     drop_index: bool=True, # keep path
     colindex: str='path',
@@ -680,6 +677,7 @@ def apply_on_paths(
     
     Parameters:
         ps (str|list): paths or string to infer paths using `read_ps`.
+        to_col (dict): convert the paths to a column e.g. {colindex: replaces_index}
         func (function): function to be applied on each of the paths.
         replaces_outp (dict|function): infer the output path (`outp`) by replacing substrings in the input paths (`p`).
         filter_rows (dict): filter the rows based on dict, using `rd.filter_rows`.
@@ -745,6 +743,9 @@ def apply_on_paths(
     import inspect
     read_path=inspect.getfullargspec(func).args[0]=='p'
     save_table=(not replaces_outp is None) and ('outp' in inspect.getfullargspec(func).args)
+    if not to_col is None:
+        colindex=list(to_col.keys())[0]
+        replaces_index=list(to_col.values())[0]
     if not replaces_index is None: drop_index=False
     ps=read_ps(ps,test=verbose)
     if len(ps)==0:

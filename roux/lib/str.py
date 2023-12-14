@@ -541,7 +541,7 @@ def encode(
         return getattr(hashlib,method_short)(data,**kws).hexdigest()
         
         
-def decode(s,out=None,**kws):
+def decode(s,out=None,**kws_out):
     """Decode data from a string.
     
     Parameters:
@@ -549,7 +549,7 @@ def decode(s,out=None,**kws):
         out (str): output format (dict|df).
         
     Keyword parameters:
-        kws: parameters provided to `dict2df`.
+        kws_out: parameters provided to `dict2df`.
         
     Returns:
         d (dict|DataFrame): output data. 
@@ -559,12 +559,12 @@ def decode(s,out=None,**kws):
     s2=zlib.decompress(b64d(s)).decode("utf-8")
     if out in ['dict','df']:
         from roux.lib.str import str2dict
-        d1=str2dict(s2, reversible=True)
+        d1=str2dict(s2, **{**dict(reversible=True),**kws_out})
         if out=='dict':
             return d1
         elif out=='df':
             from roux.lib.df import dict2df
-            return dict2df(d1,**kws)
+            return dict2df(d1,**kws_out)
     else:
         return s2
     
