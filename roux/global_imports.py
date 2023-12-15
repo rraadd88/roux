@@ -17,39 +17,49 @@ logging.basicConfig(
 try:
     from icecream import ic as info
     info.configureOutput(prefix='INFO:icrm:')
+    import watermark.watermark as watermark # session info
+    logging.info(watermark(python=True)+watermark(iversions=True,globals_=globals()))
 except ImportError:
-    logging.warning('Optional dependency icecream missing, install by running: pip install roux[interactive]')
-
-
+    logging.warning('Optional interactive-use dependencies missing, install by running: pip install roux[interactive]')
+    info=logging.info
+    
 ## data functions
-import itertools
+# import itertools
 import numpy as np
 import pandas as pd
 
 ## system functions
 import sys
 from pathlib import Path
-from os.path import exists,dirname,basename,abspath,isdir,splitext
-from glob import glob
+from os.path import exists,dirname,basename,abspath,isdir,splitext # pathlib to be preferred in the future
+from glob import glob # read_ps to be preferred in the future
 ## system functions from roux
 from roux.lib.sys import read_ps, basenamenoext, to_path, makedirs, get_datetime
 from roux.lib.io import read_dict, to_dict, read_table, to_table, backup
 ## data functions from roux
 from roux.lib.str import get_bracket, replace_many, get_suffix, get_prefix
 from roux.lib.set import dropna, flatten, unique, assert_overlaps_with, validate_overlaps_with, check_non_overlaps_with
-from roux.lib.dict import merge_dicts
+## dataframe attribute from roux
 import roux.lib.dfs as rd # attributes
 ## workflow functions from roux
-from roux.workflow.io import read_metadata,infer_parameters#, read_config, to_diff_notebooks
-from roux.workflow.log import print_parameters
+try:
+    __import__('omegaconf')
+    from roux.workflow.io import read_metadata,infer_parameters#, read_config, to_diff_notebooks
+    from roux.workflow.log import print_parameters
+    from roux.workflow.task import run_tasks
+except ImportError:
+    logging.warning('Optional workflow dependencies missing, install by running: pip install roux[workflow]')
 
 # diplay tables
 # from functools import partialmethod
 # pd.DataFrame.head = partialmethod(pd.DataFrame.head, n=1)
 # pd.set_option('display.max_rows', 2)
 
-## stats functions
-import scipy as sc
+# try:
+#     ## stats functions
+#     import scipy as sc
+# except ImportError:
+#     logging.warning('Optional dependency scipy missing, install by running: pip install roux[stat]')
 
 ## stats functions from roux
 from roux.stat.binary import perc
@@ -103,7 +113,7 @@ plt.rc('figure.subplot',wspace= 0.3,hspace= 0.3)
 # sns.set_context('notebook') # paper < notebook < talk < poster
 
 ## visualization functions from roux
-from roux.viz.io import begin_plot,get_plot_inputs,to_plot,read_plot
+from roux.viz.io import begin_plot,to_plot,read_plot
 from roux.viz.colors import get_colors_default
 from roux.viz.diagram import diagram_nb
 
@@ -125,11 +135,6 @@ else:
     # display vector graphics in jupyter
     # if not get_ipython() is None:
     #     get_ipython().run_line_magic('config', "InlineBackend.figure_formats = ['svg']")
-try:
-    import watermark.watermark as watermark # session info
-    logging.info(watermark(python=True)+watermark(iversions=True,globals_=globals()))
-except ImportError:
-    logging.warning('Optional dependency watermark missing, install by running: pip install roux[interactive]')
     
 try:
     ## parallel-pocessing functions
