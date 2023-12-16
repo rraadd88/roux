@@ -316,15 +316,17 @@ def get_pairs(
     items_with: list = None,
     size: int = 2,
     with_self: bool =False,
+    unique: bool= False,
     ) -> pd.DataFrame:
     """
     Creates a dataframe with the paired items.
 
     Parameters:
         items: the list of items to pair.
-    items_with: list of items to pair with.
-    size: size of the combinations.
-    with_self: pair with self or not.
+        items_with: list of items to pair with.
+        size: size of the combinations.
+        with_self: pair with self or not.
+        unique (bool): get unique pairs (defaults to False). 
 
     Returns:
     table with pairs of items.
@@ -351,4 +353,12 @@ def get_pairs(
             o1=[(k1,k2) for k1,k2 in o1 if k1!=k2]
     # create dataframe
     df0=pd.DataFrame(o1,columns=range(1,size+1))
+    if unique:
+        df0=(df0
+            .sort_values(df0.columns.tolist())
+            .assign(s=lambda df: df.apply(set,axis=1))
+            .drop_duplicates(subset=['s'])
+            .drop(['s'],axis=1)
+            .reset_index(drop=True)
+            )
     return df0
