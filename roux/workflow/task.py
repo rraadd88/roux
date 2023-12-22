@@ -118,6 +118,7 @@ def run_tasks(
     """
     ## save task in unique directories
     if parameters_list is None:
+        ## infer output paths
         from roux.lib.sys import to_output_paths
         parameters_list=to_output_paths(
             inputs = inputs,
@@ -133,7 +134,7 @@ def run_tasks(
             output_dir_path=output_path_base.split('{KEY}')[0]
             to_dict(parameters,
                     f"{output_dir_path}/{k.split(output_dir_path)[1].split('/')[0]}/.parameters.yaml")
-    elif isinstance(parameters_list,list):
+    if isinstance(parameters_list,list):
         before=len(parameters_list)
         ## TODO: use `to_outp`?
         parameters_list=[d for d in parameters_list if (force if force else not exists(d['output_path']))]
@@ -193,4 +194,4 @@ def run_tasks(
                     ))
     # if clean:
     #     input_notebook_temp_file.close()
-    return parameters_list
+    return before
