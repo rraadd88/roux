@@ -359,7 +359,6 @@ def _get_suffix(
         s (str): suffix.
     """    
     l1=align(s1,s2,suffix=True,common=common)
-    print(l1)
     if not common:
         if not clean:
             return l1
