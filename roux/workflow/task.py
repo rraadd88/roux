@@ -21,7 +21,7 @@ except ImportError:
 def run_task(
     parameters: dict,
     input_notebook_path: str,
-    kernel: str,
+    kernel: str=None,
     output_notebook_path: str= None,
     # force=False,
     test=False,
@@ -58,6 +58,7 @@ def run_task(
     to_dict(parameters,f"{dirname(output_notebook_path)}/parameters.yaml")
 
     if verbose: logging.info(parameters)
+    if kernel is None: logging.warning("kernel name not provided.")
     import papermill as pm
     pm.execute_notebook(
         input_path=input_notebook_path,
@@ -72,7 +73,7 @@ def run_task(
 
 def run_tasks(
     input_notebook_path: str,
-    kernel: str,
+    kernel: str=None,
     inputs: list= None,
     output_path_base: str=None,
     parameters_list: list=None,
