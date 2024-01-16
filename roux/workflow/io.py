@@ -70,7 +70,7 @@ def to_nb_cells(
     Replace notebook cells.
     """
     import nbformat
-    print(f"notebook length change: {len(notebook.cells):>2}->{len(new_cells):>2} cells")
+    logging.info(f"notebook length change: {len(notebook.cells):>2}->{len(new_cells):>2} cells")
     if not validate_diff is None:
         assert len(notebook.cells)-len(new_cells)==validate_diff
     elif validate_diff == '>': # filtering
