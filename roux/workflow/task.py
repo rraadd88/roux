@@ -3,6 +3,7 @@
 import logging
 ## internal
 from roux.lib.io import to_dict
+from pathlib import Path
 from roux.lib.sys import (basenamenoext, dirname, exists, get_datetime, makedirs, splitext)
 
 try:
@@ -157,9 +158,10 @@ def run_tasks(
         logging.info('filtering the notebook')
         if input_notebook_temp_path is None:
             import tempfile
-            input_notebook_temp_file = tempfile.NamedTemporaryFile(delete=False)
-            input_notebook_temp_file.close()
-            input_notebook_temp_path=input_notebook_temp_file.name
+            # input_notebook_temp_file = tempfile.NamedTemporaryFile(delete=False)
+            # input_notebook_temp_file.close()
+            # input_notebook_temp_path=input_notebook_temp_file.name+'.ipynb'
+            input_notebook_temp_path=f"{tempfile.gettempdir()}/{Path(input_notebook_path).name}"
         logging.info(f"temporary notebook file path: {input_notebook_temp_path}")
         ## copy input to the temporary
         import shutil
