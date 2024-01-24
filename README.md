@@ -29,27 +29,6 @@
 
 # Examples  
 
-[⌗ Dataframes.](https://github.com/rraadd88/roux/blob/master/examples/roux_lib_df.ipynb)  
-[⌗⌗ Paired Dataframes.](https://github.com/rraadd88/roux/blob/master/examples/roux_lib_dfs.ipynb)  
-[💾 General Input/Output.](https://github.com/rraadd88/roux/blob/master/examples/roux_lib_io.ipynb)  
-[⬤⬤ Sets.](https://github.com/rraadd88/roux/blob/master/examples/roux_lib_set.ipynb)  
-[🔤 Strings encoding/decoding.](https://github.com/rraadd88/roux/blob/master/examples/roux_lib_str.ipynb)  
-[🗃 File paths Input/Output.](https://github.com/rraadd88/roux/blob/master/examples/roux_lib_sys.ipynb)  
-[🏷 Classification.](https://github.com/rraadd88/roux/blob/master/examples/roux_stat_classify.ipynb)  
-[✨ Clustering.](https://github.com/rraadd88/roux/blob/master/examples/roux_stat_cluster.ipynb)  
-[✨ Correlations.](https://github.com/rraadd88/roux/blob/master/examples/roux_stat_corr.ipynb)  
-[⬤⬤ Comparison between sets.](https://github.com/rraadd88/roux/blob/master/examples/roux_stat_sets.ipynb)  
-[📈🔖Annotating visualisations.](https://github.com/rraadd88/roux/blob/master/examples/roux_viz_annot.ipynb)  
-[🔧 Subplot-level adjustments.](https://github.com/rraadd88/roux/blob/master/examples/roux_viz_ax.ipynb)  
-[📈 Distribution plots.](https://github.com/rraadd88/roux/blob/master/examples/roux_viz_dist.ipynb)  
-[📈📈Annotating figure.](https://github.com/rraadd88/roux/blob/master/examples/roux_viz_figure.ipynb)  
-[📈💾 Visualizations Input/Output.](https://github.com/rraadd88/roux/blob/master/examples/roux_viz_io.ipynb)  
-[📈 Line plots.](https://github.com/rraadd88/roux/blob/master/examples/roux_viz_line.ipynb)  
-[📈 Scatter plots.](https://github.com/rraadd88/roux/blob/master/examples/roux_viz_scatter.ipynb)  
-[📈⬤⬤ Plots of sets.](https://github.com/rraadd88/roux/blob/master/examples/roux_viz_sets.ipynb)  
-[⚙️🗺️ Reading multiple configs.](https://github.com/rraadd88/roux/blob/master/examples/roux_workflow_io.ipynb)  
-[⚙️⏩ Running multiple tasks.](https://github.com/rraadd88/roux/blob/master/examples/dev_roux_workflow_task.ipynb)  
-[⚙️⏩ Workflow using notebooks](https://github.com/rraadd88/roux/blob/master/examples/dev_workflow.ipynb)  
   
 
 # Installation  
@@ -94,21 +73,21 @@ pip install roux[interactive] # for interactive operations in jupyter notebook e
   title   = {roux: Streamlined and Versatile Data Processing Toolkit},
   author  = {Dandage, Rohan},
   year    = {2023},
-  url     = {https://doi.org/10.5281/zenodo.10205206},
+  url     = {https://zenodo.org/doi/10.5281/zenodo.2682670},
   version = {v0.1.0},
   note    = {The URL is a DOI link to the permanent archive of the software.},
 }
 ```
-2. DOI link: [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.10205206.svg)](https://doi.org/10.5281/zenodo.10205206), or  
+2. DOI link: [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.2682670.svg)](https://zenodo.org/doi/10.5281/zenodo.2682670), or  
 
 3. Using citation information from [CITATION.CFF file](https://github.com/rraadd88/roux/blob/master/CITATION.cff).  
   
 
-# Future directions, for which contributions are welcome:  
+# Future directions, for which contributions are welcome  
 - [ ] Addition of visualization function as attributes to `rd` dataframes.  
 - [ ] Refactoring of the workflow functions.  
   
-# Similar projects:  
+# Similar projects  
 - https://github.com/v-popov/helper_funcs  
 - https://github.com/nficano/yakutils  
 
@@ -2938,10 +2917,29 @@ Read the contents of a zip file.
 
 <a href="https://github.com/rraadd88/roux/blob/master/roux/lib/io.py#L58"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
+### <kbd>function</kbd> `to_zip_dir`
+
+```python
+to_zip_dir(source, destination=None, fmt='zip')
+```
+
+Zip a folder. Ref: https://stackoverflow.com/a/50381250/3521099 
+
+
+---
+
+<a href="https://github.com/rraadd88/roux/blob/master/roux/lib/io.py#L85"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+
 ### <kbd>function</kbd> `to_zip`
 
 ```python
-to_zip(p: str, outp: str = None, fmt: str = 'zip')
+to_zip(
+    p: str,
+    outp: str = None,
+    func_rename=None,
+    fmt: str = 'zip',
+    test: bool = False
+)
 ```
 
 Compress a file/directory. 
@@ -2963,7 +2961,28 @@ Compress a file/directory.
 
 ---
 
-<a href="https://github.com/rraadd88/roux/blob/master/roux/lib/io.py#L107"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="https://github.com/rraadd88/roux/blob/master/roux/lib/io.py#L113"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+
+### <kbd>function</kbd> `to_dir`
+
+```python
+to_dir(
+    paths: dict,
+    output_dir_path: str,
+    rename_basename=None,
+    force=False,
+    test=False
+)
+```
+
+
+
+
+
+
+---
+
+<a href="https://github.com/rraadd88/roux/blob/master/roux/lib/io.py#L141"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ### <kbd>function</kbd> `get_version`
 
@@ -2988,15 +3007,21 @@ Get the time-based version string.
 
 ---
 
-<a href="https://github.com/rraadd88/roux/blob/master/roux/lib/io.py#L120"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="https://github.com/rraadd88/roux/blob/master/roux/lib/io.py#L154"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
-### <kbd>function</kbd> `version`
+### <kbd>function</kbd> `to_version`
 
 ```python
-version(p: str, outd: str = None, **kws: dict) → str
+to_version(
+    p: str,
+    outd: str = None,
+    test: bool = False,
+    name: str = None,
+    **kws: dict
+) → str
 ```
 
-Get the version of the file/directory. 
+Rename a file/directory to a version. 
 
 
 
@@ -3012,12 +3037,14 @@ Keyword parameters:
 
 **Returns:**
  
- - <b>`version`</b> (string):  version.         
+ - <b>`version`</b> (string):  version. 
+
+TODOs: 1. Use `to_dir`. 
 
 
 ---
 
-<a href="https://github.com/rraadd88/roux/blob/master/roux/lib/io.py#L148"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="https://github.com/rraadd88/roux/blob/master/roux/lib/io.py#L191"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ### <kbd>function</kbd> `backup`
 
@@ -3051,15 +3078,12 @@ Steps:  0. create version dir in outd  1. move ps to version (time) dir with com
  - <b>`test`</b> (bool):  testing (True). 
  - <b>`no_test`</b> (bool):  no testing. Usage in command line (False).  
 
-
-
-**TODO:**
- 1. Chain to if exists and force. 2. Option to remove dirs  find and move/zip  "find -regex .*/_.*"  "find -regex .*/test.*" 
+TODOs: 1. Use `to_dir`. 2. Option to remove dirs  find and move/zip  "find -regex .*/_.*"  "find -regex .*/test.*" 
 
 
 ---
 
-<a href="https://github.com/rraadd88/roux/blob/master/roux/lib/io.py#L227"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="https://github.com/rraadd88/roux/blob/master/roux/lib/io.py#L228"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ### <kbd>function</kbd> `read_url`
 
@@ -3084,7 +3108,7 @@ Read text from an URL.
 
 ---
 
-<a href="https://github.com/rraadd88/roux/blob/master/roux/lib/io.py#L241"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="https://github.com/rraadd88/roux/blob/master/roux/lib/io.py#L242"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ### <kbd>function</kbd> `download`
 
@@ -3119,7 +3143,7 @@ Download a file.
 
 ---
 
-<a href="https://github.com/rraadd88/roux/blob/master/roux/lib/io.py#L280"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="https://github.com/rraadd88/roux/blob/master/roux/lib/io.py#L281"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ### <kbd>function</kbd> `read_text`
 
@@ -3144,7 +3168,7 @@ Read a file.  To be called by other functions
 
 ---
 
-<a href="https://github.com/rraadd88/roux/blob/master/roux/lib/io.py#L296"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="https://github.com/rraadd88/roux/blob/master/roux/lib/io.py#L297"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ### <kbd>function</kbd> `to_list`
 
@@ -3170,7 +3194,7 @@ Save list.
 
 ---
 
-<a href="https://github.com/rraadd88/roux/blob/master/roux/lib/io.py#L316"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="https://github.com/rraadd88/roux/blob/master/roux/lib/io.py#L317"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ### <kbd>function</kbd> `read_list`
 
@@ -3195,7 +3219,7 @@ Read the lines in the file.
 
 ---
 
-<a href="https://github.com/rraadd88/roux/blob/master/roux/lib/io.py#L316"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="https://github.com/rraadd88/roux/blob/master/roux/lib/io.py#L317"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ### <kbd>function</kbd> `read_list`
 
@@ -3220,7 +3244,7 @@ Read the lines in the file.
 
 ---
 
-<a href="https://github.com/rraadd88/roux/blob/master/roux/lib/io.py#L332"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="https://github.com/rraadd88/roux/blob/master/roux/lib/io.py#L333"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ### <kbd>function</kbd> `is_dict`
 
@@ -3235,7 +3259,7 @@ is_dict(p)
 
 ---
 
-<a href="https://github.com/rraadd88/roux/blob/master/roux/lib/io.py#L335"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="https://github.com/rraadd88/roux/blob/master/roux/lib/io.py#L336"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ### <kbd>function</kbd> `read_dict`
 
@@ -3264,7 +3288,7 @@ Keyword Arguments:
 
 ---
 
-<a href="https://github.com/rraadd88/roux/blob/master/roux/lib/io.py#L393"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="https://github.com/rraadd88/roux/blob/master/roux/lib/io.py#L394"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ### <kbd>function</kbd> `to_dict`
 
@@ -3293,7 +3317,7 @@ Keyword Arguments:
 
 ---
 
-<a href="https://github.com/rraadd88/roux/blob/master/roux/lib/io.py#L432"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="https://github.com/rraadd88/roux/blob/master/roux/lib/io.py#L433"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ### <kbd>function</kbd> `post_read_table`
 
@@ -3329,7 +3353,7 @@ Keyword parameters:
 
 ---
 
-<a href="https://github.com/rraadd88/roux/blob/master/roux/lib/io.py#L460"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="https://github.com/rraadd88/roux/blob/master/roux/lib/io.py#L461"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ### <kbd>function</kbd> `read_table`
 
@@ -3371,9 +3395,7 @@ read_table(
 
 Keyword parameters: 
      - <b>`kws_read_tables`</b> (dict):  parameters provided to `read_tables` function. For example: 
-     - <b>`drop_index`</b> (bool):  whether to drop the index column e.g. `path` (default: True). 
-     - <b>`replaces_index`</b> (object|dict|list|str):  for example, 'basenamenoext' if path to basename. 
-     - <b>`colindex`</b> (str):  the name of the column containing the paths (default: 'path') 
+     - <b>`to_col={colindex`</b>:  replaces_index} 
 
 
 
@@ -3386,9 +3408,9 @@ Keyword parameters:
 **Examples:**
  1. For reading specific columns only set `params=dict(columns=list)`. 
 
-2. While reading many files, convert paths to a column with corresponding values: 
+2. For reading many files, convert paths to a column with corresponding values: 
 
- drop_index=False,  colindex='parameter',     replaces_index=lambda x: Path(x).parent 
+ to_col={colindex: replaces_index} 
 
 3. Reading a vcf file.  p='*.vcf|vcf.gz'  read_table(p,  params_read_csv=dict(  #compression='gzip',  sep='        ',comment='#',header=None,  names=replace_many(get_header(path,comment='#',lineno=-1),['#',' '],'').split('  '))  ) 
 
@@ -3397,7 +3419,7 @@ Keyword parameters:
 
 ---
 
-<a href="https://github.com/rraadd88/roux/blob/master/roux/lib/io.py#L606"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="https://github.com/rraadd88/roux/blob/master/roux/lib/io.py#L603"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ### <kbd>function</kbd> `get_logp`
 
@@ -3422,7 +3444,7 @@ Infer the path of the log file.
 
 ---
 
-<a href="https://github.com/rraadd88/roux/blob/master/roux/lib/io.py#L623"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="https://github.com/rraadd88/roux/blob/master/roux/lib/io.py#L620"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ### <kbd>function</kbd> `apply_on_paths`
 
@@ -3431,6 +3453,7 @@ apply_on_paths(
     ps: list,
     func,
     replaces_outp: str = None,
+    to_col: dict = None,
     replaces_index=None,
     drop_index: bool = True,
     colindex: str = 'path',
@@ -3453,6 +3476,7 @@ Apply a function on list of files.
 **Parameters:**
  
  - <b>`ps`</b> (str|list):  paths or string to infer paths using `read_ps`. 
+ - <b>`to_col`</b> (dict):  convert the paths to a column e.g. {colindex: replaces_index} 
  - <b>`func`</b> (function):  function to be applied on each of the paths. 
  - <b>`replaces_outp`</b> (dict|function):  infer the output path (`outp`) by replacing substrings in the input paths (`p`). 
  - <b>`filter_rows`</b> (dict):  filter the rows based on dict, using `rd.filter_rows`. 
@@ -3479,7 +3503,7 @@ TODOs: Move out of io.
 
 ---
 
-<a href="https://github.com/rraadd88/roux/blob/master/roux/lib/io.py#L773"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="https://github.com/rraadd88/roux/blob/master/roux/lib/io.py#L775"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ### <kbd>function</kbd> `read_tables`
 
@@ -3523,7 +3547,7 @@ TODOs: Parameter to report the creation dates of the newest and the oldest files
 
 ---
 
-<a href="https://github.com/rraadd88/roux/blob/master/roux/lib/io.py#L821"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="https://github.com/rraadd88/roux/blob/master/roux/lib/io.py#L823"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ### <kbd>function</kbd> `to_table`
 
@@ -3560,7 +3584,7 @@ Keyword parameters:
 
 ---
 
-<a href="https://github.com/rraadd88/roux/blob/master/roux/lib/io.py#L867"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="https://github.com/rraadd88/roux/blob/master/roux/lib/io.py#L869"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ### <kbd>function</kbd> `to_manytables`
 
@@ -3603,7 +3627,7 @@ TODOs:
 
 ---
 
-<a href="https://github.com/rraadd88/roux/blob/master/roux/lib/io.py#L942"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="https://github.com/rraadd88/roux/blob/master/roux/lib/io.py#L944"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ### <kbd>function</kbd> `to_table_pqt`
 
@@ -3638,7 +3662,7 @@ Keyword parameters: Parameters provided to `pd.DataFrame.to_parquet`.
 
 ---
 
-<a href="https://github.com/rraadd88/roux/blob/master/roux/lib/io.py#L968"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="https://github.com/rraadd88/roux/blob/master/roux/lib/io.py#L970"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ### <kbd>function</kbd> `tsv2pqt`
 
@@ -3663,7 +3687,7 @@ Convert tab-separated file to Apache parquet.
 
 ---
 
-<a href="https://github.com/rraadd88/roux/blob/master/roux/lib/io.py#L981"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="https://github.com/rraadd88/roux/blob/master/roux/lib/io.py#L983"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ### <kbd>function</kbd> `pqt2tsv`
 
@@ -3688,7 +3712,7 @@ Convert Apache parquet file to tab-separated.
 
 ---
 
-<a href="https://github.com/rraadd88/roux/blob/master/roux/lib/io.py#L995"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="https://github.com/rraadd88/roux/blob/master/roux/lib/io.py#L997"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ### <kbd>function</kbd> `read_excel`
 
@@ -3719,7 +3743,7 @@ Keyword parameters:
 
 ---
 
-<a href="https://github.com/rraadd88/roux/blob/master/roux/lib/io.py#L1035"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="https://github.com/rraadd88/roux/blob/master/roux/lib/io.py#L1037"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ### <kbd>function</kbd> `to_excel_commented`
 
@@ -3743,7 +3767,7 @@ TODOs: 1. Increase the limit on comments can be added to number of columns. Curr
 
 ---
 
-<a href="https://github.com/rraadd88/roux/blob/master/roux/lib/io.py#L1074"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="https://github.com/rraadd88/roux/blob/master/roux/lib/io.py#L1076"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ### <kbd>function</kbd> `to_excel`
 
@@ -3778,7 +3802,7 @@ Keyword parameters:
 
 ---
 
-<a href="https://github.com/rraadd88/roux/blob/master/roux/lib/io.py#L1143"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="https://github.com/rraadd88/roux/blob/master/roux/lib/io.py#L1145"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ### <kbd>function</kbd> `check_chunks`
 
@@ -4876,12 +4900,12 @@ Align strings.
 
 ---
 
-<a href="https://github.com/rraadd88/roux/blob/master/roux/lib/str.py#L297"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="https://github.com/rraadd88/roux/blob/master/roux/lib/str.py#L324"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ### <kbd>function</kbd> `get_prefix`
 
 ```python
-get_prefix(s1: str, s2: str, common: bool = True, clean: bool = True) → str
+get_prefix(s1, s2: str = None, common: bool = True, clean: bool = True) → str
 ```
 
 Get the prefix of the strings 
@@ -4890,8 +4914,8 @@ Get the prefix of the strings
 
 **Parameters:**
  
- - <b>`s1`</b> (str):  1st string. 
- - <b>`s2`</b> (str):  2nd string. 
+ - <b>`s1`</b> (str|list):  1st string. 
+ - <b>`s2`</b> (str):  2nd string (default:None). 
  - <b>`common`</b> (bool):  get the common prefix (default:True). 
  - <b>`clean`</b> (bool):  clean the leading and trailing whitespaces (default:True). 
 
@@ -4904,12 +4928,12 @@ Get the prefix of the strings
 
 ---
 
-<a href="https://github.com/rraadd88/roux/blob/master/roux/lib/str.py#L324"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="https://github.com/rraadd88/roux/blob/master/roux/lib/str.py#L375"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ### <kbd>function</kbd> `get_suffix`
 
 ```python
-get_suffix(s1: str, s2: str, common: bool = True, clean: bool = True) → str
+get_suffix(s1, s2: str = None, common: bool = True, clean: bool = True) → str
 ```
 
 Get the suffix of the strings 
@@ -4918,8 +4942,8 @@ Get the suffix of the strings
 
 **Parameters:**
  
- - <b>`s1`</b> (str):  1st string. 
- - <b>`s2`</b> (str):  2nd string. 
+ - <b>`s1`</b> (str|list):  1st string. 
+ - <b>`s2`</b> (str):  2nd string (default:None). 
  - <b>`common`</b> (bool):  get the common prefix (default:True). 
  - <b>`clean`</b> (bool):  clean the leading and trailing whitespaces (default:True). 
 
@@ -4927,12 +4951,12 @@ Get the suffix of the strings
 
 **Returns:**
  
- - <b>`s`</b> (str):  suffix. 
+ - <b>`s`</b> (str):  prefix. 
 
 
 ---
 
-<a href="https://github.com/rraadd88/roux/blob/master/roux/lib/str.py#L355"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="https://github.com/rraadd88/roux/blob/master/roux/lib/str.py#L395"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ### <kbd>function</kbd> `get_fix`
 
@@ -4961,7 +4985,7 @@ Keyword parameters:
 
 ---
 
-<a href="https://github.com/rraadd88/roux/blob/master/roux/lib/str.py#L376"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="https://github.com/rraadd88/roux/blob/master/roux/lib/str.py#L416"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ### <kbd>function</kbd> `removesuffix`
 
@@ -4984,7 +5008,7 @@ TODOs:  1. Deprecate in py>39 use .removesuffix() instead.
 
 ---
 
-<a href="https://github.com/rraadd88/roux/blob/master/roux/lib/str.py#L399"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="https://github.com/rraadd88/roux/blob/master/roux/lib/str.py#L439"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ### <kbd>function</kbd> `str2dict`
 
@@ -5019,7 +5043,7 @@ References:
 
 ---
 
-<a href="https://github.com/rraadd88/roux/blob/master/roux/lib/str.py#L425"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="https://github.com/rraadd88/roux/blob/master/roux/lib/str.py#L465"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ### <kbd>function</kbd> `dict2str`
 
@@ -5050,7 +5074,7 @@ Dictionary to string.
 
 ---
 
-<a href="https://github.com/rraadd88/roux/blob/master/roux/lib/str.py#L448"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="https://github.com/rraadd88/roux/blob/master/roux/lib/str.py#L488"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ### <kbd>function</kbd> `str2num`
 
@@ -5075,7 +5099,7 @@ String to number.
 
 ---
 
-<a href="https://github.com/rraadd88/roux/blob/master/roux/lib/str.py#L467"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="https://github.com/rraadd88/roux/blob/master/roux/lib/str.py#L507"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ### <kbd>function</kbd> `num2str`
 
@@ -5110,7 +5134,7 @@ TODOs 1. ~ if magnitude else not
 
 ---
 
-<a href="https://github.com/rraadd88/roux/blob/master/roux/lib/str.py#L504"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="https://github.com/rraadd88/roux/blob/master/roux/lib/str.py#L544"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ### <kbd>function</kbd> `encode`
 
@@ -5140,12 +5164,12 @@ Keyword parameters:
 
 ---
 
-<a href="https://github.com/rraadd88/roux/blob/master/roux/lib/str.py#L544"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="https://github.com/rraadd88/roux/blob/master/roux/lib/str.py#L584"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ### <kbd>function</kbd> `decode`
 
 ```python
-decode(s, out=None, **kws)
+decode(s, out=None, **kws_out)
 ```
 
 Decode data from a string. 
@@ -5158,7 +5182,7 @@ Decode data from a string.
  - <b>`out`</b> (str):  output format (dict|df). 
 
 Keyword parameters: 
- - <b>`kws`</b>:  parameters provided to `dict2df`. 
+ - <b>`kws_out`</b>:  parameters provided to `dict2df`. 
 
 
 
@@ -5169,7 +5193,7 @@ Keyword parameters:
 
 ---
 
-<a href="https://github.com/rraadd88/roux/blob/master/roux/lib/str.py#L571"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="https://github.com/rraadd88/roux/blob/master/roux/lib/str.py#L611"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ### <kbd>function</kbd> `to_formula`
 
@@ -5249,7 +5273,7 @@ Filename without the extension.
 ### <kbd>function</kbd> `read_ps`
 
 ```python
-read_ps(ps, test=True) → list
+read_ps(ps, test: bool = True, verbose: bool = True) → list
 ```
 
 Read a list of paths. 
@@ -5260,6 +5284,7 @@ Read a list of paths.
  
  - <b>`ps`</b> (list|str):  list of paths or a string with wildcard/s. 
  - <b>`test`</b> (bool):  testing. 
+ - <b>`verbose`</b> (bool):  verbose. 
 
 
 
@@ -5270,7 +5295,7 @@ Read a list of paths.
 
 ---
 
-<a href="https://github.com/rraadd88/roux/blob/master/roux/lib/sys.py#L81"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="https://github.com/rraadd88/roux/blob/master/roux/lib/sys.py#L85"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ### <kbd>function</kbd> `to_path`
 
@@ -5296,7 +5321,7 @@ Normalise a string to be used as a path of file.
 
 ---
 
-<a href="https://github.com/rraadd88/roux/blob/master/roux/lib/sys.py#L81"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="https://github.com/rraadd88/roux/blob/master/roux/lib/sys.py#L85"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ### <kbd>function</kbd> `to_path`
 
@@ -5322,7 +5347,7 @@ Normalise a string to be used as a path of file.
 
 ---
 
-<a href="https://github.com/rraadd88/roux/blob/master/roux/lib/sys.py#L114"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="https://github.com/rraadd88/roux/blob/master/roux/lib/sys.py#L118"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ### <kbd>function</kbd> `makedirs`
 
@@ -5348,7 +5373,7 @@ Make directories recursively.
 
 ---
 
-<a href="https://github.com/rraadd88/roux/blob/master/roux/lib/sys.py#L132"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="https://github.com/rraadd88/roux/blob/master/roux/lib/sys.py#L136"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ### <kbd>function</kbd> `to_output_path`
 
@@ -5376,7 +5401,7 @@ Infer a single output path for a list of paths.
 
 ---
 
-<a href="https://github.com/rraadd88/roux/blob/master/roux/lib/sys.py#L155"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="https://github.com/rraadd88/roux/blob/master/roux/lib/sys.py#L159"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ### <kbd>function</kbd> `to_output_paths`
 
@@ -5418,7 +5443,7 @@ TODOs: 1. Placeholders other than {KEY}.
 
 ---
 
-<a href="https://github.com/rraadd88/roux/blob/master/roux/lib/sys.py#L231"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="https://github.com/rraadd88/roux/blob/master/roux/lib/sys.py#L235"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ### <kbd>function</kbd> `get_encoding`
 
@@ -5443,7 +5468,7 @@ Get encoding of a file.
 
 ---
 
-<a href="https://github.com/rraadd88/roux/blob/master/roux/lib/sys.py#L246"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="https://github.com/rraadd88/roux/blob/master/roux/lib/sys.py#L250"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ### <kbd>function</kbd> `get_all_subpaths`
 
@@ -5469,7 +5494,7 @@ Get all the subpaths.
 
 ---
 
-<a href="https://github.com/rraadd88/roux/blob/master/roux/lib/sys.py#L271"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="https://github.com/rraadd88/roux/blob/master/roux/lib/sys.py#L275"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ### <kbd>function</kbd> `get_env`
 
@@ -5494,7 +5519,7 @@ Get the virtual environment as a dictionary.
 
 ---
 
-<a href="https://github.com/rraadd88/roux/blob/master/roux/lib/sys.py#L300"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="https://github.com/rraadd88/roux/blob/master/roux/lib/sys.py#L304"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ### <kbd>function</kbd> `runbash`
 
@@ -5523,7 +5548,7 @@ TODOs: 1. logp 2. error ignoring
 
 ---
 
-<a href="https://github.com/rraadd88/roux/blob/master/roux/lib/sys.py#L326"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="https://github.com/rraadd88/roux/blob/master/roux/lib/sys.py#L330"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ### <kbd>function</kbd> `runbash_tmp`
 
@@ -5571,7 +5596,7 @@ Run a bash command in `/tmp` directory.
 
 ---
 
-<a href="https://github.com/rraadd88/roux/blob/master/roux/lib/sys.py#L384"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="https://github.com/rraadd88/roux/blob/master/roux/lib/sys.py#L388"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ### <kbd>function</kbd> `create_symlink`
 
@@ -5601,7 +5626,7 @@ TODOs:
 
 ---
 
-<a href="https://github.com/rraadd88/roux/blob/master/roux/lib/sys.py#L425"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="https://github.com/rraadd88/roux/blob/master/roux/lib/sys.py#L429"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ### <kbd>function</kbd> `input_binary`
 
@@ -5626,7 +5651,7 @@ Get input in binary format.
 
 ---
 
-<a href="https://github.com/rraadd88/roux/blob/master/roux/lib/sys.py#L443"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="https://github.com/rraadd88/roux/blob/master/roux/lib/sys.py#L447"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ### <kbd>function</kbd> `is_interactive`
 
@@ -5641,7 +5666,7 @@ Check if the UI is interactive e.g. jupyter or command line.
 
 ---
 
-<a href="https://github.com/rraadd88/roux/blob/master/roux/lib/sys.py#L449"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="https://github.com/rraadd88/roux/blob/master/roux/lib/sys.py#L453"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ### <kbd>function</kbd> `is_interactive_notebook`
 
@@ -5661,7 +5686,7 @@ Check if the UI is interactive e.g. jupyter or command line.
 
 ---
 
-<a href="https://github.com/rraadd88/roux/blob/master/roux/lib/sys.py#L458"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="https://github.com/rraadd88/roux/blob/master/roux/lib/sys.py#L462"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ### <kbd>function</kbd> `get_excecution_location`
 
@@ -5686,7 +5711,7 @@ Get the location of the function being executed.
 
 ---
 
-<a href="https://github.com/rraadd88/roux/blob/master/roux/lib/sys.py#L473"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="https://github.com/rraadd88/roux/blob/master/roux/lib/sys.py#L477"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ### <kbd>function</kbd> `get_datetime`
 
@@ -5712,7 +5737,7 @@ Get the date and time.
 
 ---
 
-<a href="https://github.com/rraadd88/roux/blob/master/roux/lib/sys.py#L495"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="https://github.com/rraadd88/roux/blob/master/roux/lib/sys.py#L499"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ### <kbd>function</kbd> `p2time`
 
@@ -5738,7 +5763,7 @@ Get the creation/modification dates of files.
 
 ---
 
-<a href="https://github.com/rraadd88/roux/blob/master/roux/lib/sys.py#L513"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="https://github.com/rraadd88/roux/blob/master/roux/lib/sys.py#L517"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ### <kbd>function</kbd> `ps2time`
 
@@ -5763,7 +5788,7 @@ Get the times for a list of files.
 
 ---
 
-<a href="https://github.com/rraadd88/roux/blob/master/roux/lib/sys.py#L530"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="https://github.com/rraadd88/roux/blob/master/roux/lib/sys.py#L534"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ### <kbd>function</kbd> `get_logger`
 
@@ -5781,6 +5806,21 @@ Get the logging object.
  - <b>`argv`</b> (_type_, optional):  arguments. Defaults to None. 
  - <b>`level`</b> (_type_, optional):  level of logging. Defaults to None. 
  - <b>`dp`</b> (_type_, optional):  _description_. Defaults to None. 
+
+
+---
+
+<a href="https://github.com/rraadd88/roux/blob/master/roux/lib/sys.py#L579"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+
+### <kbd>function</kbd> `tree`
+
+```python
+tree(folder_path: str, log=True)
+```
+
+
+
+
 
 
 <!-- markdownlint-disable -->
@@ -5842,15 +5882,6 @@ Concatenate text files.
 **Returns:**
  
  - <b>`outp`</b> (str):  output path. 
-
-
-<!-- markdownlint-disable -->
-
-<a href="https://github.com/rraadd88/roux/blob/master/roux.py#L0"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
-
-## <kbd>module</kbd> `roux.run`
-For access to a few functions from the terminal. 
-
 
 
 <!-- markdownlint-disable -->
@@ -6692,7 +6723,7 @@ get_stat(
     subsets=None,
     cols_subsets=['subset1', 'subset2'],
     df2=None,
-    stats=[<function mean at 0x7f72a85a7b00>, <function median at 0x7f72a8471b00>, <function var at 0x7f72a85a7f80>, <built-in function len>],
+    stats=[<function mean at 0x7fd396dafb00>, <function median at 0x7fd396c73b00>, <function var at 0x7fd396daff80>, <built-in function len>],
     coff_samples_min=None,
     verb=False,
     **kws
@@ -6750,7 +6781,7 @@ get_stats(
     subsets=None,
     df2=None,
     cols_subsets=['subset1', 'subset2'],
-    stats=[<function mean at 0x7f72a85a7b00>, <function median at 0x7f72a8471b00>, <function var at 0x7f72a85a7f80>, <built-in function len>],
+    stats=[<function mean at 0x7fd396dafb00>, <function median at 0x7fd396c73b00>, <function var at 0x7fd396daff80>, <built-in function len>],
     axis=0,
     test=False,
     **kws
@@ -9718,7 +9749,7 @@ For setting up colors.
 
 ---
 
-<a href="https://github.com/rraadd88/roux/blob/master/roux/viz/colors.py#L14"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="https://github.com/rraadd88/roux/blob/master/roux/viz/colors.py#L13"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ### <kbd>function</kbd> `rgbfloat2int`
 
@@ -9733,7 +9764,7 @@ rgbfloat2int(rgb_float)
 
 ---
 
-<a href="https://github.com/rraadd88/roux/blob/master/roux/viz/colors.py#L20"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="https://github.com/rraadd88/roux/blob/master/roux/viz/colors.py#L19"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ### <kbd>function</kbd> `get_colors_default`
 
@@ -9752,7 +9783,7 @@ get default colors.
 
 ---
 
-<a href="https://github.com/rraadd88/roux/blob/master/roux/viz/colors.py#L28"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="https://github.com/rraadd88/roux/blob/master/roux/viz/colors.py#L27"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ### <kbd>function</kbd> `get_ncolors`
 
@@ -9790,7 +9821,7 @@ Get colors.
 
 ---
 
-<a href="https://github.com/rraadd88/roux/blob/master/roux/viz/colors.py#L64"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="https://github.com/rraadd88/roux/blob/master/roux/viz/colors.py#L63"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ### <kbd>function</kbd> `get_val2color`
 
@@ -9823,7 +9854,7 @@ Get color for a value.
 
 ---
 
-<a href="https://github.com/rraadd88/roux/blob/master/roux/viz/colors.py#L90"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="https://github.com/rraadd88/roux/blob/master/roux/viz/colors.py#L89"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ### <kbd>function</kbd> `saturate_color`
 
@@ -9851,7 +9882,7 @@ References:
 
 ---
 
-<a href="https://github.com/rraadd88/roux/blob/master/roux/viz/colors.py#L113"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="https://github.com/rraadd88/roux/blob/master/roux/viz/colors.py#L112"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ### <kbd>function</kbd> `mix_colors`
 
@@ -9879,7 +9910,7 @@ References:
 
 ---
 
-<a href="https://github.com/rraadd88/roux/blob/master/roux/viz/colors.py#L139"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="https://github.com/rraadd88/roux/blob/master/roux/viz/colors.py#L138"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ### <kbd>function</kbd> `make_cmap`
 
@@ -9904,7 +9935,7 @@ Create a colormap.
 
 ---
 
-<a href="https://github.com/rraadd88/roux/blob/master/roux/viz/colors.py#L151"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="https://github.com/rraadd88/roux/blob/master/roux/viz/colors.py#L150"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ### <kbd>function</kbd> `get_cmap_section`
 
@@ -9937,7 +9968,7 @@ Get section of a colormap.
 
 ---
 
-<a href="https://github.com/rraadd88/roux/blob/master/roux/viz/colors.py#L170"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="https://github.com/rraadd88/roux/blob/master/roux/viz/colors.py#L169"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ### <kbd>function</kbd> `append_cmap`
 
@@ -10063,7 +10094,7 @@ For distribution plots.
 
 ---
 
-<a href="https://github.com/rraadd88/roux/blob/master/roux/viz/dist.py#L11"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="https://github.com/rraadd88/roux/blob/master/roux/viz/dist.py#L12"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ### <kbd>function</kbd> `hist_annot`
 
@@ -10122,7 +10153,7 @@ TODOs: For scatter, use `annot_side` with `loc='top'`.
 
 ---
 
-<a href="https://github.com/rraadd88/roux/blob/master/roux/viz/dist.py#L86"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="https://github.com/rraadd88/roux/blob/master/roux/viz/dist.py#L87"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ### <kbd>function</kbd> `plot_gmm`
 
@@ -10179,7 +10210,7 @@ Keyword Args:
 
 ---
 
-<a href="https://github.com/rraadd88/roux/blob/master/roux/viz/dist.py#L163"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="https://github.com/rraadd88/roux/blob/master/roux/viz/dist.py#L164"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ### <kbd>function</kbd> `plot_normal`
 
@@ -10205,7 +10236,7 @@ Plot normal distribution.
 
 ---
 
-<a href="https://github.com/rraadd88/roux/blob/master/roux/viz/dist.py#L189"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="https://github.com/rraadd88/roux/blob/master/roux/viz/dist.py#L190"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ### <kbd>function</kbd> `get_jitter_positions`
 
@@ -10220,7 +10251,7 @@ get_jitter_positions(ax, df1, order, column_category, column_position)
 
 ---
 
-<a href="https://github.com/rraadd88/roux/blob/master/roux/viz/dist.py#L201"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="https://github.com/rraadd88/roux/blob/master/roux/viz/dist.py#L202"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ### <kbd>function</kbd> `plot_dists`
 
@@ -10293,7 +10324,7 @@ TODOs: 1. Sort categories. 2. Change alpha of the boxplot rather than changing s
 
 ---
 
-<a href="https://github.com/rraadd88/roux/blob/master/roux/viz/dist.py#L461"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="https://github.com/rraadd88/roux/blob/master/roux/viz/dist.py#L462"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ### <kbd>function</kbd> `pointplot_groupbyedgecolor`
 
@@ -12281,7 +12312,8 @@ read_config(
     config_base=None,
     inputs=None,
     append_to_key=None,
-    convert_dtype: bool = True
+    convert_dtype: bool = True,
+    verbose: bool = True
 )
 ```
 
@@ -12297,7 +12329,7 @@ Read configuration.
 
 ---
 
-<a href="https://github.com/rraadd88/roux/blob/master/roux/workflow/io.py#L189"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="https://github.com/rraadd88/roux/blob/master/roux/workflow/io.py#L193"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ### <kbd>function</kbd> `read_metadata`
 
@@ -12332,7 +12364,7 @@ Read metadata.
 
 ---
 
-<a href="https://github.com/rraadd88/roux/blob/master/roux/workflow/io.py#L282"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="https://github.com/rraadd88/roux/blob/master/roux/workflow/io.py#L287"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ### <kbd>function</kbd> `to_workflow`
 
@@ -12359,7 +12391,7 @@ Save workflow file.
 
 ---
 
-<a href="https://github.com/rraadd88/roux/blob/master/roux/workflow/io.py#L313"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="https://github.com/rraadd88/roux/blob/master/roux/workflow/io.py#L318"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ### <kbd>function</kbd> `create_workflow_report`
 
@@ -12379,7 +12411,7 @@ Create report for the workflow run.
 
 ---
 
-<a href="https://github.com/rraadd88/roux/blob/master/roux/workflow/io.py#L344"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="https://github.com/rraadd88/roux/blob/master/roux/workflow/io.py#L349"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ### <kbd>function</kbd> `replacestar`
 
@@ -12674,18 +12706,43 @@ Parameters  nb: notebook object obtained from `nbformat.reads`.  replaces (dict)
 to_filtered_nb(
     p: str,
     outp: str,
-    h: str,
+    header: str,
     kind: str = 'include',
     validate_diff: int = None
 )
 ```
 
-Filter a notebook based on markdown heading.         
+Filter sections in a notebook based on markdown headings. 
+
+
+
+**Args:**
+ 
+ - <b>`header`</b> (str):  exact first line of a markdown cell marking a section in a notebook. validate_diff 
 
 
 ---
 
-<a href="https://github.com/rraadd88/roux/blob/master/roux/workflow/nb.py#L195"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="https://github.com/rraadd88/roux/blob/master/roux/workflow/nb.py#L199"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+
+### <kbd>function</kbd> `to_filter_nbby_patterns`
+
+```python
+to_filter_nbby_patterns(p, outp, patterns=None, **kws)
+```
+
+Filter out notebook cells if the pattern string is found. 
+
+
+
+**Args:**
+ 
+ - <b>`patterns`</b> (list):  list of string patterns. 
+
+
+---
+
+<a href="https://github.com/rraadd88/roux/blob/master/roux/workflow/nb.py#L221"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ### <kbd>function</kbd> `to_clear_unused_cells`
 
@@ -12702,7 +12759,7 @@ Remove code cells with all lines commented.
 
 ---
 
-<a href="https://github.com/rraadd88/roux/blob/master/roux/workflow/nb.py#L223"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="https://github.com/rraadd88/roux/blob/master/roux/workflow/nb.py#L249"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ### <kbd>function</kbd> `to_clear_outputs`
 
@@ -12717,7 +12774,7 @@ to_clear_outputs(notebook_path, new_notebook_path)
 
 ---
 
-<a href="https://github.com/rraadd88/roux/blob/master/roux/workflow/nb.py#L241"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="https://github.com/rraadd88/roux/blob/master/roux/workflow/nb.py#L267"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ### <kbd>function</kbd> `to_filtered_outputs`
 
@@ -12732,7 +12789,7 @@ to_filtered_outputs(input_path, output_path, warnings=True, strings=True)
 
 ---
 
-<a href="https://github.com/rraadd88/roux/blob/master/roux/workflow/nb.py#L274"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="https://github.com/rraadd88/roux/blob/master/roux/workflow/nb.py#L300"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ### <kbd>function</kbd> `to_diff_notebooks`
 
@@ -12762,7 +12819,7 @@ For task management.
 
 ---
 
-<a href="https://github.com/rraadd88/roux/blob/master/roux/workflow/task.py#L21"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="https://github.com/rraadd88/roux/blob/master/roux/workflow/task.py#L22"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ### <kbd>function</kbd> `run_task`
 
@@ -12770,7 +12827,7 @@ For task management.
 run_task(
     parameters: dict,
     input_notebook_path: str,
-    kernel: str,
+    kernel: str = None,
     output_notebook_path: str = None,
     test=False,
     verbose=False,
@@ -12793,19 +12850,22 @@ Keyword parameters:  kws_papermill: parameters provided to the `pm.execute_noteb
 
 ---
 
-<a href="https://github.com/rraadd88/roux/blob/master/roux/workflow/task.py#L73"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="https://github.com/rraadd88/roux/blob/master/roux/workflow/task.py#L78"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ### <kbd>function</kbd> `run_tasks`
 
 ```python
 run_tasks(
     input_notebook_path: str,
-    kernel: str,
+    kernel: str = None,
     inputs: list = None,
     output_path_base: str = None,
     parameters_list: list = None,
     fast: bool = False,
     fast_workers: int = 6,
+    to_filter_nbby_patterns_kws=None,
+    input_notebook_temp_path=None,
+    out_paths: bool = False,
     test1: bool = False,
     force: bool = False,
     test: bool = False,
@@ -12818,7 +12878,7 @@ Run a list of tasks.
 
 Prameters:  input_notebook_path (dict): path to the input notebook which is parameterized.  kernel (str): kernel to be used.  inputs (list): list of parameters without the output paths, which would be inferred by encoding.    output_path_base (str): output path with a placeholder e.g. 'path/to/{KEY}/file'.    parameters_list (list): list of parameters including the output paths.    fast (bool): enable parallel-processing.  fast_workers (bool): number of parallel-processes.  force (bool): overwrite the outputs.  test (bool): test-mode.  verbose (bool): verbose.  
 
-Keyword parameters:  kws_papermill: parameters provided to the `pm.execute_notebook` function. 
+Keyword parameters:  kws_papermill: parameters provided to the `pm.execute_notebook` function.  to_filter_nbby_patterns_kws (list): dictionary containing parameters to be provided to `to_filter_nbby_patterns` function (Defaults to None).   
 
 
 
@@ -12827,6 +12887,12 @@ Keyword parameters:  kws_papermill: parameters provided to the `pm.execute_noteb
  - <b>`parameters_list`</b> (list):  list of parameters including the output paths, inferred if not provided. 
 
 TODOs:  0. Ignore temporary parameters e.g test, verbose etc while encoding inputs.  1. Integrate with apply_on_paths for parallel processing etc. 
+
+
+
+**Notes:**
+
+> 1. To resolve `RuntimeError: This event loop is already running in python` from `multiprocessing`, execute import nest_asyncio nest_asyncio.apply() 
 
 
 <!-- markdownlint-disable -->
