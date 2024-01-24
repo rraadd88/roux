@@ -11,8 +11,11 @@ Note: Post-development, to remove *s from the code, use removestar (pip install 
 import logging
 logging.basicConfig(
     level=logging.INFO,
-    # format='[%(asctime)s] %(levelname)s\tfrom %(filename)s in %(funcName)s(..): %(message)s'
+    # format='[%(asctime)s] %(levelname)s\tfrom %(filename)s in %(funcName)s(..): %(message)s',
+    force=True,
     )
+    ## get current logging level
+    # logging.getLevelName(logging.root.getEffectiveLevel())
 
 try:
     from icecream import ic as info
@@ -57,7 +60,11 @@ from roux.stat.io import perc_label
 
 ## visualization functions
 import matplotlib.pyplot as plt
-import seaborn as sns
+try:
+    import seaborn as sns
+except ImportError:
+    logging.warning('Optional dependency seaborn missing, install by running: pip install roux[viz]')
+
 # settings
 FONTSIZE=12
 PAD=2

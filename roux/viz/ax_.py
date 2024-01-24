@@ -349,7 +349,7 @@ def split_ticklabels(
             df0_[axis+'ticklabel minor']=['' for k in df0_[axis+'ticklabel']]            
         df_=(df0_
             .groupby(axis+'ticklabel major')
-            .agg({axis:[min,max,len],})
+            .agg({axis:['min','max','len'],})
             .rd.flatten_columns()
         )
         if test:

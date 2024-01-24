@@ -66,8 +66,10 @@ def run_task(
         output_path=output_notebook_path,
         parameters=parameters,
         kernel_name=kernel,
-        report=True,
         start_timeout=480,
+        report_mode=True,
+        # cwd=None #(str or Path, optional) – Working directory to use when executing the notebook
+        # prepare_only (bool, optional) – Flag to determine if execution should occur or not
         **kws_papermill,
     )
     # return parameters['output_path']
