@@ -208,13 +208,7 @@ def run_tasks(
                     **kws_papermill,
                     force=force,
                     ))
-<<<<<<< HEAD
-    # if clean:
-    #     input_notebook_temp_file.close()
-    return before
-=======
     if not out_paths:
         return before
     else:
         return ds2.tolist()
->>>>>>> b56921d0011643ae1247c864a0f720fbc3d8a180
