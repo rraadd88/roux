@@ -294,7 +294,7 @@ def align(
 
 from roux.lib.set import unique_str
 
-def get_prefix(
+def _get_prefix(
     s1: str,
     s2: str,
     common: bool=True,
@@ -321,7 +321,27 @@ def get_prefix(
         else:
             return s3.strip().rsplit(' ', 1)[0]
         
-def get_suffix(
+def get_prefix(
+    s1,
+    s2: str= None,
+    common: bool=True,
+    clean: bool=True,
+    ) -> str: 
+    """Get the prefix of the strings
+    
+    Parameters:
+        s1 (str|list): 1st string.
+        s2 (str): 2nd string (default:None).
+        common (bool): get the common prefix (default:True).
+        clean (bool): clean the leading and trailing whitespaces (default:True).
+        
+    Returns:
+        s (str): prefix.
+    """
+    from functools import reduce
+    return reduce(lambda x,y: _get_prefix(x,y,common=common,clean=clean),[s1,s2] if isinstance(s1,str) else s1)
+
+def _get_suffix(
     s1: str,
     s2: str,
     common: bool=True,
@@ -351,7 +371,27 @@ def get_suffix(
             return s3
         else:
             return s3.strip()#.rsplit(' ', 1)[0]
+
+def get_suffix(
+    s1,
+    s2: str= None,
+    common: bool=True,
+    clean: bool=True,
+    ) -> str: 
+    """Get the suffix of the strings
+    
+    Parameters:
+        s1 (str|list): 1st string.
+        s2 (str): 2nd string (default:None).
+        common (bool): get the common prefix (default:True).
+        clean (bool): clean the leading and trailing whitespaces (default:True).
         
+    Returns:
+        s (str): prefix.
+    """
+    from functools import reduce
+    return reduce(lambda x,y: _get_suffix(x,y,common=common,clean=clean),[s1,s2] if isinstance(s1,str) else s1)
+
 def get_fix(
     s1: str,
     s2: str,

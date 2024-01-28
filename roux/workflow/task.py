@@ -3,6 +3,7 @@
 import logging
 ## internal
 from roux.lib.io import to_dict
+from pathlib import Path
 from roux.lib.sys import (basenamenoext, dirname, exists, get_datetime, makedirs, splitext)
 
 try:
@@ -21,7 +22,7 @@ except ImportError:
 def run_task(
     parameters: dict,
     input_notebook_path: str,
-    kernel: str,
+    kernel: str=None,
     output_notebook_path: str= None,
     # force=False,
     test=False,
@@ -58,28 +59,33 @@ def run_task(
     to_dict(parameters,f"{dirname(output_notebook_path)}/parameters.yaml")
 
     if verbose: logging.info(parameters)
+    if kernel is None: logging.warning("kernel name not provided.")
     import papermill as pm
     pm.execute_notebook(
         input_path=input_notebook_path,
         output_path=output_notebook_path,
         parameters=parameters,
         kernel_name=kernel,
-        report=True,
         start_timeout=480,
+        report_mode=True,
+        # cwd=None #(str or Path, optional) – Working directory to use when executing the notebook
+        # prepare_only (bool, optional) – Flag to determine if execution should occur or not
         **kws_papermill,
     )
-    return parameters['output_path']
+    # return parameters['output_path']
+    return output_notebook_path
 
 def run_tasks(
     input_notebook_path: str,
-    kernel: str,
+    kernel: str=None,
     inputs: list= None,
     output_path_base: str=None,
     parameters_list: list=None,
     fast: bool=False,
     fast_workers:int=6,
-    to_filter_nbby_patterns_kws={},
+    to_filter_nbby_patterns_kws=None,
     input_notebook_temp_path=None,
+    out_paths: bool=False,
     test1: bool=False,
     force: bool=False,
     test: bool=False,
@@ -103,7 +109,8 @@ def run_tasks(
         
     Keyword parameters:
         kws_papermill: parameters provided to the `pm.execute_notebook` function.
-    
+        to_filter_nbby_patterns_kws (list): dictionary containing parameters to be provided to `to_filter_nbby_patterns` function (Defaults to None). 
+        
     Returns:
         parameters_list (list): list of parameters including the output paths, inferred if not provided.
         
@@ -116,6 +123,8 @@ def run_tasks(
         import nest_asyncio
         nest_asyncio.apply()
     """
+    assert exists(input_notebook_path), input_notebook_path
+    
     ## save task in unique directories
     if parameters_list is None:
         ## infer output paths
@@ -147,22 +156,29 @@ def run_tasks(
     ## chech for duplicate output paths
     assert len(set([d['output_path'] for d in parameters_list]))==len(parameters_list), (len(set([d['output_path'] for d in parameters_list])),len(parameters_list))
     
-    if len(to_filter_nbby_patterns_kws)!=0:
-        from roux.workflow.nb import to_filter_nbby_patterns
+    if to_filter_nbby_patterns_kws is not None:
+        logging.info('filtering the notebook')
         if input_notebook_temp_path is None:
             import tempfile
-            input_notebook_temp_file = tempfile.NamedTemporaryFile(delete=False)
-            input_notebook_temp_path=input_notebook_temp_file.name
+            # input_notebook_temp_file = tempfile.NamedTemporaryFile(delete=False)
+            # input_notebook_temp_file.close()
+            # input_notebook_temp_path=input_notebook_temp_file.name+'.ipynb'
+            input_notebook_temp_path=f"{tempfile.gettempdir()}/{Path(input_notebook_path).name}"
         logging.info(f"temporary notebook file path: {input_notebook_temp_path}")
-        
+        ## copy input to the temporary
+        import shutil
+        shutil.copyfile(input_notebook_path,input_notebook_temp_path)
+                
+        from roux.workflow.nb import to_filter_nbby_patterns
         input_notebook_path=to_filter_nbby_patterns(
-            input_notebook_path,
+            input_notebook_temp_path,
             input_notebook_temp_path,
             **to_filter_nbby_patterns_kws,
            )
-        clean=True
-    else:
-        clean=False
+        input_notebook_path=input_notebook_temp_path
+    #     clean=True
+    # else:
+    #     clean=False
         
     ## run tasks
     import pandas as pd
@@ -173,7 +189,7 @@ def run_tasks(
             ds1=ds1.head(1)
             logging.warning("testing only the first input.")
         if not fast: 
-            _=getattr(ds1,'progress_apply' if hasattr(ds1,'progress_apply') else 'apply')(
+            ds2=getattr(ds1,'progress_apply' if hasattr(ds1,'progress_apply') and len(ds1)>1 else 'apply')(
                 lambda x: run_task(
                     x,
                     input_notebook_path=input_notebook_path,
@@ -184,7 +200,7 @@ def run_tasks(
         else:
             from pandarallel import pandarallel
             pandarallel.initialize(nb_workers=fast_workers,progress_bar=True,use_memory_fs=False)            
-            _=ds1.parallel_apply(
+            ds2=ds1.parallel_apply(
                 lambda x: run_task(
                     x,
                     input_notebook_path=input_notebook_path,
@@ -192,6 +208,13 @@ def run_tasks(
                     **kws_papermill,
                     force=force,
                     ))
+<<<<<<< HEAD
     # if clean:
     #     input_notebook_temp_file.close()
     return before
+=======
+    if not out_paths:
+        return before
+    else:
+        return ds2.tolist()
+>>>>>>> b56921d0011643ae1247c864a0f720fbc3d8a180

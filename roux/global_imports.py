@@ -11,8 +11,11 @@ Note: Post-development, to remove *s from the code, use removestar (pip install 
 import logging
 logging.basicConfig(
     level=logging.INFO,
-    # format='[%(asctime)s] %(levelname)s\tfrom %(filename)s in %(funcName)s(..): %(message)s'
+    # format='[%(asctime)s] %(levelname)s\tfrom %(filename)s in %(funcName)s(..): %(message)s',
+    # force=True,
     )
+    ## get current logging level
+    # logging.getLevelName(logging.root.getEffectiveLevel())
 
 try:
     from icecream import ic as info
@@ -35,7 +38,7 @@ from os.path import exists,dirname,basename,abspath,isdir,splitext # pathlib to 
 from glob import glob # read_ps to be preferred in the future
 ## system functions from roux
 from roux.lib.sys import read_ps, basenamenoext, to_path, makedirs, get_datetime
-from roux.lib.io import read_dict, to_dict, read_table, to_table, backup
+from roux.lib.io import read_dict, to_dict, read_table, to_table, to_version, backup
 ## data functions from roux
 from roux.lib.str import get_bracket, replace_many, get_suffix, get_prefix
 from roux.lib.set import dropna, flatten, unique, assert_overlaps_with, validate_overlaps_with, check_non_overlaps_with
@@ -67,7 +70,11 @@ from roux.stat.io import perc_label
 
 ## visualization functions
 import matplotlib.pyplot as plt
-import seaborn as sns
+try:
+    import seaborn as sns
+except ImportError:
+    logging.warning('Optional dependency seaborn missing, install by running: pip install roux[viz]')
+
 # settings
 FONTSIZE=12
 PAD=2

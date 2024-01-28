@@ -6,6 +6,7 @@ from roux.lib.set import dropna
 from roux.viz.colors import *
 from roux.viz.annot import *
 from roux.viz.ax_ import *
+import seaborn as sns
 
 ## single distributions.
 def hist_annot(

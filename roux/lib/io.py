@@ -151,12 +151,14 @@ def get_version(
     """
     return 'v'+get_datetime()+'_'+suffix
 
-def version(
+def to_version(
     p: str,
     outd: str=None,
+    test: bool=False,
+    name: str=None,
     **kws: dict,
     ) -> str:
-    """Get the version of the file/directory.
+    """Rename a file/directory to a version.
     
     Parameters:
         p (str): path.
@@ -175,11 +177,15 @@ def version(
     if outd is None:
         outd=f"{dirname(p)}{'/' if dirname(p)!='' else ''}"
     if isdir(p):
-        outp=f"{outd}.{get_version(basename(p),**kws)}"
+        outp=f"{outd}/.{get_version(basename(p)+' '+name,**kws)}"
     else:
-        outp=f"{outd}.{get_version(basenamenoext(p),**kws)}{splitext(p)[1]}"    
-    logging.info(p,outp)
-    shutil.move(p,outp)
+        outp=f"{outd}/.{get_version(basenamenoext(p)+' '+name,**kws)}{splitext(p)[1]}"    
+    outp=to_path(outp)
+    logging.info(f"-->{outp}")
+    if not test:
+        shutil.move(p,outp)
+    else:
+        logging.warning('test mode.')
     return outp
 
 def backup(
@@ -216,50 +222,8 @@ def backup(
             "find -regex .*/_.*"
             "find -regex .*/test.*"
     """
-    if no_test: ## usage in command line
-        test=False
-    logging.warning(f"test={test}")
-    from roux.lib.set import unique
-    ps=read_ps(p)
-    assert(len(ps)!=0)
-    if verbose:info(ps)    
-    ## correct paths if it is a directory
-    ps=[ p+'/' if isdir(p) else p for p in ps]
-    if verbose: info(ps)
-    if outd is None:
-        from os.path import commonprefix
-        outd=dirname(commonprefix(ps))
-        if isdir(outd):
-            outd=dirname(outd)+'/'
-    
-    ## add version suffix
-    from roux.lib.sys import get_datetime
-    outd2=outd+'/.'+get_version(suffix)#'/_v'+get_datetime()+'_'+(suffix+'_' if not suffix is None else '')
-    logging.warning(f"backup direction: {p} -> {outd2}")
-    # create directoried in outd
-    # outds=unique([dirname(dirname(p)) if isdir(p) else dirname(p) for p in ps])
-    ## input directories
-    inds=unique([dirname(p) for p in ps])
-    if verbose: info(inds)
-    inds=list(set([replace_many(p,{outd:outd2})+'/' if not move_only else outd2+p for p in inds]))
-    if verbose: info(inds)
-    l1=[(p,replace_many(p,{outd:outd2})) if not move_only else (p,outd2+p) for p in ps]
-    if verbose: info(l1)
-    l1=list(set([(p1,dirname(dirname(p2)) if p2.endswith('/') else p2) for p1,p2 in l1]))    
-    if test:
-        return l1
-    assert(len(outds)!=0)
-    print(l1)
-    ## make directories
-    # _=[makedirs(p) for p in outds]
-    [makedirs(t[1]) for t in l1]
-    l2=[shutil.move(*t) for t in l1]
-    # zip
-    if zipped:
-        to_zip(outd2, f"{outd2}.zip")
-        return f"{outd2}.zip"
-    else:
-        return l2
+    logging.warning("deprecation: prefer to_version.")
+    return to_version(p,outd)
 
 def read_url(url):
     """Read text from an URL.

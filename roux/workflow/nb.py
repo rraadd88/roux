@@ -150,23 +150,27 @@ def to_replaced_nb(
 def to_filtered_nb(
     p: str,
     outp: str,
-    h: str,
+    header: str,
     kind: str='include',
     validate_diff: int=None,
     ):
     """
-    Filter a notebook based on markdown heading.        
+    Filter sections in a notebook based on markdown headings.
+    
+    Args:
+        header (str): exact first line of a markdown cell marking a section in a notebook.
+        validate_diff
     """
     # Load the Jupyter Notebook
     with open(p, 'r', encoding='utf-8') as notebook_file:
         notebook = nbformat.read(notebook_file, as_version=4)
 
     def get_hlevel(h): return len(h.split('# ')[0])+1
-    hlevel=get_hlevel(h)
+    hlevel=get_hlevel(header)
     # Iterate through the notebook cells
     for cell in notebook.cells:
         if cell.cell_type == 'markdown':
-            if cell.source.split('\n')[0]==h:
+            if cell.source.split('\n')[0]==header.split('\n')[0]:
                 # Markdown cell containing the target heading found
                 # Now, look for code cells below it until the next markdown cell
                 if kind=='include':
@@ -198,14 +202,20 @@ def to_filter_nbby_patterns(
     patterns=None,
     **kws, # to_filtered_nb
     ):
+    """
+    Filter out notebook cells if the pattern string is found.
+    
+    Args:
+        patterns (list): list of string patterns.
+    """
     hs=[s for s in read_nb_md(p)[1:] if any([s1.lower() in s.lower() for s1 in patterns])]
     if p!=outp:
         import shutil
         shutil.copyfile(p,outp)
     for h in hs:
         if h in read_nb_md(outp)[1:]:
-            print('header to be dropped: ',h)
-            to_filtered_nb(outp,outp,h=h,kind='exclude',**kws)
+            logging.info(f'header to be dropped: {h}')
+            to_filtered_nb(outp,outp,header=h,kind='exclude',**kws)
     return outp
     
 def to_clear_unused_cells(

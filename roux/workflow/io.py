@@ -70,7 +70,7 @@ def to_nb_cells(
     Replace notebook cells.
     """
     import nbformat
-    print(f"notebook length change: {len(notebook.cells):>2}->{len(new_cells):>2} cells")
+    logging.info(f"notebook length change: {len(notebook.cells):>2}->{len(new_cells):>2} cells")
     if not validate_diff is None:
         assert len(notebook.cells)-len(new_cells)==validate_diff
     elif validate_diff == '>': # filtering
@@ -143,6 +143,7 @@ def read_config(
     inputs=None, #overwrite with
     append_to_key=None,
     convert_dtype:bool=True,
+    verbose:bool=True,
     ):
     """
     Read configuration.
@@ -162,6 +163,7 @@ def read_config(
     d1=read_dict(p)
     ## merge
     if not config_base is None:
+        
         if not append_to_key is None:
             # print(config_base)
             # print(d1)            
@@ -172,12 +174,14 @@ def read_config(
                 config_base, ## parent
                 d1, ## child overwrite with
                 )
-    elif not inputs is None:
+        if verbose: print("base config used.")
+    if not inputs is None:
         d1=OmegaConf.merge(
                 d1, ## parent
                 inputs, ## child overwrite with
                 )
-    else:
+        if verbose: print("inputs incorporated.")
+    if isinstance(d1,dict):
         ## no-merging
         d1=OmegaConf.create(d1)
     # ## convert data dypes
@@ -209,7 +213,7 @@ def read_metadata(
     if not exists(p):
         logging.warning(f'not found: {p}')
 
-    d1=read_config(p,**kws_read_config)
+    d1=read_config(p,verbose=verbose,**kws_read_config)
     
     ## read dicts
     keys=d1.keys()
@@ -232,6 +236,7 @@ def read_metadata(
                         p=d1[k][config_path_key],
                         config_base=d1,
                         append_to_key=k,
+                        verbose=verbose,
                         )
                 else:
                     if verbose: logging.warning(f"not exists: {d1[k][config_path_key]}")
