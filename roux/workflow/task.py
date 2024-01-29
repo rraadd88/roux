@@ -2,7 +2,7 @@
 ## logging
 import logging
 ## internal
-from roux.lib.io import to_dict
+from roux.lib.io import read_dict,to_dict
 from pathlib import Path
 from roux.lib.sys import (basenamenoext, dirname, exists, get_datetime, makedirs, splitext)
 
@@ -80,7 +80,7 @@ def run_tasks(
     kernel: str=None,
     inputs: list= None,
     output_path_base: str=None,
-    parameters_list: list=None,
+    parameters_list=None,
     fast: bool=False,
     fast_workers:int=6,
     to_filter_nbby_patterns_kws=None,
@@ -143,6 +143,9 @@ def run_tasks(
             output_dir_path=output_path_base.split('{KEY}')[0]
             to_dict(parameters,
                     f"{output_dir_path}/{k.split(output_dir_path)[1].split('/')[0]}/.parameters.yaml")
+    print(parameters_list)
+    if isinstance(parameters_list,str):
+        parameters_list=read_dict(parameters_list)
     if isinstance(parameters_list,list):
         before=len(parameters_list)
         ## TODO: use `to_outp`?
