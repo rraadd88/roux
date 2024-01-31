@@ -1469,6 +1469,8 @@ def sort_columns_by_values(
     if suffixes is None:
         from roux.lib.str import get_suffix
         suffixes=get_suffix(*subset,common=False, clean=True)
+        assert set(suffixes)!=set(subset), subset
+        logging.info(f"suffixes inferred: {suffixes}")
         
     ## data checks
     df.rd.assert_no_na(subset=subset)
@@ -1494,6 +1496,7 @@ def sort_columns_by_values(
     ## rename columns of of to be sorted
     ## TODO: use swap_paired_cols
     rename={c:c.replace(suffixes[0],suffixes[1]) if (suffixes[0] in c) else c.replace(suffixes[1],suffixes[0]) if (suffixes[1] in c) else c for c in df}
+
     for k in [True, False]:
         dn2df[(k,True)]=dn2df[(k,True)].rename(columns=rename,
                                               errors='raise')

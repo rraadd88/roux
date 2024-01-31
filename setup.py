@@ -39,8 +39,9 @@ requirements = {
     # 'xlrd',
 ],
 'fast':[
-    'pandarallel', # fast
     'fastparquet', # fast
+    'pandarallel', # fast
+    'ipywidgets', # required for pandarallel
 ],
 'stat':[
     'scipy>=1.1.0',

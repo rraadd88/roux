@@ -170,7 +170,8 @@ def get_corr(
             ci_type: CI type
     """
     ## check inputs
-    assert n_min>cv, f"n_min={n_min} !> cv={cv}"
+    if resample:
+        assert n_min>cv, f"n_min={n_min} !> cv={cv} (set resample=False to turn off resampling)"
     
     if verbose:
         preprocess_kws['verbose']=True
@@ -182,13 +183,18 @@ def get_corr(
         if df is None: 
             return {}
         x,y,n=df['x'],df['y'],len(df)
-    if hasattr(stats,method+'r'):
-        method_fun=getattr(stats,method+'r')
-    elif hasattr(spatial.distance,method):
-        ## no-pvalue
-        method_fun=getattr(spatial.distance,method)
+    if not callable(method):
+        if hasattr(stats,method+'r'):
+            method_fun=getattr(stats,method+'r')
+        elif hasattr(spatial.distance,method):
+            ## no-pvalue
+            method_fun=getattr(spatial.distance,method)
+        else:
+            raise ValueError(method)
     else:
-        raise ValueError(method)
+        method_fun=method
+        method = method.__name__
+            
     if pval:
         res=_post(method_fun(x,y,**method_kws),method,n)
     else:
