@@ -342,7 +342,7 @@ def to_script(
             lines[linei]=f'if ax is None:{line}'                
     lines=[f"    {l}" for l in lines]
     lines='\n'.join(lines)
-    lines=f'def {defn}(\n{s4}plotp="{plotp}",\n{s4}data=None,\n{s4}df1=None,\n{s4}kws_plot=None,\n{s4}ax=None,\n{s4}fig=None,\n{s4}outd=None,\n{s4}fun_data=None,\n{s4}**kws_set,\n{s4}):\n{s4}\n{s4}## get the inputs\n{s4}plotp,data,kws_plot=get_plot_inputs(plotp=plotp,df1=data,kws_plot=kws_plot,outd=f"{{dirname(__file__)}}");\n{s4}data=fun_data(data) if not fun_data is None else data;\n{s4}\n{s4}## plotting\n'+lines+f'\n{s4}ax.set(**kws_set)\n{s4}return ax\n'
+    lines=f'def {defn}(\n{s4}plotp="{plotp}",\n{s4}data=None,\n{s4}df1=None,\n{s4}kws_plot=None,\n{s4}ax=None,\n{s4}fig=None,\n{s4}outd=None,\n{s4}fun_data=None,\n{s4}**kws_set,\n{s4}):\n{s4}\n{s4}## get the inputs\n{s4}from roux.viz.io import get_plot_inputs\n{s4}plotp,data,kws_plot=get_plot_inputs(plotp=plotp,df1=data,kws_plot=kws_plot,outd=f"{{dirname(__file__)}}");\n{s4}data=fun_data(data) if not fun_data is None else data;\n{s4}\n{s4}## plotting\n'+lines+f'\n{s4}ax.set(**kws_set)\n{s4}return ax\n'
     #save def
     with open(srcp,'w') as f:
         f.write('from roux.global_imports import *\n')
