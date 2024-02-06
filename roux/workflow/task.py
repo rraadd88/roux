@@ -24,8 +24,7 @@ def run_task(
     input_notebook_path: str,
     kernel: str=None,
     output_notebook_path: str= None,
-    # force=False,
-    test=False,
+    start_timeout:int=480,
     verbose=False,
     force=False,
     **kws_papermill,
@@ -53,7 +52,7 @@ def run_task(
         ## save report i.e. output notebook
         output_notebook_path=f"{splitext(parameters['output_path'])[0]}_reports/{get_datetime()}_{basenamenoext(input_notebook_path)}.ipynb"
         makedirs(output_notebook_path)
-    if test:
+    if verbose:
         logging.info(parameters['output_path'],output_notebook_path)
     ## save parameters
     to_dict(parameters,f"{dirname(output_notebook_path)}/parameters.yaml")
@@ -66,7 +65,7 @@ def run_task(
         output_path=output_notebook_path,
         parameters=parameters,
         kernel_name=kernel,
-        start_timeout=480,
+        start_timeout=start_timeout,
         report_mode=True,
         # cwd=None #(str or Path, optional) – Working directory to use when executing the notebook
         # prepare_only (bool, optional) – Flag to determine if execution should occur or not

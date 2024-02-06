@@ -470,7 +470,7 @@ def read_table(
     tables: int=1,
     test: bool=False,
     verbose: bool=True,
-    engine: str='fastparquet',
+    engine: str='pyarrow',
     **kws_read_tables: dict,
     ):
     """
@@ -944,7 +944,7 @@ def to_manytables(
 def to_table_pqt(
     df: pd.DataFrame,
     p: str,
-    engine: str='fastparquet',
+    engine: str='pyarrow',
     compression: str='gzip',
     **kws_pqt: dict,
     ) -> str:

@@ -36,12 +36,11 @@ requirements = {
 ],
 'data':[
     'openpyxl', # special io
-    # 'xlrd',
 ],
 'fast':[
-    'fastparquet', # fast
+    'pyarrow', # fast
     'pandarallel', # fast
-    'ipywidgets', # required for pandarallel
+    'ipywidgets', # for pandarallel
 ],
 'stat':[
     'scipy>=1.1.0',
