@@ -1,10 +1,9 @@
 """For workflow management."""
 import logging
 from pathlib import Path
-from roux.lib.sys import logging,exists,dirname,basename,makedirs,basenamenoext,abspath
-from roux.lib.io import read_ps,read_dict,to_dict
+from roux.lib.sys import exists,dirname,basename,makedirs,basenamenoext,abspath
+from roux.lib.io import read_ps,read_dict
 import pandas as pd
-import numpy as np
 
 def get_scripts(
     ps: list,
@@ -146,7 +145,7 @@ def to_scripts(
     # info(packagescriptsp,notebooksdp)
     if scripts:
         # get all the notebooks
-        if not ps is None:
+        if ps is not None:
             ps=read_ps(ps)
             ps=[abspath(p) for p in ps]
             make_all=False
@@ -157,7 +156,7 @@ def to_scripts(
         if exists(f'{notebooksdp}/.workflow/config.yaml'):
             cfg=read_dict(f'{notebooksdp}/.workflow/config.yaml')
             if 'exclude' in cfg:
-                ps=[p for p in ps if not basename(p) in cfg['exclude']]
+                ps=[p for p in ps if basename(p) not in cfg['exclude']]
                 logging.info(f"remaining few paths after excluding: {len(ps)}")
         df2=get_scripts(ps,force=force,
                         notebook_prefix=notebook_prefix,
@@ -178,7 +177,7 @@ def to_scripts(
         if not initp.exists(): initp.touch()
     if workflow or (ps is None):
         ## workflow inferred
-        if not 'df2' in globals():
+        if 'df2' not in globals():
             df2=pd.read_csv(df_outp,sep='\t')
         from roux.workflow.io import to_workflow
         to_workflow(df2,workflowp=f'{packagescriptsp}/workflow.py')

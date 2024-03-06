@@ -13,7 +13,7 @@ def get_header(path: str,comment='#',lineno=None):
     import re
     file = open(path, "r")
     lines=[]
-    if not comment is None:
+    if comment is not None:
         for i,line in enumerate(file):
             if re.search(f"^{comment}.*", line):
                 lines.append(line)

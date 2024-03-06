@@ -9,7 +9,6 @@ import numpy as np
 import scipy as sc
 import itertools
 ## viz
-import matplotlib.pyplot as plt
 ## internal
 from roux.lib.set import nunique
 
@@ -110,7 +109,7 @@ def get_pval(
             #if empty list: RuntimeWarning: divide by zero encountered in double_scalars  z = (bigu - meanrank) / sd
             return np.nan,np.nan
     else:
-        assert(not colindex is None)
+        assert(colindex is not None)
         df1=df.pivot(index=colindex,columns=colsubset,values=colvalue)
         return compare_classes(df1[subsets[0]],df1[subsets[1]],method=None)
         # ct=pd.crosstab(df1[subsets[0]],df1[subsets[1]])
@@ -212,7 +211,7 @@ def get_stat(
     )
     df3=df3.rename(columns={f"{c}{i}":f"{c} {colsubset_}{i}" for c in df_ for i in [1,2] if c!=colsubset_},errors='raise')
     ## minimum samples
-    if not coff_samples_min is None:
+    if coff_samples_min is not None:
         # logging.info("coff_samples_min applied")
         df3.loc[((df3[f'len {cols_subsets[0]}']<coff_samples_min) \
                  | (df3[f'len {cols_subsets[1]}']<coff_samples_min)),
@@ -313,7 +312,7 @@ def get_significant_changes(
     Returns:
         DataFrame: output dataframe.
     """
-    if coff_p is None and not alpha is None:
+    if coff_p is None and alpha is not None:
         coff_p=alpha
     if df1.filter(regex='|'.join([f"{s} subset(1|2)" for s in value_aggs])).shape[1]:
         for s in value_aggs:
@@ -326,11 +325,11 @@ def get_significant_changes(
         df1.loc[(df1[f'difference between {changeby} (subset1-subset2)']<0),'change']='decrease'
         df1['change']=df1['change'].fillna('ns')
     for test in ['MWU','FE']:
-        if not f'P ({test} test)' in df1:
+        if f'P ({test} test)' not in df1:
             continue
         # without fdr
         df1[f'change is significant, P ({test} test) < {coff_p}']=df1[f'P ({test} test)']<coff_p
-        if not coff_q is None:
+        if coff_q is not None:
             from roux.stat.transform import get_q
             df1[f'Q ({test} test)']=get_q(df1[f'P ({test} test)'])
             # df1[f'change is significant, Q ({test} test) < {coff_q}']=df1[f'Q ({test} test)']<coff_q
@@ -446,7 +445,7 @@ def get_diff(
         cols_group=cols_group,
         **kws,
         )
-    if not coff_p is None:
+    if coff_p is not None:
         df3=df3.loc[(df3['P (MWU test)']<coff_p),:]
     else:
         logging.warning('not filtered by P-value cutoff')
@@ -529,7 +528,7 @@ def binby_pvalue_coffs(
             d4['color']=d1[coff][k]
             d3[i]=d4
         df2=pd.DataFrame(d3).T
-    if not colns is None:
+    if colns is not None:
         df1.loc[df1[colns],'c']=palette[1]
 #     info(df1.shape,df1.shape)
     return df1,df2

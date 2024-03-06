@@ -1,7 +1,6 @@
 """For processing multiple pandas DataFrames/Series"""
 import logging
 import pandas as pd
-import roux.lib.df as rd
 from roux.lib import to_rd
         
 def filter_dfs(
@@ -161,7 +160,7 @@ def merge_paired(
         common=[common]
         
     if isinstance(left_ons[0],list):
-        logging.error(f'Merge `on` lists not supported. Suggestion: Use groupby on one of the `on` columns of the left dataframe.')
+        logging.error('Merge `on` lists not supported. Suggestion: Use groupby on one of the `on` columns of the left dataframe.')
         return 
     if suffixes is None:
         from roux.lib.str import get_suffix

@@ -47,7 +47,7 @@ def get_path(
     if ')' in s:
         s=s.split(')')[0]
     l0=[s_ for s_ in s.split(',') if '/' in s_]
-    l0=[dirname(s.split('{')[0]) if (('{' in s) and (not "{metadata" in s)) else s for s in l0]
+    l0=[dirname(s.split('{')[0]) if (('{' in s) and ("{metadata" not in s)) else s for s in l0]
     l0=[dirname(s.split('*')[0]) if '*' in s else s for s in l0]
     if test:logging.info(l0)
     if len(l0)!=1:
@@ -108,7 +108,7 @@ def get_ios(
     ios=[s_ for s_ in l if (('data/' in s_) or ('plot/' in s_) or ('figs/' in s_))]
     if test:logging.info(ios)
     inputs=[f'{get_path(s,validate=False,test=test)}' for s in ios if ('read_' in s) or (s.lstrip().startswith('p='))]
-    outputs=[f'{get_path(s,validate=False,test=test)}' for s in ios if (('to_' in s) or (s.lstrip().startswith('outp='))) and (not 'prefix' in s)]
+    outputs=[f'{get_path(s,validate=False,test=test)}' for s in ios if (('to_' in s) or (s.lstrip().startswith('outp='))) and ('prefix' not in s)]
     outputs=remove_dirs_from_outputs(outputs,test=test)
     inputs,outputs=[p for p in inputs if p!='""'],[p for p in outputs if p!='""']
     return unique(inputs),unique(outputs)
@@ -182,7 +182,7 @@ def get_step(
 #     info(code)
     inputs,outputs=get_ios(code,test=test)
     if len(set(inputs) & set(outputs)) !=0:
-        inputs=[s for s in inputs if not s in outputs]
+        inputs=[s for s in inputs if s not in outputs]
 #     if name.endswith('network_networkx'):
 #         info(inputs,outputs)
     if test:logging.info(inputs,outputs)
@@ -201,11 +201,11 @@ def get_step(
     ## snakemake rule
     config=[
     f"    rule {name}:",
-    f"        input:",
+    "        input:",
     f"            {inputs_str}",
-    f"        output:",
+    "        output:",
     f"            {outputs_str}",
-    f"        run:",
+    "        run:",
     f"            from lib.{name.split('_step')[0]} import {name}",
     f"            {name}(metadata=metadata)",
     ]
@@ -214,11 +214,11 @@ def get_step(
     function=[
     f"def {name}(metadata=None):",
     f"    {quotes}{docs}",
-    f"",
+    "",
     "    Parameters:",
     "        metadata (dict): Dictionary containing information required for the analysis. Metadata files are located in `metadata` folder are read using `roux.workflow.io.read_metadata` function.",
-    f"",
-    f"    Snakemake rule:",
+    "",
+    "    Snakemake rule:",
     '\n'.join([tab+s+tab for s in config]),
     f"    {quotes}",
     "    "+'\n    '.join(code_with_comments),
@@ -273,7 +273,7 @@ def to_task(
     l0=get_lines(notebookp, keep_comments=True)
     # print(l0)
     # info(sep_step,sep_step_end)
-    if not path_prefix is None:
+    if path_prefix is not None:
         l0=[replace_many(s,{'data/':'../data/'},ignore=True) for s in l0]
     taskn=basenamenoext(pyp)
     if test: logging.info(taskn)
@@ -310,7 +310,7 @@ def to_task(
     for s in l1:
         l3.append(s)
         header=s.startswith('#')
-        if (not 'import' in s and not header) or s.startswith('# ## '):
+        if ('import' not in s and not header) or s.startswith('# ## '):
             break
     df0=pd.DataFrame(d0).T
     df0.index.name='step name'
@@ -337,7 +337,7 @@ def get_global_imports()-> pd.DataFrame:
     def clean_(s):
         if ('import ' in s or s.startswith('## ')) and not s.startswith('# '):
             # s=s.split(' # ')[0].strip()
-            if not s in ['']:
+            if s not in ['']:
                 return s.strip()   
     # lines=
     lines=dropna(list(map(clean_,lines)))
@@ -363,7 +363,7 @@ def get_global_imports()-> pd.DataFrame:
             if ' as ' in s:
                 s=s.split(' as ')[1]
             s=s.split(';')[0].split('#')[0]
-            if not ',' in s:
+            if ',' not in s:
                 return s.strip()
             else:
                 return [s_.strip() for s_ in s.split(',')]            

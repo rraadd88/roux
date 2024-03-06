@@ -1,7 +1,6 @@
 """For transformations."""
 import pandas as pd
 import numpy as np
-import scipy as sc
 import logging
 
 def plog(x, p: float, base: int):
@@ -15,7 +14,7 @@ def plog(x, p: float, base: int):
     Returns:
         output.
     """
-    if not base is None:
+    if base is not None:
         return np.log(x+p)/np.log(base)
     else:
         return np.log(x+p)
@@ -75,7 +74,7 @@ def get_q(
     """
     To FDR corrected P-value.
     """
-    if not col is None:
+    if col is not None:
         df1=ds1.copy()
         ds1=ds1[col]
     ds2=ds1.dropna()

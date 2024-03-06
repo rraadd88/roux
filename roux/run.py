@@ -9,7 +9,6 @@ from roux.workflow.io import read_config, read_metadata, replacestar
 from roux.workflow.task import run_tasks
 
 ## begin
-import sys
 parser = argh.ArghParser()
 parser.add_commands([read_ps,read_config, read_metadata,backup,to_version,to_zip,replacestar,run_tasks])
 

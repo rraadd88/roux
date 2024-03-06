@@ -3,7 +3,6 @@
 import matplotlib.pyplot as plt
 from matplotlib import colors,cm
 import numpy as np
-import itertools
 import pandas as pd
 
 # colors

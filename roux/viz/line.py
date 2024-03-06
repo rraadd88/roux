@@ -1,10 +1,8 @@
 """For line plots."""
 
 import matplotlib.pyplot as plt
-import seaborn as sns
 import pandas as pd
 import numpy as np
-from os.path import exists, basename,dirname
 from roux.viz.ax_ import *
 
 def plot_range(
@@ -104,7 +102,6 @@ def plot_connections(
         plt.Axes: `plt.Axes` object.
     """
     import matplotlib.patches as mpatches
-    from matplotlib.collections import PatchCollection
     label2xy={k:[label2xy[k][0]+xoff,label2xy[k][1]+yoff] for k in label2xy}
     dplot['index xy']=dplot['index'].map(label2xy)
     dplot['column xy']=dplot['column'].map(label2xy)
@@ -116,7 +113,7 @@ def plot_connections(
     for label in label2xy:
         xy=label2xy[label]
         rect = mpatches.Rectangle(xy, **rectangle, fill=False,fc="none",lw=2,
-                                  ec=element2color[label] if not element2color is None else 'k',
+                                  ec=element2color[label] if element2color is not None else 'k',
                                  zorder=0)
 
         patches.append(rect)
@@ -129,7 +126,7 @@ def plot_connections(
         if not test:
             axin=set_logos(label=label,element2color=element2color,ax=axin,test=test)
         axin.text(np.mean(axin.get_xlim()),np.mean(axin.get_ylim()),
-                 label2rename[label] if not label2rename is None else label,
+                 label2rename[label] if label2rename is not None else label,
                   **params_text,
                  )
     dplot.apply(lambda x: ax.plot(*[[label2xys_rectangle_centers[x[k]][0] for k in ['index','column']],

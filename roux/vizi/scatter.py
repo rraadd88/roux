@@ -1,6 +1,5 @@
 import altair as alt
 ## data function from roux
-import roux.lib.df as rd 
 
 ## settings
 alt.data_transformers.disable_max_rows()
@@ -39,7 +38,7 @@ def plot_scatters_grouped(
     for i,c in enumerate(cols_groupby):
         if isinstance(c,str):
             c=[c]
-        if not _c is None:
+        if _c is not None:
             c+=_c
         data1=data.log(c[0],c[1] if len(c)>1 else None).groupby(c).agg(aggfunc).reset_index()
         if i==0:

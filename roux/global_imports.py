@@ -28,22 +28,11 @@ except ImportError:
     
 ## data functions
 # import itertools
-import numpy as np
-import pandas as pd
 
 ## system functions
-import sys
-from pathlib import Path
-from os.path import exists,dirname,basename,abspath,isdir,splitext # pathlib to be preferred in the future
-from glob import glob # read_ps to be preferred in the future
 ## system functions from roux
-from roux.lib.sys import read_ps, basenamenoext, to_path, makedirs, get_datetime
-from roux.lib.io import read_dict, to_dict, read_table, to_table, to_version, backup
 ## data functions from roux
-from roux.lib.str import get_bracket, replace_many, get_suffix, get_prefix
-from roux.lib.set import dropna, flatten, unique, assert_overlaps_with, validate_overlaps_with, check_non_overlaps_with
 ## dataframe attribute from roux
-import roux.lib.dfs as rd # attributes
 ## workflow functions from roux
 try:
     __import__('omegaconf')
@@ -65,8 +54,6 @@ except ImportError:
 #     logging.warning('Optional dependency scipy missing, install by running: pip install roux[stat]')
 
 ## stats functions from roux
-from roux.stat.binary import perc
-from roux.stat.io import perc_label
 
 ## visualization functions
 import matplotlib.pyplot as plt
@@ -120,9 +107,6 @@ plt.rc('figure.subplot',wspace= 0.3,hspace= 0.3)
 # sns.set_context('notebook') # paper < notebook < talk < poster
 
 ## visualization functions from roux
-from roux.viz.io import begin_plot,to_plot,read_plot
-from roux.viz.colors import get_colors_default
-from roux.viz.diagram import diagram_nb
 
 ## logging functions
 from tqdm import tqdm
@@ -138,7 +122,6 @@ else:
         notebook.tqdm().pandas()
     except:
         logging.warning("ImportError: IProgress not found. Please update jupyter and ipywidgets. See https://ipywidgets.readthedocs.io/en/stable/user_install.html")
-    from IPython.display import Markdown as info_nb
     # display vector graphics in jupyter
     # if not get_ipython() is None:
     #     get_ipython().run_line_magic('config', "InlineBackend.figure_formats = ['svg']")

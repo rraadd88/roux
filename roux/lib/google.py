@@ -91,7 +91,7 @@ def list_files_in_folder(service,folderid,
     "video":"application/vnd.google-apps.video",}
 
     results = service.files().list(
-        q=f"'{folderid}' in parents"+(f" and mimeType='{filetype2mimetype[filetype]}'" if not filetype is None else ""),
+        q=f"'{folderid}' in parents"+(f" and mimeType='{filetype2mimetype[filetype]}'" if filetype is not None else ""),
         fields="nextPageToken, files(id, name)",).execute()
     items = results.get('files', [])
     name2id={d['name']:d['id'] for d in items}
@@ -101,7 +101,7 @@ def list_files_in_folder(service,folderid,
     else:
         if test:
             print(name2id)
-    if not fileext is None:
+    if fileext is not None:
         name2id={k:name2id[k] for k in name2id if k.endswith(fileext)}
     return name2id
 def get_file_id(p):return p.split('/')[5]
@@ -124,29 +124,29 @@ def download_file(p=None,
     
     Ref: https://developers.google.com/drive/api/v3/ref-export-formats
     """
-    if not p is None:
+    if p is not None:
         if file_id is None:
             file_id=get_file_id(p)
         else:
             raise ValueError("define p or file_id")
-    if not outp is None:
+    if outp is not None:
         if exists(outp) and not force: return outp
     from googleapiclient.http import MediaIoBaseDownload
     from roux.lib.sys import makedirs
-    from os.path import dirname,exists
+    from os.path import exists
     import io
     if service is None:
         service=get_service_drive()
-    if not outd is None or not convert:
+    if outd is not None or not convert:
         file = service.files().get(fileId=file_id).execute()
     else:
         file={'name':'tmp'}
-    if (outp is None) and (not outd is None):
+    if (outp is None) and (outd is not None):
         outp=f"{outd}/{file['name']}"
         if exists(outp) and not force: return outp
     import tempfile
     with tempfile.TemporaryDirectory() as outd_:
-        if not outd is None:
+        if outd is not None:
             outd_=outd
         else:
             outd=outd_
@@ -182,7 +182,7 @@ def upload_file(service,filep,folder_id,test=False):
                     'parents': [folder_id]}
     media = MediaFileUpload(filep, mimetype=f"image/{filep.split('.')[1]}")
     file_name2id=list_files_in_folder(service,folderid=folder_id,filetype=None,test=False)
-    if not basename(filep) in file_name2id:
+    if basename(filep) not in file_name2id:
         file = service.files().create(body=file_metadata,
                                         media_body=media,
                                         fields='id').execute()
@@ -402,7 +402,7 @@ def get_metadata_of_paper(file_id,service_drive,service_search,
                        service=service_search,
             #            **kws_search
                   )
-            if not 'items' in res:
+            if 'items' not in res:
                 continue
             try:
                 title=res['items'][0]['pagemap']['metatags'][0]['og:title']

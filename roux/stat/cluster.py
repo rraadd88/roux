@@ -9,7 +9,6 @@ import matplotlib.pyplot as plt
 ## stats
 import scipy as sc
 ## internal
-import roux.lib.dfs as rd
 
 # scikit learn       
 def check_clusters(df: pd.DataFrame):
@@ -99,7 +98,7 @@ def plot_silhouette(df: pd.DataFrame,n_clusters_optimum=None,ax=None):
                      y='silhouette value',x='total clusters',
                      color='k',
                      ax=ax)
-    if not n_clusters_optimum is None:
+    if n_clusters_optimum is not None:
         ax.annotate('optimum', 
                 xy=(n_clusters_optimum-int(ax.get_xticklabels()[0].get_text()),
                     ax.get_ylim()[0]),  
@@ -276,8 +275,8 @@ def get_pos_umap(
     """
     try:
         import umap
-    except ImportError as error:
-        logging.error(f'umap package not installed. Installation command: pip install umap-learn')
+    except ImportError:
+        logging.error('umap package not installed. Installation command: pip install umap-learn')
     
     reducer = umap.UMAP(spread=spread,*kws)
     embedding = reducer.fit_transform(df1)

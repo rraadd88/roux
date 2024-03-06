@@ -23,7 +23,6 @@ def plot_workflow_log(
                         len(dplot)*0.5+2,])
     ax=plt.subplot(1,5,2)
     #     ax=plt.subplot()
-    from roux.viz.colors import saturate_color
     elements=[
                 'script',
                 'function',

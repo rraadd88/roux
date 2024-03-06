@@ -1,7 +1,6 @@
 """For processing dictionaries."""
 
-from roux.lib.set import intersections, itertools, logging, np, pd
-from roux.lib.str import dict2str,str2dict
+from roux.lib.set import itertools, logging, np, pd
 
 def head_dict(d, lines=5):
     return dict(itertools.islice(d.items(), lines))

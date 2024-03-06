@@ -43,7 +43,7 @@ def pval2annot(
         f"$p$={pval:.1g}"
     elif (pval < 0.01):
         annot= "**" if fmt=='*' else \
-        f"$p$<\n0.01" if fmt=='<' else \
+        "$p$<\n0.01" if fmt=='<' else \
         f"$p$={pval:.1g}" if len(f"$p$={pval:.1g}")<6 else \
         f"$p$=\n{pval:.1g}" if not linebreak else \
         f"$p$={pval:.1g}"
@@ -59,7 +59,7 @@ def pval2annot(
         f"$p$=\n{pval:.1g}" if not linebreak else \
         f"$p$={pval:.1g}"
     annot=annot if linebreak else annot.replace('\n','')
-    if not replace_prefix is None:
+    if replace_prefix is not None:
         annot=annot.replace('$p$',replace_prefix)
     if power and 'e' in annot:
         annot=annot.replace('e-0','e-').replace('e','x$10^{')+'}$'

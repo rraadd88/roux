@@ -1,13 +1,9 @@
 """For heatmaps."""
-import logging
 import pandas as pd
 import seaborn as sns
 import matplotlib.pyplot as plt
-import scipy as sc
 ## internal
-import roux.lib.dfs as rd
 from roux.viz.ax_ import *
-from roux.stat.io import pval2annot
 
 def plot_table(
     df1: pd.DataFrame,
@@ -47,9 +43,9 @@ def plot_table(
         plt.Axes: `plt.Axes` object.
     """
     # print(df1.index.name,df1.columns.name)
-    if xlabel is None and not df1.index.name is None:
+    if xlabel is None and df1.index.name is not None:
         ylabel=df1.index.name
-    if ylabel is None and not df1.columns.name is None:
+    if ylabel is None and df1.columns.name is not None:
         xlabel=df1.columns.name
 #     print(xlabel,ylabel)
     from roux.viz.colors import make_cmap
@@ -75,4 +71,3 @@ def plot_table(
     # set_ylabel(ax=ax,s=df1.index.name if ylabel is None else ylabel,xoff=0.05,yoff=0.01)
     return ax
 
-from roux.viz.sets import plot_intersection_counts as plot_crosstab

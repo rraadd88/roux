@@ -88,7 +88,7 @@ def savefig(
 #         from roux.viz.ax_ import to_plotp
     plotp=to_plotp(plotp,
                    fmts=fmts,**kws)
-    if not replaces_plotp is None:
+    if replaces_plotp is not None:
         plotp=replace_many(plotp,replaces=replaces_plotp,)
     if exists(plotp):
         logging.warning(f"overwritting: {plotp}")
@@ -120,7 +120,7 @@ def savefig(
     if '.' in plotp:
         plt.savefig(plotp,
                     dpi=dpi,
-                    bbox_inches=bbox_inches if (not bbox_inches is None) else 'tight' if tight_layout else None,
+                    bbox_inches=bbox_inches if (bbox_inches is not None) else 'tight' if tight_layout else None,
                     **kws_savefig
                    )
     else:
@@ -132,7 +132,7 @@ def savefig(
             plt.savefig(plotp,
                         format=fmt,
                         dpi=dpi,
-                        bbox_inches=bbox_inches if (not bbox_inches is None) else 'tight' if tight_layout else None,
+                        bbox_inches=bbox_inches if (bbox_inches is not None) else 'tight' if tight_layout else None,
                        **kws_savefig,
                        )
     from roux.lib.sys import is_interactive_notebook
@@ -215,19 +215,19 @@ def get_plot_inputs(
     if exists(plotp):
         plotp=abspath(plotp)
     else:
-        if not outd is None:
+        if outd is not None:
             plotp=f"{outd}/{plotp}"
             assert exists(plotp), f"not found {plotp}"
-    if not outd is None:
+    if outd is not None:
         outd=abspath(outd)
-        if not outd in plotp:
+        if outd not in plotp:
             plotp=f"{outd}/{plotp}"
             assert exists(plotp), f"not found {plotp}"
     else:
         ## remove suffixes
         outd=remove_exts(plotp)+'/'
     if df1 is None:
-        df1=read_table(f"{outd}/data.tsv");
+        df1=read_table(f"{outd}/data.tsv")
     kws_plot=update_kws_plot(kws_plot,kws_plotp=f"{outd}/config.yaml")
     return plotp,df1,kws_plot
 
@@ -236,7 +236,7 @@ def log_code():
     """
     from IPython import get_ipython
     if is_interactive_notebook():
-        logp=f'log_notebook.log'
+        logp='log_notebook.log'
         # if exists(logp):
             # open(logp, 'w').close()
             # logging.info(f'{logp} emptied')
@@ -269,22 +269,22 @@ def get_lines(
     else:
         if not exists(logp):
             log_code()
-            logging.error(f'rerun the cell, {logp} created');
+            logging.error(f'rerun the cell, {logp} created')
             return
         l1=read_list(logp)
         if test: print(l1)
         # open(logp, 'w').close()
         # logging.info(f'{logp} emptied')
     if len(l1)==0: 
-        logging.error('log code not found.');
+        logging.error('log code not found.')
         if is_interactive_notebook():
             log_code()
-            logging.error(f'rerun the cell, because code not found');
+            logging.error('rerun the cell, because code not found')
         return
     lines=[]
     for linei,line in enumerate(l1[::-1]):
         line_=line.lstrip()
-        if len(lines)==0 and ((not line_.startswith(f"to_plot(")) and (not line_.startswith(f"saveplot("))):
+        if len(lines)==0 and ((not line_.startswith("to_plot(")) and (not line_.startswith("saveplot("))):
             continue
         if len(lines)==0:
             spaces=(len(line) - len(line.lstrip(' ')))#*' '
@@ -397,7 +397,7 @@ def to_plot(
         plt.figtext(x=0.5,y=0+show_path_offy,
                     s=plotp.split('plot/')[1] if 'plot/' in plotp else plotp,
                     ha='center')
-    if df1 is None and not data is None:
+    if df1 is None and data is not None:
         df1=data
     if df1 is None:
         if not quiet:
@@ -488,7 +488,6 @@ def to_concat(
             response=subprocess.call(com,shell=True)
             assert response==0 and exists(outp)
     else:
-        import sys
         from PIL import Image
         images = [Image.open(x) for x in ps]
     #     widths, heights = zip(*(i.size for i in images))
@@ -532,7 +531,7 @@ def to_montage(
     assert isinstance(layout, str)
     if output_path is None:
         output_path=to_outp(ps,**kws_outp)
-    if not env_name is None:
+    if env_name is not None:
         env=get_env(env_name)
         source_path=env['PATH'].split(':')[0]
     runbash(
@@ -596,7 +595,6 @@ from os.path import exists,basename,dirname
 import subprocess
 from roux.lib.io import makedirs
 from glob import glob
-import logging
 
 def to_convert(filep: str,outd: str=None,fmt: str="JPEG") -> str:
     """Convert format of image using `PIL`.
@@ -611,7 +609,7 @@ def to_convert(filep: str,outd: str=None,fmt: str="JPEG") -> str:
     """
     from PIL import Image
     im = Image.open(filep)
-    if not outd is None:
+    if outd is not None:
         outp=f"{outd}/{basename(filep)}.{fmt.lower()}"
     else:
         outp=filep+".{fmt.lower()}"
@@ -653,7 +651,7 @@ def to_raster(
         except subprocess.CalledProcessError:
             logging.error('make sure imagemagick is installed. conda install imagemagick')
             return
-        com=f'convert -density 500 '+('-background none ' if alpha else '')+'-interpolate Catrom -resize "2000" '+('-trim ' if trim else '')+f"{plotp} {plotoutp}"
+        com='convert -density 500 '+('-background none ' if alpha else '')+'-interpolate Catrom -resize "2000" '+('-trim ' if trim else '')+f"{plotp} {plotoutp}"
         subprocess.call(com,shell=True)
     return plotoutp
     

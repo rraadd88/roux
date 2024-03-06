@@ -21,9 +21,9 @@ def grep(
         completed_process = subprocess.run(command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
 
         lines=[s.replace('"',"").strip() for s in completed_process.stdout.split('\\n",\n')]
-        lines=[s for s in lines if s!='' and not '#noqa' in s]# and not s.startswith('#')]
+        lines=[s for s in lines if s!='' and '#noqa' not in s]# and not s.startswith('#')]
         for k in exclude_str:
-            lines=[s for s in lines if not k in s]# and not s.startswith('#')]
+            lines=[s for s in lines if k not in s]# and not s.startswith('#')]
         lines=flatten([s.split('\n') for s in lines])
         lines=list(set(lines)-set(exclude))
         lines=list(set(lines)-set(l2))

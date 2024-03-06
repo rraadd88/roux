@@ -6,9 +6,8 @@ import pandas as pd
 
 import shutil # for copying files
 
-from roux.lib.sys import (Path, abspath, basename, basenamenoext, create_symlink, exists, glob, isdir, makedirs, splitext)
-from roux.lib.io import read_ps,read_dict,is_dict
-from roux.lib.set import flatten
+from roux.lib.sys import (abspath, basename, basenamenoext, exists, glob, isdir, makedirs, splitext)
+from roux.lib.io import read_dict,is_dict
 
 ## variables
 def clear_variables(
@@ -71,7 +70,7 @@ def to_nb_cells(
     """
     import nbformat
     logging.info(f"notebook length change: {len(notebook.cells):>2}->{len(new_cells):>2} cells")
-    if not validate_diff is None:
+    if validate_diff is not None:
         assert len(notebook.cells)-len(new_cells)==validate_diff
     elif validate_diff == '>': # filtering
         assert len(notebook.cells)>len(new_cells)
@@ -162,9 +161,9 @@ def read_config(
     ## read config
     d1=read_dict(p)
     ## merge
-    if not config_base is None:
+    if config_base is not None:
         
-        if not append_to_key is None:
+        if append_to_key is not None:
             # print(config_base)
             # print(d1)            
             d1={append_to_key:{**config_base[append_to_key],**d1}}        
@@ -175,7 +174,7 @@ def read_config(
                 d1, ## child overwrite with
                 )
         if verbose: print("base config used.")
-    if not inputs is None:
+    if inputs is not None:
         d1=OmegaConf.merge(
                 d1, ## parent
                 inputs, ## child overwrite with
@@ -269,7 +268,7 @@ def read_metadata(
         if isdir(p_):
             if len(glob(f'{p_}/*.json'))!=0:
                 ## data e.g. stats etc
-                if not basename(p_) in d1 and len(glob(f'{p_}/*.json'))!=0:
+                if basename(p_) not in d1 and len(glob(f'{p_}/*.json'))!=0:
                     d1[basename(p_)]=read_dict(f'{p_}/*.json')
                 elif isinstance(d1[basename(p_)],dict) and len(glob(f'{p_}/*.json'))!=0:
                     d1[basename(p_)].update(read_dict(f'{p_}/*.json'))
@@ -281,7 +280,7 @@ def read_metadata(
             else:
                 logging.error(f"file not found: {p_}")
     if (len(d1)-config_size)!=0:
-        logging.info(f"metadata appended from "+str(len(d1)-config_size)+" separate config/s.")    
+        logging.info("metadata appended from "+str(len(d1)-config_size)+" separate config/s.")    
     return d1
 
 def to_workflow(
@@ -300,7 +299,6 @@ def to_workflow(
         str: path of the workflow file.
     """
     makedirs(workflowp)
-    from roux.lib.set import list2str
     with open(workflowp,'w') as f:
         ## add rule all
         f.write("from roux.lib.io import read_dict\nfrom roux.workflow.io import read_metadata\nmetadata=read_metadata()\n"
@@ -326,7 +324,6 @@ def create_workflow_report(
         workflowp (str): path of the workflow file (`snakemake`).
         env (str): name of the conda virtual environment where required the workflow dependency is available i.e. `snakemake`.
     """
-    from pathlib import Path
     workflowdp=str(Path(workflowp).absolute().with_suffix(''))+'/'
     ## create a template file for the report
     report_templatep=Path(f"{workflowdp}/report_template.rst")
@@ -430,7 +427,6 @@ def replacestar(
         return output_path
     
     df2=get_global_imports()
-    from roux.workflow.nb import get_lines
     def get_lines_replace_with(imports,df2): 
         ds=df2.query(expr=f"`function name` in {imports}").apply(lambda x: f"## {x['function comment']}\n{x['import statement']}",axis=1)
         lines=ds.tolist()
@@ -448,10 +444,10 @@ def replacestar(
     replace_with=replace_with.strip()
     replaces_={**replaces,**{replace_from:replace_with}}
 
-    if verbose:logging.info(f"replace     :\n"+('\n'.join([k for k in replaces_.keys()])))
-    if verbose:logging.info(f"replace_with:\n"+('\n'.join([v for v in replaces_.values()])))
+    if verbose:logging.info("replace     :\n"+('\n'.join([k for k in replaces_.keys()])))
+    if verbose:logging.info("replace_with:\n"+('\n'.join([v for v in replaces_.values()])))
     
-    if not output_path is None:
+    if output_path is not None:
         # save files
         if input_path.endswith(".py"):
             from roux.lib.str import replace_many

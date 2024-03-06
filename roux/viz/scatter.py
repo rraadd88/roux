@@ -126,10 +126,10 @@ def plot_scatter(
                 **scatter_kws,
                 }
         ### color
-        if not 'color' in line_kws:
+        if 'color' not in line_kws:
             line_kws['color']=saturate_color(kws['color'] if 'color' in kws else get_colors_default()[0],
                                         alpha=1.5)    
-        if "fit_reg" in kws and not "seed" in kws:
+        if "fit_reg" in kws and "seed" not in kws:
             kws['seed']=0
         if verbose:
             ## methods
@@ -272,7 +272,7 @@ def plot_volcano(
             **{coly_:lambda df: log_pval(df[coly],p_min=p_min,errors=None)}
             )
         coly=coly_
-    elif not style in data:
+    elif style not in data:
         data[style]='o'
     data['significance bin']=pd.cut(data[coly],
                         bins=log_pval([0,0.05,0.1,1])[::-1],
@@ -283,8 +283,8 @@ def plot_volcano(
     data=(data
           .assign(
         **{'significance direction bin':lambda df: df.apply(
-            lambda x: 'increase' if x[coly]>log_pval(line_pvalue) and (x[colx]>line_x if not line_x_min is None else x[colx]>=line_x) else \
-                      'decrease' if x[coly]>log_pval(line_pvalue) and (x[colx]<line_x_min if not line_x_min is None else x[colx]<=-1*line_x) else \
+            lambda x: 'increase' if x[coly]>log_pval(line_pvalue) and (x[colx]>line_x if line_x_min is not None else x[colx]>=line_x) else \
+                      'decrease' if x[coly]>log_pval(line_pvalue) and (x[colx]<line_x_min if line_x_min is not None else x[colx]<=-1*line_x) else \
                       'ns',
                        axis=1),
                        })
@@ -294,7 +294,7 @@ def plot_volcano(
     if hue=='x':
         hue='significance direction bin'
         kws_scatterplot['hue_order']=['increase','decrease','ns']
-        if not 'palette' in kws_scatterplot:
+        if 'palette' not in kws_scatterplot:
             from roux.viz.colors import get_colors_default
             kws_scatterplot['palette']=[get_colors_default()[2],get_colors_default()[0],get_colors_default()[1]]
     elif hue=='y':
@@ -315,7 +315,7 @@ def plot_volcano(
     ## set text
     axlims=get_axlims(ax)
     if show_text:
-        if not text_diff is None:
+        if text_diff is not None:
             ax.text(
                 x=axlims['x']['min']+(axlims['x']['len']*0.5),
                 y=-75,s=text_diff,
@@ -323,15 +323,15 @@ def plot_volcano(
             )
         ax.text(x=ax.get_xlim()[1],
                 y=ax.get_ylim()[1],
-                s="increase $\\rightarrow$"+(f"\n(n="+str(data.query(expr="`significance direction bin` == 'increase'")[colindex].nunique())+")" if text_increase=='n' else f"\n({text_increase})" if not text_increase is None else ''),
+                s="increase $\\rightarrow$"+("\n(n="+str(data.query(expr="`significance direction bin` == 'increase'")[colindex].nunique())+")" if text_increase=='n' else f"\n({text_increase})" if text_increase is not None else ''),
                 ha='right',va='bottom',
-                color='k' if not 'palette' in kws_scatterplot else kws_scatterplot['palette'][0],
+                color='k' if 'palette' not in kws_scatterplot else kws_scatterplot['palette'][0],
                )
         ax.text(x=ax.get_xlim()[0],
                 y=ax.get_ylim()[1],
-                s="$\\leftarrow$ decrease"+(f"\n(n="+str(data.query(expr="`significance direction bin` == 'decrease'")[colindex].nunique())+")" if text_increase=='n' else f"\n({text_decrease})" if not text_decrease is None else ''),
+                s="$\\leftarrow$ decrease"+("\n(n="+str(data.query(expr="`significance direction bin` == 'decrease'")[colindex].nunique())+")" if text_increase=='n' else f"\n({text_decrease})" if text_decrease is not None else ''),
                 ha='left',va='bottom',
-                color='k' if not 'palette' in kws_scatterplot else kws_scatterplot['palette'][1],
+                color='k' if 'palette' not in kws_scatterplot else kws_scatterplot['palette'][1],
                )
     ## set lines
     xlim=ax.get_xlim()
@@ -339,14 +339,14 @@ def plot_volcano(
     for side in [-1,1]:
         print([xlim[0 if side==-1 else 1],line_x*side,line_x*side], [log_pval(line_pvalue),log_pval(line_pvalue),ylim[1]])
         ax.plot(
-            [xlim[0 if side==-1 else 1],(line_x_min if not line_x_min is None else line_x*side),(line_x_min if not line_x_min is None else line_x*side)],
+            [xlim[0 if side==-1 else 1],(line_x_min if line_x_min is not None else line_x*side),(line_x_min if line_x_min is not None else line_x*side)],
             [log_pval(line_pvalue),log_pval(line_pvalue),ylim[1]],
             color='gray',linestyle=':',
             )
     ## set labels
-    if not show_labels is None: # show_labels overrides show_outlines
+    if show_labels is not None: # show_labels overrides show_outlines
         show_outlines=show_labels
-    if not show_outlines is None:
+    if show_outlines is not None:
         if isinstance(show_outlines,int): 
             ## show_outlines top n
             data1=(
