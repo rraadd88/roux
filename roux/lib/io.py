@@ -566,7 +566,8 @@ def read_table(
                     pd.read_parquet(
                         p,
                         engine=engine,
-                        **params),
+                        **params
+                    ),
                     clean=clean,
                     tables=tables,
                     verbose=verbose,
@@ -1122,11 +1123,18 @@ def to_excel(
             # auto-adjust column widths
             for c in df_:
                 col_idx = df_.columns.get_loc(c)
-                writer.sheets[k].set_column(col_idx, col_idx, 
-                                            max(df_[c].astype(str).map(len).max(), len(c)),
-                                           # 30,
-                                           )
-    writer.save()    
+                try:
+                    writer.sheets[k].set_column(col_idx, col_idx, 
+                                                max(df_[c].astype(str).map(len).max(), len(c)),
+                                               # 30,
+                                               )
+                except:
+                    logging.error("to adjust column width use xlsxwriter: pip install xlsxwriter")
+    try:
+        writer.close()        
+    except:
+        # old pandas version
+        writer.save()
     ## save in tsv format
     if save_input:
         for k in sheetname2df:

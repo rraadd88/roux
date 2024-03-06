@@ -58,7 +58,7 @@ def run_task(
     to_dict(parameters,f"{dirname(output_notebook_path)}/parameters.yaml")
 
     if verbose: logging.info(parameters)
-    if kernel is None: logging.warning("kernel name not provided.")
+    if kernel is None: logging.warning("`kernel` name not provided.")
     import papermill as pm
     pm.execute_notebook(
         input_path=input_notebook_path,
@@ -142,7 +142,7 @@ def run_tasks(
             output_dir_path=output_path_base.split('{KEY}')[0]
             to_dict(parameters,
                     f"{output_dir_path}/{k.split(output_dir_path)[1].split('/')[0]}/.parameters.yaml")
-    print(parameters_list)
+    # print(parameters_list)
     if isinstance(parameters_list,str):
         parameters_list=read_dict(parameters_list)
     if isinstance(parameters_list,list):

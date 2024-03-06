@@ -100,7 +100,7 @@ plt.rc('axes', grid=False,axisbelow=True,unicode_minus=False,
        labelsize=FONTSIZE,
        labelcolor='k',labelpad=PAD,
        titlesize=FONTSIZE,
-       facecolor='none',
+       facecolor='w',
        edgecolor='k',linewidth=0.5,)
 # plt.rcParams['axes.formatter.use_mathtext'] = True
 plt.rcParams['axes.formatter.limits'] = -3, 3
