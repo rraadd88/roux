@@ -2,7 +2,7 @@
 import logging
 import numpy as np
 import pandas as pd
-import roux.lib.dfs as rd
+import roux.lib.dfs as rd # noqa
 
 # difference between values
 def get_ratio_sorted(

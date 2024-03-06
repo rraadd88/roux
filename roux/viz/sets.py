@@ -1,8 +1,8 @@
 """For plotting sets."""
 import pandas as pd
-import roux.lib.dfs as rd
-from roux.viz.ax_ import *
-from roux.viz.annot import *
+import roux.lib.dfs as rd # noqa
+from roux.viz.ax_ import * # noqa
+from roux.viz.annot import * # noqa
 
 def plot_venn(
     ds1: pd.Series,

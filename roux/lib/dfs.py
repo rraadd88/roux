@@ -1,7 +1,7 @@
 """For processing multiple pandas DataFrames/Series"""
 import logging
 import pandas as pd
-import roux.lib.df as rd
+import roux.lib.df as rd # noqa
 from roux.lib import to_rd
         
 def filter_dfs(

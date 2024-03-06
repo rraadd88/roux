@@ -5,8 +5,8 @@ import seaborn as sns
 import matplotlib.pyplot as plt
 import scipy as sc
 ## internal
-import roux.lib.dfs as rd
-from roux.viz.ax_ import *
+import roux.lib.dfs as rd # noqa
+from roux.viz.ax_ import * # noqa
 from roux.stat.io import pval2annot
 
 def plot_table(
