@@ -68,7 +68,7 @@ requirements = {
     'coveralls == 3.*',
     'flake8',
     'isort',
-    'pytest-cov == 2.*',
+    'pytest-cov >= 2,< 5',
     'testbook',
     'lazydocs', 'regex', ## docs
 ],
