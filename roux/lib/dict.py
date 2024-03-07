@@ -1,6 +1,6 @@
 """For processing dictionaries."""
 
-from roux.lib.set import intersections, itertools, logging, np, pd
+from roux.lib.set import itertools, logging, np, pd
 from roux.lib.str import dict2str,str2dict # noqa
 
 def head_dict(d, lines=5):

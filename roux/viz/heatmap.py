@@ -5,7 +5,6 @@ import matplotlib.pyplot as plt
 ## internal
 import roux.lib.dfs as rd # noqa
 from roux.viz.ax_ import * # noqa
-from roux.stat.io import pval2annot
 
 def plot_table(
     df1: pd.DataFrame,
