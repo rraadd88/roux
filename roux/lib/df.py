@@ -484,7 +484,7 @@ def check_dups(
     """
     if subset is None: subset=df.columns.tolist()
     df1=df.loc[df.duplicated(subset=subset,keep=False),:].sort_values(by=subset)
-    from roux.viz.annot import perc_label
+    from roux.stat.io import perc_label # noqa
     logging.info("duplicate rows: "+perc_label(len(df1),len(df)))
     if not out:
         return df
