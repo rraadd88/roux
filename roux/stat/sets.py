@@ -1,6 +1,8 @@
 """For set related stats."""
-import pandas as pd
 import logging
+import pandas as pd
+# attributes
+import roux.lib.dfs as rd # noqa
 
 def get_overlap(
     items_set: list,

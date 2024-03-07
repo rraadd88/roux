@@ -1,10 +1,12 @@
 """For correlation stats."""
-import pandas as pd
-import numpy as np
+import logging
 
+import numpy as np
 from scipy import stats,spatial
 
-import logging
+import pandas as pd
+# attributes
+import roux.lib.dfs as rd # noqa
 
 def _pre(
     x:str,
