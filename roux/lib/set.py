@@ -235,7 +235,6 @@ def range_overlap(l1,l2):
     return list(set.intersection(set(range(l1[0],l1[1]+1,1)),
                             set(range(l2[0],l2[1]+1,1))))
 
-from roux.lib.df import to_ranges,to_boolean
 def get_windows(a, 
                 size = None, 
                 overlap = None, 
@@ -261,10 +260,10 @@ def get_windows(a,
     Notes:
         1. For development, use of `int` provides `np.floor`.
     """
-    if not windows is None and size is None:
+    if windows is not None and size is None:
         # TODOs
         size = int(len(a)/windows)
-    if not overlap_fraction is None and overlap is None:
+    if overlap_fraction is not None and overlap is None:
         overlap=int(size*overlap_fraction)
     shape = (a.size - size + 1, size)
     strides = a.strides * 2

@@ -1,7 +1,6 @@
 """For operations on jupyter notebooks."""
 import logging
 import nbformat
-from roux.lib.sys import basenamenoext, exists
 from roux.workflow.io import to_nb_cells
 
 def get_lines(
@@ -43,14 +42,13 @@ def read_nb_md(
     Returns:
         list: lines of the strings.
     """
-    from sys import argv
     l1=[]
     nb = nbformat.read(p, nbformat.NO_CONVERT)
     l1=[] 
     for cell in nb.cells:
         if cell.cell_type == 'markdown':
             l1.append(cell.source)
-        if not n is None:
+        if n is not None:
             if len(l1)==n:
                 break
     return l1
@@ -72,7 +70,6 @@ def to_info(
     """
     from os.path import basename
     from roux.lib.sys import read_ps
-    from roux.lib.set import flatten
     ps=read_ps(p)
     
     l1=[]
@@ -114,7 +111,7 @@ def to_replaced_nb(
     Returns:
         new_nb: notebook object.      
     """
-    from nbconvert import PythonExporter, NotebookExporter
+    from nbconvert import NotebookExporter
     ## read nb
     with open(nb_path) as fh:
         nb = nbformat.reads(fh.read(), nbformat.NO_CONVERT)
@@ -128,7 +125,7 @@ def to_replaced_nb(
             for replace_from, replace_to in replaces.items():
                 if replace_from in d['source']:
                     d['source']=d['source'].replace(replace_from,replace_to)
-            if not drop_lines_with_substrings is None:
+            if drop_lines_with_substrings is not None:
                 from roux.lib.str import filter_list
                 d['source']='\n'.join(
                     filter_list(
@@ -293,7 +290,7 @@ def to_filtered_outputs(
                         else:
                             ois_remove.append(oi)
             ## remove outputs
-            nb['cells'][celli]['outputs']=[o for oi,o in enumerate(cell['outputs']) if not oi in ois_remove]
+            nb['cells'][celli]['outputs']=[o for oi,o in enumerate(cell['outputs']) if oi not in ois_remove]
     nbformat.write(nb,output_path)
     return output_path
 

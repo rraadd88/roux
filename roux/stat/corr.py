@@ -30,13 +30,13 @@ def _pre(
     """
     if test:
         print(x.name,y.name)
-    if not (isinstance(x,str) and isinstance(y,str) and not df is None):
+    if not (isinstance(x,str) and isinstance(y,str) and df is not None):
         ## get columns
         df=pd.DataFrame({'x':x,'y':y})
         x,y='x','y'
     else:
         df=df.rename(columns={x:'x',y:'y'},errors='raise')
-    if not drop_same_value is None:
+    if drop_same_value is not None:
         _before=len(df)
         df=df.query(f"~(`x` == {drop_same_value} & `y` == {drop_same_value})")
         if verbose:
@@ -235,7 +235,7 @@ def _to_string(
     from roux.viz.annot import pval2annot
     from roux.lib.str import num2str
     method=res['method']
-    s0=(f"$r_{method[0]}$" if not 'tau' in method else '$\\tau$')+f"={res['rr' if 'rr' in res else 'r']:.2f}" ##prefer the resampled r value
+    s0=(f"$r_{method[0]}$" if 'tau' not in method else '$\\tau$')+f"={res['rr' if 'rr' in res else 'r']:.2f}" ##prefer the resampled r value
     if 'ci' in res:
         s0+=f"$\pm${res['ci']:.2f}{res['ci_type'] if res['ci_type']!='max' else ''}"
     s0+=f"\n{pval2annot(res['P'],fmt='<',linebreak=False, alpha=0.05)}"
@@ -279,7 +279,7 @@ def get_corrs(
             pandarallel.initialize(nb_workers={},progress_bar=True,use_memory_fs=False)
     """
     # check inflation/over-representations
-    if not coff_inflation_min is None:
+    if coff_inflation_min is not None:
         from roux.lib.df import check_inflation
         ds_=check_inflation(
             data,
@@ -289,15 +289,15 @@ def get_corrs(
         if len(ds_)!=0:
             logging.info(f"columns dropped because of inflation: {ds_.index.tolist()}")
         # remove inflated
-        cols=[c for c in cols if not c in ds_.index.tolist()]
-        cols_with=[c for c in cols_with if not c in ds_.index.tolist()]
+        cols=[c for c in cols if c not in ds_.index.tolist()]
+        cols_with=[c for c in cols_with if c not in ds_.index.tolist()]
         
     ## pair columns
     from roux.lib.set import get_pairs
     from roux.stat.transform import get_q
     df0=(
         get_pairs(
-            items=cols if not cols is None else data.columns.tolist(),
+            items=cols if cols is not None else data.columns.tolist(),
             items_with= cols_with,
             **get_pairs_kws,
             )

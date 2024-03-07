@@ -1,6 +1,4 @@
 """For comparative plots."""
-import pandas as pd
-import roux.lib.dfs as rd
 
 def plot_comparisons(
     plot_data,
@@ -19,7 +17,7 @@ def plot_comparisons(
     ## get the sample type
     ## get the data
     ## get the columns
-    if not output_dir_path is None:
+    if output_dir_path is not None:
         output_path=f"{output_dir_path}/{x['comparison type']}/{x['variable x']}/{x['variable y']}/{x['sample type']}"
         if exists(output_path+".pdf") and not force:
             return
@@ -84,7 +82,7 @@ def plot_comparisons(
             )
     else:
         raise ValueError(x['comparison type'])
-    if not output_dir_path is None:
+    if output_dir_path is not None:
         output_path=to_plot(f"{output_dir_path}/{x['comparison type']}/{x['variable x']}/{x['variable y']}/{x['sample type']}",
                 fmts=['pdf','png'])
         plt.close(fig)

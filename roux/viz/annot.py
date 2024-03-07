@@ -7,7 +7,7 @@ from roux.lib.str import *
 from roux.viz.ax_ import set_label
 
 # redirects
-from roux.stat.io import perc_label,pval2annot
+from roux.stat.io import pval2annot
 
 def annot_side(
     ax: plt.Axes,
@@ -107,9 +107,9 @@ def annot_side(
             )
     ## text
     if text:
-        if not 'ha' in kws_text:
+        if 'ha' not in kws_text:
             kws_text['ha']='right' if loc=='left' else 'center' if loc=='top' else 'left'
-        if not 'rotation' in kws_text:
+        if 'rotation' not in kws_text:
             kws_text['rotation']=0  if loc!='top' else 90
         else:
             kws_text['ha']='left'
@@ -320,7 +320,7 @@ def color_ax(
         plt.Axes: `plt.Axes` object.
     """
     plt.setp(ax.spines.values(), color=c)
-    if not linewidth is None:
+    if linewidth is not None:
         plt.setp(ax.spines.values(), linewidth=linewidth)
     plt.setp([ax.get_xticklines(), ax.get_yticklines()], color=c)
     return ax
@@ -378,7 +378,7 @@ def show_scatter_stats(
                 resample=resample,
                 verbose=verbose,
                 )
-        if not res is None and len(res)!=0:
+        if res is not None and len(res)!=0:
             label+=_to_string(res,
                      show_n=show_n,
                      show_n_prefix=show_n_prefix,                 

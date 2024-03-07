@@ -42,7 +42,7 @@ def get_child_text(
         if isinstance(c, plt.Text) and c.get_text() == search_name:
             child = c
             break
-    assert not child is None, (search_name,all_children)
+    assert child is not None, (search_name,all_children)
     return child
 
 def align_texts(
@@ -73,9 +73,9 @@ def align_texts(
             continue
         else:
             ## set
-            if not x_px_set is None:
+            if x_px_set is not None:
                 x_px=x_px_set
-            if not y_px_set is None:
+            if y_px_set is not None:
                 y_px=y_px_set
             ax_=text.axes
             x_data, y_data = ax_.transData.inverted().transform((x_px,y_px))

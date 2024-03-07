@@ -1,4 +1,4 @@
-name: CI
+name: format
 on:  [workflow_dispatch, pull_request, push]
 
 permissions:

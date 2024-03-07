@@ -94,7 +94,6 @@ def plot_value_counts(
         axbar=axes
     _=dplot.plot.barh(ax=axbar,legend=False,**kws_bar)
     axbar.set_xlabel('count')
-    from roux.lib.str import linebreaker
     axbar.set_ylabel(col.replace(' ','\n'))
     if logx:
         if hist:
@@ -221,7 +220,7 @@ def plot_bar_serial(
     ax.annotate(s=' '*(len(s)*2), xy=(100,kws1['y']-off_arrowy), xytext=(50,kws1['y']-off_arrowy), arrowprops=dict(arrowstyle='->',shrinkA=0,shrinkB=0,color='k'),zorder=-1,
                va='center',ha='center')
     _=[ax.add_patch(o) for o in l1]
-    if not ylabel is None:
+    if ylabel is not None:
         ax.text(-2.5,kws1['y']+kws_rectangle['height']*0.5,ylabel,ha='right',va='center')
             
     return ax
@@ -298,7 +297,6 @@ def plot_barh_stacked_percentage_intersections(
     return ax
 
 # redirections, to be deprecated in the future
-from roux.viz.sets import plot_intersections
 
 ## plotly
 def to_input_data_sankey(df0,
@@ -316,7 +314,7 @@ def to_input_data_sankey(df0,
                        how='all',
                    )
         )
-    if not colall in cols_groupby:
+    if colall not in cols_groupby:
         df0=df0.assign(**{colall:colall})
         cols_groupby=[colall]+cols_groupby
     for col in cols_groupby:
@@ -393,12 +391,12 @@ def plot_sankey(
     if convert and validate:    
         assert all(id2n_.loc[id2n.index]==id2n), 'sizes of the sets changed after `to_input_data_sankey`?'
     labels=list(pd.unique(df2['source'].unique().tolist()+df2['target'].unique().tolist()))
-    if not hues is None:
+    if hues is not None:
         from roux.viz.colors import get_val2color,to_hex
         val2color,legend2color=get_val2color(pd.Series(hues))
         # df2[f"{col} color"]=df2[col].map(hues)
         colors=[to_hex(val2color[hues[k]]) if k in hues else "#888888" for k in labels]
-    if not info is None:
+    if info is not None:
         customdata=[info[k] if k in info else k for k in labels]
     else:
         customdata=None
@@ -454,7 +452,7 @@ def plot_sankey(
                     # }, # the same for yaxis
                  )
     
-    if not outp is None:
+    if outp is not None:
         fig.write_image(outp,format=Path(outp).suffix[1:], engine="kaleido")
     else:
         fig.show()

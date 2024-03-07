@@ -53,8 +53,7 @@ def hist_annot(
     TODOs:
         For scatter, use `annot_side` with `loc='top'`.
     """
-    from roux.viz.ax_ import reset_legend_colors
-    if not xlim is None:
+    if xlim is not None:
         logging.warning('colx adjusted to xlim')
         dplot.loc[(dplot[colx]<xlim[0]),colx]=xlim[0]
         dplot.loc[(dplot[colx]>xlim[1]),colx]=xlim[1]
@@ -62,7 +61,7 @@ def hist_annot(
     ax=dplot[colx].hist(bins=bins,ax=ax,zorder=1,**kws,)
     ax.set_xlabel(colx)
     ax.set_ylabel('count')
-    if not xlim is None:
+    if xlim is not None:
         ax.set_xlim(xlim)
     ax.set_ylim(0,ax.get_ylim()[1]*ylimoff)        
     from roux.viz.colors import get_ncolors
@@ -174,9 +173,8 @@ def plot_normal(
     Returns:
         plt.Axes: `plt.Axes` object.
     """
-    if not ax is None:
+    if ax is not None:
         fig,ax = plt.subplots(figsize = [3, 3])
-    import statsmodels.api as sm
     ax = sns.distplot(x, hist = True, 
                       kde_kws = {"shade" : True, "lw": 1, }, 
                       fit = sc.stats.norm,
@@ -265,7 +263,7 @@ def plot_dists(
     ## y is expected to be categorical (str/bool) for horizontal orientation which is preferred and also for calculating stats
     ## if it is not, switch between x and y
     # print(df1[y].dtype)
-    if not df1[y].dtype in [int,float]:
+    if df1[y].dtype not in [int,float]:
         x_stat,y_stat=x,y
         axis_desc,axis_cont='y','x'
     else:
@@ -291,7 +289,7 @@ def plot_dists(
     if test:
         logging.info(order)        
     ## set order of the colors
-    if not hue is None and hue_order is None:
+    if hue is not None and hue_order is None:
         hue_order=df1[hue].unique().tolist()
         
     ## get stats
@@ -315,7 +313,7 @@ def plot_dists(
             df2=df2.loc[(df2['subset1']==order[0]),:]
             # print(df2)
             d1=df2.rd.to_dict(['subset2','P (MWU test)'])
-    elif (not hue is None) and (isinstance(show_p,bool) and show_p):
+    elif (hue is not None) and (isinstance(show_p,bool) and show_p):
         from roux.stat.diff import get_stats_groupby
         df2=get_stats_groupby(
                 df1.loc[df1[hue].isin(hue_order),:],
@@ -426,12 +424,12 @@ def plot_dists(
                 },
                 s=show_n_prefix+str(x['n']),
                 va='center' if axis_desc=='y' else 'top',
-                ha=show_n_ha if not show_n_ha is None else 'left' if axis_desc=='y' else 'center',
+                ha=show_n_ha if show_n_ha is not None else 'left' if axis_desc=='y' else 'center',
                 transform=transforms.blended_transform_factory(**{f"{axis_cont}_transform":ax.transAxes,
                                                                   f"{axis_desc}_transform":ax.transData}),
                 ),axis=1)
     ax.tick_params(axis=axis_desc, colors='k')
-    if not hue is None:
+    if hue is not None:
         o1=ax.legend(
             loc='upper left', 
             bbox_to_anchor=(1, 0),

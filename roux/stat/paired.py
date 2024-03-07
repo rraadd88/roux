@@ -158,7 +158,7 @@ def get_stats_paired_agg(x: np.array,y: np.array,ignore: bool=False,verb: bool=T
             return
     d={}
     d['n']=len(x)
-    from roux.stat.corr import get_spearmanr,get_pearsonr
+    from roux.stat.corr import get_spearmanr
     d['$r_s$'],d['P ($r_s$)']=get_spearmanr(x,y)
     d['linear regression slope'],d['linear regression y-intercept'],d['$r_p$'],d['P ($r_p$)'],d['linear regression stderr']=sc.stats.linregress(x,y)
 #     shape of distributions

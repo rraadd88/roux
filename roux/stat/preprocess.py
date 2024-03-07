@@ -5,12 +5,10 @@ import logging
 import numpy as np
 import pandas as pd
 ## internal
-import roux.lib.dfs as rd
 from roux.stat.corr import check_collinearity
 from roux.stat.variance import get_variance_inflation
 
 ## attach functions as attributes of dataframes
-import roux.lib.df as rd
 from roux.lib import to_rd
 
 # matrix data
@@ -24,8 +22,8 @@ def dropna_matrix(
     ):
     if test:
         verbose=True
-    assert not df1.columns.name is None
-    assert not df1.index.name is None
+    assert df1.columns.name is not None
+    assert df1.index.name is not None
     
     d1={
         df1.columns.name:df1.rd.check_na(perc=True).sort_values(ascending=False),
@@ -117,7 +115,7 @@ def drop_low_complexity(
     l1=df1_.index.tolist()
     if len(l1)!=0:
         logging.info(df1_)
-    if not max_nunique is None:
+    if max_nunique is not None:
         df2_=df_.loc[(df_['nunique']>max_nunique),:]
         l1+=df2_.index.tolist()
         logging.info(df2_)
@@ -131,10 +129,10 @@ def drop_low_complexity(
         return df1
     else:
         if len(cols_keep)!=0:
-            assert all([c in df1 for c in cols_keep]), ([c for c in cols_keep if not c in df1])
+            assert all([c in df1 for c in cols_keep]), ([c for c in cols_keep if c not in df1])
             cols_kept=[c for c in l1 if c in cols_keep]
             logging.info(cols_kept)
-            l1=[c for c in l1 if not c in cols_keep]
+            l1=[c for c in l1 if c not in cols_keep]
 
         return df1.log.drop(labels=l1,axis=1)
 
@@ -211,7 +209,7 @@ def get_cols_x_for_comparison(
                 cols_variable=['variable1','variable2'],
                 coff_pval=0.05,
             )
-            if not ds1_ is None:
+            if ds1_ is not None:
                 if verbose:logging.info(f"Minimum correlation among group of variables: {ds1_.to_dict()}")
                 from roux.lib.set import flatten,unique
                 cols_drop+=unique(flatten([s.split('--') for s in ds1_.index.tolist()]))
@@ -347,7 +345,7 @@ def get_cvsplits(
     Returns:
         dict: output.
     """
-    if random_state is None: logging.warning(f"random_state is None")
+    if random_state is None: logging.warning("random_state is None")
     X.index=range(len(X))
     y.index=range(len(y))
     

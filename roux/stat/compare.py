@@ -5,7 +5,6 @@ import logging
 import numpy as np
 import pandas as pd
 ## internal
-import roux.lib.dfs as rd
 
 def get_comparison(
     df1: pd.DataFrame,
@@ -109,7 +108,7 @@ def get_comparison(
                                     errors='raise')
                                  .assign(**{'stat type':'FE/CHI2'})
                                  )
-    if not coff_p is None:
+    if coff_p is not None:
         for k in d2:
             d2[k]=(d2[k]
                     .loc[(d2[k]['P']<coff_p),:]

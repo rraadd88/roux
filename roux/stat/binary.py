@@ -150,7 +150,7 @@ def get_cutoff(
     if all((y_score)<=0):
         negative_values=True
     elif any((y_score)<0):
-        raise ValueError(f"y_score should be all >=0 or <=0")
+        raise ValueError("y_score should be all >=0 or <=0")
     else:
         negative_values=False
     if method.lower().startswith('roc'):

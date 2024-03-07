@@ -1,7 +1,6 @@
 """For processing strings."""
 import re
 import logging
-import numpy as np
 
 # convert
 def substitution(s,i,replaceby):
@@ -137,7 +136,7 @@ def linebreaker(text,
     References:
         1. `textwrap`: https://docs.python.org/3/library/textwrap.html
     """
-    if width is None and not break_pt is None:
+    if width is None and break_pt is not None:
         width=break_pt
     import textwrap
     return sep.join(textwrap.wrap(text, width,**kws,))
@@ -499,9 +498,9 @@ def str2num(
     import re
     s1=" ".join(re.findall("[a-zA-Z]+", s))
     assert len(s1)==1, f"len({s1})!=1"
-    assert s1==s[-1], f"not at the end"
+    assert s1==s[-1], "not at the end"
     i1=" ".join(re.findall("[0-9]+", s))
-    assert len(s)==len(s1)+len(i1), f"do not add up"
+    assert len(s)==len(s1)+len(i1), "do not add up"
     return int(int(i1)*{'':1, 'K':1e3, 'M':1e6, 'G':1e9, 'T':1e12, 'P':1e15}[s1])
 
 def num2str(

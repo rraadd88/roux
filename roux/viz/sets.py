@@ -104,7 +104,7 @@ def plot_intersection_counts(
     TODOs:
         1. Use `compare_classes` to get the stats.
     """                
-    if not cols is None:
+    if cols is not None:
         for i,c in enumerate(cols):
             df1=(df1
                  .log.dropna(subset=cols)
@@ -157,7 +157,7 @@ def plot_intersection_counts(
             bbox=pa.get_bbox() # left, bottom, width, height
             x,y=np.mean([bbox.x0,bbox.x1]),np.mean([bbox.y0,bbox.y1])
             ax.text(s=n,x=x,y=y,va='center',ha='center')  
-        if not 'loc' in kws_show_stats:
+        if 'loc' not in kws_show_stats:
             kws_show_stats['loc']='center'
     else:
         raise ValueError(kind)
@@ -229,11 +229,11 @@ def plot_intersections(
         https://upsetplot.readthedocs.io/en/stable/api.html
     """
     assert(isinstance(ds1,pd.Series))
-    if (item_name is None) and (not ds1.name is None):
+    if (item_name is None) and (ds1.name is not None):
         item_name=ds1.name
     if intersections_min is None:
         intersections_min=len(ds1)
-    if not yorder is None:
+    if yorder is not None:
         yorder= [c for c in yorder if c in ds1.index.names][::-1]
         ds1.index = ds1.index.reorder_levels(yorder) 
     ds2=(ds1/ds1.sum())*100
@@ -256,7 +256,7 @@ def plot_intersections(
         d['totals'].set(ylim=d['totals'].get_ylim()[::-1],
                        xlabel='%')
     set_ylabel(ax=d['intersections'],
-              s=(f"{item_name}s " if not item_name is None else "")+f"%\n(total={ds1.sum()})",
+              s=(f"{item_name}s " if item_name is not None else "")+f"%\n(total={ds1.sum()})",
                x=set_ylabelx, y=set_ylabely,
               )        
     d['intersections'].set(
@@ -357,7 +357,7 @@ def plot_enrichment(
                         right=False,
                       )
     y=ylabel
-    if not size is None:
+    if size is not None:
         if not data[size].dtype == 'category':
             data[size]=pd.qcut(data[size],
                             q=3,
@@ -369,15 +369,15 @@ def plot_enrichment(
     sns.scatterplot(
                     data=data,
                     x=x,y=y,
-                    size=size if not size is None else None,
-                    size_order=data[size].unique() if not size is None else None,
+                    size=size if size is not None else None,
+                    size_order=data[size].unique() if size is not None else None,
                     hue=hue,
                     # color=color,
                     zorder=2,
                     ax=ax,
                     **kwargs,
     )
-    if not size is None:
+    if size is not None:
         ax.legend(loc='upper left',
                   bbox_to_anchor=(1.1, 0.1),
                  # title=size,
@@ -450,12 +450,12 @@ def _to_data_plot_pie(
         .to_frame('count').rename_axis('name').reset_index()
     )
     if order is None:
-        if not rename is None:
+        if rename is not None:
             order=list(rename.values())
         else:
             order=data_['name'].tolist()
         logging.warning(f"inferred `order`={order}")
-    if not rename is None:
+    if rename is not None:
         data_=(
             data_
             .assign(
@@ -465,7 +465,7 @@ def _to_data_plot_pie(
                 )
         .rd.sort_valuesby_list(by='name',cats=order)
         )
-    if not colors is None:
+    if colors is not None:
         if isinstance(colors,list):
             colors=dict(zip(order,colors))
         data_=(
@@ -476,7 +476,7 @@ def _to_data_plot_pie(
                 }
                 )
         )        
-    if not explode is None:
+    if explode is not None:
         if explode=='first':
             explode=order[0]            
         elif explode=='last':
@@ -549,7 +549,7 @@ def plot_pie(
         
     kws_annotate = dict(arrowprops=dict(arrowstyle="-",color=line_color,shrinkB=0),
               zorder=0, va="center")
-    if not remove_wedges is None:
+    if remove_wedges is not None:
         remove_wedges_index+=[labels.index(k) for k in remove_wedges]
     if annot_side:
         ## collect inputs
@@ -588,7 +588,7 @@ def plot_pie(
             colx='xs',coly='ys',cols='labels',
             color=line_color,
             kws_line=dict(lw=1),
-            **(kws_annot_side if len(df1_)!=1 else {k:v for k,v in kws_annot_side.items() if not k in ['offymin','offymax']}),
+            **(kws_annot_side if len(df1_)!=1 else {k:v for k,v in kws_annot_side.items() if k not in ['offymin','offymax']}),
         )
         ## left
         df1_=df1.query("`xs` < 0")
@@ -599,6 +599,6 @@ def plot_pie(
             colx='xs',coly='ys',cols='labels',
             color=line_color,
             kws_line=dict(lw=1),
-            **(kws_annot_side if len(df1_)!=1 else {k:v for k,v in kws_annot_side.items() if not k in ['offymin','offymax']}),
+            **(kws_annot_side if len(df1_)!=1 else {k:v for k,v in kws_annot_side.items() if k not in ['offymin','offymax']}),
         )
     return ax

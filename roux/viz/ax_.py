@@ -67,7 +67,7 @@ def set_label(
     """
     if title:
         ax.set_title(s,**kws)
-    elif not loc is None:
+    elif loc is not None:
         if loc==1 or loc=='upper right':
             x=1-off_loc
             y=1-off_loc
@@ -117,7 +117,7 @@ def set_ylabel(
     Returns:
         plt.Axes: `plt.Axes` object.
     """
-    if (not s is None):# and (ax.get_ylabel()=='' or ax.get_ylabel() is None):
+    if (s is not None):# and (ax.get_ylabel()=='' or ax.get_ylabel() is None):
         ax.set_ylabel(s)
     ax.set_ylabel(ax.get_ylabel(),rotation=0,ha='right',va='center')
     ax.yaxis.set_label_coords(x+xoff,y+yoff) 
@@ -133,7 +133,7 @@ def get_ax_labels(
                 # plotp=f"{plotp}_"+(getattr(ax,k)()).replace('.','_')
                 labels.append(getattr(ax,k)())
             else:
-                if not ax.legend_ is None:
+                if ax.legend_ is not None:
                     # plotp=f"{plotp}_"+(ax.legend_.get_title().get_text()).replace('.','_')
                     labels.append(ax.legend_.get_title().get_text())
     return labels
@@ -155,9 +155,9 @@ def format_labels(
         if hasattr(ax,"get_"+k):
             if k=='legend':
                 ## adjust legend first, because setting other labels can have unexpected effects on the legend.
-                if not ax.legend_ is None:
+                if ax.legend_ is not None:
                     label=ax.legend_.get_title().get_text()
-                    if not rename_labels is None:
+                    if rename_labels is not None:
                         label=replace_many(label,rename_labels,ignore=True)
                     if test: print(label)
                     if fmt=='cap1':
@@ -166,7 +166,7 @@ def format_labels(
                                 ax.legend(title=cap1(label))
             else:
                 label=getattr(ax,"get_"+k)()
-                if not rename_labels is None:
+                if rename_labels is not None:
                     label=replace_many(label,rename_labels,ignore=True)
                 if isinstance(label,str):
                     if label!='':                    
@@ -198,10 +198,10 @@ def rename_ticklabels(
         plt.Axes: `plt.Axes` object.
     """
     k=f"{axis}ticklabels"
-    if not replace is None:
+    if replace is not None:
         from roux.lib.str import replace_many
         _=getattr(ax,f"set_{k}")([replace_many(t.get_text(),replace,ignore=ignore) for t in getattr(ax,f"get_{k}")()])
-    elif not rename is None:
+    elif rename is not None:
         _=getattr(ax,f"set_{k}")([rename[t.get_text()] for t in getattr(ax,f"get_{k}")()])
     else:
         raise ValueError("either `rename` or `replace` should be provided.")
@@ -273,13 +273,13 @@ def format_ticklabels(
         fmt={'x':fmt,
            'y':fmt}
     for axis in axes:
-        if not n is None:        
+        if n is not None:        
             getattr(ax,axis+'axis').set_major_locator(plt.MaxNLocator(n[axis]))
-        elif not interval is None:
+        elif interval is not None:
             getattr(ax,axis+'axis').set_major_locator(plt.MultipleLocator(2.5))
-        if not fmt is None:
+        if fmt is not None:
             getattr(ax,axis+'axis').set_major_formatter(plt.FormatStrFormatter(fmt[axis]))
-        if not font is None:
+        if font is not None:
             for tick in getattr(ax,f'get_{axis}ticklabels')():
                 tick.set_fontname(font)
     return ax
@@ -321,7 +321,6 @@ def split_ticklabels(
     ax.set(**{f"{axis}label":None})
     ticklabels=getattr(ax,f'get_{axis}ticklabels')()
     if fmt.startswith('pair'):
-        from roux.lib.set import flatten
         # kws={
         #     f"{axis}ticks":flatten([[i-off,i+off] for i in range(0,len(ticklabels))]),
         #     f"{axis}ticklabels":flatten([t.get_text().split('-') for t in ticklabels]),
@@ -341,7 +340,7 @@ def split_ticklabels(
                 axis=axis),
                 colkey=axis+'ticklabel',
             colvalue=axis)
-        if not sep is None:
+        if sep is not None:
             df0_[axis+'ticklabel major']=df0_[axis+'ticklabel'].str.split(sep,n=1,expand=True)[0]
             df0_[axis+'ticklabel minor']=df0_[axis+'ticklabel'].str.split(sep,n=1,expand=True)[1]
         else:
@@ -407,14 +406,13 @@ def split_ticklabels(
                 **{**group_span_kws},
             ),
             axis=1)
-        from roux.lib.set import get_alt
         df_.apply(lambda x: ax.text(
             **(
                 dict(x=group_x,y=np.mean([x[axis+' min'],x[axis+' max']]))
                 if axis=='y' else
                 dict(x=np.mean([x[axis+' min'],x[axis+' max']]),y=group_y)
             ),
-            s=(group_prefix+'\n' if not group_prefix is None else '')+f"{x.name}".replace(' ','\n')+(('\n'+f"(n={int(x[axis+' len'])})") if group_suffix else ""),
+            s=(group_prefix+'\n' if group_prefix is not None else '')+f"{x.name}".replace(' ','\n')+(('\n'+f"(n={int(x[axis+' len'])})") if group_suffix else ""),
             color='k',
             # ha=get_alt(['left','right'],group_loc),
             ha=group_loc,
@@ -517,7 +515,7 @@ def set_equallim(
     min_,max_=np.min([ax.get_xlim()[0],ax.get_ylim()[0]]),np.max([ax.get_xlim()[1],ax.get_ylim()[1]])
     if diagonal:
         ax.plot([min_,max_],[min_,max_],':',color='gray',zorder=5)
-    if not difference is None:
+    if difference is not None:
         off=np.sqrt(difference**2+difference**2)
         ax.plot([min_+off ,max_+off],[min_,max_],':',color='gray',zorder=5)        
         ax.plot([min_-off ,max_-off],[min_,max_],':',color='gray',zorder=5)      
@@ -752,7 +750,7 @@ def set_legend_custom(
                        marker=marker,
                        color=color if param!='color' else legend2param[k],
                        markeredgecolor=(color if param!='color' else legend2param[k]), 
-                       markerfacecolor=(color if param!='color' else legend2param[k]) if not markerfacecolor is None else 'none',
+                       markerfacecolor=(color if param!='color' else legend2param[k]) if markerfacecolor is not None else 'none',
                        markersize=(size if param!='size' else legend2param[k]),
                        label=k,
                        lw=(lw if param!='lw' else legend2param[k]),

@@ -53,7 +53,7 @@ def nb_to_py(
         def get_path_output(s):
             s='\n'.join([line for line in s.split('\n') if not line.startswith('#')])
             for f in ['to_table','to_dict']:
-                if f in s and not 'to_dict()' in s:
+                if f in s and 'to_dict()' not in s:
                     return s.split(f)[1].split(',')[1].split(')')[0].replace("'",'')
     
         df1.loc[:,'path output']=df1['code raw'].apply(get_path_output)

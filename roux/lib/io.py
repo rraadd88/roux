@@ -66,7 +66,6 @@ def to_zip_dir(
     """
     if destination is None:
         destination=source.rsplit('/')+"."+fmt
-    from os import sep
     base = basename(destination)
     fmt = base.split('.')[-1]
     name = base.replace('.'+fmt,'')
@@ -264,7 +263,7 @@ def download(
         t = os.path.getctime(path)
         return str(datetime.datetime.fromtimestamp(t))
     if path is None:
-        assert not outd is None
+        assert outd is not None
         path=replace_many(url,
                {'https://':'',
                 'http://':'',
@@ -305,7 +304,7 @@ def to_list(l1,p):
         p (str): path.        
     """
     from roux.lib.sys import makedirs
-    if not 'My Drive' in p:
+    if 'My Drive' not in p:
         p=p.replace(' ','_')
     else:
         logging.warning('probably working on google drive; space/s left in the path.')
@@ -355,7 +354,7 @@ def read_dict(
     assert isinstance(p,(str,list)), p
     if '*' in p:
         d1={p:read_dict(p) for p in read_ps(p)}
-        if not apply_on_keys is None:
+        if apply_on_keys is not None:
             assert len(set([replace_many(k, replaces=apply_on_keys, replacewith='', ignore=False) for k in d1])) == len(d1.keys()), "apply_on_keys(keys)!=keys"
             d1={replace_many(k, replaces=apply_on_keys, replacewith='', ignore=False):v for k,v in d1.items()}
         return d1
@@ -363,7 +362,7 @@ def read_dict(
         import yaml    
         with open(p,'r') as f:
             d1=yaml.safe_load(f,**kws)
-        return d1 if not d1 is None else {}
+        return d1 if d1 is not None else {}
          
     elif p.endswith('.json') or fmt=='json':
         import json    
@@ -389,7 +388,7 @@ def read_dict(
         return joblib.load(p,**kws)
     
     else:
-        logging.error(f'supported extensions: .yml .yaml .json .pickle .joblib')
+        logging.error('supported extensions: .yml .yaml .json .pickle .joblib')
         
 def to_dict(d,p,**kws):
     """Save dictionary file.
@@ -405,7 +404,7 @@ def to_dict(d,p,**kws):
         p (str): path.
     """
     from roux.lib.sys import makedirs
-    if not 'My Drive' in p:
+    if 'My Drive' not in p:
         p=p.replace(' ','_')
     else:
         logging.warning('probably working on google drive; space/s left in the path.')
@@ -427,7 +426,7 @@ def to_dict(d,p,**kws):
         import joblib
         return joblib.dump(d, p,**kws)     
     else:
-        raise ValueError(f'supported extensions: .yml .yaml .json .pickle .joblib')
+        raise ValueError('supported extensions: .yml .yaml .json .pickle .joblib')
         
 ## tables
 def post_read_table(
@@ -547,14 +546,14 @@ def read_table(
             else:
                 return df_
         elif p.startswith("https://docs.google.com/file/"):
-            if not 'outd' in kws_cloud:
+            if 'outd' not in kws_cloud:
                 logging.warning("outd not found in kws_cloud")
             from roux.lib.google import download_file
             return read_table(download_file(p,**kws_cloud))
     else:
         raise ValueError(p)
     assert exists(p), f"not found: {p}"
-    if len(params.keys())!=0 and not 'columns' in params:
+    if len(params.keys())!=0 and 'columns' not in params:
         return post_read_table(pd.read_csv(p,**params),clean=clean,tables=tables,verbose=verbose,**kws_clean)
     else:
         if len(params.keys())==0:
@@ -575,7 +574,7 @@ def read_table(
                     )        
         params['compression']='gzip' if ext.endswith('.gz') else 'zip' if ext.endswith('.zip') else None
         
-        if not params['compression'] is None:
+        if params['compression'] is not None:
             ext=ext.split('.',1)[0]
             
         if any([s==ext for s in ['tsv','tab','txt']]):
@@ -702,16 +701,16 @@ def apply_on_paths(
                 return p,
         else:
             df=read_table(p,params=params,verbose=verbose,**kws_read_table)
-            if not filter_rows is None:
+            if filter_rows is not None:
                 df=df.rd.filter_rows(filter_rows)            
             return df,
     import inspect
     read_path=inspect.getfullargspec(func).args[0]=='p'
-    save_table=(not replaces_outp is None) and ('outp' in inspect.getfullargspec(func).args)
-    if not to_col is None:
+    save_table=(replaces_outp is not None) and ('outp' in inspect.getfullargspec(func).args)
+    if to_col is not None:
         colindex=list(to_col.keys())[0]
         replaces_index=list(to_col.values())[0]
-    if not replaces_index is None: drop_index=False
+    if replaces_index is not None: drop_index=False
     ps=read_ps(ps,test=verbose)
     if len(ps)==0:
         logging.error('no paths found')
@@ -719,7 +718,7 @@ def apply_on_paths(
     if test1:
         ps=ps[:1]
         logging.warning(f"test1=True, {ps[0]}")
-    if (not replaces_outp is None) and ('force' in kws):
+    if (replaces_outp is not None) and ('force' in kws):
         if not kws['force']:
             # p2outp
             p2outp={p:replace_many(p, replaces=replaces_outp, replacewith='', ignore=False) for p in ps}
@@ -766,7 +765,7 @@ def apply_on_paths(
         df2=df2.reset_index(drop=drop_index).rd.clean()
         if colindex!='path':
             df2=df2.rename(columns={'path':colindex},errors='raise')
-    if not replaces_index is None:
+    if replaces_index is not None:
         if isinstance(replaces_index,str):
             if replaces_index=='basenamenoext':
                 replaces_index=basenamenoext
@@ -802,7 +801,7 @@ def read_tables(
     TODOs:
         Parameter to report the creation dates of the newest and the oldest files.
     """
-    if not filterby_time is None:
+    if filterby_time is not None:
         from roux.lib.sys import ps2time
         df_=ps2time(ps)
         ps=df_.loc[df_['time'].str.contains(filterby_time),'p'].unique().tolist()
@@ -850,11 +849,11 @@ def to_table(
 #     if len(basename(p))>100:
 #         p=f"{dirname(p)}/{basename(p)[:95]}_{basename(p)[-4:]}"
 #         logging.warning(f"p shortened to {p}")
-    if not df.index.name is None:
+    if df.index.name is not None:
         df=df.reset_index()
     if not exists(dirname(p)) and dirname(p)!='':
         makedirs(p,exist_ok=True)
-    if not colgroupby is None:
+    if colgroupby is not None:
         to_manytables(df,p,colgroupby,**kws)
     elif p.endswith('.tsv') or p.endswith('.tab'):
         df.to_csv(
@@ -1017,7 +1016,7 @@ def read_excel(
     #   logging.error('need xlrd to work with excel; pip install xlrd')
     if isinstance(p,str):
         if p.startswith("https://docs.google.com/spreadsheets/"):
-            if not 'outd' in kws_cloud:
+            if 'outd' not in kws_cloud:
                 raise ValueError("outd not found in kws_cloud")
             from roux.lib.google import download_file
             return read_excel(download_file(p,**kws_cloud),**kws)
@@ -1063,7 +1062,7 @@ def to_excel_commented(
     wb = load_workbook(filename = outp)
     for sh in wb:
         for k in [s+'1' for s in list(ascii_uppercase)+['A'+s_ for s_ in ascii_uppercase]]:
-            if (not sh[k].value is None):
+            if (sh[k].value is not None):
                 if (sh[k].value in comments):
                     sh[k].comment = Comment(comments[sh[k].value],author=author)
                 else:
@@ -1099,10 +1098,10 @@ def to_excel(
 #     if not 'xlrd' in sys.modules:
 #         logging.error('need xlrd to work with excel; pip install xlrd')
     # makedirs(outp)
-    if not comments is None:
+    if comments is not None:
         ## order the columns
         for k1 in sheetname2df:
-            sheetname2df[k1]=sheetname2df[k1].loc[:,[k for k in comments if k in sheetname2df[k1]]+[k for k in sheetname2df[k1] if not k in comments]]
+            sheetname2df[k1]=sheetname2df[k1].loc[:,[k for k in comments if k in sheetname2df[k1]]+[k for k in sheetname2df[k1] if k not in comments]]
         if not any([k.lower().startswith('descr') for k in sheetname2df]):
             ## insert a table with the description
             items = list(sheetname2df.items())
@@ -1140,7 +1139,7 @@ def to_excel(
         for k in sheetname2df:
             to_table(sheetname2df[k],f"{splitext(outp)[0]}/{k}.tsv")
     
-    if not comments is None:
+    if comments is not None:
         to_excel_commented(
             outp,
             comments=comments,

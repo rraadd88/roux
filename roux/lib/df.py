@@ -30,7 +30,7 @@ def get_name(
     if hasattr(df1,'name') and cols is None:
         name=df1.name
         name=name if isinstance(name,str) else list(name)
-    elif not cols is None:
+    elif cols is not None:
         name=df1.iloc[0,:][cols]
     else:
         l1=get_constants(df1.select_dtypes(object))
@@ -437,7 +437,7 @@ def check_nunique(
         ## no logging
         return ds_
     else:
-        str_log=f"{'by '+to_str(groupby,log=True)+', nunique '+to_str(subset,log=True)+':' if not groupby is None else 'nunique:'} {to_str(ds_)}"
+        str_log=f"{'by '+to_str(groupby,log=True)+', nunique '+to_str(subset,log=True)+':' if groupby is not None else 'nunique:'} {to_str(ds_)}"
         if log:
             logging.info(str_log)
             return df #input    
@@ -703,10 +703,10 @@ def get_mappings(
     Returns:
         df (DataFrame): output dataframe.
     """
-    if not cols is None and not subset is None: 
-        logging.error(f"cols and subset are alias, both cannot be used.")
+    if cols is not None and subset is not None: 
+        logging.error("cols and subset are alias, both cannot be used.")
         return
-    if cols is None and not subset is None: cols=subset        
+    if cols is None and subset is not None: cols=subset        
     if cols is None: cols=df1.columns.tolist()
     if not df1.rd.validate_no_dups(cols):
         df1=df1.loc[:,cols].log.drop_duplicates()
@@ -721,7 +721,7 @@ def get_mappings(
         else:
             raise ValueError(keep)
     df2=classify_mappings(df1,subset=cols,clean=clean)
-    if not query_expr is None:
+    if query_expr is not None:
         df2=df2.log.query(expr=query_expr)
     return df2
 
@@ -819,7 +819,7 @@ def get_totals(ds1):
     Returns:
         d (dict): output dictionary.
     """
-    col=ds1.name if not ds1.name is None else 0
+    col=ds1.name if ds1.name is not None else 0
     df1=ds1.to_frame().reset_index()
     return {c:df1.loc[df1[c],col].sum() for c in ds1.index.names}
     
@@ -855,7 +855,7 @@ def filter_rows(
     if test:
         logging.info(df1.loc[:,list(d.keys())].drop_duplicates())
         logging.warning('may be some column names are wrong..')
-        logging.warning([k for k in d if not k in df])
+        logging.warning([k for k in d if k not in df])
     if verbose: logging.info(df1.shape)
     if drop_constants:
         df1=df1.rd.drop_constants()
@@ -962,7 +962,7 @@ def melt_paired(
     """
     if cols_value is None:
         assert not (cols_index is None and suffixes is None), "either cols_index or suffixes needed" 
-        if suffixes is None and not cols_index is None:
+        if suffixes is None and cols_index is not None:
             from roux.lib.str import get_suffix
             suffixes=get_suffix(*cols_index,common=False, clean=True)
             
@@ -988,7 +988,7 @@ def melt_paired(
             df2=df2.drop(['suffix'],axis=1)
         return df2
     else:
-        assert not suffixes is None
+        assert suffixes is not None
         import itertools
         df2=pd.concat({c: df.rename(columns={f"{c} {s}":f"value {s}" for s in suffixes},errors='raise') for c in cols_value},
                         axis=0,names=['variable'],
@@ -1018,7 +1018,7 @@ def get_chunks(
     Returns: 
         ds (Series): output series.
     """
-    from roux.lib.set import unique,nunique
+    from roux.lib.set import nunique
     if bins==0:
         df1['chunk']=bins
         logging.warning("bins=0, so chunks=1")
@@ -1077,7 +1077,7 @@ def get_group(
     Notes: 
         Useful for testing `groupby`.
     """
-    if not i is None: 
+    if i is not None: 
         dn=list(groups.groups.keys())[i]
     else:
         dn=groups.size().sort_values(ascending=False).index.tolist()[0]
@@ -1148,7 +1148,7 @@ def groupby_agg_nested(
             return df2
     ## infer inputs
     if func is None:
-        if not cols_value is None:
+        if cols_value is not None:
             func={c:np.mean for c in cols_value}
     else:
         cols_value=list(func.keys())
@@ -1475,7 +1475,7 @@ def sort_columns_by_values(
     ## data checks
     df.rd.assert_no_na(subset=subset)
 
-    if not order is None:
+    if order is not None:
         ## ranks
         ranks={s:i for i,s in enumerate(order)}
         df=df.assign(
@@ -1505,7 +1505,7 @@ def sort_columns_by_values(
     logging.info(f"(equal, sorted) items: {df1.groupby(['equal','sorted']).size().to_dict()}")
     if clean:
         df1=df1.drop(
-                ['equal','sorted']+(subset if not order is None else []),
+                ['equal','sorted']+(subset if order is not None else []),
                 axis=1,
             )            
     return df1
@@ -1593,7 +1593,7 @@ def split_ids(df1,col,sep='--',prefix=None):
     df=df1[col].str.split(sep,expand=True)
     for i in range(len(df.columns)):
         df1[f"{col} {i+1}"]=df[i].copy()
-    if not prefix is None:
+    if prefix is not None:
         df1=df1.rd.renameby_replace(replaces={f"{col} ":prefix})
     return df1
 
@@ -1690,7 +1690,7 @@ class log:
         suffix=None,
         **kws_check_nunique,
         ):
-        if not subset is None:
+        if subset is not None:
             suffix=self._obj.rd.check_nunique(
                 subset=subset,
                 groupby=groupby,

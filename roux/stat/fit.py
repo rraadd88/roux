@@ -22,10 +22,8 @@ def fit_curve_fit(func,
         tuple: output.
     """
     from scipy.optimize import curve_fit
-    # >>>
     # Define the data to be fit with some noise:
     if xdata is None and ydata is None:
-        # >>>
         xdata = np.linspace(1, 4, 50)
         y = func(xdata, -2.5)
         np.random.seed(1729)
@@ -35,21 +33,18 @@ def fit_curve_fit(func,
         plt.plot(xdata, ydata, 'b.', label='data')
         # Fit for the parameters a, b, c of the function func:
 
-    # >>>
     popt, pcov = curve_fit(func, xdata, ydata)
     if test or plot:
         print(popt)
         plt.plot(xdata, func(xdata, *popt), 'r-',
                  label=f'non-bounded fit:\na={popt[0]}')
     # Constrain the optimization to the region of 0 <= a <= 3, 0 <= b <= 1 and 0 <= c <= 0.5:
-    # >>>
     popt, pcov = curve_fit(func, xdata, ydata, bounds=bounds)
     
     if test or plot:
         print(popt)
         plt.plot(xdata, func(xdata, *popt), 'g--',
                  label=f'bounded fit:\na={popt[0]}')
-        # >>>
         plt.xlabel('x')
         plt.ylabel('y')
         plt.legend()

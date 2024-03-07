@@ -145,13 +145,13 @@ def to_output_path(ps,outd=None,outp=None,suffix=''):
     Returns:
         outp (str): path of the output file. 
     """
-    if not outp is None:
+    if outp is not None:
         return outp
     from roux.lib.str import get_prefix
     # makedirs(outd)
     ps=read_ps(ps)
     pre=get_prefix(ps[0],ps[-1], common=True)
-    if not outd is None:
+    if outd is not None:
         pre=outd+(basename(pre) if basename(pre)!='' else basename(dirname(pre)))
     outp=f"{pre}_{suffix}{splitext(ps[0])[1]}"
     return outp
@@ -203,7 +203,7 @@ def to_output_paths(
         output_paths_exist=list(filter(exists,output_paths))
     if isinstance(inputs,list):    
         ## infer output_path
-        assert not '*' in output_path_base, output_path_base
+        assert '*' not in output_path_base, output_path_base
         assert '{KEY}' in output_path_base, f"placeholder i.e. '{{KEY}}' not found in output_path_base: '{output_path_base}'"
         l2={output_path_base.format(KEY=encode(d.copy(),short=encode_short)):d.copy() for d in inputs}
         # if verbose:
@@ -215,7 +215,7 @@ def to_output_paths(
         output_paths_exist=glob(output_path_base.replace('{KEY}','*'))
     for k in output_paths:
         ## add output path in the dictionary
-        if not key_output_path is None:
+        if key_output_path is not None:
             output_paths[k][key_output_path]=k
     if force:
         return output_paths
@@ -257,7 +257,6 @@ def get_all_subpaths(d='.',include_directories=False):
     Returns:
         paths (list): sub-paths.
     """
-    from glob import glob
     import os
     paths=[]
     for root, dirs, files in os.walk(d):
@@ -284,7 +283,8 @@ def get_env(
     Returns:
         d (dict): parameters of the virtual environment.
     """
-    import sys,subprocess, os
+    import sys
+    import os
     env = os.environ.copy()
     env_name_current=sys.executable.split('anaconda3/envs/')[1].split('/')[0]
     path=sys.executable.replace(env_name_current,env_name)
@@ -320,7 +320,7 @@ def runbash(s1,env=None,test=False,**kws):
     if env is None:
         logging.warning('env is not set.')
     response=subprocess.call(s1, shell=True,
-                           env=get_env(env) if isinstance(env,str) else env if not env is None else env,
+                           env=get_env(env) if isinstance(env,str) else env if env is not None else env,
                stderr=subprocess.DEVNULL if not test else None, 
                stdout=subprocess.DEVNULL if not test else None,
                **kws)
@@ -368,7 +368,7 @@ def runbash_tmp(s1: str,
         s1=replace_many(s1,{'INPUT':tmp_inp,
                             'OUTPUT':tmp_outp,
                            })
-        if not df1 is None:
+        if df1 is not None:
             if input_type=='df':
                 df1.to_csv(replace_many(inp,{'INPUT':tmp_inp,}),sep='\t')
             elif input_type=='list':
@@ -436,7 +436,7 @@ def input_binary(q:str):
         b (bool): response.
     """
     reply=''
-    while not reply in ['y','n','o']:
+    while reply not in ['y','n','o']:
         reply = input(f"{q}:")
         if reply == 'y':
             return True
