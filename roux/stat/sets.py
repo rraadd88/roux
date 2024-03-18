@@ -186,6 +186,7 @@ def get_enrichment(
     colset: str, 
     background: int,
     coltest: str=None, 
+    test_type: list=None,
     verbose: bool=False,
     ) -> pd.DataFrame:
     """Calculate the enrichments.
@@ -197,6 +198,7 @@ def get_enrichment(
         colset (str): column sets 
         coltest (str): column tests 
         background (int): background size.
+        test_type (list): hypergeom or Fisher. Defaults to both.
         verbose (bool): verbose
 
     Returns:
@@ -208,8 +210,9 @@ def get_enrichment(
     if coltest is None:
         coltest='Unnamed'
         df1=df1.assign(**{coltest:1})
+    ## statistics
     df3=(df1
-        .groupby(coltest) # iterate over the groups of items to test
+        .groupby(by=coltest) # iterate over the groups of items to test
         .apply(lambda df1_: (df2.groupby(colset) # iterate over the groups of item sets
                             .apply(lambda df2_: pd.Series(
                             {
@@ -251,18 +254,40 @@ def get_enrichment(
             items_set=df2_[colid].tolist(),
             background=background,
             ),
-        'P (hypergeom. test)':get_hypergeom_pval(
-            items_test=df1_[colid].tolist(),
-            items_set= df2_[colid].tolist(),
-            background=background),
-        "P (Fisher's exact)":get_odds_ratio(
-            items_test=df1_[colid].tolist(),
-            items_set= df2_[colid].tolist(), 
-            background=background_fisher_test,
-            )[1], 
         },
         ))))
     ).reset_index()
+    if 'hypergeom' in test_type or test_type is None:
+        df_=(df1
+            .groupby(by=coltest) # iterate over the groups of items to test
+            .apply(lambda df1_: (df2.groupby(colset) # iterate over the groups of item sets
+                                .apply(lambda df2_: pd.Series(
+                                {
+            'P (hypergeom. test)':get_hypergeom_pval(
+                items_test=df1_[colid].tolist(),
+                items_set= df2_[colid].tolist(),
+                background=background),
+            },
+            ))))
+        ).reset_index().rd.clean()
+        ## concat with the output
+        df3=pd.concat([df3,df_],axis=1)
+    if 'Fisher' in test_type or test_type is None:
+        df_=(df1
+            .groupby(by=coltest) # iterate over the groups of items to test
+            .apply(lambda df1_: (df2.groupby(colset) # iterate over the groups of item sets
+                                .apply(lambda df2_: pd.Series(
+                                {
+            "P (Fisher's exact)":get_odds_ratio(
+                items_test=df1_[colid].tolist(),
+                items_set= df2_[colid].tolist(), 
+                background=background_fisher_test,
+                )[1], 
+            },
+            ))))
+        ).reset_index().rd.clean()
+        ## concat with the output
+        df3=pd.concat([df3,df_],axis=1)
     
     def get_qs(df):
         from roux.stat.transform import get_q
@@ -274,7 +299,7 @@ def get_enrichment(
         return df
     df4=(df3
         .query(expr="`overlap size` != 0")
-        .groupby(coltest) # iterate over tests
+        .groupby(by=coltest) # iterate over tests
             .apply(get_qs)
             .rd.clean()
         )

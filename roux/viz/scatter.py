@@ -226,6 +226,8 @@ def plot_volcano(
     style_order: list=['o','^'],
     markers: list=['o','^'],    
     show_labels: int=None,
+    labels_layout: str=None,
+    labels_kws: dict={},
     show_outlines: int=None,
     outline_colors: list=['k'],
     collabel:str=None,
@@ -361,7 +363,7 @@ def plot_volcano(
                     data1.tail(show_outlines) # right
                 ],
                 axis=0,
-                )        
+                ).drop_duplicates(subset=[colindex])      
         elif isinstance(show_outlines, dict):
             ## subset
             data1=data.rd.filter_rows(show_outlines)
@@ -407,28 +409,42 @@ def plot_volcano(
                 kws_legend=kws_legend,
                 ax=ax,
                 )
-    if show_labels: 
-        texts=(data1
-                .apply(lambda x: ax.text(x=x[colx],
-                    y=x[coly],
-                    s=x[collabel],
-                    ),axis=1)
-                .tolist()
-            )
-        try:
-            from adjustText import adjust_text
-            adjust_text(texts,
-                       arrowprops=dict(arrowstyle='-', color='k'),
-                       )
-        except:
-            logging.error("install adjustText to repel the labels.")
-    
+    ## setting ylim before setting the labels
     ax.set(
         xlabel='Log$_\mathrm{2}$ Fold Change (LFC)',
         ylabel='Significance\n(-Log$_\mathrm{10}$($q$))',
         xlim=xlim,
         ylim=ylim,
     )
+    if show_labels: 
+        if labels_layout == 'side':
+            from roux.viz.annot import annot_side
+            ax=annot_side(
+                ax=ax,
+                df1=data1,
+                colx=colx,
+                coly=coly,
+                cols=collabel,
+                **labels_kws,
+                )
+        else:
+            texts=(data1
+                    .apply(lambda x: ax.text(x=x[colx],
+                        y=x[coly],
+                        s=x[collabel],
+                        ),axis=1)
+                    .tolist()
+                )
+            try:
+                from adjustText import adjust_text
+                adjust_text(
+                    texts,
+                    arrowprops=dict(arrowstyle='-', color='k'),
+                    **labels_kws,
+                    )
+            except:
+                logging.error("install adjustText to repel the labels.")
+    ## formatting
     ax.spines.top.set(visible=False)
     ax.spines.right.set(visible=False)
     if not outmore:
