@@ -204,7 +204,9 @@ def get_enrichment(
     Returns:
         pd.DataFrame: output table
     """
-    assert isinstance(background,int) 
+    assert isinstance(background,int)
+    if test_type is None:
+        test_type=[]
     ## calculate the background for the Fisher's test that is compatible with the contigency tables
     background_fisher_test = len(set(df1[colid].tolist()+df2[colid].tolist()))
     if coltest is None:
