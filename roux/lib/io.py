@@ -100,7 +100,7 @@ def to_zip(
     """
     if isinstance(p,str):
         if isdir(p):
-            return _to_zip(p, destination=outp, fmt=fmt)        
+            return to_zip_dir(p, destination=outp, fmt=fmt)        
     ps=read_ps(p)
     import tempfile
     with tempfile.TemporaryDirectory() as outd:
