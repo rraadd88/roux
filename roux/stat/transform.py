@@ -82,7 +82,7 @@ def get_q(
     ds3=fdrcorrection(pvals=ds2, alpha=0.05, method='indep', is_sorted=False)[1]
     ds4=ds1.map(pd.DataFrame({'P':ds2,'Q':ds3}).drop_duplicates().set_index('P')['Q'])
     if verb:
-        from roux.viz.annot import perc_label        
+        from roux.stat.io import perc_label # noqa        
         logging.info(f"significant at Q<{test_coff}: {perc_label(ds4<test_coff)}")
     if col is None:
         return ds4
