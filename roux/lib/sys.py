@@ -301,7 +301,12 @@ def get_env(
         
     return env
 
-def runbash(s1,env=None,test=False,**kws):
+def runbash(
+    s1: str,
+    env=None,
+    test: bool=False,
+    **kws
+    ):
     """Run a bash command. 
 
     Args:
@@ -319,11 +324,14 @@ def runbash(s1,env=None,test=False,**kws):
     if test:logging.info(s1)
     if env is None:
         logging.warning('env is not set.')
-    response=subprocess.call(s1, shell=True,
-                           env=get_env(env) if isinstance(env,str) else env if env is not None else env,
-               stderr=subprocess.DEVNULL if not test else None, 
-               stdout=subprocess.DEVNULL if not test else None,
-               **kws)
+    response=subprocess.call(
+        s1,
+        shell=True,
+        env=get_env(env) if isinstance(env,str) else env if env is not None else env,
+        stderr=subprocess.DEVNULL if not test else None, 
+        stdout=subprocess.DEVNULL if not test else None,
+        **kws,
+    )
     assert response==0, f"Error: {s1}"+('\nset `test=True` for more verbose.' if not test else '')
     return response
 

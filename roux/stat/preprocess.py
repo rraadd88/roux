@@ -327,7 +327,7 @@ def to_filteredby_samples(
 
 def get_cvsplits(
     X: np.array,
-    y: np.array,
+    y: np.array=None,
     cv: int=5,
     random_state: int=None,
     outtest: bool=True
@@ -347,7 +347,8 @@ def get_cvsplits(
     """
     if random_state is None: logging.warning("random_state is None")
     X.index=range(len(X))
-    y.index=range(len(y))
+    if not y is None:
+        y.index=range(len(y))
     
     from sklearn.model_selection import KFold
     cv = KFold(n_splits=cv,random_state=random_state,shuffle=True)
@@ -359,8 +360,10 @@ def get_cvsplits(
             for dtype in dtype2index:
                 cv2Xy[i][dtype]={}
                 cv2Xy[i][dtype]['X' if isinstance(X,pd.DataFrame) else 'x']=X.iloc[dtype2index[dtype],:] if isinstance(X,pd.DataFrame) else X[dtype2index[dtype]]
-                cv2Xy[i][dtype]['y']=y[dtype2index[dtype]]
+                if not y is None:
+                    cv2Xy[i][dtype]['y']=y[dtype2index[dtype]]
         else:
             cv2Xy[i]['X' if isinstance(X,pd.DataFrame) else 'x']=X.iloc[dtype2index['train'],:] if isinstance(X,pd.DataFrame) else X[dtype2index['train']]
-            cv2Xy[i]['y']=y[dtype2index['train']]                
+            if not y is None:
+                cv2Xy[i]['y']=y[dtype2index['train']]                
     return cv2Xy
