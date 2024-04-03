@@ -347,7 +347,7 @@ def get_cvsplits(
     """
     if random_state is None: logging.warning("random_state is None")
     X.index=range(len(X))
-    if not y is None:
+    if y is not None:
         y.index=range(len(y))
     
     from sklearn.model_selection import KFold
@@ -360,10 +360,10 @@ def get_cvsplits(
             for dtype in dtype2index:
                 cv2Xy[i][dtype]={}
                 cv2Xy[i][dtype]['X' if isinstance(X,pd.DataFrame) else 'x']=X.iloc[dtype2index[dtype],:] if isinstance(X,pd.DataFrame) else X[dtype2index[dtype]]
-                if not y is None:
+                if y is not None:
                     cv2Xy[i][dtype]['y']=y[dtype2index[dtype]]
         else:
             cv2Xy[i]['X' if isinstance(X,pd.DataFrame) else 'x']=X.iloc[dtype2index['train'],:] if isinstance(X,pd.DataFrame) else X[dtype2index['train']]
-            if not y is None:
+            if y is not None:
                 cv2Xy[i]['y']=y[dtype2index['train']]                
     return cv2Xy

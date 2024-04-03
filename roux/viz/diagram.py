@@ -27,7 +27,7 @@ def diagram_nb(
         classDef ends fill:#fff,stroke:#fff
     """
     from roux.lib.str import replace_many
-    if not counts is None:
+    if counts is not None:
         import re
         replaces={}
         for step,ds in counts.items():
