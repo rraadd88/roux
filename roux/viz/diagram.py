@@ -2,6 +2,7 @@
 
 def diagram_nb(
     graph: str,
+    counts: dict=None,
     out: bool=False,
     ):
     """
@@ -25,6 +26,20 @@ def diagram_nb(
                     --> o2["output2"]:::ends
         classDef ends fill:#fff,stroke:#fff
     """
+    from roux.lib.str import replace_many
+    if not counts is None:
+        import re
+        replaces={}
+        for step,ds in counts.items():
+            s1=re.split(
+                step+r'.*?"',
+                graph
+                )[1].split('"')[0]
+            if isinstance(ds,dict):
+                ds=[ds]
+            s2=s1+"\n"+"("+(',\n'.join([f"{d['value']} {d['key']}s" for d in ds]))+")"
+            replaces[s1]=s2
+        graph=replace_many(graph,replaces)
     import base64
     from IPython.display import Image, display
     graphbytes = graph.encode("ascii")
