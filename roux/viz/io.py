@@ -284,7 +284,7 @@ def get_lines(
     lines=[]
     for linei,line in enumerate(l1[::-1]):
         line_=line.lstrip()
-        if len(lines)==0 and ((not line_.startswith("to_plot(")) and (not line_.startswith("saveplot("))):
+        if len(lines)==0 and ((not "to_plot(" in line_) and (not line_.startswith("saveplot("))):
             continue
         if len(lines)==0:
             spaces=(len(line) - len(line.lstrip(' ')))#*' '
