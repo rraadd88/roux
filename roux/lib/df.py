@@ -1,4 +1,4 @@
-"""For processing individual pandas DataFrames/Series"""
+"""For processing individual pandas DataFrames/Series. Ideal for piped operations."""
 ## logging
 import logging
 ## data
@@ -47,8 +47,18 @@ def get_name(
     if out=='list':
         if isinstance(name,str):
             name=[name]
+    elif out==False:
+        logging.info(name)
+        return df1
     return name
-            
+
+@to_rd            
+def log_name(
+    df1: pd.DataFrame,
+    **kws_get_name,
+    ): 
+    return get_name(df1,out=False,**kws_get_name)
+
 @to_rd            
 def get_groupby_columns(df_): 
     """Get the columns supplied to `groupby`.
@@ -682,7 +692,8 @@ def assert_1_1_mappings(
                    subset=subset,
                   )
     assert all(df1['mapping']=="1:1"), df1.columns
-    
+    return df
+
 @to_rd
 def get_mappings(
     df1: pd.DataFrame,
@@ -997,6 +1008,81 @@ def melt_paired(
             df2=df2.drop([f"{c} {s}" for c,s in itertools.product(cols_value,suffixes)],axis=1)
         assert len(df2)==len(df)*len(cols_value)
         return df2
+    
+## helper to get_bins
+def get_bin_labels(
+    bins: list,
+    dtype: str = 'int', # todo: detect
+    ):
+    df_=(pd.DataFrame(
+        dict(
+            start=bins,
+            end=pd.Series(bins).shift(-1),
+        )
+        )
+        .dropna()
+        .astype(dtype)
+        .assign(
+            label=lambda df: df.apply(
+                lambda x: 
+                x['end'] if x['end']-x['start']==1 else f"({x['start']},{x['end']}]",
+                axis=1)
+        )
+    )
+    ## first bin
+    x=df_.iloc[0,:]
+    if (x['end']-x['start'])>1:
+        df_.loc[x.name,'label']=f"$\leq${x['end']}" ## right-inclusive (])
+    ## last bin
+    x=df_.iloc[-1,:]
+    if (x['end']-x['start'])>1:
+        df_.loc[x.name,'label']=f"$>${x['start']}" ## left-inclusive (()
+    return df_['label'].tolist()
+
+@to_rd
+def get_bins(
+    df: pd.DataFrame,
+    col: str,
+    bins: list,
+    dtype: str ='int', #dtype of bins
+    labels: list=None,
+    **kws_cut
+    ):
+    if labels is None:
+        if df[col].dtype=='int' or dtype=='int':
+            labels=get_bin_labels(
+                        bins=bins,
+                        # dtype='int',
+                    )
+    return df.assign(
+        **{f"{col} bin":lambda df: 
+            pd.cut(
+                df[col],
+                bins=bins,
+                labels=labels,
+                **kws_cut
+            ),
+          },
+    )
+
+@to_rd
+def get_qbins(
+    df: pd.DataFrame,
+    col: str,
+    bins: list,
+    labels: list=None,
+    **kws_qcut
+    ):
+    return df.assign(
+        **{f"{col} bin":lambda df: 
+            pd.qcut(
+                df[col],
+                q=bins,
+                labels=labels,
+                **kws_qcut
+            ),
+          },
+    )
 
 @to_rd
 def get_chunks(

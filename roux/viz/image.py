@@ -3,6 +3,7 @@
 import matplotlib.pyplot as plt
 from os.path import splitext
 
+## subplot
 def plot_image(
     imp: str,
     ax: plt.Axes=None,
@@ -44,3 +45,26 @@ def plot_image(
     if not axes:
         ax.axis('off')
     return ax 
+
+## figure
+def plot_images(
+    image_paths,
+    ncols=3,
+    title_func=None,
+    size=3,
+    ):
+    import matplotlib.image as mpimg
+    nrows = (len(image_paths) + ncols - 1) // ncols
+    fig, axes = plt.subplots(nrows=nrows, ncols=ncols, figsize=(size*ncols, size*nrows))
+    for i,(ax, path) in enumerate(zip(axes.flat, image_paths)):
+        if path is not None:
+            img = mpimg.imread(path)
+            ax.imshow(img)
+            ax.axis('off')  # Hide axis
+            if not title_func is None:
+                ax.set_title(label=title_func(path),ha='left')
+    for ax in axes.flat[i+1:]:
+        ax.remove()       
+        # fig.delaxes(ax)
+    plt.tight_layout()
+    return fig

@@ -227,7 +227,7 @@ def get_cols_x_for_comparison(
             if verbose:logging.info(ds2_)
     
     df1=df1.log.drop(labels=cols_drop,axis=1)
-    columns['cols_x']['cont']=list(sorted(set(columns['cols_x']['cont']) - set(cols_drop)))
+    columns['cols_x']['cont']=list(sorted(set(columns['cols_x']['cont']) - set(cols_drop)  - set(columns['cols_index'])))
         
     ## get descrete x columns
     ds2_=df1.nunique().sort_values()
@@ -238,7 +238,7 @@ def get_cols_x_for_comparison(
     l2=ds2_.loc[lambda x: (x==2)].index.tolist()
     if test: print('l2',l2)
     
-    columns['cols_x']['desc']=sorted(list(set(l1+l2) - set(columns['cols_y']['desc'])))   
+    columns['cols_x']['desc']=sorted(list(set(l1+l2) - set(columns['cols_y']['desc']) - set(columns['cols_index'])))
     return columns
 
 def to_preprocessed_data(

@@ -259,10 +259,10 @@ def get_stats(
 
     """
     dn2df={}
-    if subsets is None:
-        subsets=sorted(df1[colsubset].unique())
     for colvalue in cols_value:
         df1_=df1.dropna(subset=[colsubset,colvalue])
+        if subsets is None:
+            subsets=sorted(df1[colsubset].unique())
         if len(df1_[colsubset].unique())>1:
             dn2df[colvalue]=get_stat(df1_,
                           colsubset=colsubset,

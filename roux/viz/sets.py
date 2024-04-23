@@ -68,6 +68,7 @@ def plot_intersection_counts(
     cols: list=None,
     kind : str = 'table',
     method: str=None,#'chi2'|fe
+    show_counts: bool=True,
     show_pval: bool= True,
     confusion: bool=False,
     rename_cols: bool=False,
@@ -152,11 +153,12 @@ def plot_intersection_counts(
     elif kind=='bar':
         ax=dplot.plot.barh(stacked=True,ax=ax)
         ax.set(xlabel='count')
-        ## show counts
-        for pa,n in zip(ax.get_children()[:4],dplot.melt()['value'].tolist()):
-            bbox=pa.get_bbox() # left, bottom, width, height
-            x,y=np.mean([bbox.x0,bbox.x1]),np.mean([bbox.y0,bbox.y1])
-            ax.text(s=n,x=x,y=y,va='center',ha='center')  
+        if show_counts:
+            ## show counts
+            for pa,n in zip(ax.get_children()[:4],dplot.melt()['value'].tolist()):
+                bbox=pa.get_bbox() # left, bottom, width, height
+                x,y=np.mean([bbox.x0,bbox.x1]),np.mean([bbox.y0,bbox.y1])
+                ax.text(s=n,x=x,y=y,va='center',ha='center')  
         if 'loc' not in kws_show_stats:
             kws_show_stats['loc']='center'
     else:
