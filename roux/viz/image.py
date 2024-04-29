@@ -61,7 +61,7 @@ def plot_images(
             img = mpimg.imread(path)
             ax.imshow(img)
             ax.axis('off')  # Hide axis
-            if not title_func is None:
+            if title_func is not None:
                 ax.set_title(label=title_func(path),ha='left')
     for ax in axes.flat[i+1:]:
         ax.remove()       
