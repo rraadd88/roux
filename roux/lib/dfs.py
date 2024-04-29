@@ -159,6 +159,8 @@ def merge_paired(
         right_ons_common=[right_ons_common]
     if isinstance(common,str):
         common=[common]
+    if how!='inner':
+        logging.warning(f"how!='inner' ('{how}'), other types of merging are under development mode.")
         
     if isinstance(left_ons[0],list):
         logging.error('Merge `on` lists not supported. Suggestion: Use groupby on one of the `on` columns of the left dataframe.')

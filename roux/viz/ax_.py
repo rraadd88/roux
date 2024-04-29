@@ -140,6 +140,7 @@ def get_ax_labels(
 
 def format_labels(
     ax,
+    axes: list = ['x','y'],
     fmt='cap1',
     title_fontsize=15,
     rename_labels=None,
@@ -147,7 +148,7 @@ def format_labels(
     ):
     def cap1(s): 
         return s[0].upper()+s[1:]
-    for k in ['legend','xlabel','ylabel','title']: 
+    for k in ['legend']+[f'{k}label' for k in axes]+['title']:
         if k=='title':
             kws=dict(fontdict=dict(fontsize=title_fontsize))
         else:
@@ -841,4 +842,31 @@ def set_colorbar_label(
                 a.set_ylabel(label)
                 break
     return ax
+
+## meta
+def format_ax(
+    ax=None,
+    kws_fmt_ticklabels={},
+    kws_fmt_labels={},
+    ):
+    if ax is None:
+         ax=plt.gca()
     
+    format_ticklabels(
+        ax,
+        **kws_fmt_ticklabels,
+    )
+    format_labels(
+        ax,
+        **kws_fmt_labels,
+        # fmt='cap1',
+        # title_fontsize=15,
+        # rename_labels=None,
+        # test=False,
+    )
+    try:
+        import seaborn as sns
+        sns.despine(trim=False)
+    except ImportError:
+        logging.warning('Optional dependency seaborn missing, install by running: pip install roux[viz]')    
+    return ax

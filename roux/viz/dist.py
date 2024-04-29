@@ -293,49 +293,50 @@ def plot_dists(
         hue_order=df1[hue].unique().tolist()
         
     ## get stats
-    if (hue is None) and (isinstance(show_p,bool) and show_p):
-        from roux.stat.diff import get_stats
-        df2=get_stats(df1,
-                colindex=colindex,
-                colsubset=y_stat,
-                cols_value=[x_stat],
-                subsets=order,
-                # alpha=0.05
-                axis=0,
-                **kws_stats,
-                )
-        if df2 is None:
-            logging.error("get_stats failed.")
-            d1={}
-        else:
-            df2=df2.reset_index()
+    if show_p:
+        if (hue is None) and (isinstance(show_p,bool)):
+            from roux.stat.diff import get_stats
+            df2=get_stats(df1,
+                    colindex=colindex,
+                    colsubset=y_stat,
+                    cols_value=[x_stat],
+                    subsets=order,
+                    # alpha=0.05
+                    axis=0,
+                    **kws_stats,
+                    )
+            if df2 is None:
+                logging.error("get_stats failed.")
+                d1={}
+            else:
+                df2=df2.reset_index()
+                # df1=df1.rd.renameby_replace({f"{} ":''})
+                df2=df2.loc[(df2['subset1']==order[0]),:]
+                # print(df2)
+                d1=df2.rd.to_dict(['subset2','P (MWU test)'])
+        elif (hue is not None) and (isinstance(show_p,bool)):
+            from roux.stat.diff import get_stats_groupby
+            df2=get_stats_groupby(
+                    df1.loc[df1[hue].isin(hue_order),:],
+                    cols_group=[y],
+                    colsubset=hue,
+                    cols_value=[x],
+                    colindex=colindex,
+                    alpha=0.05,
+                    axis=0,
+                    **kws_stats,
+                    ).reset_index()
             # df1=df1.rd.renameby_replace({f"{} ":''})
-            df2=df2.loc[(df2['subset1']==order[0]),:]
-            # print(df2)
-            d1=df2.rd.to_dict(['subset2','P (MWU test)'])
-    elif (hue is not None) and (isinstance(show_p,bool) and show_p):
-        from roux.stat.diff import get_stats_groupby
-        df2=get_stats_groupby(
-                df1.loc[df1[hue].isin(hue_order),:],
-                cols_group=[y],
-                colsubset=hue,
-                cols_value=[x],
-                colindex=colindex,
-                alpha=0.05,
-                axis=0,
-                **kws_stats,
-                ).reset_index()
-        # df1=df1.rd.renameby_replace({f"{} ":''})
-        # df2=df2.loc[(df2['subset1']==hue_order[1]),:]
-        # d1=df2.rd.to_dict([y,'P (MWU test)'])
-        d1=df2.set_index(y)['P (MWU test)'].to_dict()
-        if test:
-            logging.info(d1)
-    # print(df2.set_index(['subset1','subset2']).T)
-    ## stats printing
-    stats=df2.set_index(['subset1','subset2']).rd.dropby_patterns(['median ','mean ','var ','variable'],verbose=False)
-    logging.info(stats)
-    del stats
+            # df2=df2.loc[(df2['subset1']==hue_order[1]),:]
+            # d1=df2.rd.to_dict([y,'P (MWU test)'])
+            d1=df2.set_index(y)['P (MWU test)'].to_dict()
+            if test:
+                logging.info(d1)
+        # print(df2.set_index(['subset1','subset2']).T)
+        ## stats printing
+        stats=df2.set_index(['subset1','subset2']).rd.dropby_patterns(['median ','mean ','var ','variable'],verbose=False)
+        logging.info(stats)
+        del stats
     ## axes
     if ax is None:
         ax=plt.gca()
@@ -386,10 +387,12 @@ def plot_dists(
                              linebreak=False,
                             ) for k in d1}
         else:
-            d1=show_p
+        #     d1=show_p
+            d1={}
         if offs_pval is None:
             offs_pval={}
         offs_pval={**{'x':0,'y':0},**offs_pval}
+
         if hue is None and len(d1)==1:
             offs_pval[axis_desc]+=-0.5
         if test:logging.info(offs_pval)
@@ -432,11 +435,11 @@ def plot_dists(
     if hue is not None:
         o1=ax.legend(
             loc='upper left', 
-            bbox_to_anchor=(1, 0),
-            frameon=True,
+            bbox_to_anchor=(1, 1),
+            # frameon=True,
             title=hue,
             )
-        o1.get_frame().set_edgecolor((0.95,0.95,0.95))
+        # o1.get_frame().set_edgecolor((0.95,0.95,0.95))
     if show_outlines:
         column_outlines=show_outlines
         ## get jitter positions and plot outlines
