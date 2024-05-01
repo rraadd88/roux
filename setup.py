@@ -65,7 +65,7 @@ requirements = {
     'jupyter','ipywidgets','ipykernel',
     # 'sphinx','recommonmark',
     'black',
-    'coveralls == 3.*',
+    'coveralls >= 3,< 5',
     'flake8',
     'isort',
     'pytest-cov >= 2,< 6',
