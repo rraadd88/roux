@@ -117,12 +117,13 @@ def tuple2str(tup,sep=' '):
 #     import re
 #     return re.sub('\W+','', s.lower()).replace('_','')
 
-def linebreaker(text, 
-                width=None,
-                break_pt=None,
-                sep='\n',
-                **kws,
-               ):
+def linebreaker(
+    text, 
+    width=None,
+    break_pt=None,
+    sep='\n',
+    **kws,
+    ):
     """Insert `newline`s within a string. 
     
     Parameters:

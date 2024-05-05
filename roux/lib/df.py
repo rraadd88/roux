@@ -582,6 +582,40 @@ def assert_dense(
     assert validate_dense(df01,subset=subset,duplicates=duplicates,na=na,message=message), "Duplicates or missing values or both found in the table."
     return df01
 
+## counts
+@to_rd
+def assert_len(
+    df: pd.DataFrame,
+    count: int,
+    ) -> pd.DataFrame:
+    """Validate length in pipe'd operations.
+    
+    Example:
+        (
+            df
+            .rd.assert_len(10)
+        )
+    """
+    assert len(df)==count, len(df)
+    return df
+
+@to_rd
+def assert_nunique(
+    df: pd.DataFrame,
+    col: str,
+    count: int,
+    ) -> pd.DataFrame:
+    """Validate unique counts in pipe'd operations.
+    
+    Example:
+        (
+            df
+            .rd.assert_nunique('id',10)
+        )
+    """
+    assert df[col].nunique()==count, df[col].nunique()
+    return df
+
 ## mappings
 def _post_classify_mappings(
     df1: pd.DataFrame,
@@ -905,28 +939,32 @@ def to_dict(
 del to_dict
 
 ## conversion
-@to_rd
-def get_bools(df,cols,drop=False):
-    """Columns to bools. One-hot-encoder (`get_dummies`).
+## deprecated: use pd.get_dummies(.. columns=)
+# @to_rd
+# def get_bools(df,cols,drop=False):
+#     """Columns to bools. One-hot-encoder (`get_dummies`).
     
-    Parameters:
-        df (DataFrame): input dataframe. 
-        cols (list): columns to encode.
-        drop (bool): drop the `cols` (False).
+#     Parameters:
+#         df (DataFrame): input dataframe. 
+#         cols (list): columns to encode.
+#         drop (bool): drop the `cols` (False).
     
-    Returns: 
-        df (DataFrame): output dataframe.
-    """
-    for c in cols:
-        df_=pd.get_dummies(df[c],
-                                  prefix=c,
-                                  prefix_sep=": ",
-                                  dummy_na=False)
-        df_=df_.replace(1,True).replace(0,False)
-        df=df.join(df_)
-        if drop:
-            df=df.drop([c],axis=1)
-    return df
+#     Returns: 
+#         df (DataFrame): output dataframe.
+#     """
+#     df=df.reset_index(drop=True) # because .join later
+#     for c in cols:
+#         df_=pd.get_dummies(
+#             df[c],
+#               prefix=c,
+#               prefix_sep=": ",
+#               dummy_na=False,
+#         )
+#         df_=df_.replace(1,True).replace(0,False)
+#         df=df.join(df_)
+#         if drop:
+#             df=df.drop([c],axis=1)
+#     return df
 
 @to_rd
 def agg_bools(df1,cols):
@@ -1698,8 +1736,24 @@ def dict2df(d,colkey='key',colvalue='value'):
     if not isinstance(list(d.values())[0],list):
         return pd.DataFrame({colkey:d.keys(), colvalue:d.values()})
     else:
-        return pd.DataFrame(pd.concat({k:pd.Series(d[k]) for k in d})).droplevel(1).reset_index().rename(columns={'index':colkey,0:colvalue},
-                                                                                                        errors='raise')
+        return (pd.DataFrame(
+                    pd.concat(
+                        {k:pd.Series(d[k]) for k in d}
+                    )
+                    )
+                .droplevel(1).reset_index()
+                .rename(
+                    columns={
+                    'index':colkey,
+                    0:colvalue
+                    },
+                    errors='raise',
+                )
+               )
+
+
+
+## log 
 def log_shape_change(d1,fun=''):
     """Report the changes in the shapes of a DataFrame.
 
@@ -1715,7 +1769,7 @@ def log_shape_change(d1,fun=''):
             logging.info(f"{prefix}shape changed: {d1['from']}->{d1['to']}, width constant")        
         else:
             logging.info(f"{prefix}shape changed: {d1['from']}->{d1['to']}")
-## log
+
 def log_apply(df, fun, 
               validate_equal_length=False,
               validate_equal_width=False,

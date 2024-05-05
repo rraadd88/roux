@@ -109,7 +109,10 @@ def drop_low_complexity(
     df_=pd.concat([df1.rd.check_nunique(cols),df1.rd.check_inflation(cols)],axis=1,)
     df_.columns=['nunique','% inflation']
     if verbose:
-        logging.info(df_)
+        logging.info(df_.sort_values(
+            ["nunique","% inflation"],
+            ascending=[True,False],
+            ))
     df_=df_.sort_values(df_.columns.tolist(),ascending=False)
     df1_=df_.loc[((df_['nunique']<min_nunique) | (df_['% inflation']>=max_inflation)),:]
     l1=df1_.index.tolist()
@@ -210,10 +213,11 @@ def get_cols_x_for_comparison(
                 coff_pval=0.05,
             )
             if ds1_ is not None:
-                if verbose:logging.info(f"Minimum correlation among group of variables: {ds1_.to_dict()}")
+                if verbose:logging.info(f"Minimum correlation among group of variables: {ds1_}")
                 from roux.lib.set import flatten,unique
                 cols_drop+=unique(flatten([s.split('--') for s in ds1_.index.tolist()]))
                 if verbose:logging.info(f"Columns to be dropped: {cols_drop}")
+                
     if dropby_variance_inflation: 
         logging.info("[3] Checking variance inflation..")
         vifs={}
@@ -230,6 +234,7 @@ def get_cols_x_for_comparison(
     columns['cols_x']['cont']=list(sorted(set(columns['cols_x']['cont']) - set(cols_drop)  - set(columns['cols_index'])))
         
     ## get descrete x columns
+    ## bools
     ds2_=df1.nunique().sort_values()
     l1=ds2_.loc[lambda x: (x==2)].index.tolist()
     if test: print('l1',l1)

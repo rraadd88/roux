@@ -116,7 +116,7 @@ def annot_side(
         df1.apply(lambda x: ax.text(
             (x3 if loc!='top' else x['y'])+text_offx,
             (x['y'] if loc!='top' else x3)+text_offy,
-            linebreaker(x[cols],break_pt=break_pt,),
+            x[cols] if break_pt is None else linebreaker(x[cols],break_pt=break_pt,),
             va=va,
             color='k' if hue is None else x[hue] if hue in x else hue, ## prefer if column is present
             # **{k:v for k,v in kws_text.items() if not (k==color and not hue is None)},

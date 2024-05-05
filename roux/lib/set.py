@@ -58,12 +58,13 @@ def check_non_overlaps_with(
     l1: list,
     l2: list,
     out_count: bool=False,
-    log=False,
+    log=True,
     ):
     l_=set(l1) - set(l2)
     if log:
-        return f"{len(l_)} non overlapping items found {l_}"
-    elif not out_count:
+        from roux.stat.io import perc_label
+        logging.info(f"{perc_label(len(l_),len(set(l1)))} non overlapping items found in l1: {l_}")
+    if not out_count:
         return l_
     else: 
         return len(l_)
