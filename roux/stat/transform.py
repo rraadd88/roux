@@ -125,7 +125,8 @@ def rescale(a: np.array, range1: tuple=None, range2: tuple=[0,1]) -> np.array:
 def rescale_divergent(
     df1: pd.DataFrame,
     col: str,
-#                       rank=True,
+    col_sign: str = None,
+    # rank=True,
     ) -> pd.DataFrame:
     """Rescale divergently i.e. two-sided.
 
@@ -139,17 +140,21 @@ def rescale_divergent(
     Notes:
         Under development.
     """
-    def apply_(df2,
-#                sign=None,
-              ):
+    def apply_(
+        df2,
+        ):
         sign=df2.name
-#         from roux.stat.transform import rescale
         df2[f'{col} rescaled']=rescale(df2[col],range2=[1, 0] if sign=='+' else [0,-1])
         df2[f'{col} rank']=df2[col].rank(ascending=True if sign=='+' else False)*(1 if sign=='+' else -1)
         return df2
-    assert(not any(df1[col]==0))
-    df1.loc[df1[col]<0,f'{col} sign']='-'
-    df1.loc[df1[col]>0,f'{col} sign']='+'
-#     return pd.concat({k:apply_(df1.loc[(df1[f'{col} sign']==k),:],k) for k in df1[f'{col} sign'].unique()},
-#                     axis=0)
-    return df1.groupby([f'{col} sign']).apply(lambda df: apply_(df))
+    if col_sign is None:
+        col_sign=f'{col} sign'
+    return (
+        df1
+            .assign(
+            **{
+                col_sign: lambda df: df[col].apply(lambda x: '+' if x>0 else '-' if x<0 else np.nan)
+            }
+            )
+            .groupby([col_sign]).apply(lambda df: apply_(df))
+        )

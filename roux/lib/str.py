@@ -71,12 +71,14 @@ def filter_list(
     Returns:
         (list) list of filtered strings.
     """
+    if isinstance(patterns, str):
+        patterns=[patterns]
     filtered_lines=[]
     for line in l:
         include=(kind=='out')
         for p in patterns:
             if re.compile(p).match(line.strip()):
-                include=(kind!='out')
+                include=(not include)
                 break
         if include:
             filtered_lines.append(line)
