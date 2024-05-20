@@ -628,7 +628,7 @@ def _post_classify_mappings(
         if df1['mapping'].nunique()!=1:
             # multiple classes
             from roux.lib.set import validate_overlaps_with
-            if validate_overlaps_with(df1['mapping'].unique(),['m:m','1:m','m:1']):
+            if validate_overlaps_with(df1['mapping'].unique(),['m:m','1:m','m:1'],log=False):
                 df1['mapping']='m:m'
             else:
                 print(set(df1['mapping'].unique()) & set(['m:m','m:1']))
@@ -707,7 +707,8 @@ def check_mappings(
     if out: 
         return df1
     else:
-        return logging.info(f"mappings: {df1.to_string()}")
+        logging.info(f"mappings: {df1.to_string()}")
+        return df
     
 @to_rd        
 def assert_1_1_mappings(
@@ -1827,20 +1828,23 @@ class log:
         self,
         subset=None,
         groupby=None,
-        suffix=None,
+        label="", 
+        suffix=None, # to be deprecated in the future
         **kws_check_nunique,
         ):
+        if not suffix is None:
+            logging.warning("please use label= instead of suffix= in the future.")
+            label=suffix
         if subset is not None:
-            suffix=self._obj.rd.check_nunique(
+            suffix_=self._obj.rd.check_nunique(
                 subset=subset,
                 groupby=groupby,
                 out=False,
                 log=False,
                 **kws_check_nunique,            
                 )
-        elif suffix is None:
-            suffix=""
-        logging.info(f"shape = {self._obj.shape} {suffix}")
+            label=f"{suffix_} {label}"
+        logging.info(f"shape = {self._obj.shape} {label}")
         return self._obj
     def dropna(self,**kws):
         from roux.lib.df import log_apply

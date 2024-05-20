@@ -69,8 +69,12 @@ def check_non_overlaps_with(
     else: 
         return len(l_)
 
-def validate_overlaps_with(l1,l2):
-    return len(check_non_overlaps_with(l1,l2))==0
+def validate_overlaps_with(
+    l1,
+    l2,
+    **kws_check
+    ):
+    return len(check_non_overlaps_with(l1,l2,**kws_check))==0
     
 def assert_overlaps_with(l1,l2,out_count=False):
     assert validate_overlaps_with(l1,l2), f'Non-ovelapping item/s: {check_non_overlaps_with(l1,l2,out_count=out_count)}'    
