@@ -1832,7 +1832,7 @@ class log:
         suffix=None, # to be deprecated in the future
         **kws_check_nunique,
         ):
-        if not suffix is None:
+        if suffix is not None:
             logging.warning("please use label= instead of suffix= in the future.")
             label=suffix
         if subset is not None:
