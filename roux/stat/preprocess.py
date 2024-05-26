@@ -170,10 +170,16 @@ def get_cols_x_for_comparison(
         df1
         .drop(cols_drop,axis=1)
         .rd.dropby_patterns(cols_dropby_patterns)
+        .log(label='all na')
         .log.dropna(how='all',axis=1)
-        ## drop single value columns
-        .rd.drop_constants()
     )
+    if dropby_low_complexity:
+        df1=(
+            df1
+            .log(label='constants')
+            ## drop single value columns
+            .rd.drop_constants()
+        )
     ## columns to drop after identifying them
     cols_drop=[]
     ## make the dictionary with column names

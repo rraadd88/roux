@@ -277,6 +277,7 @@ def get_pos_umap(
         import umap
     except ImportError:
         logging.error('umap package not installed. Installation command: pip install umap-learn')
+        return
     
     reducer = umap.UMAP(spread=spread,*kws)
     embedding = reducer.fit_transform(df1)
@@ -285,6 +286,7 @@ def get_pos_umap(
             embedding[:, 0],
             embedding[:, 1],
             c=['r' if k in s else 'k' for s in df1.index.get_level_values(0)],
+            alpha=0.1,
         )
         plt.gca().set_aspect('equal', 'datalim')
     df2=pd.DataFrame(embedding,

@@ -1,4 +1,4 @@
-"""For processing individual pandas DataFrames/Series. Ideal for piped operations."""
+"""For processing individual pandas DataFrames/Series. Mainly used in piped operations."""
 ## logging
 import logging
 ## data

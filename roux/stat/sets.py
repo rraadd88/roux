@@ -259,7 +259,7 @@ def get_enrichment(
         },
         ))))
     ).reset_index()
-    if 'hypergeom' in test_type or test_type is None:
+    if 'hypergeom' in test_type:
         df_=(df1
             .groupby(by=coltest) # iterate over the groups of items to test
             .apply(lambda df1_: (df2.groupby(colset) # iterate over the groups of item sets
@@ -273,8 +273,14 @@ def get_enrichment(
             ))))
         ).reset_index().rd.clean()
         ## concat with the output
-        df3=pd.concat([df3,df_],axis=1)
-    if 'Fisher' in test_type or test_type is None:
+        # df3=pd.concat([df3,df_],axis=1)
+        df3=df3.merge(
+            right=df_,
+            how='outer',
+            on=[coltest,colset],
+            validate="1:1",
+            )
+    if 'Fisher' in test_type:
         df_=(df1
             .groupby(by=coltest) # iterate over the groups of items to test
             .apply(lambda df1_: (df2.groupby(colset) # iterate over the groups of item sets
@@ -289,7 +295,13 @@ def get_enrichment(
             ))))
         ).reset_index().rd.clean()
         ## concat with the output
-        df3=pd.concat([df3,df_],axis=1)
+        # df3=pd.concat([df3,df_],axis=1)
+        df3=df3.merge(
+            right=df_,
+            how='outer',
+            on=[coltest,colset],
+            validate="1:1",
+            )
     
     def get_qs(df):
         from roux.stat.transform import get_q

@@ -154,7 +154,7 @@ def to_version(
     p: str,
     outd: str=None,
     test: bool=False,
-    name: str=None,
+    label: str="",
     **kws: dict,
     ) -> str:
     """Rename a file/directory to a version.
@@ -176,13 +176,21 @@ def to_version(
     if outd is None:
         outd=f"{dirname(p)}{'/' if dirname(p)!='' else ''}"
     if isdir(p):
-        outp=f"{outd}/.{get_version(basename(p)+' '+name,**kws)}"
+        outp=f"{outd}/.{get_version(basename(p)+' '+label,**kws)}"
     else:
-        outp=f"{outd}/.{get_version(basenamenoext(p)+' '+name,**kws)}{splitext(p)[1]}"    
+        outp=f"{outd}/.{get_version(basenamenoext(p)+' '+label,**kws)}{splitext(p)[1]}"    
     outp=to_path(outp)
     logging.info(f"-->{outp}")
     if not test:
         shutil.move(p,outp)
+        to_dict(
+            dict(
+            src=p,
+            dst=outp,
+            ),
+            outp+'/.params.json',
+        )
+        
     else:
         logging.warning('test mode.')
     return outp
@@ -352,7 +360,7 @@ def read_dict(
         d (dict): output dictionary.
     """
     assert isinstance(p,(str,list)), p
-    if '*' in p:
+    if '*' in p or isinstance(p,list):
         d1={p:read_dict(p) for p in read_ps(p)}
         if apply_on_keys is not None:
             assert len(set([replace_many(k, replaces=apply_on_keys, replacewith='', ignore=False) for k in d1])) == len(d1.keys()), "apply_on_keys(keys)!=keys"
@@ -532,6 +540,9 @@ def read_table(
         if check_paths and isdir(splitext(p)[0]):
             # if len(read_ps(f"{splitext(p)[0]}/*{splitext(p)[1]}",test=False))>0:
             df_=read_table(p,check_paths=False)
+            if df_.empty==True:
+                logging.warning("empty table found")
+                return df_
             if df_.columns.tolist()[-1]=='path':
                 logging.info(f"paths read {len(df_['path'].tolist())}paths from the file")
                 ps=df_['path'].tolist()

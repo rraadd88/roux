@@ -150,7 +150,8 @@ def run_tasks(
         ## TODO: use `to_outp`?
         parameters_list=[d for d in parameters_list if (force if force else not exists(d['output_path']))]
         if not force:
-            logging.info(f"parameters_list reduced because force=False: {before} -> {len(parameters_list)}")
+            if before-len(parameters_list) != 0:
+                logging.info(f"parameters_list reduced because force=False: {before} -> {len(parameters_list)}")
             if len(parameters_list)==0:
                 return parameters_list
     else:
