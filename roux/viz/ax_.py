@@ -287,7 +287,7 @@ def format_ticklabels(
             getattr(ax,axis+'axis').set_major_locator(plt.MaxNLocator(n[axis]))
         elif interval is not None:
             getattr(ax,axis+'axis').set_major_locator(plt.MultipleLocator(interval))
-        if fmt[axis] is not None:
+        if fmt is not None:
             if fmt[axis]=='counts':
                 max_val = getattr(ax,f'get_{axis}lim')()[1]
                 if max_val <= 10:
@@ -650,7 +650,7 @@ def format_legends(
     return ax.legend(
         handles=handles,
         labels=labels,
-        title=ax.get_legend().get_title().get_text().capitalize(),
+        title=ax.get_legend().get_title().get_text().capitalize() if ax.get_legend() is not None else None,
         **kws_legend,
     )
 

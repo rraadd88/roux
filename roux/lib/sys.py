@@ -26,26 +26,27 @@ def basenamenoext(p):
 
 def remove_exts(
     p: str,
-    exts: tuple= None,
     ):
     """Filename without the extension.
 
     Args:
         p (str): path.
-        exts (tuple): extensions.
 
     Returns:
         s (str): output.
     """
-    if not isinstance(p,str):
-        p=str(p)
-    if exts is None:
-        exts=Path(p).suffixes
-    if isinstance(exts,(list,tuple)):
-        e=''.join(Path(p).suffixes)
-    if p.endswith(e):
-        p=p[:-len(e)]
-    return p
+    # if not isinstance(p,str):
+    #     p=str(p)
+    # if exts is None:
+    #     exts=Path(Path(p).name).suffixes
+    # if isinstance(exts,(list,tuple)):
+    #     e=''.join(Path(p).suffixes)
+    # if p.endswith(e):
+    #     p=p[:-len(e)]
+    # return p
+    while '.' in Path(p).name:
+        p=Path(p).with_suffix('')
+    return p 
 
 def read_ps(
     ps,
