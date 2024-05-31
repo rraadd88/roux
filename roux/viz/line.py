@@ -57,7 +57,54 @@ def plot_range(
                    )
     ax.axis(False)
     return ax
-    
+
+def plot_bezier(
+    pt1,
+    pt2,
+    pt1_guide=None,
+    pt2_guide=None,
+    direction='h',
+    ax=None,
+    test=False,
+    **kws_line,
+    ):
+    from matplotlib.path import Path
+    import matplotlib.patches as patches    
+    if test:
+        print(pt1,pt2)
+    if direction=='h':
+        assert pt1[0]<pt2[0], (pt1[0],pt2[0])
+        xoff=abs(pt1[0]-pt2[0])*0.25
+        if pt1_guide is None:
+            pt1_guide=[pt1[0]+xoff,pt1[1]]
+        if pt2_guide is None:
+            pt2_guide=[pt2[0]-xoff,pt2[1]]
+    # Create the Path object using the control points
+    vertices = [pt1, pt1_guide, pt2_guide, pt2]
+    codes = [Path.MOVETO, Path.CURVE4, Path.CURVE4, Path.CURVE4]
+
+    path = Path(vertices, codes)
+
+    # Create a patch from the path
+    patch = patches.PathPatch(
+        path,
+        # facecolor='none',
+        # edgecolor='blue',
+        # lw=2,
+        fc='none',
+        **kws_line,
+    )
+
+    # Plot the path
+    if ax is None:
+        ax=plt.gca()
+    ax.add_patch(patch)
+    if test:
+        # Plot control points
+        control_points = np.array([pt1, pt1_guide, pt2_guide, pt2])
+        ax.plot(control_points[:, 0], control_points[:, 1], 'ro--',)
+    return ax
+
 def plot_connections(
     dplot: pd.DataFrame,
     label2xy: dict,

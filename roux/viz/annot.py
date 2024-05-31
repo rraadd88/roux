@@ -66,6 +66,9 @@ def annot_side(
     if len(df1)==0: 
         logging.warning("annot_side: no data found")
         return
+    assert colx!='x', colx
+    assert coly!='y', coly
+    assert cols!='s', cols
     if isinstance(colx,float):
         df1['colx']=colx
         colx='colx'
@@ -92,6 +95,7 @@ def annot_side(
             [x[coly],x['y']] if loc!='top' else [x[coly], x2],
             color=color,
             zorder=zorder-1,
+            clip_on = False,
             **kws_line,
             ),
             axis=1)
@@ -114,7 +118,7 @@ def annot_side(
         else:
             kws_text['ha']='left'
         df1.apply(lambda x: ax.text(
-            (x3 if loc!='top' else x['y'])+text_offx,
+            (x3 if loc!='top' else x['y'])+text_offx*(1 if loc=='right' else -1),
             (x['y'] if loc!='top' else x3)+text_offy,
             x[cols] if break_pt is None else linebreaker(x[cols],break_pt=break_pt,),
             va=va,
@@ -126,19 +130,25 @@ def annot_side(
     # line #2
     if lines:
         if loc!='top':
-            df1.apply(lambda x:ax.axhline(y = x['y'], 
-                                         xmin=0 if loc=='left' else 1,
-                                         xmax=0-(length_axhline-1)-offx3 if loc=='left' else length_axhline+offx3,
-                                                 clip_on = False,color=color,zorder=zorder-1,
-                                          **kws_line,
-                                        ),axis=1)
+            df1.apply(lambda x:ax.axhline(
+                y = x['y'], 
+                xmin=0 if loc=='left' else 1,
+                xmax=0-(length_axhline-1)-offx3 if loc=='left' else length_axhline+offx3,
+                clip_on = False,color=color,zorder=zorder-1,
+                **kws_line,
+                ),
+              axis=1,
+             )
         else:
-            df1.apply(lambda x:ax.axvline(x = x['y'], 
-                                         ymin=0 if loc=='left' else 1,
-                                         ymax=0-(length_axhline-1)-offx3 if loc=='left' else length_axhline+offx3,
-                                                 clip_on = False,color=color,zorder=zorder-1,
-                                          **kws_line,
-                                        ),axis=1)
+            df1.apply(lambda x:ax.axvline(
+                x = x['y'], 
+                ymin=0 if loc=='left' else 1,
+                ymax=0-(length_axhline-1)-offx3 if loc=='left' else length_axhline+offx3,
+                clip_on = False,color=color,zorder=zorder-1,
+                **kws_line,
+                ),
+              axis=1,
+             )
     if loc=='left':
         ax.yaxis.tick_right()
         ax.yaxis.set_label_position("right")
@@ -147,6 +157,77 @@ def annot_side(
             )
     return ax
 
+def annot_side_curved(
+    data,
+    colx: str,
+    coly: str,
+    col_label: str,
+    x: float,
+    ylim: tuple,
+    test: bool=False,
+    ax=None,
+    **kws_line,
+    ):
+    if ax is None:
+        ax=plt.gca()
+    if test:
+        ## labels
+        ax=sns.scatterplot(data=data,x='sepal_length',y='petal_width',ax=ax)
+
+    ## sorted labels
+    data1=(data
+        .sort_values(coly)
+        .loc[:,[col_label]]
+        .drop_duplicates()
+        .assign(
+            y=lambda df: np.linspace(
+                *ylim,
+                len(df),
+            ),
+            x=lambda df: np.repeat(x,len(df)),
+        )
+    )
+    data1.apply(lambda x: ax.text(
+        x['x'],x['y'],s=x[col_label],
+        ha='left',
+        va='center',
+        ),
+        axis=1,
+        )
+    ## lines
+    data2=data.merge(
+        right=data1,
+        how='inner',
+        on=col_label,
+        # validate="1:1"
+    )
+    lims=dict(
+        xlim=ax.get_xlim(),
+        ylim=ax.get_ylim(),
+        )
+    from roux.viz.line import plot_bezier
+    data2.apply(
+        lambda x: plot_bezier(
+            [x[colx],x[coly]],
+            [x['x'],x['y']],
+            ax=ax,
+            **{
+                **dict(
+                    clip_on=False,
+                    color='k',
+                ),
+                **kws_line,
+            },
+        ),
+        axis=1
+    )
+    ## resets ax lims
+    ax.set(
+        **lims
+    )
+    if test: 
+        print(data2)
+    return ax
 # scatters
 ## annotations
 def show_outlines(

@@ -144,6 +144,7 @@ def format_labels(
     fmt='cap1',
     title_fontsize=15,
     rename_labels=None,
+    rotate_ylabel=True,
     test=False,
     ):
     def cap1(s): 
@@ -173,6 +174,14 @@ def format_labels(
                     if label!='':                    
                         if fmt=='cap1':
                             getattr(ax,"set_"+k)(cap1(label),**kws)
+    if rotate_ylabel:
+        ax.set_ylabel(
+            ax.get_ylabel(),
+            ha='left',
+            y=1.1,
+            rotation=0,
+            labelpad=0,
+        )
     return ax
 
 ## ticklabels
@@ -244,46 +253,7 @@ def set_ticklabels_color(
             tick.set_color(ticklabel2color[tick.get_text()])
     return ax 
 
-def format_ticklabels(
-    ax: plt.Axes,
-    axes: tuple=['x','y'],
-    interval: float=None,
-    n: int=None,
-    fmt: str=None,
-    font: str=None,#'DejaVu Sans Mono',#"Monospace"
-    ) -> plt.Axes:
-    """format_ticklabels
 
-    Args:
-        ax (plt.Axes): `plt.Axes` object.
-        axes (tuple, optional): axes. Defaults to ['x','y'].
-        n (int, optional): number of ticks. Defaults to None.
-        fmt (str, optional): format e.g. '.0f'. Defaults to None.
-        font (str, optional): font. Defaults to 'DejaVu Sans Mono'.
-
-    Returns:
-        plt.Axes: `plt.Axes` object.
-        
-    TODOs: 
-        1. include color_ticklabels
-    """
-    if isinstance(n,int):
-        n={'x':n,
-           'y':n}
-    if isinstance(fmt,str):
-        fmt={'x':fmt,
-           'y':fmt}
-    for axis in axes:
-        if n is not None:        
-            getattr(ax,axis+'axis').set_major_locator(plt.MaxNLocator(n[axis]))
-        elif interval is not None:
-            getattr(ax,axis+'axis').set_major_locator(plt.MultipleLocator(2.5))
-        if fmt is not None:
-            getattr(ax,axis+'axis').set_major_formatter(plt.FormatStrFormatter(fmt[axis]))
-        if font is not None:
-            for tick in getattr(ax,f'get_{axis}ticklabels')():
-                tick.set_fontname(font)
-    return ax
 
 def split_ticklabels(
     ax: plt.Axes,
@@ -587,6 +557,37 @@ def set_grids(
     return ax
 
 # legends
+def format_legends(
+    ax: plt.Axes,
+    **kws_legend,
+    ) -> plt.Axes:
+    """Format legend text.
+
+    Args:
+        ax (plt.Axes): `plt.Axes` object.
+
+    Returns:
+        plt.Axes: `plt.Axes` object.
+    """
+    handles, labels = ax.get_legend_handles_labels()
+    labels=[str(s).capitalize() for s in labels]
+    kws_legend={
+        **dict(
+            borderpad=0,
+            handletextpad=0.1,
+            labelspacing = 0.01,
+            columnspacing=0.1,
+            handlelength=0.8,
+        ),
+        **kws_legend,
+    }
+    return ax.legend(
+        handles=handles,
+        labels=labels,
+        title=ax.get_legend().get_title().get_text().capitalize(),
+        **kws_legend,
+    )
+
 def rename_legends(
     ax: plt.Axes,
     replaces: dict,
@@ -607,9 +608,12 @@ def rename_legends(
         labels=[replaces[s] for s in labels]
     else:
         labels=[replacemany(s,replaces) for s in labels]
-    return ax.legend(handles=handles,labels=labels,
-                     title=ax.get_legend().get_title().get_text(),
-                     **kws_legend)
+    return ax.legend(
+        handles=handles,
+        labels=labels,
+        title=ax.get_legend().get_title().get_text(),
+        **kws_legend,
+    )
 
 def append_legends(
     ax: plt.Axes,
@@ -681,7 +685,10 @@ def reset_legend_colors(ax):
 #         lh._legmarker.set_alpha(1)
     return ax
 
-def set_legends_merged(axs):
+def set_legends_merged(
+    axs,
+    **kws_legend,
+    ):
     """Reset legend colors.
 
     Args:
@@ -695,8 +702,13 @@ def set_legends_merged(axs):
     df_['fc']=df_[1].apply(lambda x: x.get_fc())
     df_=df_.log.drop_duplicates(subset=[0,'fc'])
     if df_[0].duplicated().any(): logging.error("duplicate legend labels")
-    return axs[1].legend(handles=df_[1].tolist(), labels=df_[0].tolist(),
-                       bbox_to_anchor=[-0.2,0],loc=2,frameon=True).get_frame().set_edgecolor((0.95,0.95,0.95))
+    return axs[1].legend(
+        handles=df_[1].tolist(), 
+        labels=df_[0].tolist(),
+        **kws_legend
+        # bbox_to_anchor=[-0.2,0],loc=2,
+        # frameon=False,
+        )#.get_frame().set_edgecolor((0.95,0.95,0.95))
 
 def set_legend_custom(
     ax: plt.Axes,
@@ -709,7 +721,7 @@ def set_legend_custom(
     color: str='k',
     linestyle: str='',
     title_ha: str='center',
-    frameon: bool=True,
+    # frameon: bool=False,
     **kws
     ) -> plt.Axes:
     """Set custom legends.
@@ -757,10 +769,13 @@ def set_legend_custom(
                        lw=(lw if param!='lw' else legend2param[k]),
                        linestyle=legend2param[k] if param=='linestyle' else linestyle if param!='lw' else '-',
                       ) for k in legend2param]
-    o1=ax.legend(handles=legend_elements,frameon=frameon,
-              **kws)
-    o1._legend_box.align=title_ha
-    o1.get_frame().set_edgecolor((0.95,0.95,0.95))
+    o1=ax.legend(
+        handles=legend_elements,
+        # frameon=frameon,
+        **kws,
+    )
+    # o1._legend_box.align=title_ha
+    # o1.get_frame().set_edgecolor((0.95,0.95,0.95))
     return ax
 
 # line round
@@ -848,6 +863,7 @@ def format_ax(
     ax=None,
     kws_fmt_ticklabels={},
     kws_fmt_labels={},
+    kws_legend={},
     ):
     if ax is None:
          ax=plt.gca()
@@ -864,6 +880,10 @@ def format_ax(
         # rename_labels=None,
         # test=False,
     )
+    format_legends(
+        ax=ax,
+        **kws_legend,
+        )    
     try:
         import seaborn as sns
         sns.despine(trim=False)
