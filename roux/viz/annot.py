@@ -166,10 +166,18 @@ def annot_side_curved(
     ylim: tuple,
     test: bool=False,
     ax=None,
+    ha='left',
+    kws_text={},
     **kws_line,
     ):
     if ax is None:
         ax=plt.gca()
+    ## for resettings at the end
+    lims=dict(
+        xlim=ax.get_xlim(),
+        ylim=ax.get_ylim(),
+        )
+        
     if test:
         ## labels
         ax=sns.scatterplot(data=data,x='sepal_length',y='petal_width',ax=ax)
@@ -185,15 +193,24 @@ def annot_side_curved(
                 len(df),
             ),
             x=lambda df: np.repeat(x,len(df)),
+            x_text=lambda df: df.apply(
+                lambda x: 
+                    ax.text(
+                    x['x'],x['y'],
+                    s=x[col_label],
+                    ha=ha,
+                    **{
+                        **dict(
+                            va='center',
+                        ),
+                        **kws_text
+                    },
+                ).get_window_extent(renderer=plt.gcf().canvas.get_renderer()).transformed(ax.transData.inverted()).xmin,
+                axis=1,
+            ),
         )
     )
-    data1.apply(lambda x: ax.text(
-        x['x'],x['y'],s=x[col_label],
-        ha='left',
-        va='center',
-        ),
-        axis=1,
-        )
+    # return data1
     ## lines
     data2=data.merge(
         right=data1,
@@ -201,15 +218,11 @@ def annot_side_curved(
         on=col_label,
         # validate="1:1"
     )
-    lims=dict(
-        xlim=ax.get_xlim(),
-        ylim=ax.get_ylim(),
-        )
     from roux.viz.line import plot_bezier
     data2.apply(
         lambda x: plot_bezier(
             [x[colx],x[coly]],
-            [x['x'],x['y']],
+            [x['x_text'],x['y']],
             ax=ax,
             **{
                 **dict(

@@ -175,73 +175,6 @@ def plot_qq(
     ax=set_equallim(ax)
     return ax
 
-def format_ticklabels(
-    ax: plt.Axes,
-    axes: tuple=['x','y'],
-    interval: float=None,
-    n: int=None,
-    fmt: str=None,
-    font: str=None,#'DejaVu Sans Mono',#"Monospace"
-    ) -> plt.Axes:
-    """format_ticklabels
-
-    Args:
-        ax (plt.Axes): `plt.Axes` object.
-        axes (tuple, optional): axes. Defaults to ['x','y'].
-        n (int, optional): number of ticks. Defaults to None.
-        fmt (str, optional): format e.g. '.0f'. Defaults to None.
-        font (str, optional): font. Defaults to 'DejaVu Sans Mono'.
-
-    Returns:
-        plt.Axes: `plt.Axes` object.
-        
-    TODOs: 
-        1. include color_ticklabels
-    """
-    if isinstance(n,int):
-        n={'x':n,
-           'y':n}
-    if isinstance(fmt,str):
-        fmt={'x':fmt,
-           'y':fmt}
-    for axis in axes:
-        if n is not None:        
-            getattr(ax,axis+'axis').set_major_locator(plt.MaxNLocator(n[axis]))
-        elif interval is not None:
-            getattr(ax,axis+'axis').set_major_locator(plt.MultipleLocator(interval))
-            
-        if fmt[axis]=='counts':
-            max_val = getattr(ax,f'get_{axis}lim')()[1]
-            if max_val <= 10:
-                interval=1
-            elif max_val <= 100:
-                interval=10
-            elif max_val <= 1000:
-                interval=100
-            else:
-                interval=1000
-            
-            import matplotlib.ticker as ticker
-            locator = ticker.MultipleLocator(interval)
-            # locator
-            getattr(ax,f'{axis}axis').set_major_locator(locator)            
-            ## start with 1
-            ticks=getattr(ax,f'get_{axis}ticks')()
-            getattr(ax,f'set_{axis}ticks')(
-                np.where(ticks==0,1,ticks)
-            )
-            ## as integers
-            getattr(ax,axis+'axis').set_major_formatter(plt.FormatStrFormatter('%d'))
-            getattr(ax,f'set_{axis}lim')(1,max_val)
-            
-        elif fmt[axis] is not None:
-            getattr(ax,axis+'axis').set_major_formatter(plt.FormatStrFormatter(fmt[axis]))
-            
-        if font is not None:
-            for tick in getattr(ax,f'get_{axis}ticklabels')():
-                tick.set_fontname(font)
-    return ax
-
 def plot_ranks(
     df1: pd.DataFrame,
     col: str,
@@ -252,6 +185,7 @@ def plot_ranks(
     line: bool=True,
     kws_line={},
     show_topn: int= None,
+    show_ids:list=None,
     ax=None,
     **kws,
     ) -> plt.Axes:
@@ -313,26 +247,27 @@ def plot_ranks(
             label='_nolegend_',
         zorder=0,
         )
-    if isinstance(show_topn,int):
-        df3=df2.sort_values('rank',ascending=True).head(show_topn)
-    else: 
-        df3=df2.copy()
-    ax=sns.scatterplot(
-        data=df3,
-        ax=ax,
-        **cols,
-        **{
-            **dict(
-                fc='k',
-                alpha=0.5,
-                clip_on=False,
-            ),
-            **kws,
-        },
-        zorder=1,
-        ec='none',
-    )
-    # from roux.viz.ax_ import format_ticklabels
+    if show_ids is not None or isinstance(show_topn,int):
+        if isinstance(show_topn,int): 
+            df3=df2.sort_values('rank',ascending=True).head(show_topn)
+        elif show_ids is not None: 
+            df3=df2.query(expr=f"`{colid}`=={show_ids}")
+        ax=sns.scatterplot(
+            data=df3,
+            ax=ax,
+            **cols,
+            **{
+                **dict(
+                    fc='k',
+                    alpha=0.5,
+                    clip_on=False,
+                ),
+                **kws,
+            },
+            zorder=1,
+            ec='none',
+        )
+    from roux.viz.ax_ import format_ticklabels
     format_ticklabels(
         ax=ax,
         axes=[ranks_on],
@@ -340,7 +275,7 @@ def plot_ranks(
     )
     if ranks_on=='y':
         ax.invert_yaxis()
-    return ax
+    return ax,df2
 
 def plot_volcano(
     data: pd.DataFrame,

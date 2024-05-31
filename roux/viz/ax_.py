@@ -253,7 +253,73 @@ def set_ticklabels_color(
             tick.set_color(ticklabel2color[tick.get_text()])
     return ax 
 
+def format_ticklabels(
+    ax: plt.Axes,
+    axes: tuple=['x','y'],
+    interval: float=None,
+    n: int=None,
+    fmt: str=None,
+    font: str=None,#'DejaVu Sans Mono',#"Monospace"
+    ) -> plt.Axes:
+    """format_ticklabels
 
+    Args:
+        ax (plt.Axes): `plt.Axes` object.
+        axes (tuple, optional): axes. Defaults to ['x','y'].
+        n (int, optional): number of ticks. Defaults to None.
+        fmt (str, optional): format e.g. '.0f'. Defaults to None.
+        font (str, optional): font. Defaults to 'DejaVu Sans Mono'.
+
+    Returns:
+        plt.Axes: `plt.Axes` object.
+        
+    TODOs: 
+        1. include color_ticklabels
+    """
+    if isinstance(n,int):
+        n={'x':n,
+           'y':n}
+    if isinstance(fmt,str):
+        fmt={'x':fmt,
+           'y':fmt}
+    for axis in axes:
+        if n is not None:        
+            getattr(ax,axis+'axis').set_major_locator(plt.MaxNLocator(n[axis]))
+        elif interval is not None:
+            getattr(ax,axis+'axis').set_major_locator(plt.MultipleLocator(interval))
+        if fmt[axis] is not None:
+            if fmt[axis]=='counts':
+                max_val = getattr(ax,f'get_{axis}lim')()[1]
+                if max_val <= 10:
+                    interval=1
+                elif max_val <= 100:
+                    interval=10
+                elif max_val <= 1000:
+                    interval=100
+                else:
+                    interval=1000
+
+                import matplotlib.ticker as ticker
+                locator = ticker.MultipleLocator(interval)
+                # locator
+                getattr(ax,f'{axis}axis').set_major_locator(locator)            
+                ## start with 1
+                ticks=getattr(ax,f'get_{axis}ticks')()
+                getattr(ax,f'set_{axis}ticks')(
+                    np.where(ticks==0,1,ticks)
+                )
+                ## as integers
+                getattr(ax,axis+'axis').set_major_formatter(plt.FormatStrFormatter('%d'))
+                getattr(ax,f'set_{axis}lim')(1,max_val)
+
+            # elif fmt[axis] is not None:
+            else:
+                getattr(ax,axis+'axis').set_major_formatter(plt.FormatStrFormatter(fmt[axis]))
+            
+        if font is not None:
+            for tick in getattr(ax,f'get_{axis}ticklabels')():
+                tick.set_fontname(font)
+    return ax
 
 def split_ticklabels(
     ax: plt.Axes,
