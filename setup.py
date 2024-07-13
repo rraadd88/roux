@@ -30,7 +30,7 @@ requirements = {
     ],
 'interactive':[
     'watermark', # session info
-    'icecream', # logging
+    # 'icecream', # logging
     # 'argh',
     #'jupyter','ipywidgets','ipykernel',
 ],
