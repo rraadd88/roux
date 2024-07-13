@@ -397,12 +397,15 @@ def replacestar(
         exporter = PythonExporter()
         code, _ = exporter.from_notebook_node(nb)
 
+    # try:
     import tempfile
     replaces = fix_code(
             code=code,
             file=tempfile.NamedTemporaryFile().name,
             return_replacements=True,
             )
+    # except:
+    #     print(code)
     
     if replace_from in replaces:
         imports=replaces[replace_from]
@@ -429,6 +432,8 @@ def replacestar(
     df2=get_global_imports()
     def get_lines_replace_with(imports,df2): 
         ds=df2.query(expr=f"`function name` in {imports}").apply(lambda x: f"## {x['function comment']}\n{x['import statement']}",axis=1)
+        if len(ds)==0:
+            return '\n'
         lines=ds.tolist()
         return '\n'.join(lines)
     
