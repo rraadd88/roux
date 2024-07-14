@@ -441,7 +441,7 @@ def replacestar(
             if verbose: logging.warning(f"no function imports found in '{input_path}'")    
     else:
         logging.info(f"'{replace_from}' not found in '{input_path}'")
-        if not output_path is None and not in_place:
+        if output_path is not None and not in_place:
             logging.warning("copying the file, as it is.")
             shutil.copy(input_path,output_path)
         return output_path
@@ -452,7 +452,7 @@ def replacestar(
         
     if len(imports+imports_attrs)==0:
         logging.info(f"no imports found in '{input_path}'")    
-        if not output_path is None and not in_place:
+        if output_path is not None and not in_place:
             logging.warning("copying the file, as it is.")
             shutil.copy(input_path,output_path)
         return output_path
