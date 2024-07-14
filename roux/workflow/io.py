@@ -371,7 +371,31 @@ def replacestar(
     
     Returns:
         output_path (str): path to the modified notebook.            
+
+    Examples:
+        roux replacestar -i notebook.ipynb
+        roux replacestar -i notebooks/*.ipynb
     """
+    from roux.lib.io import read_ps
+    input_paths=read_ps(input_path)
+    if len(input_paths)>1:
+        ## Recursion-mode
+        outps=[]
+        for p in input_paths:
+            outps.append(
+                replacestar(
+                    p,
+                    output_path=None,
+                    replace_from=replace_from,
+                    in_place=in_place,
+                    attributes=attributes,
+                    verbose=verbose,
+                    test=test,
+                    **kws_fix_code,            
+                )
+            )
+        return
+    
     from roux.workflow.function import get_global_imports
     ## infer input parameters
     if output_path is None:
@@ -416,8 +440,10 @@ def replacestar(
             imports=[]
             if verbose: logging.warning(f"no function imports found in '{input_path}'")    
     else:
-        logging.warning(f"'{replace_from}' not found in '{input_path}'; copying the file, as it is.")
-        shutil.copy(input_path,output_path)
+        logging.info(f"'{replace_from}' not found in '{input_path}'")
+        if not output_path is None and not in_place:
+            logging.warning("copying the file, as it is.")
+            shutil.copy(input_path,output_path)
         return output_path
 
     imports_attrs=[k for k,v in attributes.items() if any([s in code for s in v])]
@@ -425,8 +451,10 @@ def replacestar(
         if verbose: logging.warning(f"no attribute imports found in '{input_path}'")
         
     if len(imports+imports_attrs)==0:
-        logging.warning(f"no imports found in '{input_path}'; copying the file, as it is.")    
-        shutil.copy(input_path,output_path)
+        logging.info(f"no imports found in '{input_path}'")    
+        if not output_path is None and not in_place:
+            logging.warning("copying the file, as it is.")
+            shutil.copy(input_path,output_path)
         return output_path
     
     df2=get_global_imports()
@@ -450,7 +478,7 @@ def replacestar(
     replaces_={**replaces,**{replace_from:replace_with}}
 
     if verbose:logging.info("replace     :\n"+('\n'.join([k for k in replaces_.keys()])))
-    if verbose:logging.info("replace_with:\n"+('\n'.join([v for v in replaces_.values()])))
+    if verbose:logging.info("replace_with:\n\n"+('\n'.join([v for v in replaces_.values()])))
     
     if output_path is not None:
         # save files

@@ -380,7 +380,7 @@ def get_global_imports()-> pd.DataFrame:
         **{
             'internal':lambda df: df['function comment'].apply(lambda x: 'roux' in x),
             'function type':lambda df: df['function comment'].str.split(' ',expand=True)[0],
-            'rank':lambda df: df.groupby('function type')['rank'].transform(min),
+            'rank':lambda df: df.groupby('function type')['rank'].transform('min'),
             'attribute':lambda df: df['import statement'].apply(lambda x: '# attribute' in x),
             'function name':lambda df: df['import statement'].apply(get_function_name),
           }
