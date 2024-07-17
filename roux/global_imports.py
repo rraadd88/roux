@@ -67,7 +67,6 @@ from roux.stat.binary import perc # noqa
 from roux.stat.io import perc_label # noqa
 
 ## visualization functions
-import matplotlib.pyplot as plt
 try:
     import seaborn as sns
 except ImportError:
