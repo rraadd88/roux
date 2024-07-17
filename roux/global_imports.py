@@ -67,9 +67,9 @@ from roux.stat.binary import perc # noqa
 from roux.stat.io import perc_label # noqa
 
 ## visualization functions
-import matplotlib.pyplot as plt
+import matplotlib.pyplot as plt # noqa
 try:
-    import seaborn as sns
+    import seaborn as sns # noqa
 except ImportError:
     logging.warning('Optional dependency seaborn missing, install by running: pip install roux[viz]')
 
