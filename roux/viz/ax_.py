@@ -145,6 +145,7 @@ def format_labels(
     title_fontsize=15,
     rename_labels=None,
     rotate_ylabel=True,
+    y=1.05,
     test=False,
     ):
     def cap1(s): 
@@ -178,7 +179,7 @@ def format_labels(
         ax.set_ylabel(
             ax.get_ylabel(),
             ha='left',
-            y=1.1,
+            y=y,
             rotation=0,
             labelpad=0,
         )

@@ -30,8 +30,6 @@ requirements = {
     ],
 'interactive':[
     'watermark', # session info
-    # 'icecream', # logging
-    # 'argh',
     #'jupyter','ipywidgets','ipykernel',
 ],
 'data':[
@@ -39,8 +37,8 @@ requirements = {
 ],
 'fast':[
     'pyarrow', # fast
-    'pandarallel', # fast
-    'ipywidgets', # for pandarallel
+    # 'pandarallel', # fast
+    # 'ipywidgets', # for pandarallel
 ],
 'stat':[
     'scipy>=1.1.0',
@@ -54,10 +52,7 @@ requirements = {
 'workflow':[
     'omegaconf',
     'papermill',
-    # 'snakemake',
-    # 'gitpython',
-    # 'networkx',
-    # 'pygraphviz'
+    'argh',
 ],
 ## development and maintenance
 'dev':[

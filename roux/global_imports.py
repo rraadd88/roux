@@ -18,13 +18,10 @@ logging.basicConfig(
     # logging.getLevelName(logging.root.getEffectiveLevel())
 
 try:
-    from icecream import ic as info
-    info.configureOutput(prefix='INFO:icrm:')
     import watermark.watermark as watermark # session info
     logging.info(watermark(python=True)+watermark(iversions=True,globals_=globals()))
 except ImportError:
     logging.warning('Optional interactive-use dependencies missing, install by running: pip install roux[interactive]')
-    info=logging.info
     
 ## data functions
 # import itertools
@@ -35,7 +32,6 @@ import pandas as pd # noqa
 import sys # noqa
 from pathlib import Path # noqa
 from os.path import exists,dirname,basename,abspath,isdir,splitext # pathlib to be preferred in the future # noqa
-from glob import glob # read_ps to be preferred in the future # noqa
 ## system functions from roux
 from roux.lib.sys import read_ps, basenamenoext, to_path, makedirs, get_datetime # noqa
 from roux.lib.io import read_dict, to_dict, read_table, to_table, to_version, backup # noqa
@@ -77,50 +73,6 @@ try:
 except ImportError:
     logging.warning('Optional dependency seaborn missing, install by running: pip install roux[viz]')
 
-# settings
-FONTSIZE=12
-PAD=2
-plt.set_loglevel('error')
-plt.style.use('ggplot')
-plt.rcParams['pdf.fonttype'] = 42
-plt.rcParams['ps.fonttype'] = 42
-plt.rcParams['font.family'] = 'Myriad Pro'
-plt.rcParams['font.size'] = FONTSIZE
-plt.rcParams['legend.frameon']=False
-from cycler import cycler
-plt.rcParams['axes.prop_cycle']= cycler('color',[
-    '#50AADC',#blue
-    "#D3DDDC",#gray
-    '#F1D929',#yellow
-    "#f55f5f",#red
-    "#046C9A",#blue
-    "#00A08A", "#F2AD00", "#F98400", "#5BBCD6", "#ECCBAE", "#D69C4E", "#ABDDDE", "#000000"])
-# plt.rc('grid', lw=0.2,linestyle="-", color=[0.98,0.98,0.98])
-# ticks
-# plt.rcParams['xtick.color']=[0.95,0.95,0.95]
-plt.rc('axes', grid=False,axisbelow=True,unicode_minus=False,
-       labelsize=FONTSIZE,
-       labelcolor='k',labelpad=PAD,
-       titlesize=FONTSIZE,
-       facecolor='w',
-       edgecolor='k',linewidth=0.5,)
-# plt.rcParams['axes.formatter.use_mathtext'] = True
-plt.rcParams['axes.formatter.limits'] = -3, 3
-plt.rcParams['axes.formatter.min_exponent'] = 3
-
-plt.rcParams["xtick.major.size"] = PAD
-plt.rcParams["ytick.major.size"] = PAD
-plt.rcParams["xtick.major.width"] = 0.5
-plt.rcParams["ytick.major.width"] = 0.5
-plt.rcParams["xtick.major.pad"] = PAD
-plt.rcParams["ytick.major.pad"] = PAD
-plt.rcParams["xtick.direction"] = "in"
-plt.rcParams["ytick.direction"] = "in"
-# scale
-plt.rc('figure',figsize = (3, 3))
-plt.rc('figure.subplot',wspace= 0.3,hspace= 0.3)
-# sns.set_context('notebook') # paper < notebook < talk < poster
-
 ## visualization functions from roux
 from roux.viz.io import begin_plot,to_plot,read_plot # noqa
 from roux.viz.colors import get_colors_default # noqa
@@ -145,9 +97,9 @@ else:
     # if not get_ipython() is None:
     #     get_ipython().run_line_magic('config', "InlineBackend.figure_formats = ['svg']")
     
-try:
-    ## parallel-pocessing functions
-    from pandarallel import pandarallel;pandarallel.initialize(nb_workers=6,progress_bar=True,use_memory_fs=False) # attributes
-    # logging.info("pandarallel.initialize(nb_workers=4,progress_bar=True)")
-except ImportError:
-    logging.warning('Optional dependency pandarallel missing, install by running: pip install roux[fast]')
+# try:
+#     ## parallel-pocessing functions
+#     from pandarallel import pandarallel;pandarallel.initialize(nb_workers=6,progress_bar=True,use_memory_fs=False) # attributes
+#     # logging.info("pandarallel.initialize(nb_workers=4,progress_bar=True)")
+# except ImportError:
+#     logging.warning('Optional dependency pandarallel missing, install by running: pip install roux[fast]')

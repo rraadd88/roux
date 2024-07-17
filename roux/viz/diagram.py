@@ -86,7 +86,8 @@ def diagram_nb(
         if test:
             print('\n',replaces)
         graph=replace_many(graph,replaces)
-    
+
+    ## diagram
     import base64
     from IPython.display import Image, display
     graphbytes = graph.encode("ascii")
@@ -94,6 +95,10 @@ def diagram_nb(
     base64_string = base64_bytes.decode("ascii")
     url="https://mermaid.ink/img/" + base64_string
     display(Image(url=url))
-    if out:
-        return url
     
+    if isinstance(out, bool):
+        if out: 
+            return url
+    elif isinstance(out, str):
+        open(out,'w').write(graph)    
+        return out    

@@ -97,6 +97,11 @@ def test_roux_viz_sets(tb):
     pass # execute only because tests are present in the notebook itself
     return
 
+@testbook('examples/roux_viz_theme.ipynb', execute=True)
+def test_roux_viz_theme(tb):
+    pass # execute only because tests are present in the notebook itself
+    return
+
 @testbook('examples/roux_workflow_io.ipynb', execute=True)
 def test_roux_workflow_io(tb):
     assert tb.cell_output_text('read_configs')=='value interpolated in config1 = value from metaconfig = value1', tb.cell_output_text('read_configs')
