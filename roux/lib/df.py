@@ -306,7 +306,7 @@ def compress(
     if verbose:
         ini=df1.memory_usage().sum()
     ds=df1.select_dtypes('object').nunique()
-    if not coff_categories is None:
+    if coff_categories is not None:
         cols=ds[ds<=coff_categories].index
     else:
         cols=ds.index.tolist()
