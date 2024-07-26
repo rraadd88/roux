@@ -129,7 +129,7 @@ def get_stat(
     subsets=None,
     cols_subsets=['subset1', 'subset2'],
     df2=None,
-    stats=[np.mean,np.median,np.var]+[len],
+    stats=["mean","median","var","size"],
     coff_samples_min=None,
     verb=False,
     **kws,
@@ -191,7 +191,7 @@ def get_stat(
     colsubset_=get_prefix(*cols_subsets,common=True, clean=True)
     df_=(df1
         .groupby([colsubset])[colvalue]
-        .agg(stats if not colvalue_bool else [sum,len])
+        .agg(stats if not colvalue_bool else ['sum','len'])
         .reset_index()
              # TODOs rename to subset1 subset2
         .rename(columns={colsubset:colsubset_},errors='raise'))        
@@ -226,7 +226,7 @@ def get_stats(
     subsets=None,
     df2=None,
     cols_subsets=['subset1', 'subset2'],
-    stats=[np.mean,np.median,np.var,len],
+    stats=["mean","median","var","size"],
     axis=0, # concat 
     test=False,
     **kws,
@@ -398,7 +398,17 @@ def get_stats_groupby(
     Returns:
         DataFrame: output dataframe.
     """
-    df2=getattr(df1.groupby(cols_group),f"{'progress' if not fast else 'parallel'}_apply")(lambda df: get_stats(df1=df,**kws)).reset_index().rd.clean()
+    df2=(
+        getattr(
+            df1.groupby(cols_group),
+            f"{'progress_' if not fast and hasattr(df1.groupby(cols_group),'progress_apply') else '' if not fast else 'parallel_'}apply"
+        )(lambda df: get_stats(
+            df1=df,
+            **kws,
+        ))
+        .reset_index()
+        .rd.clean()
+    )
     return get_significant_changes(df1=df2,alpha=alpha,coff_p=coff_p,coff_q=coff_q,)
 
 def get_diff(
