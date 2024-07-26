@@ -332,7 +332,7 @@ def plot_dists(
             d1=df2.set_index(y)['P (MWU test)'].to_dict()
             if test:
                 logging.info(d1)
-        if not df2 is None:
+        if df2 is not None:
             # print(df2.set_index(['subset1','subset2']).T)
             ## stats printing
             stats=df2.set_index(['subset1','subset2']).rd.dropby_patterns(['median ','mean ','var ','variable'],verbose=False)
