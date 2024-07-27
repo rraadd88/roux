@@ -136,6 +136,7 @@ def dropby_patterns(
     strict=False,
     test=False,
     verbose=True,
+    errors='raise',
     ):
     """Deletes columns containing substrings i.e. patterns.
 
@@ -155,7 +156,8 @@ def dropby_patterns(
     s1=f"{'^' if strict else ''}.*({s0}).*{'$' if strict else ''}"
     cols=df1.filter(regex=s1).columns.tolist()
     if test: logging.info(s1)
-    assert(len(cols)!=0)
+    if errors=='raise':
+        assert(len(cols)!=0)
     if verbose: 
         logging.info('columns dropped:'+','.join(cols))
         return df1.log.drop(labels=cols,axis=1)
@@ -286,26 +288,41 @@ def clean(
         return df
     
 @to_rd
-def compress(df1,coff_categories=20,test=False):
+def compress(
+    df1: pd.DataFrame,
+    coff_categories: int=None,
+    verbose: bool=True,
+    ):
     """Compress the dataframe by converting columns containing strings/objects to categorical.
     
     Parameters:
         df1 (DataFrame): input dataframe.
         coff_categories (int): if the number of unique values are less than cutoff the it will be converted to categories. 
-        test (bool): verbose.
+        verbose (bool): verbose.
         
     Returns:
         df1 (DataFrame): output dataframe.
     """    
-    if test: ini=df1.memory_usage().sum()
+    if verbose:
+        ini=df1.memory_usage().sum()
     ds=df1.select_dtypes('object').nunique()
-    for c in ds[ds<=coff_categories].index:
+    if coff_categories is not None:
+        cols=ds[ds<=coff_categories].index
+    else:
+        cols=ds.index.tolist()
+    for c in cols:
+        logging.info(f"compressing '{c}'")
         df1[c]=df1[c].astype('category')
-    if test: logging.info(f"compression={((ini-df1.memory_usage().sum())/ini)*100:.1f}%")
+    if verbose:
+        logging.info(f"compression={((ini-df1.memory_usage().sum())/ini)*100:.1f}%")
     return df1
 
 @to_rd
-def clean_compress(df,kws_compress={},**kws_clean): 
+def clean_compress(
+    df: pd.DataFrame,
+    kws_compress: dict={},
+    **kws_clean,
+    ): 
     """`clean` and `compress` the dataframe.
     
     Parameters:
@@ -323,7 +340,11 @@ def clean_compress(df,kws_compress={},**kws_clean):
         `clean`
         `compress`
     """    
-    return df.rd.clean(**kws_clean).rd.compress(**kws_compress)
+    return (
+        df
+        .rd.clean(**kws_clean)
+        .rd.compress(**kws_compress)
+        )
 
 ## nans:    
 @to_rd

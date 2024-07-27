@@ -62,6 +62,7 @@ def savefig(
     force: bool=True,
     kws_replace_many: dict={},
     kws_savefig: dict={},
+    verbose:bool=False,
     **kws,
     ) -> str:
     """Wrapper around `plt.savefig`.
@@ -108,14 +109,17 @@ def savefig(
         return
     
     ## warnings
-    plt.set_loglevel("warning")
+    # if verbose:
+    # plt.set_loglevel("warning")
     try:
         import fontTools
-        fontTools.logging.disable()
-        del fontTools
         logging.getLogger("fontTools.subset").setLevel(logging.ERROR)
+        # fontTools.logging.disable()
+        del fontTools
     except:
         pass
+    # logging.basicConfig(level=logging.INFO)
+    # plt.set_loglevel("info")
     
     if '.' in plotp:
         plt.savefig(plotp,

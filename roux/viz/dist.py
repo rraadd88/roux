@@ -332,11 +332,15 @@ def plot_dists(
             d1=df2.set_index(y)['P (MWU test)'].to_dict()
             if test:
                 logging.info(d1)
-        # print(df2.set_index(['subset1','subset2']).T)
-        ## stats printing
-        stats=df2.set_index(['subset1','subset2']).rd.dropby_patterns(['median ','mean ','var ','variable'],verbose=False)
-        logging.info(stats)
-        del stats
+        if df2 is not None:
+            # print(df2.set_index(['subset1','subset2']).T)
+            ## stats printing
+            stats=df2.set_index(['subset1','subset2']).rd.dropby_patterns(['median ','mean ','var ','variable'],verbose=False)
+            logging.info(stats)
+            del stats
+        else:
+            show_p=False
+            logging.error("p-value could not be estimated. likely lack of >1 categories.")
     ## axes
     if ax is None:
         ax=plt.gca()

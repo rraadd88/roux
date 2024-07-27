@@ -77,7 +77,9 @@ def set_theme(
     plt.rcParams["ytick.major.pad"] = pad
     plt.rcParams["xtick.direction"] = "in"
     plt.rcParams["ytick.direction"] = "in"
-    
+    ## tick labels
+    plt.rcParams["xtick.labelcolor"] = 'k'
+    plt.rcParams["ytick.labelcolor"] = 'k'
     # legend
     ## Dimensions as fraction of font size:
     plt.rcParams["legend.borderpad"]=0  # border whitespace

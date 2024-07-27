@@ -46,3 +46,4 @@ tests/input/*
 coverage.xml
 examples/outputs/
 outputs/
+examples/test.ipynb

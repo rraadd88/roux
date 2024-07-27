@@ -84,7 +84,7 @@ def run_tasks(
     fast_workers:int=6,
     to_filter_nbby_patterns_kws=None,
     input_notebook_temp_path=None,
-    out_paths: bool=False,
+    out_paths: bool=True,
     test1: bool=False,
     force: bool=False,
     test: bool=False,
@@ -100,6 +100,8 @@ def run_tasks(
         inputs (list): list of parameters without the output paths, which would be inferred by encoding.  
         output_path_base (str): output path with a placeholder e.g. 'path/to/{KEY}/file'.  
         parameters_list (list): list of parameters including the output paths.  
+        out_paths (bool): return paths of the reports (Defaults to True).
+        test1 (bool): test only first task in the list (Defaults to False).
         fast (bool): enable parallel-processing.
         fast_workers (bool): number of parallel-processes.
         force (bool): overwrite the outputs.

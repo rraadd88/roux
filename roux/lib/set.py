@@ -117,7 +117,7 @@ def unique(l):
     Notes:
         The function can return list of lists if used in `pandas.core.groupby.DataFrameGroupBy.agg` context. 
     """
-    return list(np.unique(l))
+    return list(set(l))
     
 def list2str(x,ignore=False):
     """Returns string if single item in a list.
@@ -128,7 +128,7 @@ def list2str(x,ignore=False):
     Returns:
         s (str): string.        
     """
-    x=list(x)
+    x=unique(x)
     if not ignore:
         assert len(x)==1, x
     if len(x)>1:

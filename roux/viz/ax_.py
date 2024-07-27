@@ -36,6 +36,53 @@ def set_axes_minimal(
             rotation=90,ha='right',va='bottom')    
     return ax
 
+def set_axes_arrows(
+    ax:plt.Axes,
+    length: float=0.1,
+    pad: float=0.2,
+    color: str='k',
+    head_width: float=0.03,
+    head_length: float=0.02,
+    length_includes_head: bool=True,
+    clip_on: bool=False,
+    **kws_arrow,
+    ):
+    """
+    Set arrows next to the axis labels.
+
+    Parameters:
+        ax (plt.Axes): subplot.
+        color=
+    """
+    kws={
+        **dict(
+            fc=color,
+            ec=color,
+            head_width=head_width,
+            head_length=head_length,
+            length_includes_head=length_includes_head,
+            clip_on=clip_on,
+            transform=ax.transAxes,    
+        ),
+        ## overwrite
+        **kws_arrow
+        }
+    ax.arrow(
+        1-length,
+        -1*(length*(1+pad)),
+        length,
+        0,
+        **kws
+        )
+    ax.arrow(
+        -1*length,
+        1+(length*pad),
+        0.0,
+        length,
+        **kws
+    )
+    return ax
+    
 # labels
 def set_label(
     s: str,
@@ -182,6 +229,10 @@ def format_labels(
             y=y,
             rotation=0,
             labelpad=0,
+        )
+        ax.yaxis.set_label_coords(-0.05,1.02)
+        set_axes_arrows(
+            ax=ax
         )
     return ax
 
@@ -931,6 +982,7 @@ def format_ax(
     kws_fmt_ticklabels={},
     kws_fmt_labels={},
     kws_legend={},
+    rotate_ylabel=False,
     ):
     if ax is None:
          ax=plt.gca()
@@ -941,6 +993,7 @@ def format_ax(
     )
     format_labels(
         ax,
+        rotate_ylabel=rotate_ylabel,
         **kws_fmt_labels,
         # fmt='cap1',
         # title_fontsize=15,
