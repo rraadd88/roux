@@ -264,16 +264,22 @@ def get_stats(
         if subsets is None:
             subsets=sorted(df1[colsubset].unique())
         if len(df1_[colsubset].unique())>1:
-            dn2df[colvalue]=get_stat(df1_,
-                          colsubset=colsubset,
-                          colvalue=colvalue,
-                          colindex=colindex,
-                          subsets=subsets,
-                          cols_subsets=cols_subsets,
-                          df2=df2,
-                          stats=stats,
-                          **kws,
-                         ).set_index(cols_subsets)
+            dn2df[colvalue]=(
+                get_stat(
+                    df1_,
+                    colsubset=colsubset,
+                    colvalue=colvalue,
+                    colindex=colindex,
+                    subsets=subsets,
+                    cols_subsets=cols_subsets,
+                    df2=df2,
+                    stats=stats,
+                    **kws,
+                    )
+                .set_index(
+                    cols_subsets
+                )
+            )
         else:
             if test:
                 logging.warning(f"not processed: {colvalue}; probably because of dropna")
@@ -290,11 +296,13 @@ def get_stats(
         df3=df3.reset_index().rd.flatten_columns()
     return df3
 
+
 def get_significant_changes(
     df1: pd.DataFrame,
     coff_p=0.025,
     coff_q=0.1,
     alpha=None,
+    change_type=['diff','ratio'],
     changeby="mean",
     # fdr=True,
     value_aggs=['mean','median'],
@@ -314,15 +322,19 @@ def get_significant_changes(
     """
     if coff_p is None and alpha is not None:
         coff_p=alpha
-    if df1.filter(regex='|'.join([f"{s} subset(1|2)" for s in value_aggs])).shape[1]:
+    logging.info(changeby)
+    if df1.filter(
+        regex='|'.join([f"{s} subset(1|2)" for s in value_aggs])
+                 ).shape[1]:
         for s in value_aggs:
-            df1[f'difference between {s} (subset1-subset2)']=df1[f'{s} subset1']-df1[f'{s} subset2']
-        ## call change if both mean and median are changed
-        # df1.loc[((df1.filter(like=f'difference between {changeby}')>0).T.sum()==2),'change']='increase'
-        # df1.loc[((df1.filter(like=f'difference between {changeby}')<0).T.sum()==2),'change']='decrease'
-        logging.info(changeby)
-        df1.loc[(df1[f'difference between {changeby} (subset1-subset2)']>0),'change']='increase'
-        df1.loc[(df1[f'difference between {changeby} (subset1-subset2)']<0),'change']='decrease'
+            if 'diff' in change_type: 
+                df1[f'difference between {s} (subset1-subset2)']=df1[f'{s} subset1']-df1[f'{s} subset2']
+                df1.loc[(df1[f'difference between {changeby} (subset1-subset2)']>0),'change']='increase'
+                df1.loc[(df1[f'difference between {changeby} (subset1-subset2)']<0),'change']='decrease'
+            if 'ratio' in change_type:
+                df1[f'ratio between {s} (subset1-subset2)']=df1[f'{s} subset1']/df1[f'{s} subset2']
+                # df1.loc[(df1[f'ratio between {changeby} (subset1-subset2)']>1),'change']='increase'
+                # df1.loc[(df1[f'ratio between {changeby} (subset1-subset2)']<1),'change']='decrease'                
         df1['change']=df1['change'].fillna('ns')
     for test in ['MWU','FE']:
         if f'P ({test} test)' not in df1:
@@ -339,6 +351,7 @@ def get_significant_changes(
             # df1.loc[df1[f'change is significant, Q ({test} test) < {coff_q}'],f"significant change, Q ({test} test) < {coff_q}"]=df1.loc[df1[f"change is significant, Q ({test} test) < {coff_q}"],'change']
             # df1[f"significant change, Q ({test} test) < {coff_q}"]=df1[f"significant change, Q ({test} test) < {coff_q}"].fillna('ns')
     return df1
+
 
 def apply_get_significant_changes(
     df1: pd.DataFrame,
@@ -376,6 +389,7 @@ def apply_get_significant_changes(
     assert(not df2.columns.duplicated().any())
     return df2
 
+
 def get_stats_groupby(
     df1: pd.DataFrame,
     cols_group: list,
@@ -410,6 +424,7 @@ def get_stats_groupby(
         .rd.clean()
     )
     return get_significant_changes(df1=df2,alpha=alpha,coff_p=coff_p,coff_q=coff_q,)
+
 
 def get_diff(
     df1: pd.DataFrame,
@@ -460,6 +475,7 @@ def get_diff(
     else:
         logging.warning('not filtered by P-value cutoff')
     return df3.sort_values('P (MWU test)')
+
 
 def binby_pvalue_coffs(
     df1: pd.DataFrame,
