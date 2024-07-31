@@ -22,7 +22,7 @@ with open('README.md', 'r') as fh:
 requirements = {
 'base':[
     'numpy>=1.17.3',
-    'pandas>=0.25.3,<=2.1.4',
+    'pandas>=0.25.3,<=2.2.2',
     'pyyaml>=5.1',
     'matplotlib>=2.2',
     'tqdm>=4.38.0', # logging
