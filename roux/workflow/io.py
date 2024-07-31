@@ -188,6 +188,7 @@ def read_config(
         d1=OmegaConf.to_object(d1)
     return d1
 
+
 ## metadata-related
 def read_metadata(
     p: str,
@@ -359,6 +360,9 @@ def replacestar(
     """
     Post-development, replace wildcard (global) import from roux i.e. 'from roux.global_imports import *' with individual imports with accompanying documentation.
     
+    Usage: 
+        For notebooks developed using roux.global_imports.
+
     Parameters
         input_path (str): path to the .py or .ipynb file.
         output_path (str): path to the output.
@@ -407,6 +411,7 @@ def replacestar(
         from removestar.removestar import fix_code, replace_in_nb
     except ImportError as error:
         logging.error(f'{error}: Install needed requirement using command: pip install removestar')
+        return
 
     if input_path.endswith(".py"):    
         with open(input_path, encoding="utf-8") as f:
@@ -495,4 +500,149 @@ def replacestar(
                     cell_type='code',
                     output_path=output_path,
                     )
+    ## to ensure the imports are inferred correctly
+    com=f"ruff check {output_path}"
+    print(com)
+    import subprocess
+    res=subprocess.run(
+        com,
+        shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+    print(res.stdout)
     return output_path
+
+
+def to_clean_nb(
+    p,
+    outp,
+    temp_outp: str=None,
+    clear_outputs=True,
+    drop_code_lines_containing=[
+        ## dev
+        r'.*%run .*',
+        ## unused params       
+        r'^#\s*.*=.*',
+        ## unused strings
+        r'^#\s*".*',
+        r"^#\s*'.*",
+        r'^#\s*f".*',
+        r"^#\s*f'.*",
+        r"^#\s*df.*",
+        r"^#\s*.*kws_.*",
+        ## lines with one hashtag (not a comment)
+        r'^\s*#\s*$',
+        r'^\s*#\s*break\s*$',
+        ## unused
+        "\[X",
+        "\[old ","#old","# old",
+        '\[not used', '# not used',
+        ## development
+        "#tmp","# tmp",
+        "#temp","# temp",
+        "check ","checking", "# check",
+        "\[SKIP",
+        "DEBUG ",
+        # "#todos","# todos",'todos',
+    ],
+    drop_headers_containing=[
+        'check','[check',
+        'old','[old',
+        'tmp','[tmp',
+    ],
+    ## ruff
+    lint=False,
+    format=False,
+    **kws_fix_code,
+    ) -> str:
+    """
+    Wraper around the notebook post-processing functions.
+
+    Usage: 
+        For notebooks developed using roux.global_imports.
+
+        On command line:
+
+        roux to-clean-nb in.ipynb out.ipynb -l -f
+    
+    Parameters:
+        temp_outp (str): path to the intermediate output. 
+    """
+    from roux.workflow.nb import to_clear_unused_cells, to_clear_outputs, to_filtered_outputs, to_filter_nbby_patterns, to_replaced_nb
+    from roux.lib.sys import grep 
+    
+    # makedirs(outp)
+    from pathlib import Path
+    Path(outp).parent.mkdir(parents=True, exist_ok=True)
+    
+    if temp_outp is None:
+        import tempfile
+        temp_outp=f"{tempfile.gettempdir()}/to_clean_nb.ipynb"
+        
+    #Remove the code blocks that have all commented code and empty lines 
+    to_clear_unused_cells(
+        p,
+        temp_outp,
+    )
+    
+    if clear_outputs:
+        to_clear_outputs(
+            temp_outp,
+            temp_outp,
+        )
+    
+    to_filtered_outputs(
+        temp_outp,
+        temp_outp
+    )
+    
+    to_filter_nbby_patterns(
+        temp_outp,
+        temp_outp,
+        patterns=drop_headers_containing
+        )
+    
+    to_replaced_nb(
+        nb_path=temp_outp,
+        output_path=temp_outp,
+        replaces={
+            ## to replace the star
+            " import * #noqa": " import *",
+            " import *  #noqa": " import *",
+            'if "metadata" in globals(): del metadata':'if "metadata" in globals():\n   del metadata #noqa'
+        },
+        cell_type='code',
+        drop_lines_with_substrings=drop_code_lines_containing,
+    )
+
+    _l=grep(
+        p=temp_outp,
+        checks=drop_code_lines_containing,
+        exclude=['## backup old files if overwriting (force is True)'],
+    )
+    
+    assert len(_l)==0, (p,_l)
+
+    replacestar(
+        input_path=temp_outp,
+        output_path=outp,
+        replace_from='from roux.global_imports import *',
+        in_place=False,
+        attributes={
+            'pandarallel':['parallel_apply'],
+            'rd':['.rd.','.log.']
+        },
+        verbose=False,
+        test=False,
+        **kws_fix_code,
+    )
+    ## ruff
+    com=""
+    if lint:
+        com+=f"ruff check --fix {outp};"
+    if format:
+        com+=f"ruff format {outp};"        
+    import subprocess
+    res=subprocess.run(
+        com,
+        shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+    print(res.stdout)
+    return outp

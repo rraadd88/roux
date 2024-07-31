@@ -126,12 +126,14 @@ def makedirs(p: str,exist_ok=True,**kws):
     Returns:
         p_ (str): the path of the directory.
     """
+    logging.warning("makedirs will be deprecated in the future releases, use pathlib instead: Path(p).parent.mkdir(parents=True, exist_ok=True)")
     from os import makedirs
     from os.path import isdir
     p_=p
     if not isdir(p):
         p=dirname(p)
-    makedirs(p,exist_ok=exist_ok,**kws)
+    if p!='':
+        makedirs(p,exist_ok=exist_ok,**kws)
     return p_
 
 def to_output_path(ps,outd=None,outp=None,suffix=''):
@@ -597,3 +599,42 @@ def tree(
         logging.info(out)
     else:
         return out
+
+
+def grep(
+    p: str,
+    checks: list,
+    exclude: list=[],
+    exclude_str: list=[],
+    verbose: bool=True,
+    ) -> list:
+    """
+    To get the output of grep as a list of strings.
+
+    Parameters: 
+        p (str): input path
+    """
+    from roux.lib.set import flatten
+    import subprocess
+    l2=[]
+    for s in checks:
+        # The command you want to execute
+        command = f'grep -i "{s}" {p}'
+
+        # Use subprocess.run to execute the command and capture the output
+        completed_process = subprocess.run(command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+
+        lines=[s.replace('"',"").strip() for s in completed_process.stdout.split('\\n",\n')]
+        lines=[s for s in lines if s!='' and '#noqa' not in s]# and not s.startswith('#')]
+        for k in exclude_str:
+            lines=[s for s in lines if k not in s]# and not s.startswith('#')]
+        lines=flatten([s.split('\n') for s in lines])
+        lines=list(set(lines)-set(exclude))
+        lines=list(set(lines)-set(l2))
+        if len(lines)>0:
+            # print(completed_process.stdout)
+            # print(f"'{s}'")
+            if verbose:
+                print(basename(p),f"{s}: {lines}")
+            l2+=lines#[f"{s}: {lines}"]
+    return l2
