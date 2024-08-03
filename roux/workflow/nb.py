@@ -59,7 +59,7 @@ def to_info(
     outp: str,
     linkd: str='',
     ) -> str:
-    """Save README.md file.
+    """Save README.md file with table of contents obtained from jupyter notebooks.
 
     Args:
         p (str, optional): path of the notebook files that would be converted to "tasks".
@@ -294,27 +294,28 @@ def to_filtered_outputs(
     nbformat.write(nb,output_path)
     return output_path
 
-def to_diff_notebooks(
-    notebook_paths,
-    url_prefix="https://localhost:8888/nbdime/difftool?",
-    remove_prefix='file://', # for bash
-    verbose=True,
-    ) -> list:
-    """
-    "Diff" notebooks using `nbdiff` (https://nbdime.readthedocs.io/en/latest/)
+## deprecated because of the GH's nbdiff
+# def to_diff_notebooks(
+#     notebook_paths,
+#     url_prefix="https://localhost:8888/nbdime/difftool?",
+#     remove_prefix='file://', # for bash
+#     verbose=True,
+#     ) -> list:
+#     """
+#     "Diff" notebooks using `nbdiff` (https://nbdime.readthedocs.io/en/latest/)
     
-    Start the nb-diff session by running: `nbdiff-web`
+#     Start the nb-diff session by running: `nbdiff-web`
     
-    Todos:
-        1. Deprecate if functionality added to `nbdiff-web`.
-    """
-    import itertools
-    logging.warning('to_diff_notebooks is under development.')
-    urls_input=[Path(p).absolute().as_uri() for p in notebook_paths]
-    urls_output=[]
-    for url_base,url_remote in list(itertools.product(urls_input[:1],urls_input[1:])):
-        urls_output.append(f"{url_prefix}base={url_base.replace('file://','')}&remote={url_remote.replace('file://','')}")
-    if verbose:
-        logging.info('Differences between notebooks:')
-        logging.info('\n'.join(urls_output))
-    return urls_output
+#     Todos:
+#         1. Deprecate if functionality added to `nbdiff-web`.
+#     """
+#     import itertools
+#     logging.warning('to_diff_notebooks is under development.')
+#     urls_input=[Path(p).absolute().as_uri() for p in notebook_paths]
+#     urls_output=[]
+#     for url_base,url_remote in list(itertools.product(urls_input[:1],urls_input[1:])):
+#         urls_output.append(f"{url_prefix}base={url_base.replace('file://','')}&remote={url_remote.replace('file://','')}")
+#     if verbose:
+#         logging.info('Differences between notebooks:')
+#         logging.info('\n'.join(urls_output))
+#     return urls_output

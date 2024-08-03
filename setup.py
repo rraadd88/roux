@@ -30,7 +30,7 @@ requirements = {
     ],
 'interactive':[
     'watermark', # session info
-    #'jupyter','ipywidgets','ipykernel',
+    #'ipywidgets','ipykernel',
 ],
 'data':[
     'openpyxl', # special io
@@ -53,6 +53,9 @@ requirements = {
     'omegaconf',
     'papermill',
     'argh',
+    'ruff',
+    'nbconvert',
+    'removestar',
 ],
 ## development and maintenance
 'dev':[
