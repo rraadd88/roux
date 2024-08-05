@@ -196,6 +196,7 @@ def get_jitter_positions(
     d1=dict(zip(order,[c.get_offsets()[:,0].data for c in ax.collections]))
     return df1.groupby(column_category,as_index=False).apply(lambda df: df.assign(**{column_position:(d1[df.name])})).reset_index(drop=True)
 
+
 ## paired distributions.
 def plot_dists(
     df1: pd.DataFrame,
@@ -218,6 +219,7 @@ def plot_dists(
     axis_cont_lim: tuple=None,
     axis_cont_scale: str='linear',
     offs_pval: dict=None,
+    fmt_pval: str='<',
     alpha: float=0.5,
     # saturate_color_alpha: float=1.5,
     ax: plt.Axes = None,
@@ -387,7 +389,7 @@ def plot_dists(
         if isinstance(show_p,bool) and show_p:
             d1={k:pval2annot(d1[k],
                              alternative=alternative,
-                             fmt='<',
+                             fmt=fmt_pval,
                              linebreak=False,
                             ) for k in d1}
         else:

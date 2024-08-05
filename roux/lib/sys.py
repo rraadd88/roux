@@ -126,7 +126,7 @@ def makedirs(p: str,exist_ok=True,**kws):
     Returns:
         p_ (str): the path of the directory.
     """
-    logging.warning("makedirs will be deprecated in the future releases, use pathlib instead: Path(p).parent.mkdir(parents=True, exist_ok=True)")
+    logging.debug("makedirs will be deprecated in the future releases, use pathlib instead: Path(p).parent.mkdir(parents=True, exist_ok=True)")
     from os import makedirs
     from os.path import isdir
     p_=p

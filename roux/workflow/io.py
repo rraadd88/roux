@@ -513,9 +513,10 @@ def replacestar(
 
 def to_clean_nb(
     p,
-    outp,
+    outp: str =None,
+    in_place: bool=False,
     temp_outp: str=None,
-    clear_outputs=True,
+    clear_outputs=False,
     drop_code_lines_containing=[
         ## dev
         r'.*%run .*',
@@ -561,18 +562,57 @@ def to_clean_nb(
 
         On command line:
 
-        roux to-clean-nb in.ipynb out.ipynb -l -f
+        ## single input
+        roux to-clean-nb in.ipynb out.ipynb -c -l -f
+
+        ## multiple inputs
+        roux to-clean-nb "in*.ipynb" -i -c -l -f
     
     Parameters:
         temp_outp (str): path to the intermediate output. 
     """
+    from roux.lib.io import read_ps
+    input_paths=read_ps(p)
+    if len(input_paths)>1:
+        assert in_place, in_place
+        logging.info(f"Processing {len(input_paths)} files ..")
+        ## Recursive
+        outps=[]
+        for inp in input_paths:
+            logging.info(f"Processing {inp} ..")
+            outps.append(
+                to_clean_nb(
+                    p=inp,
+                    outp =outp,
+                    in_place=in_place,
+                    temp_outp=temp_outp,
+                    clear_outputs=clear_outputs,
+                    drop_code_lines_containing=drop_code_lines_containing,
+                    drop_headers_containing=drop_headers_containing,
+                    ## ruff
+                    lint=lint,
+                    format=format,
+                    **kws_fix_code,          
+                )
+            )
+        return
+    try:
+        __import__('removestar')    
+        __import__('ruff')
+    except:
+        raise ModuleNotFoundError('Optional interactive-use dependencies missing, install by running: pip install roux[workflow]')
+        
+    
     from roux.workflow.nb import to_clear_unused_cells, to_clear_outputs, to_filtered_outputs, to_filter_nbby_patterns, to_replaced_nb
     from roux.lib.sys import grep 
     
-    # makedirs(outp)
-    from pathlib import Path
-    Path(outp).parent.mkdir(parents=True, exist_ok=True)
-    
+    if in_place:
+        outp=p
+    else:
+        # makedirs(outp)
+        from pathlib import Path
+        Path(outp).parent.mkdir(parents=True, exist_ok=True)
+        
     if temp_outp is None:
         import tempfile
         temp_outp=f"{tempfile.gettempdir()}/to_clean_nb.ipynb"
@@ -621,7 +661,7 @@ def to_clean_nb(
     
     assert len(_l)==0, (p,_l)
 
-    replacestar(
+    res=replacestar(
         input_path=temp_outp,
         output_path=outp,
         replace_from='from roux.global_imports import *',
@@ -634,6 +674,8 @@ def to_clean_nb(
         test=False,
         **kws_fix_code,
     )
+    if res is None:
+        return
     ## ruff
     com=""
     if lint:

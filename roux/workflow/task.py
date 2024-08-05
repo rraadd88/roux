@@ -18,6 +18,12 @@ try:
 except ImportError:
     logging.warning('ImportError: IProgress not found. Please update jupyter and ipywidgets. See https://ipywidgets.readthedocs.io/en/stable/user_install.html')
     
+## validators
+def validate_params(
+    d: dict,
+) -> bool:
+    return 'input_path' in d and 'output_path' in d
+
 ## execution
 def run_task(
     parameters: dict,
@@ -37,7 +43,6 @@ def run_task(
         input_notebook_path (dict): path to the input notebook which is parameterized.
         kernel (str): kernel to be used.
         output_notebook_path: path to the output notebook which is used as a report. 
-        test (bool): test-mode.
         verbose (bool): verbose.
         
     Keyword parameters:
@@ -74,6 +79,7 @@ def run_task(
     # return parameters['output_path']
     return output_notebook_path
 
+    
 def run_tasks(
     input_notebook_path: str,
     kernel: str=None,
@@ -125,7 +131,8 @@ def run_tasks(
         nest_asyncio.apply()
     """
     assert exists(input_notebook_path), input_notebook_path
-    
+    if test:
+        force=True
     ## save task in unique directories
     if parameters_list is None:
         ## infer output paths
@@ -147,6 +154,15 @@ def run_tasks(
     # print(parameters_list)
     if isinstance(parameters_list,str):
         parameters_list=read_dict(parameters_list)
+    if len(parameters_list)==0:
+        logging.info("nothing to process. use `force`=True to rerun.")
+        return
+    if isinstance(parameters_list,dict):
+        if validate_params(parameters_list[list(parameters_list.keys())[0]]):
+            parameters_list=list(parameters_list.values())
+    if test:
+        logging.info("Aborting run because of the test mode")
+        return parameters_list
     if isinstance(parameters_list,list):
         before=len(parameters_list)
         ## TODO: use `to_outp`?

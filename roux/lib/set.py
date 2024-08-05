@@ -119,7 +119,25 @@ def unique(l):
     """
     return list(set(l))
     
-def list2str(x,ignore=False):
+def unique_sorted(l):
+    """Unique items in a list.
+    
+    Parameters:
+        l (list): input list.
+    
+    Returns:
+        l (list): list.
+    
+    Notes:
+        The function can return list of lists if used in `pandas.core.groupby.DataFrameGroupBy.agg` context. 
+    """
+    return sorted(unique(l))
+    
+def list2str(
+    x,
+    fmt=None,
+    ignore=False,
+    ):
     """Returns string if single item in a list.
     
     Parameters:
@@ -128,15 +146,47 @@ def list2str(x,ignore=False):
     Returns:
         s (str): string.        
     """
-    x=unique(x)
-    if not ignore:
-        assert len(x)==1, x
-    if len(x)>1:
-        logging.warning('more than 1 str value encountered, returning list')
-        return x
-    else:
-        return x[0]
+    if not fmt is None:
+        if fmt.lower().startswith('count'):
+            if not isinstance(x, pd.Series):
+                x=pd.Series(x)
+            d = x.sort_values().value_counts().to_dict()
+            return ";".join([f"{k}({v})" for k, v in d.items()])
 
+    x=unique_sorted(x)
+        
+    if len(x)==1:
+        return x[0]
+    else:
+        if fmt is None:
+            if not ignore:
+                assert len(x)==1, x
+            else:
+                logging.warning('more than 1 str value encountered, returning list')
+                return x
+        elif fmt=='id':
+            return ';'.join(x)        
+        # elif fmt.lower().startswith('count'):
+        # elif fmt=='dict':
+        else:
+            raise ValueError(f"{fmt},{x}")            
+
+def lists2str(
+    ds: pd.DataFrame,
+    **kws_list2str,
+    ) -> str :
+    """
+    Combining lists with ids to to unified string
+
+    Usage: 
+        `pandas` aggregation functions.
+    """
+    assert isinstance(ds,pd.Series)
+    return list2str(
+        ds.drop_duplicates().apply(lambda x: x.split(';')).explode().unique(),
+        **kws_list2str,
+    )
+    
 def unique_str(l,**kws):
     """Unique single item from a list.
     

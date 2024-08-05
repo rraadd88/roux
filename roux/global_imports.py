@@ -74,10 +74,11 @@ except ImportError:
     logging.warning('Optional dependency seaborn missing, install by running: pip install roux[viz]')
 
 ## visualization functions from roux
-from roux.viz.io import begin_plot,to_plot,read_plot # noqa
+from roux.viz.theme import set_theme #noqa
+from roux.viz.ax_ import format_ax # noqa
 from roux.viz.colors import get_colors_default # noqa
 from roux.viz.diagram import diagram_nb # noqa
-from roux.viz.ax_ import format_ax # noqa
+from roux.viz.io import begin_plot,to_plot,read_plot # noqa
 
 ## logging functions
 from tqdm import tqdm
