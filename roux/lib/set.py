@@ -146,7 +146,7 @@ def list2str(
     Returns:
         s (str): string.        
     """
-    if not fmt is None:
+    if fmt is not None:
         if fmt.lower().startswith('count'):
             if not isinstance(x, pd.Series):
                 x=pd.Series(x)
