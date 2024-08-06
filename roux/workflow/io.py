@@ -566,7 +566,7 @@ def replacestar_ruff(
             drop_lines.append(i)        
         s_=s
     
-    cleaned_lines=[s for i,s in enumerate(replaced_lines) if not i in drop_lines]
+    cleaned_lines=[s for i,s in enumerate(replaced_lines) if i not in drop_lines]
     
     cleaned_text='\n'.join(cleaned_lines)
     
