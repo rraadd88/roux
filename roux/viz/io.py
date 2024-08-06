@@ -311,6 +311,7 @@ def to_script(
     defn: str="plot_",
     s4: str='    ',
     test: bool=False,
+    validate: bool=False,
     **kws
     ) -> str:
     """Save the script with the code for the plot.
@@ -341,9 +342,9 @@ def to_script(
     #make def
     for linei,line in enumerate(lines):
         if 'plt.subplot(' in line:
-            lines[linei]=f'if ax is None:{line}'        
+            lines[linei]=f'if ax is None:{line} #noqa'        
         elif 'plt.subplots(' in line:
-            lines[linei]=f'if ax is None:{line}'                
+            lines[linei]=f'if ax is None:{line} #noqa'                
     lines=[f"    {l}" for l in lines]
     lines='\n'.join(lines)
     lines=f'def {defn}(\n{s4}plotp="{plotp}",\n{s4}data=None,\n{s4}df1=None,\n{s4}kws_plot=None,\n{s4}ax=None,\n{s4}fig=None,\n{s4}outd=None,\n{s4}fun_data=None,\n{s4}**kws_set,\n{s4}):\n{s4}\n{s4}## get the inputs\n{s4}from roux.viz.io import get_plot_inputs\n{s4}plotp,data,kws_plot=get_plot_inputs(plotp=plotp,df1=data,kws_plot=kws_plot,outd=f"{{dirname(__file__)}}");\n{s4}data=fun_data(data) if not fun_data is None else data;\n{s4}\n{s4}## plotting\n'+lines+f'\n{s4}ax.set(**kws_set)\n{s4}return ax\n'
@@ -352,6 +353,15 @@ def to_script(
         f.write('from roux.global_imports import *\n')
         f.write(lines)
     if test: print(lines)
+        
+    if validate:    
+        ## replacestar
+        from roux.workflow.io import replacestar_ruff
+        replacestar_ruff(
+            p=srcp,
+            outp=srcp,
+            verbose=test,
+        )        
     return srcp
 
 def to_plot(
@@ -416,8 +426,14 @@ def to_plot(
     srcp=f"{outd}/plot.py"
     #save data
     to_table(df1,df1p)
-    srcp=to_script(srcp=srcp,plotp=plotp,
-                   logp=logp,sep=sep,test=test)
+    srcp=to_script(
+        srcp=srcp,
+        plotp=plotp,
+        logp=logp,
+        sep=sep,
+        test=test,
+        validate=validate,
+    )
     if srcp is None: return plotp
     to_dict(kws_plot,paramp)
     if test:

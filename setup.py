@@ -25,11 +25,12 @@ requirements = {
     'pandas>=0.25.3,<=2.1.4',
     'pyyaml>=5.1',
     'matplotlib>=2.2',
+    'seaborn>=0.8',
     'tqdm>=4.38.0', # logging
     # 'regex>=2018.7.11',
     ],
 'interactive':[
-    'watermark', # session info
+    # 'watermark', # session info
     #'ipywidgets','ipykernel',
 ],
 'data':[
@@ -47,7 +48,6 @@ requirements = {
     'scikit-learn',
         ],
 'viz':[
-    'seaborn>=0.8',
       ],
 'workflow':[
     'omegaconf',

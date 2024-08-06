@@ -354,7 +354,12 @@ def get_global_imports()-> pd.DataFrame:
         else:
             lines_grouped[k].append(s)
 
-    df1=pd.Series(lines_grouped).explode().to_frame('import statement').rename_axis(['rank','function comment']).reset_index()
+    df1=(
+        pd.Series(lines_grouped).explode().to_frame('import statement').rename_axis(['rank','function comment'])
+        .reset_index()
+        .dropna(subset=['import statement'])
+        .query(expr="~(`import statement`.str.strip().str.startswith('#'))")
+    )
     # df1
 
     def get_function_name(s):
@@ -375,7 +380,9 @@ def get_global_imports()-> pd.DataFrame:
             if ',' in s:
                 s=f"{s.split(' import ')[0]} import {function_name}"
         return s
-    df2=(df1
+    # return df1
+    df2=(
+    df1
     .assign(
         **{
             'internal':lambda df: df['function comment'].apply(lambda x: 'roux' in x),

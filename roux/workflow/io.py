@@ -510,6 +510,88 @@ def replacestar(
     print(res.stdout)
     return output_path
 
+def replacestar_ruff(
+    p:str,
+    outp:str,
+    replace: str='from roux.global_imports import *',
+    verbose=True,
+    ) -> str :
+    from roux import global_imports 
+    text=open(global_imports.__file__,'r').read()
+    
+    lines=(text
+        .split('## begin replacestar')[1]
+        .split('## end replacestar')[0]
+        .replace("#noqa","")
+        .replace("set_theme","set_theme #noqa")
+        .replace("\n\n","\n")
+        .split('\n')
+    )
+    lines=[s.strip() for s in lines]
+    lines=[s for s in lines if s!='']+['']
+    # lines
+    replace_with='\n'.join(lines)
+    
+    
+    replaced=open(p,'r').read().replace(replace,replace_with)
+    
+    import tempfile
+    temp = tempfile.NamedTemporaryFile().name + ".py"
+    # temp
+    
+    open(temp,'w').write(replaced)
+    
+    from roux.workflow.io import post_code
+    post_code(
+        p=temp,
+        lint=True,
+        format=True,
+        verbose=verbose,
+    )
+    
+    replaced_lines=open(temp,'r').read().split('\n')
+    
+    # import shutil
+    # shutil.move(temp,outp)
+    
+    drop_lines=[]
+    s_='' #last
+    for i,s in enumerate(replaced_lines):
+        s=s.strip()
+        if s.startswith('## setting states'):
+            break
+        if (s_.startswith('#') and s.startswith('#')):
+            drop_lines.append(i-1)
+        if s=='':
+            drop_lines.append(i)        
+        s_=s
+    
+    cleaned_lines=[s for i,s in enumerate(replaced_lines) if not i in drop_lines]
+    
+    cleaned_text='\n'.join(cleaned_lines)
+    
+    open(outp,'w').write(cleaned_text)
+    return outp
+    
+def post_code(
+    p: str,
+    lint:bool,
+    format:bool,
+    verbose: bool=True,
+):
+    ## ruff
+    com=""
+    if lint:
+        com+=f"ruff check --fix {p};"
+    if format:
+        com+=f"ruff format {p};"        
+    import subprocess
+    res=subprocess.run(
+        com,
+        shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+    if verbose:
+        print(res.stdout)
+    return res
 
 def to_clean_nb(
     p,
@@ -676,15 +758,9 @@ def to_clean_nb(
     )
     if res is None:
         return
-    ## ruff
-    com=""
-    if lint:
-        com+=f"ruff check --fix {outp};"
-    if format:
-        com+=f"ruff format {outp};"        
-    import subprocess
-    res=subprocess.run(
-        com,
-        shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
-    print(res.stdout)
+    post_code(
+        p=outp,
+        lint=lint,
+        format=format,
+    )
     return outp
