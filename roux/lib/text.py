@@ -1,5 +1,9 @@
 """For processing text files."""
-def get_header(path: str,comment='#',lineno=None):
+
+from roux.lib.sys import makedirs
+
+
+def get_header(path: str, comment="#", lineno=None):
     """Get the header of a file.
 
     Args:
@@ -11,10 +15,11 @@ def get_header(path: str,comment='#',lineno=None):
         lines (list): header.
     """
     import re
+
     file = open(path, "r")
-    lines=[]
+    lines = []
     if comment is not None:
-        for i,line in enumerate(file):
+        for i, line in enumerate(file):
             if re.search(f"^{comment}.*", line):
                 lines.append(line)
             else:
@@ -24,12 +29,13 @@ def get_header(path: str,comment='#',lineno=None):
         else:
             return lines[lineno]
     else:
-        for i,line in enumerate(file):
-            if i==lineno:
+        for i, line in enumerate(file):
+            if i == lineno:
                 return line
-            
+
+
 ## text files
-def cat(ps,outp):
+def cat(ps, outp):
     """Concatenate text files.
 
     Args:
@@ -39,9 +45,9 @@ def cat(ps,outp):
     Returns:
         outp (str): output path.
     """
-    makedirs(outp,exist_ok=True)
-    with open(outp, 'w') as outfile:
+    makedirs(outp, exist_ok=True)
+    with open(outp, "w") as outfile:
         for p in ps:
             with open(p) as infile:
-                outfile.write(infile.read())    
+                outfile.write(infile.read())
     return outp
