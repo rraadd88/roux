@@ -7,8 +7,28 @@ import logging
 import pandas as pd
 import numpy as np
 
+from pathlib import Path
+
+from os.path import exists, basename, dirname
+from glob import glob
+
+# from roux.lib.sys import runbash
+import subprocess
+
+## viz
+import matplotlib.pyplot as plt
+
 ## internal
-from roux.lib.io import read_dict, read_list, read_ps, read_table, to_dict, to_table
+from roux.lib.str import replace_many
+from roux.lib.io import (
+    read_dict,
+    read_list,
+    read_ps,
+    read_table,
+    to_dict,
+    to_table,
+    makedirs,
+)
 from roux.lib.sys import (
     basenamenoext,
     is_interactive_notebook,
@@ -20,11 +40,6 @@ from roux.lib.sys import (
     remove_exts,
     to_output_path,
 )
-from roux.lib.str import replace_many
-
-## viz
-import matplotlib.pyplot as plt
-
 
 ## matplotlib plots
 def to_plotp(
@@ -106,24 +121,41 @@ def savefig(
         str: output path.
     """
     #         from roux.viz.ax_ import to_plotp
-    plotp = to_plotp(plotp, fmts=fmts, **kws)
+    plotp = to_plotp(
+        plotp,
+        fmts=fmts,
+        **kws,
+    )
+    # print(plotp)
     if replaces_plotp is not None:
         plotp = replace_many(
             plotp,
             replaces=replaces_plotp,
         )
+        
+    # print(plotp)
     if exists(plotp):
         logging.warning(f"overwritting: {plotp}")
-    if plotp.count(".") > 1:
-        plotp = abspath(plotp)
-        if plotp.count(".") > 1:
-            logging.error(f"more than one '.' not allowed in the path {plotp}")
-            return
+        
+    # print(plotp)
+    assert Path(plotp).name.count(".") <= 1
+        # plotp = abspath(plotp)
+        # if plotp.count(".") > 1:
+        # logging.error(f"more than one '.' not allowed in the path {plotp}")
+        # return
+            
+    # print(plotp)
     if normalise_path:
-        plotp = abspath(to_path(plotp))
+        plotp = abspath(
+            to_path(
+                plotp
+            )
+        )
+    # print(plotp)
     plotp = (
         f"{dirname(plotp)}/{basenamenoext(plotp).replace('.','_')}{splitext(plotp)[1]}"
     )
+    # print(plotp)
     makedirs(plotp, exist_ok=True)
     if len(fmts) == 0:
         fmts = ["png"]
@@ -145,7 +177,7 @@ def savefig(
     # logging.basicConfig(level=logging.INFO)
     # plt.set_loglevel("info")
 
-    if "." in plotp:
+    if "." in Path(plotp).name:
         plt.savefig(
             plotp,
             dpi=dpi,
@@ -458,7 +490,12 @@ def to_plot(
 
     """
     # save plot
-    plotp = savefig(plotp, force=force, **kws)
+    plotp = savefig(
+        plotp,
+        force=force,
+        **kws,
+    )
+    # print(plotp)
     if show_path:
         plt.figtext(
             x=0.5,
@@ -472,6 +509,7 @@ def to_plot(
         if not quiet:
             logging.warning("no data provided to_plot")
         return plotp
+    # print(plotp)
     outd = plotp
     outd = remove_exts(outd)
     if test:
@@ -678,14 +716,6 @@ def to_data(path: str) -> str:
             "data:image/jpeg;base64," + base64.b64encode(image_file.read()).decode()
         )
     return encoded_string
-
-
-from os.path import exists, basename, dirname
-
-# from roux.lib.sys import runbash
-import subprocess
-from roux.lib.io import makedirs
-from glob import glob
 
 
 def to_convert(filep: str, outd: str = None, fmt: str = "JPEG") -> str:
