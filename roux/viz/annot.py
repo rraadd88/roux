@@ -333,7 +333,6 @@ def show_outlines(
             f"Mapping between the categories and the colors of the outlines: {outline_colors}."
         )
     for cat, df_ in data.groupby(column_outlines):
-        import seaborn as sns
 
         ax = sns.scatterplot(
             data=df_,
