@@ -44,6 +44,7 @@ def set_theme(
     plt.rcParams["font.family"] = font
     plt.rcParams["font.size"] = fontsize
     plt.rcParams["legend.frameon"] = False
+    
     from cycler import cycler
 
     plt.rcParams["axes.prop_cycle"] = cycler(
@@ -90,7 +91,7 @@ def set_theme(
     # legend.handlelength:  2.0  # the length of the legend lines
     # legend.handleheight:  0.7  # the height of the legend handle
     plt.rcParams["legend.handletextpad"] = (
-        0  # the space between the legend line and legend text
+        0.1  # the space between the legend line and legend text
     )
     # legend.borderaxespad: 0.5  # the border between the axes and legend edge
     # legend.columnspacing: 2.0  # column separation

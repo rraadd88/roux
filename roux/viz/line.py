@@ -85,6 +85,7 @@ def plot_bezier(
     pt1_guide=None,
     pt2_guide=None,
     direction="h",
+    off_guide=0.25,
     ax=None,
     test=False,
     **kws_line,
@@ -92,15 +93,22 @@ def plot_bezier(
     from matplotlib.path import Path
     import matplotlib.patches as patches
 
-    if test:
-        print(pt1, pt2)
     if direction == "h":
         assert pt1[0] < pt2[0], (pt1[0], pt2[0])
-        xoff = abs(pt1[0] - pt2[0]) * 0.25
+        off = abs(pt1[0] - pt2[0]) * off_guide
         if pt1_guide is None:
-            pt1_guide = [pt1[0] + xoff, pt1[1]]
+            pt1_guide = [pt1[0] + off, pt1[1]]
         if pt2_guide is None:
-            pt2_guide = [pt2[0] - xoff, pt2[1]]
+            pt2_guide = [pt2[0] - off, pt2[1]]
+    elif direction == "v":
+        assert pt1[1] < pt2[1], (pt1[1], pt2[1])
+        off = abs(pt1[1] - pt2[1]) * off_guide
+        if pt1_guide is None:
+            pt1_guide = [pt1[0], pt1[1] + off]
+        if pt2_guide is None:
+            pt2_guide = [pt2[0], pt2[1] - off]
+    else:
+        raise ValueError(direction)
     # Create the Path object using the control points
     vertices = [pt1, pt1_guide, pt2_guide, pt2]
     codes = [Path.MOVETO, Path.CURVE4, Path.CURVE4, Path.CURVE4]
@@ -127,7 +135,8 @@ def plot_bezier(
         ax.plot(
             control_points[:, 0],
             control_points[:, 1],
-            "ro--",
+            "--",
+            label=f'direction={direction}; off_guide={off_guide}'
         )
     return ax
 

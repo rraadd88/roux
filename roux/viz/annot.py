@@ -206,55 +206,73 @@ def annot_side_curved(
     colx: str,
     coly: str,
     col_label: str,
-    x: float,
-    ylim: tuple,
-    test: bool = False,
+    off: float,
+    lim: tuple,
+    loc: str='right',
+    # x: float=None, ## todo: deprecate
+    # ylim: tuple=None, ## todo: deprecate
     ax=None,
-    ha="left",
+    test: bool = False,
     kws_text={},
     **kws_line,
 ):
+    """Annot elements of the plots on the of the side plot using bezier lines.
+    
+    Usage: 
+        1. Allows m:1 mappings between points and labels
+    """
     if ax is None:
-        ax = plt.gca()
+        ax = plt.gca()        
+    
     ## for resettings at the end
     lims = dict(
         xlim=ax.get_xlim(),
         ylim=ax.get_ylim(),
     )
-
-    if test:
-        ## labels
-        ax = sns.scatterplot(data=data, x="sepal_length", y="petal_width", ax=ax)
-
+    if loc=='right':
+        kws_text_loc=dict(
+            va="center",
+            ha="right",    
+        )
+    else:
+        ## top
+        kws_text_loc=dict(
+            ha="center",
+            va="top",
+            rotation=90,
+        )
     ## sorted labels
     data1 = (
-        data.sort_values(coly)
+        data.sort_values(coly if loc=='right' else colx)
         .loc[:, [col_label]]
         .drop_duplicates()
         .assign(
-            y=lambda df: np.linspace(
-                *ylim,
-                len(df),
-            ),
-            x=lambda df: np.repeat(x, len(df)),
-            x_text=lambda df: df.apply(
-                lambda x: ax.text(
-                    x["x"],
-                    x["y"],
-                    s=x[col_label],
-                    ha=ha,
-                    **{
-                        **dict(
-                            va="center",
+            **{
+                'x' if loc=='right' else 'y':lambda df: np.repeat(off, len(df)),
+                'y' if loc=='right' else 'x':lambda df: np.linspace(
+                    *lim,
+                    len(df),
+                ),
+                ('x' if loc=='right' else 'y')+'_text':lambda df: df.apply(
+                    lambda x: getattr(
+                        (
+                            ax.text(
+                                x["x"],
+                                x["y"],
+                                s=x[col_label],
+                                **{
+                                    **kws_text_loc,
+                                    **kws_text, ## override by the inputs
+                                },
+                            )
+                            .get_window_extent(renderer=plt.gcf().canvas.get_renderer())
+                            .transformed(ax.transData.inverted())
                         ),
-                        **kws_text,
-                    },
-                )
-                .get_window_extent(renderer=plt.gcf().canvas.get_renderer())
-                .transformed(ax.transData.inverted())
-                .xmin,
-                axis=1,
-            ),
+                        'xmin' if  loc=='right' else 'ymin'
+                    ),
+                    axis=1,
+                ),
+            }
         )
     )
     # return data1
@@ -270,12 +288,13 @@ def annot_side_curved(
     data2.apply(
         lambda x: plot_bezier(
             [x[colx], x[coly]],
-            [x["x_text"], x["y"]],
+            [x["x_text"], x["y"]] if loc=='right' else [x["x"], x["y_text"]],
+            direction='h' if loc=='right' else 'v',
             ax=ax,
             **{
                 **dict(
                     clip_on=False,
-                    color="k",
+                    color="darkgray",
                 ),
                 **kws_line,
             },
