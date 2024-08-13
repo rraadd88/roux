@@ -231,7 +231,7 @@ def annot_side_curved(
         ylim=ax.get_ylim(),
     )
     # print(lims)
-    if not limf is None:
+    if limf is not None:
         ## fraction to limits
         from roux.stat.transform import rescale
         lim=rescale(
