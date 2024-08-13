@@ -206,8 +206,9 @@ def annot_side_curved(
     colx: str,
     coly: str,
     col_label: str,
-    off: float,
-    lim: tuple,
+    off: float=0.5,
+    lim: tuple=None,
+    limf: tuple=None, ## limits as fractions
     loc: str='right',
     # x: float=None, ## todo: deprecate
     # ylim: tuple=None, ## todo: deprecate
@@ -229,6 +230,24 @@ def annot_side_curved(
         xlim=ax.get_xlim(),
         ylim=ax.get_ylim(),
     )
+    # print(lims)
+    if not limf is None:
+        ## fraction to limits
+        from roux.stat.transform import rescale
+        lim=rescale(
+            limf,
+            range1=[0,1],
+            range2=lims['ylim'] if loc=='right' else lims['xlim'],
+        )        
+    if lim is None:
+        lim=lims['ylim'] if loc=='right' else lims['xlim']
+
+    from roux.stat.paired import get_diff_sorted
+    lim_=(lims['xlim'] if loc=='right' else lims['ylim'])
+    size=get_diff_sorted(*lim_)
+    off=max(lim_)+(size*off)
+    # print(off)
+    
     if loc=='right':
         kws_text_loc=dict(
             va="center",
@@ -243,7 +262,12 @@ def annot_side_curved(
         )
     ## sorted labels
     data1 = (
-        data.sort_values(coly if loc=='right' else colx)
+        data
+        .sort_values(
+            coly if loc=='right' else colx,
+            ascending=lims['ylim'][0]<lims['ylim'][1] if loc=='right' else lims['xlim'][0]<lims['xlim'][1],
+            # ascending=True,
+        )
         .loc[:, [col_label]]
         .drop_duplicates()
         .assign(
@@ -275,6 +299,7 @@ def annot_side_curved(
             }
         )
     )
+    # print(data1)
     # return data1
     ## lines
     data2 = data.merge(
