@@ -30,16 +30,15 @@ requirements = {
     # 'regex>=2018.7.11',
     ],
 'interactive':[
+    'ipywidgets',
+    'ipykernel',
     # 'watermark', # session info
-    #'ipywidgets','ipykernel',
 ],
 'data':[
     'openpyxl', # special io
 ],
 'fast':[
     'pyarrow', # fast
-    # 'pandarallel', # fast
-    # 'ipywidgets', # for pandarallel
 ],
 'stat':[
     'scipy>=1.1.0',
@@ -48,6 +47,7 @@ requirements = {
     'scikit-learn',
         ],
 'viz':[
+    'altair',
       ],
 'workflow':[
     'omegaconf',

@@ -511,6 +511,7 @@ def check_nunique(
             ds_ = df.groupby(groupby).apply(
                 lambda df: len(df.loc[:, subset].drop_duplicates())
             )
+    ds_=ds_.sort_values(ascending=False)
     if out:
         ## no logging
         return ds_
