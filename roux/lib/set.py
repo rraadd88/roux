@@ -70,7 +70,6 @@ def check_non_overlaps_with(
     l_ = set(l1) - set(l2)
     if log:
         from roux.stat.io import perc_label
-
         logging.info(
             f"{perc_label(len(l_),len(set(l1)))} non overlapping items found in l1: {l_}"
         )
@@ -80,13 +79,23 @@ def check_non_overlaps_with(
         return len(l_)
 
 
-def validate_overlaps_with(l1, l2, **kws_check):
+def validate_overlaps_with(
+    l1,
+    l2,
+    **kws_check
+    ):
     return len(check_non_overlaps_with(l1, l2, **kws_check)) == 0
 
 
-def assert_overlaps_with(l1, l2, out_count=False):
+def assert_overlaps_with(
+    l1,
+    l2,
+    out_count=False
+    ):
     assert validate_overlaps_with(
-        l1, l2
+        l1,
+        l2,
+        log=False,
     ), f"Non-ovelapping item/s: {check_non_overlaps_with(l1,l2,out_count=out_count)}"
 
 
