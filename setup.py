@@ -25,20 +25,20 @@ requirements = {
     'pandas>=0.25.3,<=2.1.4',
     'pyyaml>=5.1',
     'matplotlib>=2.2',
+    'seaborn>=0.8',
     'tqdm>=4.38.0', # logging
     # 'regex>=2018.7.11',
     ],
 'interactive':[
-    'watermark', # session info
-    #'ipywidgets','ipykernel',
+    'ipywidgets',
+    'ipykernel',
+    # 'watermark', # session info
 ],
 'data':[
     'openpyxl', # special io
 ],
 'fast':[
     'pyarrow', # fast
-    # 'pandarallel', # fast
-    # 'ipywidgets', # for pandarallel
 ],
 'stat':[
     'scipy>=1.1.0',
@@ -47,7 +47,7 @@ requirements = {
     'scikit-learn',
         ],
 'viz':[
-    'seaborn>=0.8',
+    'altair',
       ],
 'workflow':[
     'omegaconf',
