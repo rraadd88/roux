@@ -1,3 +1,5 @@
+import logging
+
 def print_parameters(d: dict):
     """
     Print a directory with parameters as lines of code
@@ -14,3 +16,12 @@ def print_parameters(d: dict):
             ]
         )
     )
+
+def test_params(
+    params,
+    i=0, #index
+    ):
+    if isinstance(params, dict):
+        params=[params]
+    logging.info(f"total params: {len(params)}")
+    print_parameters(params[i])
