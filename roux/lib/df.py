@@ -1663,7 +1663,11 @@ def to_boolean(df1):
 
 
 ## sorting
-def to_cat(ds1, cats, ordered=True):
+def to_cat(
+    ds1: pd.Series,
+    cats: list,
+    ordered: bool=True,
+    ):
     """To series containing categories.
 
     Parameters:
@@ -1678,7 +1682,6 @@ def to_cat(ds1, cats, ordered=True):
     ds1 = ds1.cat.set_categories(new_categories=cats, ordered=ordered)
     assert not ds1.isnull().any()
     return ds1
-
 
 @to_rd
 def astype_cat(
