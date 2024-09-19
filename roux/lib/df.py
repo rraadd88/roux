@@ -1404,6 +1404,46 @@ def groupby_sample(
     """
     return get_group(df.groupby(by=groupby), **kws_get_group)
 
+@to_rd
+def groupby_sort_values(
+    df: pd.DataFrame,
+    groupby: str,
+    col: str,
+    func: str,
+    col_temp : str ='temp',
+    ascending=True,
+    **kws_sort_values,
+) -> pd.DataFrame:
+    """
+    Groupby and sort
+
+    Parameters:
+        df (pd.DataFrame): input dataframe.
+        groupby (list): columns to group by.
+
+    Keyword arguments:
+        keyword parameters provided to the `.sort_values` attribute
+
+    Returns:
+        pd.DataFrame
+    """
+    return (
+        df
+        .assign(
+            **{
+                col_temp:lambda df: df.groupby(groupby)[col].transform(func),
+            },
+        )
+        .sort_values(
+            col_temp,
+            ascending=ascending,
+            **kws_sort_values,
+            )
+        .drop(
+            [col_temp],
+            axis=1
+        )
+    )
 
 @to_rd
 def groupby_agg_nested(
