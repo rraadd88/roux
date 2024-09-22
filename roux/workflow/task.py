@@ -81,8 +81,8 @@ def run_task(
         logging.info(parameters)
     if kernel is None:
         logging.warning("`kernel` name not provided.")
-    import papermill as pm
 
+    import papermill as pm
     pm.execute_notebook(
         input_path=input_notebook_path,
         output_path=output_notebook_path,
@@ -97,6 +97,25 @@ def run_task(
     # return parameters['output_path']
     return output_notebook_path
 
+def apply_run_task(
+    x: str,
+    input_notebook_path: str,
+    kernel: str,
+    force=False,
+    **kws_papermill,
+    ):
+    try:
+        run_task(
+            x,
+            input_notebook_path=input_notebook_path,
+            kernel=kernel,
+            force=force,
+            **kws_papermill,
+        )
+    except:
+        # logging.error
+        raise RuntimeError(f"tb: check {x}")
+        # return 
 
 def run_tasks(
     input_notebook_path: str,
@@ -133,7 +152,7 @@ def run_tasks(
         verbose (bool): verbose.
 
     Keyword parameters:
-        kws_papermill: parameters provided to the `pm.execute_notebook` function.
+        kws_papermill: parameters provided to the `pm.execute_notebook` function e.g. working directory (cwd=)
         to_filter_nbby_patterns_kws (list): dictionary containing parameters to be provided to `to_filter_nbby_patterns` function (Defaults to None).
 
     Returns:
@@ -239,11 +258,12 @@ def run_tasks(
     import pandas as pd
 
     ds1 = pd.Series(parameters_list)
-
+        
     if len(ds1) != 0:
         if test1:
             ds1 = ds1.head(1)
             logging.warning("testing only the first input.")
+            
         if not fast:
             ds2 = getattr(
                 ds1,
@@ -251,7 +271,7 @@ def run_tasks(
                 if hasattr(ds1, "progress_apply") and len(ds1) > 1
                 else "apply",
             )(
-                lambda x: run_task(
+                lambda x: apply_run_task(
                     x,
                     input_notebook_path=input_notebook_path,
                     kernel=kernel,
@@ -266,7 +286,7 @@ def run_tasks(
                 nb_workers=fast_workers, progress_bar=True, use_memory_fs=False
             )
             ds2 = ds1.parallel_apply(
-                lambda x: run_task(
+                lambda x: apply_run_task(
                     x,
                     input_notebook_path=input_notebook_path,
                     kernel=kernel,

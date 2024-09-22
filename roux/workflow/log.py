@@ -1,4 +1,5 @@
 import logging
+from pathlib import Path
 
 def print_parameters(d: dict):
     """
@@ -9,11 +10,13 @@ def print_parameters(d: dict):
     """
     assert isinstance(d, dict)
     print(
-        "\n".join(
-            [
-                k + "=" + ('"' + v + '"' if isinstance(v, str) else str(v))
-                for k, v in d.items()
-            ]
+        f"## for testing\nimport os\nos.chdir('{Path.cwd().as_posix()}')\n\n## parameters\n"+(
+            "\n".join(
+                [
+                    k + "=" + ('"' + v + '"' if isinstance(v, str) else str(v))
+                    for k, v in d.items()
+                ]
+            )
         )
     )
 

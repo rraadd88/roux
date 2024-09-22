@@ -813,8 +813,13 @@ def rename_legends(ax: plt.Axes, replaces: dict, **kws_legend) -> plt.Axes:
     return ax.legend(
         handles=handles,
         labels=labels,
-        title=ax.get_legend().get_title().get_text(),
-        **kws_legend,
+        **{
+            **dict(
+                bbox_to_anchor=ax.get_legend().get_bbox_to_anchor()._bbox.bounds,
+                title=ax.get_legend().get_title().get_text(),
+            ),
+            **kws_legend,
+        },
     )
 
 
