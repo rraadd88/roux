@@ -181,7 +181,7 @@ def annot_axs(
     fig=ax1.get_figure()
     
     for k,col in cols.items():
-        if not col in data:
+        if col not in data:
             if col in ['xmin','xmax','ymin','ymax']:
                 if k.startswith('ax1'):
                     ax=ax1
