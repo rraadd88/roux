@@ -787,10 +787,16 @@ def format_legends(
     return ax.legend(
         handles=handles,
         labels=labels,
-        title=ax.get_legend().get_title().get_text().capitalize()
-        if ax.get_legend() is not None
-        else None,
-        **kws_legend,
+        **{
+            ## inferred
+            **dict(
+                title=ax.get_legend().get_title().get_text().capitalize()
+                    if ax.get_legend() is not None
+                    else None,
+            ),
+            ## custom
+            **kws_legend,
+        }
     )
 
 
