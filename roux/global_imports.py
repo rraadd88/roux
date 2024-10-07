@@ -33,6 +33,7 @@ from roux.lib.set import dropna, flatten, unique, assert_overlaps_with, validate
 ## dataframe attribute from roux
 # attributes
 import roux.lib.dfs as rd #noqa
+import roux.viz.ds as rs #noqa
 
 ## stats functions from roux
 from roux.stat.binary import perc #noqa

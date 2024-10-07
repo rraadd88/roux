@@ -794,7 +794,11 @@ def format_legends(
     )
 
 
-def rename_legends(ax: plt.Axes, replaces: dict, **kws_legend) -> plt.Axes:
+def rename_legends(
+    ax: plt.Axes,
+    replaces: dict,
+    **kws_legend
+    ) -> plt.Axes:
     """Rename legends.
 
     Args:

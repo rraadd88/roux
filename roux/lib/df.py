@@ -595,6 +595,7 @@ def check_duplicated(
 def validate_no_dups(
     df,
     subset=None,
+    log: bool=True,
 ):
     """Validate that no duplicates.
 
@@ -605,7 +606,7 @@ def validate_no_dups(
     if subset is None:
         subset = df.columns.tolist()
     out = not df.duplicated(subset=subset).any()
-    if not out:
+    if not out and log:
         logging.warning("duplicate rows found")
     return out
 
@@ -614,11 +615,13 @@ def validate_no_dups(
 def validate_no_duplicates(
     df,
     subset=None,
+    **kws,
 ):
     """Validate that no duplicates (alias of `validate_no_dups`)"""
     return validate_no_dups(
         df,
         subset=subset,
+        **kws,
     )
 
 
@@ -1563,24 +1566,30 @@ def infer_index(
     Infer the index (id) of the table.
 
 
-    """
-    cols = (
-        data.drop(cols_drop, axis=1)
+    """    
+    cols=(
+        data
+        .drop(cols_drop, axis=1)
         .select_dtypes(
-            include=object,
+            include='object',
             exclude=None,
         )
         .nunique()
         .sort_values(ascending=False)
+        .to_frame('nunique')
+        .reset_index()
+        .query(expr="`nunique`>1")
+        ['index'].tolist()
     )
-    assert not cols.duplicated(), cols
-    subset = []
-    for col in cols.index:
-        subset = subset + [col]
-        if data.rd.validate_no_dups(subset=subset):
-            break
-    return subset
-
+    
+    cols_id=[]
+    for c in cols:
+        cols_id+=[c]
+        if data.rd.validate_no_dups(
+            subset=cols_id,
+            log=False,
+            ):
+            return cols_id
 
 ## multiindex
 @to_rd
