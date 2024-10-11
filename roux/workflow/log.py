@@ -25,6 +25,15 @@ def test_params(
     i=0, #index
     ):
     if isinstance(params, dict):
-        params=[params]
+        from roux.workflow.task import validate_params
+        if validate_params(
+            params[
+                list(params.keys())[0]
+            ]
+            ):
+            params = list(params.values())
+        else:  
+            params=[params]
+        
     logging.info(f"total params: {len(params)}")
     print_parameters(params[i])

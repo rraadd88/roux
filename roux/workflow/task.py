@@ -192,14 +192,22 @@ def run_tasks(
                 f"{output_dir_path}/{k.split(output_dir_path)[1].split('/')[0]}/.parameters.yaml",
             )
     # print(parameters_list)
+    
     if isinstance(parameters_list, str):
         parameters_list = read_dict(parameters_list)
+        
     if len(parameters_list) == 0:
         logging.info("nothing to process. use `force`=True to rerun.")
         return
+        
     if isinstance(parameters_list, dict):
-        if validate_params(parameters_list[list(parameters_list.keys())[0]]):
+        if validate_params(
+            parameters_list[
+                list(parameters_list.keys())[0]
+            ]
+            ):
             parameters_list = list(parameters_list.values())
+            
     if test:
         logging.info("Aborting run because of the test mode")
         return parameters_list
