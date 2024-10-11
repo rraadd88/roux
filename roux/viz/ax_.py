@@ -787,14 +787,24 @@ def format_legends(
     return ax.legend(
         handles=handles,
         labels=labels,
-        title=ax.get_legend().get_title().get_text().capitalize()
-        if ax.get_legend() is not None
-        else None,
-        **kws_legend,
+        **{
+            ## inferred
+            **dict(
+                title=ax.get_legend().get_title().get_text().capitalize()
+                    if ax.get_legend() is not None
+                    else None,
+            ),
+            ## custom
+            **kws_legend,
+        }
     )
 
 
-def rename_legends(ax: plt.Axes, replaces: dict, **kws_legend) -> plt.Axes:
+def rename_legends(
+    ax: plt.Axes,
+    replaces: dict,
+    **kws_legend
+    ) -> plt.Axes:
     """Rename legends.
 
     Args:
@@ -813,8 +823,13 @@ def rename_legends(ax: plt.Axes, replaces: dict, **kws_legend) -> plt.Axes:
     return ax.legend(
         handles=handles,
         labels=labels,
-        title=ax.get_legend().get_title().get_text(),
-        **kws_legend,
+        **{
+            **dict(
+                bbox_to_anchor=ax.get_legend().get_bbox_to_anchor()._bbox.bounds,
+                title=ax.get_legend().get_title().get_text(),
+            ),
+            **kws_legend,
+        },
     )
 
 

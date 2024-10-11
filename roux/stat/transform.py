@@ -124,10 +124,17 @@ def rescale(a: np.array, range1: tuple = None, range2: tuple = [0, 1]) -> np.arr
     Returns:
         np.array: output.
     """
-    if not isinstance(a, np.ndarray):
-        a = np.array(a)
+    if not isinstance(a, pd.Series):
+        if not isinstance(a, np.ndarray):
+            ## float or list
+            a = np.array(a)
     if range1 is None:
-        range1 = [np.min(a), np.max(a)]
+        if not isinstance(a, pd.Series):
+            range1 = [np.min(a), np.max(a)]
+        else:
+            ## faster
+            range1 = [a.min(), a.max()]
+
     delta1 = range1[1] - range1[0]
     delta2 = range2[1] - range2[0]
     return (delta2 * (a - range1[0]) / delta1) + range2[0]

@@ -1,6 +1,5 @@
 import pandas as pd
 
-
 def to_class(cls):
     """Get the decorator to attach functions.
 
@@ -36,6 +35,17 @@ class rd:
 
 # create the `roux-dataframe` (`.rd`) decorator
 to_rd = to_class(rd)
+
+@pd.api.extensions.register_series_accessor("rs")
+class rs:
+    """`roux-series` (`.rs`) extension."""
+
+    def __init__(self, pandas_obj):
+        self._obj = pandas_obj
+
+
+# create the `roux-series` (`.rs`) decorator
+to_rs = to_class(rs)
 
 # @pd.api.extensions.register_dataframe_accessor("stat")
 # class stat:

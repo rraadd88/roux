@@ -71,7 +71,7 @@ def get_pval(
     colindex=None,
     subsets=None,
     test=False,
-    fun=None,
+    func=None,
 ) -> tuple:
     """Get p-value.
 
@@ -83,7 +83,7 @@ def get_pval(
         colindex (str, optional): column with the index. Defaults to None.
         subsets (list, optional): subset types. Defaults to None.
         test (bool, optional): test. Defaults to False.
-        fun (function, optional): function. Defaults to None.
+        func (function, optional): function. Defaults to None.
 
     Raises:
         ArgumentError: colvalue or colsubset not found in df.
@@ -113,15 +113,22 @@ def get_pval(
             df.loc[(df[colsubset] == subsets[1]), colvalue].tolist(),
         )
         if len(x) != 0 and len(y) != 0 and (nunique(x + y) != 1):
-            if fun is None:
+            if func is None:
                 if test:
                     logging.warning("mannwhitneyu used")
-                return sc.stats.mannwhitneyu(x, y, alternative="two-sided")
+                return sc.stats.mannwhitneyu(
+                    x,
+                    y,
+                    alternative="two-sided",
+                )
             else:
-                logging.warning("custom function used")
-                return fun(
-                    df.loc[(df[colsubset] == subsets[0]), colvalue],
-                    df.loc[(df[colsubset] == subsets[1]), colvalue],
+                if test:
+                    logging.warning(f"custom function used: {str(func)}")
+                return func(
+                    # df.loc[(df[colsubset] == subsets[0]), colvalue],
+                    # df.loc[(df[colsubset] == subsets[1]), colvalue],
+                    x,
+                    y,
                 )
         else:
             # if empty list: RuntimeWarning: divide by zero encountered in double_scalars  z = (bigu - meanrank) / sd
@@ -151,6 +158,7 @@ def get_stat(
     stats=["mean", "median", "var", "size"],
     coff_samples_min=None,
     verb=False,
+    func=None,
     **kws,
 ) -> pd.DataFrame:
     """Get statistics.
@@ -210,6 +218,7 @@ def get_stat(
                 colindex=colindex,
                 subsets=df.name,
                 colvalue_bool=colvalue_bool,
+                func=func,
                 **kws,
             )
         )
@@ -217,8 +226,8 @@ def get_stat(
     )
     df2 = df2.rename(
         columns={
-            0: f"stat ({'MWU' if not colvalue_bool else 'FE'} test)",
-            1: f"P ({'MWU' if not colvalue_bool else 'FE'} test)",
+            0: "stat"+(f" ({'MWU' if not colvalue_bool else 'FE'} test)" if func is None else ""),
+            1: "P"+(f" ({'MWU' if not colvalue_bool else 'FE'} test)" if func is None else ""),
         },
     ).reset_index()
     from roux.lib.dfs import merge_paired
@@ -393,26 +402,29 @@ def get_significant_changes(
                 # df1.loc[(df1[f'ratio between {changeby} (subset1-subset2)']>1),'change']='increase'
                 # df1.loc[(df1[f'ratio between {changeby} (subset1-subset2)']<1),'change']='decrease'
         df1["change"] = df1["change"].fillna("ns")
-    for test in ["MWU", "FE"]:
-        if f"P ({test} test)" not in df1:
+    stat_suffixs=[c.split('P')[1] if c.startswith('P ') else "" for c in df1.filter(regex="^P.*").columns]
+    # for stat in ["MWU", "FE"]:
+    #     stat_suffix=f" ({stat} test)"
+    for stat_suffix in stat_suffixs:
+        if "P"+stat_suffix not in df1:
             continue
         # without fdr
-        df1[f"change is significant, P ({test} test) < {coff_p}"] = (
-            df1[f"P ({test} test)"] < coff_p
+        df1[f"change is significant, P{stat_suffix} < {coff_p}"] = (
+            df1["P"+stat_suffix] < coff_p
         )
         if coff_q is not None:
             from roux.stat.transform import get_q
 
-            df1[f"Q ({test} test)"] = get_q(df1[f"P ({test} test)"])
-            # df1[f'change is significant, Q ({test} test) < {coff_q}']=df1[f'Q ({test} test)']<coff_q
+            df1["Q"+stat_suffix] = get_q(df1["P"+stat_suffix])
+            # df1[f'change is significant, Q{stat_suffix} < {coff_q}']=df1[f'Q{stat_suffix}']<coff_q
             #     info(f"corrected alpha alphacSidak={alphacSidak},alphacBonf={alphacBonf}")
             # if test!='FE':
-            df1[f"significant change, Q ({test} test) < {coff_q}"] = df1.apply(
-                lambda x: x["change"] if x[f"Q ({test} test)"] < coff_q else "ns",
+            df1[f"significant change, Q{stat_suffix} < {coff_q}"] = df1.apply(
+                lambda x: x["change"] if x["Q"+stat_suffix] < coff_q else "ns",
                 axis=1,
             )
-            # df1.loc[df1[f'change is significant, Q ({test} test) < {coff_q}'],f"significant change, Q ({test} test) < {coff_q}"]=df1.loc[df1[f"change is significant, Q ({test} test) < {coff_q}"],'change']
-            # df1[f"significant change, Q ({test} test) < {coff_q}"]=df1[f"significant change, Q ({test} test) < {coff_q}"].fillna('ns')
+            # df1.loc[df1[f'change is significant, Q{stat_suffix} < {coff_q}'],f"significant change, Q{stat_suffix} < {coff_q}"]=df1.loc[df1[f"change is significant, Q{stat_suffix} < {coff_q}"],'change']
+            # df1[f"significant change, Q{stat_suffix} < {coff_q}"]=df1[f"significant change, Q{stat_suffix} < {coff_q}"].fillna('ns')
     return df1
 
 
@@ -514,6 +526,7 @@ def get_diff(
     cols_group: list,
     coff_p: float = None,
     test: bool = False,
+    func=None,
     **kws,
 ) -> pd.DataFrame:
     """
@@ -555,13 +568,14 @@ def get_diff(
         cols_value=["value y"],
         colindex=cols_index,
         cols_group=cols_group,
+        func=func,
         **kws,
     )
     if coff_p is not None:
-        df3 = df3.loc[(df3["P (MWU test)"] < coff_p), :]
+        df3 = df3.loc[(df3["P"+(" (MWU test)" if func is None else "")] < coff_p), :]
     else:
         logging.warning("not filtered by P-value cutoff")
-    return df3.sort_values("P (MWU test)")
+    return df3.sort_values("P"+(" (MWU test)" if func is None else ""))
 
 
 def binby_pvalue_coffs(

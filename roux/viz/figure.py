@@ -169,3 +169,50 @@ def labelplots(
                 **kws_text,
                 transform=ax.transAxes,
             )
+
+def annot_axs(
+    data, # contains the x and y coord.s in ax1 and 2
+    ax1,
+    ax2,
+    cols,
+    **kws_line,
+    ):
+    ## inferred
+    fig=ax1.get_figure()
+    
+    for k,col in cols.items():
+        if col not in data:
+            if col in ['xmin','xmax','ymin','ymax']:
+                if k.startswith('ax1'):
+                    ax=ax1
+                elif k.startswith('ax2'):
+                    ax=ax2
+                from roux.viz.ax_ import get_axlims
+                lims=get_axlims(ax)
+                data=data.assign(
+                    **{
+                        col:lims[col[0]][col[1:]]
+                    }
+                )
+                logging.info(f"col={col}")
+            else:
+                raise ValueError(col)
+    
+    from matplotlib.patches import ConnectionPatch
+    _=data.apply(lambda x:  fig.add_artist(
+        ConnectionPatch(
+            xyA=[x[cols['ax1x']],x[cols['ax1y']]], 
+            xyB=[x[cols['ax2x']],x[cols['ax2y']]],
+            coordsA=ax1.transData, 
+            coordsB=ax2.transData,
+            **{
+                **dict(
+                    clip_on=False,
+                    color='gray',
+                ),
+                **kws_line
+            }
+        ),
+        ),
+        axis=1)
+    return data

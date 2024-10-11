@@ -33,6 +33,7 @@ from roux.lib.set import dropna, flatten, unique, assert_overlaps_with, validate
 ## dataframe attribute from roux
 # attributes
 import roux.lib.dfs as rd #noqa
+import roux.viz.ds as rs #noqa
 
 ## stats functions from roux
 from roux.stat.binary import perc #noqa
@@ -51,7 +52,7 @@ from roux.viz.io import begin_plot,to_plot,read_plot #noqa
 
 ## workflow functions from roux
 from roux.workflow.io import read_metadata,infer_parameters #noqa #, read_config, to_diff_notebooks
-from roux.workflow.log import print_parameters #noqa
+from roux.workflow.log import test_params, print_parameters #noqa
 from roux.workflow.task import run_tasks #noqa
 
 ## logging functions

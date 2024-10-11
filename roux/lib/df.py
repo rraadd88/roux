@@ -595,6 +595,7 @@ def check_duplicated(
 def validate_no_dups(
     df,
     subset=None,
+    log: bool=True,
 ):
     """Validate that no duplicates.
 
@@ -605,7 +606,7 @@ def validate_no_dups(
     if subset is None:
         subset = df.columns.tolist()
     out = not df.duplicated(subset=subset).any()
-    if not out:
+    if not out and log:
         logging.warning("duplicate rows found")
     return out
 
@@ -614,11 +615,13 @@ def validate_no_dups(
 def validate_no_duplicates(
     df,
     subset=None,
+    **kws,
 ):
     """Validate that no duplicates (alias of `validate_no_dups`)"""
     return validate_no_dups(
         df,
         subset=subset,
+        **kws,
     )
 
 
@@ -1404,6 +1407,46 @@ def groupby_sample(
     """
     return get_group(df.groupby(by=groupby), **kws_get_group)
 
+@to_rd
+def groupby_sort_values(
+    df: pd.DataFrame,
+    groupby: str,
+    col: str,
+    func: str,
+    col_temp : str ='temp',
+    ascending=True,
+    **kws_sort_values,
+) -> pd.DataFrame:
+    """
+    Groupby and sort
+
+    Parameters:
+        df (pd.DataFrame): input dataframe.
+        groupby (list): columns to group by.
+
+    Keyword arguments:
+        keyword parameters provided to the `.sort_values` attribute
+
+    Returns:
+        pd.DataFrame
+    """
+    return (
+        df
+        .assign(
+            **{
+                col_temp:lambda df: df.groupby(groupby)[col].transform(func),
+            },
+        )
+        .sort_values(
+            col_temp,
+            ascending=ascending,
+            **kws_sort_values,
+            )
+        .drop(
+            [col_temp],
+            axis=1
+        )
+    )
 
 @to_rd
 def groupby_agg_nested(
@@ -1523,24 +1566,30 @@ def infer_index(
     Infer the index (id) of the table.
 
 
-    """
-    cols = (
-        data.drop(cols_drop, axis=1)
+    """    
+    cols=(
+        data
+        .drop(cols_drop, axis=1)
         .select_dtypes(
-            include=object,
+            include='object',
             exclude=None,
         )
         .nunique()
         .sort_values(ascending=False)
+        .to_frame('nunique')
+        .reset_index()
+        .query(expr="`nunique`>1")
+        ['index'].tolist()
     )
-    assert not cols.duplicated(), cols
-    subset = []
-    for col in cols.index:
-        subset = subset + [col]
-        if data.rd.validate_no_dups(subset=subset):
-            break
-    return subset
-
+    
+    cols_id=[]
+    for c in cols:
+        cols_id+=[c]
+        if data.rd.validate_no_dups(
+            subset=cols_id,
+            log=False,
+            ):
+            return cols_id
 
 ## multiindex
 @to_rd
@@ -1623,7 +1672,11 @@ def to_boolean(df1):
 
 
 ## sorting
-def to_cat(ds1, cats, ordered=True):
+def to_cat(
+    ds1: pd.Series,
+    cats: list,
+    ordered: bool=True,
+    ):
     """To series containing categories.
 
     Parameters:
@@ -1638,7 +1691,6 @@ def to_cat(ds1, cats, ordered=True):
     ds1 = ds1.cat.set_categories(new_categories=cats, ordered=ordered)
     assert not ds1.isnull().any()
     return ds1
-
 
 @to_rd
 def astype_cat(

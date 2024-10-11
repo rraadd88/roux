@@ -2,9 +2,9 @@
 
 import logging
 import pandas as pd
-import roux.lib.df as rd  # noqa
-from roux.lib import to_rd
 
+import roux.lib.df as rd #noqa
+from roux.lib import to_rd
 
 def filter_dfs(
     dfs: list,

@@ -357,11 +357,16 @@ def get_env(
     return env
 
 
-def runbash(s1: str, env=None, test: bool = False, **kws):
+def run_com(
+    com: str, 
+    env=None, 
+    test: bool = False, 
+    **kws,
+    ):
     """Run a bash command.
 
     Args:
-        s1 (str): command.
+        com (str): command.
         env (str): environment name.
         test (bool, optional): testing. Defaults to False.
 
@@ -372,23 +377,34 @@ def runbash(s1: str, env=None, test: bool = False, **kws):
         1. logp
         2. error ignoring
     """
-    if test:
-        logging.info(s1)
-    if env is None:
-        logging.warning("env is not set.")
-    response = subprocess.call(
-        s1,
-        shell=True,
-        env=get_env(env) if isinstance(env, str) else env if env is not None else env,
-        stderr=subprocess.DEVNULL if not test else None,
-        stdout=subprocess.DEVNULL if not test else None,
-        **kws,
-    )
-    assert response == 0, f"Error: {s1}" + (
-        "\nset `test=True` for more verbose." if not test else ""
-    )
-    return response
-
+    logging.info(com)
+    if env is not None:
+        # logging.warning("env is not set.")
+        response = subprocess.call(
+            com,
+            shell=True,
+            env=get_env(env) if isinstance(env, str) else env if env is not None else env,
+            stderr=subprocess.DEVNULL if not test else None,
+            stdout=subprocess.DEVNULL if not test else None,
+            **kws,
+        )
+        assert response == 0, f"Error: {com}" + (
+            "\nset `test=True` for more verbose." if not test else ""
+        )
+    else:
+        response = subprocess.run(
+            com,
+            shell=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            text=True
+            )
+        # print(res.stdout)
+        assert response.returncode == 0, response
+        return response.stdout
+    
+# alias to be deprecated in the future
+runbash=run_com
 
 def runbash_tmp(
     s1: str,

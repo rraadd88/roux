@@ -6,6 +6,7 @@ logging.getLogger().setLevel(logging.INFO)
 
 import argh
 from roux.lib.io import backup, to_version, to_zip
+from roux.lib.io import pqt2tsv
 from roux.lib.sys import read_ps
 from roux.workflow.io import read_config, read_metadata, replacestar, to_clean_nb
 from roux.workflow.task import run_tasks
@@ -21,6 +22,7 @@ parser.add_commands(
         backup,
         to_version,
         to_zip,
+        pqt2tsv,
         ## workflow io
         read_config,
         read_metadata,
