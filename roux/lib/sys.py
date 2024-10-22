@@ -380,7 +380,7 @@ def run_com(
     """
     if verbose:
         logging.info(com)
-    if not env is None:
+    if env is not None:
         # logging.warning("env is not set.")
         response = subprocess.call(
             com,
