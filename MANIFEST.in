@@ -11,6 +11,7 @@ prune roux/plot*
 prune roux/fig*
 prune roux.egg-info
 prune .ipynb_checkpoints
+prune *-checkpoint*
 prune roux/.ipynb_checkpoints
 include roux/*.py
 include roux/*.md

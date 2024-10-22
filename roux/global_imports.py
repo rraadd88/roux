@@ -8,7 +8,7 @@ Requirements:
 Usage: in interactive sessions (e.g. in jupyter notebooks) to facilitate faster code development.
 
 Note: Post-development, to remove *s from the code, use removestar (pip install removestar).
-    
+
     removestar file
 """
 ## begin replacestar
