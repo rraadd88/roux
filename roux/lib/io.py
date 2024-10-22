@@ -1086,7 +1086,7 @@ def to_manytables(
             if exists(outd):
                 logging.error(f"can not overwrite existing chunks: {outd}/")
             assert not exists(outd), outd
-        df[colgroupby] = get_chunks(df1=df, value="right", **kws_get_chunks)
+        df = get_chunks(df1=df, **kws_get_chunks)
     #
     if (df.loc[:, colgroupby].dtypes == "float").any():
         logging.error("columns can not be float")

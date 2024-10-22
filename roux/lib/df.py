@@ -1291,48 +1291,24 @@ def get_qbins(df: pd.DataFrame, col: str, bins: list, labels: list = None, **kws
 
 @to_rd
 def get_chunks(
-    df1: pd.DataFrame,
-    colindex: str,
-    colvalue: str,
-    bins: int = None,
-    value: str = "right",
-) -> pd.DataFrame:
-    """Get chunks of a dataframe.
-
-    Parameters:
-        df1 (DataFrame): input dataframe.
-        colindex (str): name of the index column.
-        colvalue (str): name of the column containing values [0-100]
-        bins (int): number of bins.
-        value (str): value to use as the name of the chunk ('right').
-
-    Returns:
-        ds (Series): output series.
-    """
-    from roux.lib.set import nunique
-
-    if bins == 0:
-        df1["chunk"] = bins
-        logging.warning("bins=0, so chunks=1")
-        return df1["chunk"]
-    elif bins is None:
-        bins = int(np.ceil(df1.memory_usage().sum() / 1e9))
-    df2 = df1.loc[:, [colindex, colvalue]].drop_duplicates()
-    from roux.stat.transform import get_bins
-
-    d1 = get_bins(
-        df2.set_index(colindex)[colvalue], bins=bins, value=value, ignore=True
+    df,
+    size=None,
+    n=None,
+    ):
+    assert not (size is None and n is None)
+    assert (not size is None or not n is None)
+    if n is None:
+        n=(len(df)//size)+1
+    if size is None:
+        size=(len(df)//n)+1
+        
+    return (
+        df
+        .assign(
+            chunk=np.array([np.repeat(i,size) for i in range(n)]).ravel()[:len(df)],
+        )
+        .log('chunk')
     )
-    ## number bins
-    d_ = {
-        k: f"chunk{ki+1:08d}_upto{int(k):03d}"
-        for ki, k in enumerate(sorted(np.unique(list(d1.values()))))
-    }
-    ## rename bins
-    d2 = {k: d_[d1[k]] for k in d1}
-    assert nunique(d1.values()) == nunique(d2.values())
-    df1["chunk"] = df1[colindex].map(d2)
-    return df1["chunk"]
 
 
 @to_rd

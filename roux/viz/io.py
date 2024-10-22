@@ -120,6 +120,9 @@ def savefig(
     Returns:
         str: output path.
     """
+    ## for restoring
+    fmts_=fmts
+
     #         from roux.viz.ax_ import to_plotp
     plotp = to_plotp(
         plotp,
@@ -157,11 +160,15 @@ def savefig(
     )
     # print(plotp)
     makedirs(plotp, exist_ok=True)
+
     if len(fmts) == 0:
-        fmts = ["png"]
-    if exists(plotp) and not force:
-        logging.info("fig exists")
-        return
+        if "." in Path(plotp).name:
+            fmts=[Path(plotp).suffix]
+        else:
+        # restore default
+            fmts = fmts_
+    # clean
+    fmts=[fmt[1:] if fmt.startswith('.') else fmt for fmt in fmts]
 
     ## warnings
     # if verbose:
@@ -176,10 +183,18 @@ def savefig(
         pass
     # logging.basicConfig(level=logging.INFO)
     # plt.set_loglevel("info")
-
-    if "." in Path(plotp).name:
+    
+    for fmt in fmts:
+        # plotp_ = f"{plotp}.{fmt}"
+        plotp_=Path(plotp).with_suffix(f".{fmt}")
+        if exists(plotp) and not force:
+            logging.info("fig exists")
+            return
+        # logging.info(plotp_)
+        # print(plotp_)
         plt.savefig(
-            plotp,
+            plotp_,
+            format=fmt,
             dpi=dpi,
             bbox_inches=bbox_inches
             if (bbox_inches is not None)
@@ -188,30 +203,12 @@ def savefig(
             else None,
             **kws_savefig,
         )
-    else:
-        for fmt in fmts:
-            plotp = f"{plotp}.{fmt}"
-            if exists(plotp) and not force:
-                logging.info("fig exists")
-                return
-            plt.savefig(
-                plotp,
-                format=fmt,
-                dpi=dpi,
-                bbox_inches=bbox_inches
-                if (bbox_inches is not None)
-                else "tight"
-                if tight_layout
-                else None,
-                **kws_savefig,
-            )
+            
     from roux.lib.sys import is_interactive_notebook
-
     if not is_interactive_notebook():
         plt.clf()
         plt.close()
     return plotp
-
 
 def savelegend(
     plotp: str, legend: object, expand: list = [-5, -5, 5, 5], **kws_savefig
@@ -568,7 +565,63 @@ def read_plot(p: str, safe: bool = False, test: bool = False, **kws) -> plt.Axes
 
 
 ## files
-def to_concat(
+def label_pdf(
+    p,
+    output_writer,
+    label=None,
+    ):
+    from PyPDF2 import PdfReader
+    from reportlab.pdfgen import canvas
+    from reportlab.lib.pagesizes import letter
+    from reportlab.lib.units import inch
+    from io import BytesIO
+    # Create a PDF reader
+    reader = PdfReader(p)
+
+    # Add filename to each page
+    for page_num in range(len(reader.pages)):
+        page = reader.pages[page_num]
+
+        # Create a new PDF in memory with the filename at the top
+        packet = BytesIO()
+        can = canvas.Canvas(packet, pagesize=letter)
+        can.translate(inch,inch)
+        if label is None:
+            label = Path(p).stem
+        # can.drawString(100, 750, filename)  # Position at the top of the page
+        can.setFont("Helvetica", 5)
+        can.setFillColorRGB(0.9,0.9,0.9)
+        can.drawString(-36, -72, label)  # Position at the top of the page
+        can.save()
+
+        # Move to the beginning of the StringIO buffer
+        packet.seek(0)
+        # Read the created overlay PDF
+        overlay_reader = PdfReader(packet)
+        overlay_page = overlay_reader.pages[0]
+
+        # Merge the overlay with the original page
+        page.merge_page(overlay_page)
+
+        # Add the modified page to the output PDF
+        output_writer.add_page(page)
+
+def to_concat_pdfs(
+    ps,
+    outp
+    ):
+    from PyPDF2 import PdfWriter
+    output_writer = PdfWriter()
+
+    # Add each PDF file with filenames at the top
+    for p in ps:
+        label_pdf(p, output_writer)
+
+    # Write the combined PDF to a file
+    with open(outp, 'wb') as output_pdf:
+        output_writer.write(output_pdf)
+        
+def to_concat_images(
     ps: list,
     how: str = "h",
     use_imagemagick: bool = False,

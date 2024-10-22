@@ -361,6 +361,7 @@ def run_com(
     com: str, 
     env=None, 
     test: bool = False, 
+    verbose: bool = True, 
     **kws,
     ):
     """Run a bash command.
@@ -377,7 +378,8 @@ def run_com(
         1. logp
         2. error ignoring
     """
-    logging.info(com)
+    if verbose:
+        logging.info(com)
     if not env is None:
         # logging.warning("env is not set.")
         response = subprocess.call(

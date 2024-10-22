@@ -9,7 +9,10 @@ from roux.lib.io import backup, to_version, to_zip
 from roux.lib.io import pqt2tsv
 from roux.lib.sys import read_ps
 from roux.workflow.io import read_config, read_metadata, replacestar, to_clean_nb
-from roux.workflow.task import run_tasks
+from roux.workflow.task import (
+    # run_task, 
+    run_tasks ## preferred because it infers setup for the outputs
+)
 from roux.workflow.nb import to_clear_unused_cells, to_clear_outputs
 
 ## begin
@@ -27,6 +30,7 @@ parser.add_commands(
         read_config,
         read_metadata,
         ## workflow execution
+        # run_task,
         run_tasks,
         ## notebook post-processing
         replacestar,
