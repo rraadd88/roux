@@ -1296,7 +1296,7 @@ def get_chunks(
     n=None,
     ):
     assert not (size is None and n is None)
-    assert (not size is None or not n is None)
+    assert (size is not None or n is not None)
     if n is None:
         n=(len(df)//size)+1
     if size is None:
