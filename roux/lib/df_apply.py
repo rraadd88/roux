@@ -119,7 +119,7 @@ def apply_async_chunks(
                     },
                 )
                 )
-            if not func_to_df is None:
+            if func_to_df is not None:
                 df_out=func_to_df(df_out)
             # print(df_out)
             to_table(
