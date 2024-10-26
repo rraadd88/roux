@@ -6,6 +6,107 @@ import pandas as pd
 import roux.lib.df as rd #noqa
 from roux.lib import to_rd
 
+## ids
+@to_rd
+def make_ids(
+    df: pd.DataFrame,
+    cols: list,
+    ids_have_equal_length: bool,
+    sep: str = "--",
+    sort: bool = False,
+) -> pd.Series:
+    """Make ids by joining string ids in more than one columns.
+
+    Parameters:
+        df (DataFrame): input dataframe.
+        cols (list): columns.
+        ids_have_equal_length (bool): ids have equal length, if True faster processing.
+        sep (str): separator between the ids ('--').
+        sort (bool): sort the ids before joining (False).
+
+    Returns:
+        ds (Series): output series.
+    """
+
+    def get_ids(x):
+        return "--".join(x)
+
+    def get_ids_sorted(x):
+        return "--".join(sorted(x))
+
+    if ids_have_equal_length:
+        logging.debug(
+            "the ids should be of equal character length and should not contain non-alphanumeric characters e.g. '.'"
+        )
+        return np.apply_along_axis(
+            get_ids if not sort else get_ids_sorted, 1, df.loc[:, cols].values
+        )
+    else:
+        return df.loc[:, cols].agg(
+            lambda x: sep.join(x if not sort else sorted(x)), axis=1
+        )
+
+
+@to_rd
+def make_ids_sorted(
+    df: pd.DataFrame,
+    cols: list,
+    ids_have_equal_length: bool,
+    sep: str = "--",
+    sort: bool = False,
+) -> pd.Series:
+    """Make sorted ids by joining string ids in more than one columns.
+
+    Parameters:
+        df (DataFrame): input dataframe.
+        cols (list): columns.
+        ids_have_equal_length (bool): ids have equal length, if True faster processing.
+        sep (str): separator between the ids ('--').
+
+    Returns:
+        ds (Series): output series.
+    """
+    return make_ids(df, cols, ids_have_equal_length, sep=sep, sort=True)
+
+
+def get_alt_id(
+    s1: str,
+    s2: str,
+    sep: str = "--",
+):
+    """Get alternate/partner id from a paired id.
+
+    Parameters:
+        s1 (str): joined id.
+        s2 (str): query id.
+
+    Returns:
+        s (str): partner id.
+    """
+    return [s for s in s1.split(sep) if s != s2][0]
+
+
+@to_rd
+def split_ids(df1, col, sep="--", prefix=None):
+    """Split joined ids to individual ones.
+
+    Parameters:
+        df1 (DataFrame): input dataframe.
+        col (str): column containing the joined ids.
+        sep (str): separator within the joined ids ('--').
+        prefix (str): prefix of the individual ids (None).
+
+    Return:
+        df1 (DataFrame): output dataframe.
+    """
+    # assert not df1._is_view, "input series should be a copy not a view"
+    df = df1[col].str.split(sep, expand=True)
+    for i in range(len(df.columns)):
+        df1[f"{col} {i+1}"] = df[i].copy()
+    if prefix is not None:
+        df1 = df1.rd.renameby_replace(replaces={f"{col} ": prefix})
+    return df1
+
 def filter_dfs(
     dfs: list,
     cols: list,

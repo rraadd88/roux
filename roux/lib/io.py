@@ -938,16 +938,32 @@ def apply_on_paths(
     else:
         df2 = df2.reset_index(drop=drop_index).rd.clean()
         if colindex != "path":
+            if colindex in df2:
+                logging.warning(f"{colindex} found in the dataframe; hence dropped.")
+                df2=df2.drop(
+                    [colindex],
+                    axis=1
+                )
             df2 = df2.rename(columns={"path": colindex}, errors="raise")
     if replaces_index is not None:
+        logging.debug(f"setting {colindex} column from the paths ..")
+        # print(replaces_index)
+        # print(df2[colindex].head())
         if isinstance(replaces_index, str):
             if replaces_index == "basenamenoext":
                 replaces_index = basenamenoext
-        df2[colindex] = df2[colindex].apply(
-            lambda x: replace_many(
-                x, replaces=replaces_index, replacewith="", ignore=False
+        ## update: faster renaming
+        to_value={x: replace_many(
+                                x, replaces=replaces_index, replacewith="", ignore=False
+                            )  for x in df2[colindex].unique()}
+        df2 = (
+            df2
+            .assign(
+                **{
+                    colindex:lambda df: df[colindex].map(to_value)
+                   }
+                )
             )
-        )
     return df2
 
 

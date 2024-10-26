@@ -70,7 +70,10 @@ def frac(x: list) -> float:
     Returns:
         float: fraction of True values.
     """
-    return sum(x) / len(x)
+    if len(x)==0:
+        return np.nan
+    else:
+        return sum(x) / len(x)
 
 
 def perc(x: list) -> float:

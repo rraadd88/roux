@@ -16,6 +16,11 @@ def test_roux_lib_dfs(tb):
     pass # execute only because tests are present in the notebook itself
     return
 
+@testbook("examples/roux_lib_df_apply.ipynb", execute=True)
+def test_roux_lib_df_apply(tb):
+    pass # execute only because tests are present in the notebook itself
+    return
+
 @testbook('examples/roux_lib_io.ipynb', execute=True)
 def test_roux_lib_io(tb):
     pass # execute only because tests are present in the notebook itself
