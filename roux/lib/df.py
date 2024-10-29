@@ -4,8 +4,8 @@
 import logging
 
 ## data
-import pandas as pd
 import numpy as np
+import pandas as pd
 
 ## internal
 from roux.lib import to_rd

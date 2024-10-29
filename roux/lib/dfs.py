@@ -1,6 +1,8 @@
 """For processing multiple pandas DataFrames/Series"""
 
 import logging
+
+import numpy as np
 import pandas as pd
 
 import roux.lib.df as rd #noqa

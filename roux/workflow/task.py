@@ -267,41 +267,62 @@ def run_tasks(
 
     ds1 = pd.Series(parameters_list)
         
-    if len(ds1) != 0:
-        if test1:
-            ds1 = ds1.head(1)
-            logging.warning("testing only the first input.")
-            
-        if not fast:
-            ds2 = getattr(
-                ds1,
-                "progress_apply"
-                if hasattr(ds1, "progress_apply") and len(ds1) > 1
-                else "apply",
-            )(
-                lambda x: apply_run_task(
-                    x,
-                    input_notebook_path=input_notebook_path,
-                    kernel=kernel,
-                    **kws_papermill,
-                    force=force,
-                )
+    if len(ds1) == 0:
+        logging.warning("No tasks remaining.")
+        return 
+        
+    if test1:
+        ds1 = ds1.head(1)
+        logging.warning("testing only the first input.")
+        
+    if not fast or len(ds1)==2:
+        ds2 = getattr(
+            ds1,
+            "progress_apply"
+            if hasattr(ds1, "progress_apply") and len(ds1) > 1
+            else "apply",
+        )(
+            lambda x: apply_run_task(
+                x,
+                input_notebook_path=input_notebook_path,
+                kernel=kernel,
+                **kws_papermill,
+                force=force,
             )
-        else:
-            from pandarallel import pandarallel
+        )
+    else:
+        # from pandarallel import pandarallel
 
-            pandarallel.initialize(
-                nb_workers=fast_workers, progress_bar=True, use_memory_fs=False
+        # pandarallel.initialize(
+        #     nb_workers=fast_workers, progress_bar=True, use_memory_fs=False
+        # )
+        # ds2 = ds1.parallel_apply(
+        #     lambda x: apply_run_task(
+        #         x,
+        #         input_notebook_path=input_notebook_path,
+        #         kernel=kernel,
+        #         **kws_papermill,
+        #         force=force,
+        #     )
+        # )
+        import roux.lib.df_apply as rd #noqa
+        logging.info(f"running in parallel (cpus={fast_workers})..")
+        ds2=(
+            ds1
+            # to df
+            .to_frame('params')
+            .rd.apply_async(
+                lambda x: 
+                    apply_run_task(
+                        x['params'],
+                        input_notebook_path=input_notebook_path,
+                        kernel=kernel,
+                        **kws_papermill,
+                        force=force,
+                    ),
+                cpus=fast_workers,
             )
-            ds2 = ds1.parallel_apply(
-                lambda x: apply_run_task(
-                    x,
-                    input_notebook_path=input_notebook_path,
-                    kernel=kernel,
-                    **kws_papermill,
-                    force=force,
-                )
-            )
+        )            
     if not out_paths:
         return before
     else:
