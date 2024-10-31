@@ -350,9 +350,19 @@ def plot_volcano(
     coly: str,
     colindex: str,
     hue: str = "x",
-    style: str = "P=0",
-    style_order: list = ["o", "^"],
-    markers: list = ["o", "^"],
+    style: str = "marker_style",
+    style_order: list = [
+        "o",
+        "^", #P=0
+        "<", #-inf
+        ">", #+inf
+        ],
+    markers: list = [
+        "o",
+        "^", #P=0
+        "<", #-inf
+        ">", #+inf
+    ],
     show_labels: int = None,
     labels_layout: str = None,
     labels_kws: dict = {},
@@ -392,10 +402,37 @@ def plot_volcano(
     assert not data[colindex].duplicated().any()
     from roux.stat.transform import log_pval
 
+    # to avoid insert index error of seaborn
+    data=data.reset_index(drop=True)
+    
     if not coly.lower().startswith("significance"):
+        
+        xlim_data={
+            'max':data.loc[~np.isinf(data[colx]),colx].max(),
+            'min':data.loc[~np.isinf(data[colx]),colx].min(),
+        }
+        
         data = data.assign(
-            **{style: lambda df: (df[coly] == 0).map({True: "^", False: "o"})},
-            # **{style: lambda df: df[coly]==0 },
+            **{
+                style: lambda df: df.apply(
+                    lambda x:                     
+                    (
+                        "^" if x[coly]==0 else   
+                        ">" if x[colx]==np.inf else 
+                        "<" if x[colx]==-np.inf else 
+                        "o"
+                    ),
+                    axis=1,
+                ),
+                colx: lambda df: df[colx].apply(
+                    lambda x: 
+                    (
+                        xlim_data['max'] if x==np.inf else 
+                        xlim_data['min'] if x==-np.inf else 
+                        x
+                    )
+                )
+            },
         )
         logging.warning(f'transforming the coly ("{coly}") values.')
         coly_ = f"significance\n(-log10({coly}))"

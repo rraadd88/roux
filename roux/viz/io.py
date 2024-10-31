@@ -278,8 +278,10 @@ def get_plot_inputs(
     Returns:
         tuple: (path,dataframe,dict)
     """
-    if exists(plotp):
+    if Path(plotp).exists():
         plotp = abspath(plotp)
+    elif Path(plotp).parent.exists():
+        plotp = abspath(read_ps(Path(plotp).parent.as_posix()+'/*.*')[0])        
     else:
         if outd is not None:
             plotp = f"{outd}/{plotp}"
@@ -617,9 +619,11 @@ def to_concat_pdfs(
     for p in ps:
         label_pdf(p, output_writer)
 
+    Path(outp).parent.mkdir(parents=True, exist_ok=True)
     # Write the combined PDF to a file
     with open(outp, 'wb') as output_pdf:
         output_writer.write(output_pdf)
+    return outp
         
 def to_concat_images(
     ps: list,

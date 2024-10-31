@@ -135,6 +135,9 @@ def drop_constants(df):
     Returns:
         df (DataFrame): output dataframe.
     """
+    if len(df)>1:
+        logging.warning(f"skipped drop_constants because len(df)=={len(df)}")
+        return df
     cols_del = get_constants(df)
     if len(cols_del) > 0:
         logging.warning(f"dropped columns: {', '.join(cols_del)}")

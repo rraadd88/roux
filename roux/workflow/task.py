@@ -232,7 +232,9 @@ def run_tasks(
     assert len(set([d["output_path"] for d in parameters_list])) == len(
         parameters_list
     ), (len(set([d["output_path"] for d in parameters_list])), len(parameters_list))
-
+    ## input_path!=output_path
+    assert [Path(d["input_path"])!=Path(d["output_path"]) for d in parameters_list], [d for d in parameters_list if Path(d["input_path"])==Path(d["output_path"])]
+    
     if to_filter_nbby_patterns_kws is not None:
         logging.info("filtering the notebook")
         if input_notebook_temp_path is None:
