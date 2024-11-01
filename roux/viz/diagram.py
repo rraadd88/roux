@@ -77,7 +77,7 @@ def diagram_nb(
             except:
                 logging.warning(f'node and/or label missing for {step}')
                 s1=None
-            if not s1 is None:
+            if s1 is not None:
                 s2 = (
                     s1
                     + "\n"
