@@ -571,6 +571,11 @@ def label_pdf(
     p,
     output_writer,
     label=None,
+    x=-36,
+    y=-72,
+    size=5,
+    color=[0.9,0.9,0.9],
+    font="Helvetica",
     ):
     from PyPDF2 import PdfReader
     from reportlab.pdfgen import canvas
@@ -591,9 +596,9 @@ def label_pdf(
         if label is None:
             label = Path(p).stem
         # can.drawString(100, 750, filename)  # Position at the top of the page
-        can.setFont("Helvetica", 5)
-        can.setFillColorRGB(0.9,0.9,0.9)
-        can.drawString(-36, -72, label)  # Position at the top of the page
+        can.setFont(font, size)
+        can.setFillColorRGB(*color)
+        can.drawString(x, y, label)  # Position at the top of the page
         can.save()
 
         # Move to the beginning of the StringIO buffer
@@ -610,14 +615,19 @@ def label_pdf(
 
 def to_concat_pdfs(
     ps,
-    outp
+    outp,
+    **kws_label_pdf,
     ):
     from PyPDF2 import PdfWriter
     output_writer = PdfWriter()
 
     # Add each PDF file with filenames at the top
     for p in ps:
-        label_pdf(p, output_writer)
+        label_pdf(
+            p,
+            output_writer,
+            **kws_label_pdf,
+            )
 
     Path(outp).parent.mkdir(parents=True, exist_ok=True)
     # Write the combined PDF to a file

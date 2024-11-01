@@ -1,5 +1,5 @@
 """For diagrams e.g. flowcharts"""
-
+import logging 
 
 def diagram_nb(
     graph: str,
@@ -75,19 +75,20 @@ def diagram_nb(
                     print(f"regex: {regex}")
                 s1 = re.split(regex, graph)[1].split('"')[0]
             except:
-                print(f'label missing for {step} ["dsds"]', graph)
-
-            s2 = (
-                s1
-                + "\n"
-                + "("
-                + (",\n".join([f"{d['value']} {d['key']}s" for d in ds]))
-                + ")"
-            )
-            # if test:
-            #     print('replaces',f"{s1} : {s2}")
-
-            replaces[s1] = s2
+                logging.warning(f'node and/or label missing for {step}')
+                s1=None
+            if not s1 is None:
+                s2 = (
+                    s1
+                    + "\n"
+                    + "("
+                    + (",\n".join([f"{d['value']} {d['key']}s" for d in ds]))
+                    + ")"
+                )
+                # if test:
+                #     print('replaces',f"{s1} : {s2}")
+                replaces[s1] = s2
+                
             if test:
                 print(replaces)
         if test:
@@ -108,5 +109,7 @@ def diagram_nb(
         if out:
             return url
     elif isinstance(out, str):
+        from pathlib import Path
+        Path(out).parent.mkdir(parents=True,exist_ok=True)
         open(out, "w").write(graph)
         return out
