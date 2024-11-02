@@ -754,7 +754,7 @@ def grep(
         if len(lines) > 0:
             # print(completed_process.stdout)
             # print(f"'{s}'")
-            if verbose:
-                print(basename(p), f"{s}: {lines}")
+            # if verbose:
+            #     logging.info(basename(p), f"{s}: {lines}")
             l2 += lines  # [f"{s}: {lines}"]
     return l2

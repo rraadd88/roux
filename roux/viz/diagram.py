@@ -93,7 +93,11 @@ def diagram_nb(
                 print(replaces)
         if test:
             print("\n", replaces)
-        graph = replace_many(graph, replaces)
+        graph = replace_many(
+            graph,
+            replaces,
+            ignore=True,
+        )
 
     ## diagram
     import base64
