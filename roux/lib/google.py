@@ -156,7 +156,6 @@ def download_file(
         return outp
             
     from googleapiclient.http import MediaIoBaseDownload
-    from roux.lib.sys import makedirs
     import io
 
     if service is None:
