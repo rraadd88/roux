@@ -1,8 +1,8 @@
 """Processing files form google-cloud services."""
-
-import pandas as pd
 import logging
-from os.path import exists
+
+from pathlib import Path
+import pandas as pd
 
 """
 pip install --upgrade google-api-python-client google-auth-httplib2 google-auth-oauthlib
@@ -46,28 +46,20 @@ def get_service(service_name="drive", access_limit=True, client_config=None):
     }
     if client_config is None:
         from getpass import getpass
-
         client_config = eval(getpass())
-    from googleapiclient.discovery import build
-    from google_auth_oauthlib.flow import InstalledAppFlow
-
-    #     SCOPES=[]
-    #     if 'scope' in service_name2params[service_name]:
-    #     SCOPES = SCOPES.append([service_name2params[service_name]['scope']])
+        
+    # Define the required scopes
     SCOPES = [service_name2params[service_name]["scope"]]
-    if not access_limit:
-        SCOPES = [s.replace(".readonly", "") for s in SCOPES]
-    logging.warning(SCOPES)
-    flow = InstalledAppFlow.from_client_config(client_config, SCOPES)
-    creds = flow.run_console(port=0)
-    service = build(
-        service_name,
-        service_name2params[service_name]["version"],
-        credentials=creds,
-        cache_discovery=False,
+    
+    # Authenticate with the Google API
+    from google.oauth2 import service_account
+    credentials = service_account.Credentials.from_service_account_info(
+        client_config, scopes=SCOPES
     )
-    return service
-
+    
+    # Build the Drive API service
+    from googleapiclient.discovery import build
+    return build('drive', 'v3', credentials=credentials)
 
 get_service_drive = get_service
 
@@ -135,14 +127,13 @@ def get_file_id(p):
 
 
 def download_file(
-    p=None,
     file_id=None,
-    service=None,
-    outd=None,
     outp=None,
+    service=None,
+    # outd=None,
     convert=False,
     force=False,
-    test=False,
+    dbug=False,
 ):
     """
     Downloads a specified file.
@@ -151,55 +142,56 @@ def download_file(
     :param file_id: file id as on google drive
     :param filetypes: specify file type
     :param outp: path to the ouput file
-    :param test: True if verbose else False
+    :param dbug: True if verbose else False
 
     Ref: https://developers.google.com/drive/api/v3/ref-export-formats
     """
-    if p is not None:
-        if file_id is None:
-            file_id = get_file_id(p)
-        else:
-            raise ValueError("define p or file_id")
-    if outp is not None:
-        if exists(outp) and not force:
-            return outp
+    if file_id.startswith('https'):
+        file_id = get_file_id(file_id)
+        logging.info(f"inferred file id: {file_id}")
+    else:
+        raise ValueError("define p or file_id")
+            
+    if Path(outp).exists() and not force:
+        return outp
+            
     from googleapiclient.http import MediaIoBaseDownload
     from roux.lib.sys import makedirs
     import io
 
     if service is None:
+        logging.info("getting service ..")
         service = get_service_drive()
-    if outd is not None or not convert:
-        file = service.files().get(fileId=file_id).execute()
+        
+    logging.info("getting file object ..")
+    file = service.files().get(fileId=file_id).execute()
+    logging.info(f"name: {file['name']}, mimeType: {file['mimeType']}")
+    if dbug:
+        print(file)
+        
+    Path(outp).parent.mkdir(parents=True,exist_ok=True)
+    
+    if convert==False:
+        logging.info("no conversion ..")
+        request = service.files().get_media(fileId=file_id)
     else:
-        file = {"name": "tmp"}
-    if (outp is None) and (outd is not None):
-        outp = f"{outd}/{file['name']}"
-        if exists(outp) and not force:
-            return outp
-    import tempfile
-
-    with tempfile.TemporaryDirectory() as outd_:
-        if outd is not None:
-            outd_ = outd
-        else:
-            outd = outd_
-        outp = f"{outd}/{file['name']}"
-        if not convert:
-            request = service.files().get_media(fileId=file_id)
-        else:
+        if isinstance(convert, str):
+            logging.info(f"converting to {convert}..")
             request = service.files().export_media(
-                fileId=file_id, mimeType=file["mimeType"]
+                fileId=file_id,
+                # mimeType=file["mimeType"],
+                mimeType=f'application/{convert}',
             )
-        makedirs(outp)
-        fh = io.FileIO(file=outp, mode="w")
-        downloader = MediaIoBaseDownload(fh, request)
-        done = False
-        while done is False:
-            status, done = downloader.next_chunk()
-            if test:
-                print(f"Downloading {outp}: {int(status.progress() * 100)}")
-        return outp
+    fh = io.FileIO(outp, 'wb')
+    downloader = MediaIoBaseDownload(fh, request)
+
+    # Download the file
+    done = False
+    while not done:
+        status, done = downloader.next_chunk()
+        print(f"Download progress: {int(status.progress() * 100)}%")  
+        
+    return outp
 
 
 def upload_file(service, filep, folder_id, test=False):
@@ -275,7 +267,7 @@ def download_drawings(folderid, outd, service=None, test=False):
             service,
             filename2id[n],
             [
-                #                                                 'image/png',
+                #'image/png',
                 "image/svg+xml"
             ],
             f"{outd}/{n}",
