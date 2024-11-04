@@ -46,6 +46,8 @@ def replace_many(
     if isinstance(replaces, list):
         replaces = {k: replacewith for k in replaces}
     if isinstance(replaces, dict):
+        if len(replaces)==0:
+            return s
         for k in replaces:
             s = s.replace(k, replaces[k])
     else:

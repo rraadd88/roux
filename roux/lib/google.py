@@ -47,7 +47,7 @@ def get_service(service_name="drive", access_limit=True, client_config=None):
     if client_config is None:
         from getpass import getpass
         client_config = eval(getpass())
-        
+
     # Define the required scopes
     SCOPES = [service_name2params[service_name]["scope"]]
     
@@ -134,6 +134,7 @@ def download_file(
     convert=False,
     force=False,
     dbug=False,
+    **kws_get_service,
 ):
     """
     Downloads a specified file.
@@ -160,7 +161,9 @@ def download_file(
 
     if service is None:
         logging.info("getting service ..")
-        service = get_service_drive()
+        service = get_service_drive(
+            **kws_get_service
+        )
         
     logging.info("getting file object ..")
     file = service.files().get(fileId=file_id).execute()
