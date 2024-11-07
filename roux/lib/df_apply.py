@@ -18,7 +18,15 @@ def apply_async(
     df: pd.DataFrame,
     func,
     cpus: int,
-    ) -> list:            
+    ) -> list:
+    
+    idx=df.index.tolist()
+    
+    if len(idx)==0:
+        return
+    else:    
+        assert idx==list(range(len(df))), "before apply_async, need: .reset_index(drop=True)"
+    
     import concurrent.futures
     with concurrent.futures.ThreadPoolExecutor(
         max_workers=cpus

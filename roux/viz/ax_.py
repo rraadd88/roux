@@ -214,6 +214,7 @@ def format_labels(
     rotate_ylabel=True,
     y=1.05,
     test=False,
+    textwrap_width=None,
 ):
     def cap1(s):
         return s[0].upper() + s[1:]
@@ -254,6 +255,19 @@ def format_labels(
         )
         ax.yaxis.set_label_coords(-0.05, 1.02)
         set_axes_arrows(ax=ax)
+        
+    if isinstance(textwrap_width,int):
+        from roux.lib.str import linebreaker
+        ax.set(
+            xlabel=linebreaker(
+                ax.get_xlabel(),
+                width=textwrap_width,
+                ),
+            ylabel=linebreaker(
+                ax.get_ylabel(),
+                width=textwrap_width,
+                ),                
+        )
     return ax
 
 
@@ -1099,6 +1113,7 @@ def format_ax(
     kws_fmt_labels={},
     kws_legend={},
     rotate_ylabel=False,
+    textwrap_width=None,
 ):
     if ax is None:
         ax = plt.gca()
@@ -1109,6 +1124,7 @@ def format_ax(
     )
     format_labels(
         ax,
+        textwrap_width=textwrap_width,
         rotate_ylabel=rotate_ylabel,
         **kws_fmt_labels,
         # fmt='cap1',

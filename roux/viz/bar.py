@@ -450,19 +450,22 @@ def to_input_data_sankey(
     )
     # df2
 
-    df3 = (
-        df2.merge(
-            df1.groupby("target")["count"].sum().to_frame("substract").reset_index(),
-            on=["target"],
-            how="left",
-        )
-        .assign(
-            **{
-                "substract": lambda x: x["substract"].fillna(0),
-                "count": lambda x: x["total"] - x["substract"],
-            }
-        )
-        .append(df1)
+    df3 = pd.concat(
+        [
+            df2.merge(
+                df1.groupby("target")["count"].sum().to_frame("substract").reset_index(),
+                on=["target"],
+                how="left",
+            )
+            .assign(
+                **{
+                    "substract": lambda x: x["substract"].fillna(0),
+                    "count": lambda x: x["total"] - x["substract"],
+                }
+            ),
+            df1,
+        ],
+        axis=0
     )
     if remove_all:
         # to set the correct number of count for the 1st subset bar in case where the counts decrease
@@ -510,13 +513,15 @@ def plot_sankey(
 ):
     if convert:
         df2 = to_input_data_sankey(df1, cols_groupby=cols_groupby, **kws)
-        id2n_ = df1.apply(lambda x: len(df1) - x.isnull().sum())
+        # id2n_ = df1.apply(lambda x: len(df1) - x.isnull().sum())
+        id2n_ = df1.loc[:,cols_groupby].apply(lambda x: x.value_counts()).sum(axis=1)
+        # print(df2)
     id2n = df2.groupby(["target"])["count"].sum().astype(int)  # .to_dict()
     # print(id2n)
     # print(id2n_)
     if convert and validate:
         assert all(
-            id2n_.loc[id2n.index] == id2n
+            id2n_ == id2n
         ), "sizes of the sets changed after `to_input_data_sankey`?"
     labels = list(
         pd.unique(df2["source"].unique().tolist() + df2["target"].unique().tolist())
