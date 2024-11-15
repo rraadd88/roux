@@ -758,3 +758,51 @@ def grep(
             #     logging.info(basename(p), f"{s}: {lines}")
             l2 += lines  # [f"{s}: {lines}"]
     return l2
+
+def resolve_paths(
+    key_path, #with "PLACE_HOLDER"
+    keys, #"PLACE_HOLDER"s'
+    paths=None,
+    ):
+    if isinstance(keys,list):
+        #recursive
+        d={}
+        paths=glob(replace_many(key_path,{k:'*' for k in keys}))
+        assert len(paths)>0, key_path.replace(key,'*') 
+        
+        for k in keys:
+            d[k]=resolve_paths(
+                key_path, #with "PLACE_HOLDER"
+                keys=k, #"PLACE_HOLDER"s
+                paths=paths,
+                )
+        ## combine
+        import pandas as pd
+        return (
+            pd.DataFrame(d)
+            .T.to_dict(orient='list')
+        )
+            
+    elif isinstance(keys,str):
+        key=keys
+    
+    if paths is None:
+        paths=glob(key_path.replace(key,'*'))
+        assert len(paths)>0, key_path.replace(key,'*') 
+    
+    before_placeholder, after_placeholder = key_path.split(key)
+    ## alt. by slashes
+    spliti=before_placeholder.count('/')
+    
+    extracted_segments = {}
+    for path in paths:
+    #     # Remove prefix and suffix to isolate the PLACE_HOLDER part
+    #     if before_placeholder in path and after_placeholder in path:
+    #         start = path.find(before_placeholder) + len(before_placeholder)
+    #         end = path.find(after_placeholder)
+    #         extracted_segments[path[start:end]]=path
+        value=path.split('/')[spliti]
+        # extracted_segments[value]=path
+        extracted_segments[path]=value
+        
+    return extracted_segments

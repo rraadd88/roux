@@ -1044,19 +1044,25 @@ def get_line_cap_length(ax: plt.Axes, linewidth: float) -> plt.Axes:
 
 # colorbar
 def set_colorbar(
-    fig: object,
-    ax: plt.Axes,
-    ax_pc: plt.Axes,
-    label: str,
-    bbox_to_anchor: tuple = (0.05, 0.5, 1, 0.45),
-    orientation: str = "vertical",
+    axc: plt.Axes,
+    orientation: str = "horizontal",
+    bounds=[0.2,-0.3,0.6,0.05], #[x0, y0, width, height],
+    x0: float = None, y0: float = None, width: float = None, height: float = None,
+    label: str=None,
+    fig: object =None,
+    ax: plt.Axes =None,
+    # bbox_to_anchor: tuple = (0.05, 0.5, 1, 0.45),
+    # width='50%',
+    # height='5%',
+    kws_ins={},
+    **kws
 ):
     """Set colorbar.
 
     Args:
         fig (object): figure object.
         ax (plt.Axes): `plt.Axes` object.
-        ax_pc (plt.Axes): `plt.Axes` object for the colorbar.
+        axc (plt.Axes): `plt.Axes` object for the colorbar.
         label (str): label
         bbox_to_anchor (tuple, optional): location. Defaults to (0.05, 0.5, 1, 0.45).
         orientation (str, optional): orientation. Defaults to "vertical".
@@ -1064,28 +1070,46 @@ def set_colorbar(
     Returns:
         figure object.
     """
-    from mpl_toolkits.axes_grid1.inset_locator import inset_axes
 
-    if orientation == "vertical":
-        width, height = "5%", "50%"
-    else:
-        width, height = "50%", "5%"
-    axins = inset_axes(
-        ax,
-        width=width,  # width = 5% of parent_bbox width
-        height=height,  # height : 50%
-        loc=2,
-        bbox_to_anchor=bbox_to_anchor,
-        bbox_transform=ax.transAxes,
-        borderpad=0,
+    # if orientation == "vertical":
+    #     width, height = "5%", "50%"
+    # else:
+    # if orientation == "vertical":
+    #     width, height = height, width
+        
+    # from mpl_toolkits.axes_grid1.inset_locator import inset_axes
+    # axins = inset_axes(
+    #     ax,
+    #     width=width,  # width = 5% of parent_bbox width
+    #     height=height,  # height : 50%
+    #     loc=2,
+    #     bbox_to_anchor=bbox_to_anchor,
+    #     bbox_transform=ax.transAxes,
+    #     borderpad=0,
+    # )
+    for i,n in enumerate([x0, y0, width, height]):
+        if not n is None:
+            bounds[i]=n
+    if ax is None:
+        ax=plt.gca()
+    if fig is None:
+        fig=ax.get_figure()
+        
+    axins=ax.inset_axes(
+        bounds,
+        **kws_ins
     )
-    fig.colorbar(
-        ax_pc,
+    
+    cb=fig.colorbar(
+        axc,
         cax=axins,
         label=label,
         orientation=orientation,
+        pad=0,
+        **kws,
     )
-    return fig
+    cb.outline.set_visible(False)
+    return cb
 
 
 def set_colorbar_label(ax: plt.Axes, label: str) -> plt.Axes:

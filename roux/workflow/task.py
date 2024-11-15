@@ -90,6 +90,7 @@ def run_task(
         kernel_name=kernel,
         start_timeout=start_timeout,
         report_mode=True,
+        allow_errors=False,
         # cwd=None #(str or Path, optional) – Working directory to use when executing the notebook
         # prepare_only (bool, optional) – Flag to determine if execution should occur or not
         **kws_papermill,
