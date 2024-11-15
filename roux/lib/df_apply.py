@@ -25,7 +25,7 @@ def apply_async(
     if len(idx)==0:
         return
     else:    
-        assert idx==list(range(len(df))), "before apply_async, need: .reset_index(drop=True)"
+        assert idx==list(range(len(df))), f"before apply_async, need: .reset_index(drop=True), {idx}, {list(range(len(df)))}"
     
     import concurrent.futures
     with concurrent.futures.ThreadPoolExecutor(
@@ -111,10 +111,14 @@ def apply_async_chunks(
         if (not Path(outp).exists() or force) or temp_outd:
             if verbose:
                 logging.info(f"processsing {outp} ..")
-            df_out=df_.rd.apply_async(
-                func=func,
-                cpus=cpus,
-                **kws_apply_async,
+            df_out=(
+                df_
+                .reset_index(drop=True)
+                .rd.apply_async(
+                    func=func,
+                    cpus=cpus,
+                    **kws_apply_async,
+                )
                 )
             # return df_out
             if isinstance(df_out,pd.Series):
@@ -155,11 +159,15 @@ def apply_async_chunks(
             validate="1:1",
         )
     )
+    
     if clean:
         df2=df2.drop(
             ['chunk'],
             axis=1,
         )
+        
     if temp_col_id:
         df2=df2.drop([col_id],axis=1)
+        
     return df2
+
