@@ -1088,7 +1088,7 @@ def set_colorbar(
     #     borderpad=0,
     # )
     for i,n in enumerate([x0, y0, width, height]):
-        if not n is None:
+        if n is not None:
             bounds[i]=n
     if ax is None:
         ax=plt.gca()
