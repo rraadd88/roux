@@ -322,7 +322,8 @@ def merge_paired(
 
 ## merge dfs
 def merge_dfs(
-    dfs: list,
+    dfs,
+    force_suffixes=False,
     **kws,
 ) -> pd.DataFrame:
     """Merge dataframes from left to right.
@@ -345,11 +346,36 @@ def merge_dfs(
         )
     from functools import reduce
 
+    if isinstance(dfs,list):
+        dfs=[(f" {i+1}",df) for i,df in enumerate(dfs)]
+    elif isinstance(dfs,dict):
+        dfs=[(f" {k}",v) for k,v in dfs.items()]
+        
     logging.info(
-        f"merge_dfs: shape changed from : dfs shape={[df.shape for df in dfs]}"
+        f"dfs shape={[df.shape for k,df in dfs]}"
     )
-    df3 = reduce(lambda df1, df2: pd.merge(df1, df2, **kws), dfs)
-    logging.info(f"merge_dfs: shape changed to   : {df3.shape}")
+    for i,(k2,df2) in enumerate(dfs):
+        if i==0:
+            df3=df2.copy()
+            if force_suffixes:
+                df3=(
+                    df3
+                    .set_index(kws['on'])
+                    .add_suffix(k2)
+                    .reset_index()
+                ) 
+        else:
+            df3=(
+                df3
+                .log.merge(
+                    right=df2,
+                    **{
+                        **kws,
+                        **dict(suffixes=[k1,k2]),
+                      },
+                )
+            )
+        k1=k2        
     return df3
 
 
