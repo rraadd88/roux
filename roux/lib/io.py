@@ -169,7 +169,7 @@ def to_copy(
         copy_paths = {}
         for d, ps in paths.items():
             for p in ps:
-                if not flatten_rename_basename is None:
+                if flatten_rename_basename is not None:
                     outb = flatten_rename_basename(p)
                 else:
                     outb = basename(p)
