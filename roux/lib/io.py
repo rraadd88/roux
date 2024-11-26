@@ -19,6 +19,7 @@ from roux.lib.sys import (
     splitext,
     to_path,
 )  # is_interactive_notebook,basenamenoext,makedirs,get_all_subpaths
+from pathlib import Path
 from roux.lib.str import replace_many
 
 # import path: df -> dfs -> io
@@ -75,14 +76,23 @@ def read_zip(
             return fun_read(file.open(file_open).read())
 
 
-def to_zip_dir(source, destination=None, fmt="zip"):
+def to_zip_dir(
+    source,
+    destination=None,
+    fmt="zip"
+    ):
     """
     Zip a folder.
     Ref:
     https://stackoverflow.com/a/50381250/3521099
     """
-    if destination is None:
-        destination = source.rsplit("/") + "." + fmt
+    if isinstance(source,str):
+        if destination is None:
+            destination = source.rsplit("/") + "." + fmt
+        paths={source:destination}
+    elif isinstance(source,dict):
+        paths=source
+        
     base = basename(destination)
     fmt = base.split(".")[-1]
     name = base.replace("." + fmt, "")
@@ -122,6 +132,7 @@ def to_zip(
     if isinstance(p, str):
         if isdir(p):
             return to_zip_dir(p, destination=outp, fmt=fmt)
+            
     ps = read_ps(p)
     import tempfile
 
@@ -139,36 +150,46 @@ def to_zip(
         ]
         return to_zip_dir(outd + "/", destination=outp, fmt=fmt)
 
-
-def to_dir(
+def to_copy(
     paths: dict,
-    output_dir_path: str,
-    rename_basename=None,
+    flatten=False,
+    flatten_rename_basename=None,
+    flatten_outd: str=None,
     force=False,
     test=False,
-):
-    ## expand paths
-    paths = {k: read_ps(v) for k, v in paths.items()}
+    ):
+    
+    paths = {k: v for k, v in paths.items()}
 
     import shutil
-
-    makedirs(output_dir_path)
-    copy_paths = {}
-    for d, ps in paths.items():
-        for p in ps:
-            if rename_basename is None:
-                outb = basename(p)
-            else:
-                outb = rename_basename(p)
-            copy_paths[p] = f"{output_dir_path}/{d}/{outb}"
+    if not flatten:
+        copy_paths=paths
+    else:
+        makedirs(flatten_outd)
+        copy_paths = {}
+        for d, ps in paths.items():
+            for p in ps:
+                if not flatten_rename_basename is None:
+                    outb = flatten_rename_basename(p)
+                else:
+                    outb = basename(p)
+                copy_paths[p] = f"{flatten_outd}/{d}/{outb}"
+                
     assert len(list(set(copy_paths.keys()))) == len(
         list(set(copy_paths.values()))
     ), copy_paths
+    
     if test:
         return copy_paths
+        
+    logging.info("copying ..")
     for p, outp in copy_paths.items():
-        if not exists(outp) or force:
-            shutil.copyfile(p, makedirs(outp))
+        if not Path(outp).exists() or force:
+            logging.info(f"{p} -> {outp}")
+            if Path(p).is_file():
+                shutil.copyfile(p, makedirs(outp))
+            elif Path(p).is_dir():
+                shutil.copytree(p, makedirs(outp))
     return copy_paths
 
 
@@ -232,7 +253,6 @@ def to_version(
     else:
         logging.warning("test mode.")
     return outp
-
 
 def backup(
     p: str,

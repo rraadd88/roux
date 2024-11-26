@@ -691,6 +691,22 @@ def assert_dense(
 
 ## counts
 @to_rd
+def assert_shape(
+    df: pd.DataFrame,
+    shape: int,
+) -> pd.DataFrame:
+    """Validate shape in pipe'd operations.
+
+    Example:
+        (
+            df
+            .rd.assert_shape((2,10))
+        )
+    """
+    assert df.shape == shape, df.shape
+    return df
+    
+@to_rd
 def assert_len(
     df: pd.DataFrame,
     count: int,
@@ -1604,7 +1620,17 @@ def to_multiindex_columns(df, suffixes, test=False):
 
 ## ranges
 @to_rd
-def to_ranges(df1, colindex, colbool, sort=True):
+def to_ranges(
+    df1,
+    colindex,
+    colbool=None,
+    sort=True,
+    agg: dict={},
+    interval=1,
+    return_ranges_only=False,
+    clean=True,
+    verbose=True,
+    ):
     """Ranges from boolean columns.
 
     Parameters:
@@ -1612,24 +1638,63 @@ def to_ranges(df1, colindex, colbool, sort=True):
         colindex (str): column containing index items.
         colbool (str): column containing boolean values.
         sort (bool): sort the dataframe (True).
+        agg (bool): extra columns to agg. format: {col_renamed: (col,agg_func)}. (defaults to {}).
 
     Returns:
         df1 (DataFrame): output dataframe.
 
     TODO:
         compare with io_sets.bools2intervals.
-    """
-    import scipy as sc
+    """        
+    # import scipy as sc
 
     if sort:
         df1 = df1.sort_values(by=colindex)
-    df1["group"] = sc.ndimage.measurements.label(df1[colbool].astype(int))[0]
-    return (
-        df1.loc[(df1["group"] != 0), :]
-        .groupby("group")[colindex]
-        .agg([min, max])
+
+    if colbool is None:
+        if verbose:
+            logging.info("setting consecutive values as ranges ..")
+        colbool='_range'
+        df1=df1.assign(
+            **{
+                colbool:lambda df : (df[colindex]+interval)==df[colindex].shift(-interval),
+            },
+        )
+        
+    col_group='_group'  
+    
+    df1=df1.assign(
+        **{
+            # col_group: sc.ndimage.measurements.label(df1[colbool].astype(int))[0],
+            col_group: lambda df: (df[colindex].diff() != interval).cumsum()
+        },
+    )
+    
+        
+    df2=(
+        df1
+        .groupby(col_group)
+        .agg(
+            **{
+                **{
+                    f"{colindex} min": (colindex, 'min'),
+                    f"{colindex} max": (colindex, 'max'),
+                },
+                **agg
+            }
+        )
         .reset_index()
     )
+        
+    if return_ranges_only:
+        if verbose:
+            logging.info("returning ranges only ..")        
+        df2=df2.query(expr=f"`{colindex} min` !=0 `{colindex} max`")
+        
+    if clean:
+        df2=df2.drop([col_group],axis=1)
+        
+    return df2
 
 
 @to_rd
