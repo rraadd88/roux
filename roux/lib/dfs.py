@@ -344,7 +344,6 @@ def merge_dfs(
         logging.warning(
             "Drop-outs may occur if on!='outer'. Make sure that the dataframes are ordered properly from left to right."
         )
-    from functools import reduce
 
     if isinstance(dfs,list):
         dfs=[(f" {i+1}",df) for i,df in enumerate(dfs)]
