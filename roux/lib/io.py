@@ -1341,12 +1341,15 @@ def to_excel(
     # makedirs(outp)
     if comments is not None:
         ## order the columns
+        cols=[]
         for k1 in sheetname2df:
             sheetname2df[k1] = sheetname2df[k1].loc[
                 :,
                 [k for k in comments if k in sheetname2df[k1]]
                 + [k for k in sheetname2df[k1] if k not in comments],
             ]
+            cols+=sheetname2df[k1].columns.tolist()
+        cols=list(set(cols))
         if not any([k.lower().startswith("descr") for k in sheetname2df]):
             ## insert a table with the description
             items = list(sheetname2df.items())
@@ -1356,7 +1359,7 @@ def to_excel(
                 0,
                 (
                     "description",
-                    dict2df(comments, colkey="column name", colvalue="description"),
+                    dict2df({k:v for k,v in comments.items() if k in cols}, colkey="column name", colvalue="description"),
                 ),
             )
             sheetname2df = dict(items)
