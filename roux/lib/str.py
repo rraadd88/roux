@@ -61,9 +61,9 @@ def replace_many(
             )
           )
         if errors=='raise':
-            assert not "${" in s, (s)
+            assert "${" not in s, (s)
     else:
-        assert not replaces is None
+        assert replaces is not None
         
         if isinstance(replaces, list):
             replaces = {k: replacewith for k in replaces}
