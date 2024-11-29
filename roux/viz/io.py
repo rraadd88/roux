@@ -640,6 +640,7 @@ def to_concat_images(
     how: str = "h",
     use_imagemagick: bool = False,
     use_conda_env: bool = False,
+    outp=None,
     test: bool = False,
     **kws_outp,
 ) -> str:
@@ -653,7 +654,9 @@ def to_concat_images(
     Returns:
         str: path of the output.
     """
-    outp = to_output_path(ps, **kws_outp)
+    if outp is None:
+        outp = to_output_path(ps, **kws_outp)
+        logging.info(f"inferred out paht: {outp}")
     if use_imagemagick:
         com = f"convert {'+' if how=='h' else '-'}append {' '.join(ps)} {outp}"
         if use_conda_env:
@@ -680,8 +683,11 @@ def to_concat_images(
             # for a vertical stacking it is simple: use vstack
         elif how == "v":
             min_shape = sorted([(np.sum(i.size), i.size) for i in images])[0][1]
+            imgs_stacked=np.vstack(
+                [np.asarray(i.resize(min_shape)) for i in images]
+                )
             imgs_comb = Image.fromarray(
-                np.vstack((np.asarray(i.resize(min_shape)) for i in images))
+                imgs_stacked
             )
         else:
             raise ValueError(how)

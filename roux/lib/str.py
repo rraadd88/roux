@@ -27,9 +27,11 @@ replacebyposition = substitution
 
 def replace_many(
     s: str,
-    replaces: dict,
+    replaces: dict=None,
     replacewith: str = "",
+    errors='raise',
     ignore: bool = False,
+    **kws_subs,
 ):
     """Rename by replacing sub-strings.
 
@@ -42,22 +44,42 @@ def replace_many(
     Returns:
         s (DataFrame): output dataframe.
     """
+    if ignore==True:
+        errors=None
+        logging.warning("use errors=None instead")
+        
     s_ = s
-    if isinstance(replaces, list):
-        replaces = {k: replacewith for k in replaces}
-    if isinstance(replaces, dict):
-        if len(replaces)==0:
-            return s
-        for k in replaces:
-            s = s.replace(k, replaces[k])
+    if "${" in s:
+        from string import Template
+        s=(
+            getattr(
+                Template(s),
+                ('' if errors=='raise' else 'safe_')+'substitute',
+            )
+            (
+                **kws_subs
+            )
+          )
+        if errors=='raise':
+            assert not "${" in s, (s)
     else:
-        import inspect
-
-        if inspect.isfunction(replaces):
-            s = replaces(s_)
+        assert not replaces is None
+        
+        if isinstance(replaces, list):
+            replaces = {k: replacewith for k in replaces}
+        if isinstance(replaces, dict):
+            if len(replaces)==0:
+                return s
+            for k in replaces:
+                s = s.replace(k, replaces[k])
         else:
-            raise ValueError(replaces)
-    if not ignore:
+            import inspect
+    
+            if inspect.isfunction(replaces):
+                s = replaces(s_)
+            else:
+                raise ValueError(replaces)
+    if errors=='raise':
         assert s != s_, (s, s_)
     return s
 

@@ -360,6 +360,7 @@ def get_env(
 def run_com(
     com: str, 
     env=None, 
+    template=None,
     test: bool = False, 
     verbose: bool = True, 
     **kws,
@@ -374,12 +375,20 @@ def run_com(
     Returns:
         output: output of the `subprocess.call` function.
 
+    Examples:
+        from string import Template
+        com_template=Template(f"docker run -d -v {wd}:/data image bash -c '$com'")
+
     TODOs:
         1. logp
         2. error ignoring
     """
     if verbose:
         logging.info(com)
+        
+    if not template is None:
+        com=template.safe_substitute(com=com)
+        
     if env is not None:
         # logging.warning("env is not set.")
         response = subprocess.call(
