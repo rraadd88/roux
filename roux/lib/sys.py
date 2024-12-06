@@ -387,7 +387,7 @@ def run_com(
     if verbose:
         logging.info(com)
         
-    if not template is None:
+    if template is not None:
         com=template.safe_substitute(com=com)
         
     if env is not None:
