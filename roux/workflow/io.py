@@ -325,6 +325,9 @@ def read_metadata(
             + str(len(d1) - config_size)
             + " separate config/s."
         )
+    # if verbose and 
+    if 'version' in d1:
+        logging.info(f"version: {str(d1['version'])}")        
     return d1
 
 

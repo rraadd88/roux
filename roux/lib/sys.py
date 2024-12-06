@@ -363,6 +363,7 @@ def run_com(
     template=None,
     test: bool = False, 
     verbose: bool = True, 
+    returncodes: list = [0],
     **kws,
     ):
     """Run a bash command.
@@ -411,7 +412,7 @@ def run_com(
             text=True
             )
         # print(res.stdout)
-        assert response.returncode == 0, response
+        assert response.returncode in returncodes, response
         return response.stdout
     
 # alias to be deprecated in the future

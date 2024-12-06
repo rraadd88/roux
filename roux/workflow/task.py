@@ -123,7 +123,8 @@ def run_tasks(
     kernel: str = None,
     inputs: list = None,
     output_path_base: str = None,
-    parameters_list=None,
+    params=None,
+    parameters_list=None, # same as params
     fast: bool = False,
     fast_workers: int = 6,
     to_filter_nbby_patterns_kws=None,
@@ -171,6 +172,10 @@ def run_tasks(
     assert exists(input_notebook_path), input_notebook_path
     if test:
         force = True
+    assert not (not params is None and not parameters_list is None)
+    if not params is None and parameters_list is None:
+        parameters_list=params
+        del params
     ## save task in unique directories
     if parameters_list is None:
         ## infer output paths
