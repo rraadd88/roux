@@ -15,6 +15,10 @@ from roux.lib.sys import (
     splitext,
 )
 
+import pandas as pd
+## parallel-processing
+import roux.lib.df_apply as rd #noqa
+
 try:
     from tqdm import tqdm
     from roux.lib.sys import is_interactive_notebook
@@ -36,7 +40,7 @@ except ImportError:
 def validate_params(
     d: dict,
 ) -> bool:
-    return "input_path" in d and "output_path" in d
+    return ("input_path" in d) and ("output_path" in d)
 
 
 ## execution
@@ -106,7 +110,7 @@ def apply_run_task(
     **kws_papermill,
     ):
     try:
-        run_task(
+        return run_task(
             x,
             input_notebook_path=input_notebook_path,
             kernel=kernel,
@@ -130,6 +134,7 @@ def run_tasks(
     to_filter_nbby_patterns_kws=None,
     input_notebook_temp_path=None,
     out_paths: bool = True,
+    post: bool = True,
     test1: bool = False,
     force: bool = False,
     test: bool = False,
@@ -146,6 +151,7 @@ def run_tasks(
         output_path_base (str): output path with a placeholder e.g. 'path/to/{KEY}/file'.
         parameters_list (list): list of parameters including the output paths.
         out_paths (bool): return paths of the reports (Defaults to True).
+        post (bool): post-process (Defaults to True).
         test1 (bool): test only first task in the list (Defaults to False).
         fast (bool): enable parallel-processing.
         fast_workers (bool): number of parallel-processes.
@@ -207,16 +213,23 @@ def run_tasks(
         return
         
     if isinstance(parameters_list, dict):
+        ## input_paths used as keys
+        if not any(['input_path' in d for d in parameters_list.values()]):
+            logging.warning("setting keys of params as input_path s ..")
+            parameters_list={k:{**d,**{'input_path':k}} for k,d in parameters_list.items()}
         if validate_params(
             parameters_list[
                 list(parameters_list.keys())[0]
             ]
             ):
             parameters_list = list(parameters_list.values())
+        else:
+            raise ValueError(parameters_list)
             
     if test:
         logging.info("Aborting run because of the test mode")
         return parameters_list
+        
     if isinstance(parameters_list, list):
         before = len(parameters_list)
         ## TODO: use `to_outp`?
@@ -271,23 +284,26 @@ def run_tasks(
     #     clean=False
 
     ## run tasks
-    import pandas as pd
 
-    ds1 = pd.Series(parameters_list)
+    df1 = (
+        pd.Series(parameters_list)
+        # to df
+        .to_frame('params')
+    )
         
-    if len(ds1) == 0:
+    if len(df1) == 0:
         logging.warning("No tasks remaining.")
         return 
         
     if test1:
-        ds1 = ds1.head(1)
+        df1 = df1.head(1)
         logging.warning("testing only the first input.")
         
-    if not fast or len(ds1)==2:
-        ds2 = getattr(
-            ds1,
+    if not fast or len(df1)==1:
+        df1['nb path'] = getattr(
+            df1['params'],
             "progress_apply"
-            if hasattr(ds1, "progress_apply") and len(ds1) > 1
+            if hasattr(df1, "progress_apply") and len(df1) > 1
             else "apply",
         )(
             lambda x: apply_run_task(
@@ -304,7 +320,7 @@ def run_tasks(
         # pandarallel.initialize(
         #     nb_workers=fast_workers, progress_bar=True, use_memory_fs=False
         # )
-        # ds2 = ds1.parallel_apply(
+        # ds2 = df1.parallel_apply(
         #     lambda x: apply_run_task(
         #         x,
         #         input_notebook_path=input_notebook_path,
@@ -313,12 +329,9 @@ def run_tasks(
         #         force=force,
         #     )
         # )
-        import roux.lib.df_apply as rd #noqa
         logging.info(f"running in parallel (cpus={fast_workers})..")
-        ds2=(
-            ds1
-            # to df
-            .to_frame('params')
+        df1['nb path']=(
+            df1
             .rd.apply_async(
                 lambda x: 
                     apply_run_task(
@@ -330,8 +343,23 @@ def run_tasks(
                     ),
                 cpus=fast_workers,
             )
-        )            
+        )
+    # return ds2
+    if post:
+        from roux.workflow.io import valid_post_task_deps, to_html
+        if valid_post_task_deps:
+            df1['html path']=(
+            df1
+            .rd.apply_async(
+                lambda x: 
+                    to_html(
+                        x['nb path'],                    
+                    ),
+                cpus=fast_workers,
+            )
+            )
+        
     if not out_paths:
         return before
     else:
-        return ds2.tolist()
+        return df1

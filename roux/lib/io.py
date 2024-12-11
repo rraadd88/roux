@@ -1222,7 +1222,18 @@ def pqt2tsv(
     Returns:
         p (str): path of the output.
     """
-    to_table(read_table(p), f"{p}.tsv")
+    ps=read_ps(p)
+    if len(ps)>1:
+        ## recursive
+        logging.info("converting files recursively")    
+        for p_ in read_ps(p):
+            pqt2tsv(
+                p_,
+            )
+    to_table(
+        read_table(p),
+        Path(p).with_suffix(".tsv").as_posix(),
+        )
 
 
 ## tables: excel

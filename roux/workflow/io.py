@@ -855,3 +855,22 @@ def to_clean_nb(
         format=format,
     )
     return outp
+
+## post tasks
+from roux.lib.sys import run_com
+def valid_post_task_deps(
+    ):
+    return run_com('which quarto',returncodes=[0,1])!=''
+    
+def to_html(
+    p,
+    env=None,
+    ):
+    if not env is None:
+        pre=f"micromamba run -n {env} "
+    else:
+        pre=""
+    run_com(
+        f"{pre}quarto render {p} --to html --toc -M code-fold:true -M code-summary:'_' -M code-tools:true -M self-contained:true"
+    )
+    return Path(p).with_suffix(".html").as_posix()

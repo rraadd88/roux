@@ -636,6 +636,35 @@ def assert_no_dups(df, subset=None):
     )
     return df
 
+@to_rd
+def drop_dups_by_agg(
+    df1,
+    subset,
+    col_agg,
+    std_max=0.05, ## standard deviation
+    agg_func='mean',
+    **kws_drop_duplicates,
+    ):
+    df2=df1.rd.check_dups(
+        subset=subset
+    )
+    if len(df2)==0:
+        return df1
+    else:
+        std_max_data=df2.groupby(subset)[col_agg].std().max()
+        assert std_max_data<=std_max, std_max_data
+        logging.info(f'std max found in data={std_max_data}')
+        return pd.concat(
+            [
+                df1.log().drop_duplicates(
+                    subset=subset,
+                    keep=False,
+                    **kws_drop_duplicates
+                ),
+                df2.groupby(subset)[col_agg].agg(agg_func).reset_index(),
+            ],
+            axis=0,
+            ).log()
 
 ## asserts
 @to_rd
