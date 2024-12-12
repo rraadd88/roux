@@ -35,6 +35,16 @@ except ImportError:
         "ImportError: IProgress not found. Please update jupyter and ipywidgets. See https://ipywidgets.readthedocs.io/en/stable/user_install.html"
     )
 
+import papermill as pm
+## disable logging
+# import logging
+# sorted(list(logging.root.manager.loggerDict.keys()))
+# for k in [
+#     'papermill',
+#     'papermill.translators',
+#     'papermill.utils',
+# ]:
+#     logging.getLogger(k).setLevel(logging.CRITICAL)
 
 ## validators
 def validate_params(
@@ -86,7 +96,6 @@ def run_task(
     if kernel is None:
         logging.warning("`kernel` name not provided.")
 
-    import papermill as pm
     pm.execute_notebook(
         input_path=input_notebook_path,
         output_path=output_notebook_path,

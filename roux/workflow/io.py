@@ -864,13 +864,25 @@ def valid_post_task_deps(
     
 def to_html(
     p,
+    # outp=None,
     env=None,
+    verbose=False,
     ):
     if not env is None:
         pre=f"micromamba run -n {env} "
     else:
         pre=""
+    # if outp is None:
+    outp=Path(p).with_suffix(".html").as_posix()
+        
+    ## convert
     run_com(
-        f"{pre}quarto render {p} --to html --toc -M code-fold:true -M code-summary:'_' -M code-tools:true -M self-contained:true"
+        f"{pre}quarto render {p} --to html --toc -M code-fold:true -M code-summary:'_' -M code-tools:true -M self-contained:true",# --output-dir {Path(outp).parent.as_posix()} --output {Path(outp).name}",
+        verbose=verbose,
     )
-    return Path(p).with_suffix(".html").as_posix()
+    ## clean
+    run_com(
+        "sed -i '' 's/<\/head>/<style>summary { display: none; }<\/style><\/head>/' "+outp,
+        verbose=verbose,
+    )
+    return outp
