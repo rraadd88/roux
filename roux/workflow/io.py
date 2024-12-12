@@ -868,7 +868,7 @@ def to_html(
     env=None,
     verbose=False,
     ):
-    if not env is None:
+    if env is not None:
         pre=f"micromamba run -n {env} "
     else:
         pre=""
