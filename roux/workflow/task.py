@@ -187,8 +187,8 @@ def run_tasks(
     assert exists(input_notebook_path), input_notebook_path
     if test:
         force = True
-    assert not (not params is None and not parameters_list is None)
-    if not params is None and parameters_list is None:
+    assert not (params is not None and parameters_list is not None)
+    if params is not None and parameters_list is None:
         parameters_list=params
         del params
     ## save task in unique directories
