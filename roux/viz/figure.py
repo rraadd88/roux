@@ -31,24 +31,31 @@ def get_children(fig):
     return flatten(l2)
 
 
-def get_child_text(
-    search_name,
+def get_text(
+    text,
     all_children=None,
     fig=None,
+    ax=None
 ):
     """
     Get text object.
     """
+    if fig is None:
+        fig=plt.gcf()
     if all_children is None:
-        all_children = get_children(fig=fig)
-    child = None
-    for c in all_children:
-        if isinstance(c, plt.Text) and c.get_text() == search_name:
-            child = c
-            break
-    assert child is not None, (search_name, all_children)
-    return child
+        if not ax is None:
+            all_children = get_children(fig=fig)
+        else:
+            all_children = ax.get_children()
 
+    outs = []
+    for c in all_children:
+        if isinstance(c, plt.Text):
+            if c.get_text() == text:
+                outs.append(c)
+            
+    assert len(outs)!=0, (text, all_children)    
+    return outs
 
 def align_texts(
     fig,
@@ -62,10 +69,10 @@ def align_texts(
     all_children = get_children(fig=fig)
     x_px_set, y_px_set = None, None
     for i, search_name in enumerate(texts):
-        text = get_child_text(
-            search_name=search_name,
+        text = get_text(
+            text=search_name,
             all_children=all_children,
-        )
+        )[0]
         extent = text.get_window_extent(renderer=fig.canvas.get_renderer())
         x_px, y_px = np.array(extent)[0][0], np.array(extent)[1][1]
         if test:

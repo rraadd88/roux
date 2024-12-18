@@ -53,6 +53,8 @@ def get_ncolors(
     Returns:
         list: colors.
     """
+    if cmap is None:
+        cmap="Spectral"
     if isinstance(cmap, str):
         cmap = get_cmap_section(cmap, **kws_get_cmap_section)
     elif isinstance(cmap, list):

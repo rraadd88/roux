@@ -61,6 +61,8 @@ def remove_exts(
 
 def read_ps(
     ps,
+    errors=None,
+    tree_depth=None,
     test: bool = True,
     verbose: bool = True,
 ) -> list:
@@ -79,7 +81,7 @@ def read_ps(
             ps = glob(ps)
         else:
             if Path(ps).is_dir() and verbose:
-                tree(ps)
+                tree(ps,tree_depth=tree_depth)
             ps = [ps]
     ps = sorted(ps)
     if test or verbose:
@@ -99,6 +101,9 @@ def read_ps(
             ):
                 logging.info(f"{k_}: {k}\t{v}")
         elif len(ds1) == 0:
+            if errors=='raise':
+                logging.error("paths do not exist.")
+                return
             logging.warning("paths do not exist.")
     return ps
 
@@ -705,11 +710,13 @@ def get_logger(program="program", argv=None, level=None, dp=None):
 
 def tree(
     folder_path: str,
+    tree_depth: int=None,
     log=True,
 ):
     # Run the tree command and capture the output
     result = subprocess.run(
-        f"tree {folder_path}", shell=True, capture_output=True, text=True
+        f"tree {folder_path}"+(f' -L {tree_depth}' if not tree_depth is None else ''),
+        shell=True, capture_output=True, text=True
     )
     ## clean
     out = result.stdout.replace("\n\n", "\n").strip("\n")
@@ -717,7 +724,6 @@ def tree(
         logging.info(out)
     else:
         return out
-
 
 def grep(
     p: str,

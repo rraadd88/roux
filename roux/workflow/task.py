@@ -143,7 +143,7 @@ def run_tasks(
     to_filter_nbby_patterns_kws=None,
     input_notebook_temp_path=None,
     out_paths: bool = True,
-    post: bool = True,
+    post: bool = False,
     test1: bool = False,
     force: bool = False,
     test: bool = False,
@@ -160,7 +160,7 @@ def run_tasks(
         output_path_base (str): output path with a placeholder e.g. 'path/to/{KEY}/file'.
         parameters_list (list): list of parameters including the output paths.
         out_paths (bool): return paths of the reports (Defaults to True).
-        post (bool): post-process (Defaults to True).
+        post (bool): post-process (Defaults to False).
         test1 (bool): test only first task in the list (Defaults to False).
         fast (bool): enable parallel-processing.
         fast_workers (bool): number of parallel-processes.
@@ -354,7 +354,7 @@ def run_tasks(
             )
         )
     # return ds2
-    if post:
+    if post==True and not fast:        
         from roux.workflow.io import valid_post_task_deps, to_html
         if valid_post_task_deps:
             df1['html path']=(

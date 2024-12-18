@@ -228,8 +228,11 @@ def get_jitter_positions(
     column_category,
     column_position,
 ):
+    ## filtering
     df1 = df1.loc[df1[column_category].isin(order), :]
-    d1 = dict(zip(order, [c.get_offsets()[:, 0].data for c in ax.collections]))
+    ## pos
+    d1 = dict(zip(order, [c.get_offsets()[:, 0 if column_position =='x' else 1].data for c in ax.collections]))
+    ## mapping
     return (
         df1.groupby(column_category, as_index=False)
         .apply(lambda df: df.assign(**{column_position: (d1[df.name])}))
@@ -530,19 +533,18 @@ def plot_dists(
         column_outlines = show_outlines
         ## get jitter positions and plot outlines
         from roux.viz.annot import show_outlines
-
-        show_outlines(
-            get_jitter_positions(
+        df_jit=get_jitter_positions(
                 ax,
                 df1,
                 order=order,
                 column_category=x if axis_desc == "x" else y,
-                column_position="x"
-                if axis_desc == "x"
-                else "y",  # jitter is along the axis with decrete values
-            ),
-            colx="x" if axis_desc == "x" else "y",
-            coly=y if axis_desc == "x" else x,
+                column_position=("x" if axis_desc == "x" else "y"),  # jitter is along the axis with decrete values
+            )
+        # df_jit=df_jit.dropna([column_outlines])
+        show_outlines(
+            df_jit,
+            colx="x" if axis_desc == "x" else x,
+            coly=y if axis_desc == "x" else 'y',
             column_outlines=column_outlines,
             **kws_outlines,
             ax=ax,

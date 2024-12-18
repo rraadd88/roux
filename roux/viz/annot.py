@@ -340,7 +340,8 @@ def show_outlines(
     colx: str,
     coly: str,
     column_outlines: str,
-    outline_colors: dict,
+    outline_colors: dict = None,
+    cmap=None,
     style=None,
     legend: bool = True,
     kws_legend: dict = {},
@@ -352,11 +353,19 @@ def show_outlines(
     Outline points on the scatter plot by categories.
 
     """
+    if outline_colors is None:
+        from roux.viz.colors import get_ncolors
+        outline_colors=get_ncolors(  
+            data[column_outlines].nunique(),
+            cmap=cmap,
+        )
+    # print(outline_colors)
     if isinstance(outline_colors, list):
-        outline_colors = dict(zip(data[column_outlines].unique(), outline_colors))
+        outline_colors = dict(zip(data[column_outlines].dropna().unique(), outline_colors))
         logging.info(
             f"Mapping between the categories and the colors of the outlines: {outline_colors}."
         )
+    # print(outline_colors)
     for cat, df_ in data.groupby(column_outlines):
 
         ax = sns.scatterplot(

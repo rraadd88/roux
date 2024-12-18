@@ -570,11 +570,11 @@ def read_plot(p: str, safe: bool = False, test: bool = False, **kws) -> plt.Axes
 def label_pdf(
     p,
     output_writer,
-    label=None,
+    label='fn',
     x=-36,
     y=-72,
     size=5,
-    color=[0.9,0.9,0.9],
+    color=[0.5,0.5,0.5],
     font="Helvetica",
     ):
     from PyPDF2 import PdfReader
@@ -593,8 +593,11 @@ def label_pdf(
         packet = BytesIO()
         can = canvas.Canvas(packet, pagesize=letter)
         can.translate(inch,inch)
-        if label is None:
+        if label =='fn':
             label = Path(p).stem
+        else:
+            ## disable
+            label = ''
         # can.drawString(100, 750, filename)  # Position at the top of the page
         can.setFont(font, size)
         can.setFillColorRGB(*color)
