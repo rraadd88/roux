@@ -36,15 +36,6 @@ except ImportError:
     )
 
 import papermill as pm
-## disable logging
-# import logging
-# sorted(list(logging.root.manager.loggerDict.keys()))
-# for k in [
-#     'papermill',
-#     'papermill.translators',
-#     'papermill.utils',
-# ]:
-#     logging.getLogger(k).setLevel(logging.CRITICAL)
 
 ## validators
 def validate_params(
@@ -59,7 +50,7 @@ def run_task(
     input_notebook_path: str,
     kernel: str = None,
     output_notebook_path: str = None,
-    start_timeout: int = 480,
+    start_timeout: int = 600,
     verbose=False,
     force=False,
     **kws_papermill,
@@ -323,22 +314,18 @@ def run_tasks(
                 force=force,
             )
         )
-    else:
-        # from pandarallel import pandarallel
-
-        # pandarallel.initialize(
-        #     nb_workers=fast_workers, progress_bar=True, use_memory_fs=False
-        # )
-        # ds2 = df1.parallel_apply(
-        #     lambda x: apply_run_task(
-        #         x,
-        #         input_notebook_path=input_notebook_path,
-        #         kernel=kernel,
-        #         **kws_papermill,
-        #         force=force,
-        #     )
-        # )
+    else:        
         logging.info(f"running in parallel (cpus={fast_workers})..")
+        
+        # disable logging
+        sorted(list(logging.root.manager.loggerDict.keys()))
+        for k in [
+            'papermill',
+            'papermill.translators',
+            'papermill.utils',
+        ]:
+            logging.getLogger(k).setLevel(logging.CRITICAL)
+        
         df1['nb path']=(
             df1
             .rd.apply_async(
