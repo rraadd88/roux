@@ -715,7 +715,7 @@ def tree(
 ):
     # Run the tree command and capture the output
     result = subprocess.run(
-        f"tree {folder_path}"+(f' -L {tree_depth}' if not tree_depth is None else ''),
+        f"tree {folder_path}"+(f' -L {tree_depth}' if tree_depth is not None else ''),
         shell=True, capture_output=True, text=True
     )
     ## clean

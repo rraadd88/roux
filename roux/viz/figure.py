@@ -43,7 +43,7 @@ def get_text(
     if fig is None:
         fig=plt.gcf()
     if all_children is None:
-        if not ax is None:
+        if ax is not None:
             all_children = get_children(fig=fig)
         else:
             all_children = ax.get_children()
