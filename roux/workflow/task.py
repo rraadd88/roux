@@ -122,6 +122,25 @@ def apply_run_task(
         raise RuntimeError(f"tb: check {x}")
         # return 
 
+def flt_params(
+    parameters_list,
+    force=False,
+):
+    before = len(parameters_list)
+    ## TODO: use `to_outp`?
+    parameters_list = [
+        d
+        for d in parameters_list
+        if (force if force else not exists(d["output_path"]))
+    ]
+    if not force:
+        if before - len(parameters_list) != 0:
+            logging.info(
+                f"parameters_list reduced because force=False: {before} -> {len(parameters_list)}"
+            )
+            
+    return parameters_list
+
 def run_tasks(
     input_notebook_path: str,
     kernel: str = None,
@@ -231,20 +250,12 @@ def run_tasks(
         return parameters_list
         
     if isinstance(parameters_list, list):
-        before = len(parameters_list)
-        ## TODO: use `to_outp`?
-        parameters_list = [
-            d
-            for d in parameters_list
-            if (force if force else not exists(d["output_path"]))
-        ]
-        if not force:
-            if before - len(parameters_list) != 0:
-                logging.info(
-                    f"parameters_list reduced because force=False: {before} -> {len(parameters_list)}"
-                )
-            if len(parameters_list) == 0:
-                return parameters_list
+        parameters_list=flt_params(
+            parameters_list,
+            force=False,
+        )
+        if len(parameters_list) == 0:
+            return 
     else:
         raise ValueError(parameters_list)
     ## chech for duplicate output paths
