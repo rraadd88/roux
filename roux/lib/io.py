@@ -578,8 +578,8 @@ def read_table(
     params: dict = {},
     kws_clean: dict = {},
     kws_cloud: dict = {},
-    check_paths: bool = True,  # read files in the path column
-    use_paths: bool = False,  # read files in the path column
+    use_dir_paths: bool = True,  # read files in the path column, from sub-dir by default
+    use_paths: bool = False,  # read files in the path column even if not available in the sub-dir
     tables: int = 1,
     test: bool = False,
     verbose: bool = True,
@@ -594,7 +594,7 @@ def read_table(
         ext (str): extension of the file (default: None meaning infered from the path).
         clean=(default:True).
         filterby_time=None).
-        check_paths (bool): read files in the path column (default:True).
+        use_dir_paths (bool): read files in the path column (default:True).
         use_paths (bool): forced read files in the path column (default:False).
         test (bool): testing (default:False).
         params: parameters provided to the 'pd.read_csv' (default:{}). For example
@@ -644,9 +644,9 @@ def read_table(
         )
     elif isinstance(p, str):
         ## read paths
-        if check_paths and (isdir(splitext(p)[0]) or use_paths):
+        if use_dir_paths and (isdir(splitext(p)[0]) or use_paths):
             # if len(read_ps(f"{splitext(p)[0]}/*{splitext(p)[1]}",test=False))>0:
-            df_ = read_table(p, check_paths=False)
+            df_ = read_table(p, use_dir_paths=False)
             if df_.empty:
                 logging.warning("empty table found")
                 return df_
