@@ -652,7 +652,7 @@ def read_table(
                 return df_
             if df_.columns.tolist()[-1] == "path":
                 logging.info(
-                    f"paths read {len(df_['path'].tolist())}paths from the file"
+                    f" {len(df_['path'].tolist())} paths from the file."
                 )
                 ps = df_["path"].tolist()
                 return read_tables(
@@ -673,6 +673,7 @@ def read_table(
             return read_table(download_file(p, **kws_cloud))
     else:
         raise ValueError(p)
+    
     assert exists(p), f"not found: {p}"
     if len(params.keys()) != 0 and "columns" not in params:
         return post_read_table(
@@ -781,16 +782,14 @@ def apply_on_paths(
     ps: list,
     func,
     replaces_outp: str = None,
-    # path=None,
     to_col: dict = None,
     replaces_index=None,
     drop_index: bool = True,  # keep path
     colindex: str = "path",
     filter_rows: dict = None,
-    fast: bool = False,
-    progress_bar: bool = True,
+    # progress_bar: bool = True,
     params: dict = {},
-    # log=True,
+    fast: bool = False,
     dbug: bool = False,
     test1: bool = False,
     verbose: bool = True,
@@ -805,7 +804,7 @@ def apply_on_paths(
         func (function): function to be applied on each of the paths.
         replaces_outp (dict|function): infer the output path (`outp`) by replacing substrings in the input paths (`p`).
         filter_rows (dict): filter the rows based on dict, using `rd.filter_rows`.
-        fast (bool): parallel processing (default:False).
+        fast (bool|int): parallel processing tasks (default:False).
         progress_bar (bool): show progress bar(default:True).
         params (dict): parameters provided to the `pd.read_csv` function.
         dbug (bool): debug mode on (default:False).
@@ -839,7 +838,7 @@ def apply_on_paths(
     """
 
     def read_table_(
-        df,
+        p,
         read_path=False,
         save_table=False,
         filter_rows=None,
@@ -849,7 +848,8 @@ def apply_on_paths(
         verbose=True,
         **kws_read_table,
     ):
-        p = df.iloc[0, :]["path"]
+        if isinstance(p,pd.DataFrame):
+            p = p.iloc[0, :]["path"]
         if read_path:
             if save_table:
                 outp = replace_many(
@@ -870,7 +870,7 @@ def apply_on_paths(
             if filter_rows is not None:
                 df = df.rd.filter_rows(filter_rows)
             return (df,)
-
+    
     import inspect
 
     read_path = inspect.getfullargspec(func).args[0] == "p"
@@ -882,13 +882,17 @@ def apply_on_paths(
         replaces_index = list(to_col.values())[0]
     if replaces_index is not None:
         drop_index = False
+
     ps = read_ps(ps, test=verbose)
+
     if len(ps) == 0:
         logging.error("no paths found")
         return
+        
     if test1:
         ps = ps[:1]
         logging.warning(f"test1=True, {ps[0]}")
+        
     if (replaces_outp is not None) and ("force" in kws):
         if not kws["force"]:
             # p2outp
@@ -905,22 +909,41 @@ def apply_on_paths(
             if d_["from"] != d_["  to"]:
                 logging.info(f"force=False, so paths reduced from: {d_['from']}")
                 logging.info(f"                                to: {d_['  to']}")
+    
     if dbug:
         logging.info(ps)
+        
     df1 = pd.DataFrame({"path": ps})
+    
     if len(df1) == 0:
         logging.info("no paths remained to be processed.")
         return df1
-    if fast and not progress_bar:
-        progress_bar = True
+
+    if fast!=False and drop_index:
+        logging.info(f"using {fast} cpus ..")
+        import roux.lib.df_apply as rd #noqa
+        return df1.rd.apply_async(
+            lambda x: read_table(
+                x['path'],
+                **kws_read_table,
+            ),
+            cpus=fast if isinstance(fast,int) else 2,
+            unstack=False,
+        )
+    
+    # if fast and not progress_bar:
+    #     progress_bar = True
+    
     _groupby = df1.groupby("path", as_index=True)
+    
     df2 = getattr(
         _groupby,
-        "progress_apply"
-        if fast
-        else "progress_apply"
-        if hasattr(_groupby, "progress_apply")
-        else "apply",
+        # "progress_apply"
+        # if fast
+        # else "progress_apply"
+        # if hasattr(_groupby, "progress_apply")
+        # else "apply",
+        "apply",
     )(
         lambda df: func(
             *(
@@ -939,8 +962,10 @@ def apply_on_paths(
             **kws,
         )
     )
+
     if isinstance(df2, pd.Series):
         return df2
+        
     if save_table:
         if len(df2) != 0 and not test1:
             # save log file
@@ -965,6 +990,7 @@ def apply_on_paths(
                     axis=1
                 )
             df2 = df2.rename(columns={"path": colindex}, errors="raise")
+            
     if replaces_index is not None:
         logging.debug(f"setting {colindex} column from the paths ..")
         # print(replaces_index)
@@ -1015,7 +1041,7 @@ def read_tables(
 
     TODOs:
         Parameter to report the creation dates of the newest and the oldest files.
-    """
+    """    
     if filterby_time is not None:
         from roux.lib.sys import ps2time
 

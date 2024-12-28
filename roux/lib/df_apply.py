@@ -18,6 +18,7 @@ def apply_async(
     df: pd.DataFrame,
     func,
     cpus: int,
+    unstack: bool=True,
     ) -> list:
     
     idx=df.index.tolist()
@@ -40,7 +41,10 @@ def apply_async(
     if isinstance(results[0],(pd.Series)):
         return pd.concat([ds.to_frame().T for ds in results],axis=0)
     elif isinstance(results[0],(pd.DataFrame)):
-        return pd.concat(results,axis=0).unstack(1)
+        df1 = pd.concat(results,axis=0)
+        if unstack:
+            df1=df1.unstack(1)
+        return df1
     else: 
         return pd.Series(results)
 

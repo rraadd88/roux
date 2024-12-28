@@ -83,6 +83,10 @@ def read_ps(
             if Path(ps).is_dir() and verbose:
                 tree(ps,tree_depth=tree_depth)
             ps = [ps]
+    
+    if isinstance(ps,list):
+        assert isinstance(ps[0],str), ps[0]
+    
     ps = sorted(ps)
     if test or verbose:
         import pandas as pd
