@@ -106,6 +106,13 @@ def get_pval(
     if colvalue_bool and not df[colvalue].dtype == bool:
         logging.warning(f"colvalue_bool {colvalue} is not bool")
         return
+
+    assert not df.duplicated(
+        subset=([colindex] if isinstance(colindex,str) else colindex) + ([colsubset] if isinstance(colsubset,str) else colsubset)
+    ).any(), df.rd.check_dups(
+        subset=([colindex] if isinstance(colindex,str) else colindex) + ([colsubset] if isinstance(colsubset,str) else colsubset)
+    )
+    
     if not colvalue_bool:
         #         try:
         x, y = (
@@ -134,7 +141,7 @@ def get_pval(
             # if empty list: RuntimeWarning: divide by zero encountered in double_scalars  z = (bigu - meanrank) / sd
             return np.nan, np.nan
     else:
-        assert colindex is not None
+        # assert colindex is not None
         df1 = df.pivot(index=colindex, columns=colsubset, values=colvalue)
         return compare_classes(df1[subsets[0]], df1[subsets[1]], method=None)
         # ct=pd.crosstab(df1[subsets[0]],df1[subsets[1]])
@@ -482,6 +489,9 @@ def get_stats_groupby(
     coff_q: float = 0.1,
     alpha=None,
     fast=False,
+    
+    change_type=["diff", "ratio"],
+    kws_signi={},
     **kws,
 ) -> pd.DataFrame:
     """Iterate over groups, to get the differences.
@@ -515,6 +525,8 @@ def get_stats_groupby(
         alpha=alpha,
         coff_p=coff_p,
         coff_q=coff_q,
+        change_type=change_type,
+        **kws_signi,
     )
 
 

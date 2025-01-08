@@ -83,8 +83,10 @@ def read_ps(
             if Path(ps).is_dir() and verbose:
                 tree(ps,tree_depth=tree_depth)
             ps = [ps]
-    
+
     if isinstance(ps,list):
+        if len(ps)==0:
+            return ps
         assert isinstance(ps[0],str), ps[0]
     
     ps = sorted(ps)
