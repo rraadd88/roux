@@ -392,6 +392,55 @@ def show_outlines(
             )
     return ax
 
+def outline_scatter(
+    data,
+    x,
+    y,
+    color='lightgray',
+    linestyle=':',
+    ax=None,
+    test=False,
+    return_data=False,
+    plot=True,
+    **kws_line,
+    ):
+    if ax is None:
+        ax=plt.gca()
+    points=data.loc[:,[x,y]].values
+    
+    from scipy.spatial import ConvexHull    
+    # Compute the convex hull
+    hull = ConvexHull(points)
+    out_pts=np.vstack([points[hull.vertices, 0],points[hull.vertices, 1]]).T
+    
+    # Plot the convex hull    
+    if plot:
+        ax.plot(
+            list(out_pts[:, 0])+[out_pts[0, 0]],
+            list(out_pts[:, 1])+[out_pts[0, 1]],
+            **{
+                **dict(
+                    color=color,
+                    linestyle=linestyle,
+                    clip_on=False,
+                ),
+                **kws_line,
+            }
+           )
+        
+        # Plot the points
+        if test:
+            ax.scatter(points[:, 0], points[:, 1], label="Points")
+            # Optional: Fill the convex hull
+            ax.fill(points[hull.vertices, 0], points[hull.vertices, 1], color='red', alpha=0.2, label="Hull Area")
+    
+    if not return_data:
+        return ax
+    else:
+        return pd.DataFrame(
+            out_pts,
+            columns=[x,y],
+        )
 
 ## variance
 def show_confidence_ellipse(x, y, ax, n_std=3.0, facecolor="none", **kwargs):

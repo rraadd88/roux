@@ -16,6 +16,7 @@ def set_axes_minimal(
     xlabel=None,
     ylabel=None,
     off_axes_pad=0,
+    head_width=0.02,
 ) -> plt.Axes:
     """
     Set minimal axes labels, at the lower left corner.
@@ -30,7 +31,7 @@ def set_axes_minimal(
         y=off_axes_pad,
         dx=0.1,
         dy=0,
-        head_width=0.02,
+        head_width=head_width,
         transform=ax.transAxes,  # fig.transFigure,
         clip_on=False,
         color="k",
@@ -41,7 +42,7 @@ def set_axes_minimal(
         y=off_axes_pad,
         dx=0,
         dy=0.1,
-        head_width=0.02,
+        head_width=head_width,
         transform=ax.transAxes,  # fig.transFigure,
         clip_on=False,
         color="k",

@@ -191,7 +191,14 @@ def read_config(
         else:
             logging.warning(f"Base config path not found: {config_base}")
     ## read config
-    d1 = read_dict(p)
+    if isinstance(p,(str)) and Path(p).is_file():
+        d1 = read_dict(p)
+    elif isinstance(p,(str)) and not Path(p).is_file():
+        import yaml
+        d1 =yaml.safe_load(p)
+    elif isinstance(p,(dict)):
+        d1=p
+    
     ## merge
     if config_base is not None:
         if append_to_key is not None:

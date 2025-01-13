@@ -55,7 +55,7 @@ def remove_exts(
     #     p=p[:-len(e)]
     # return p
     while "." in Path(p).name:
-        p = Path(p).with_suffix("")
+        p = Path(p).with_suffix("").as_posix()
     return p
 
 

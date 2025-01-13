@@ -508,12 +508,14 @@ def check_nunique(
     else:
         if isinstance(groupby, str):
             groupby = [groupby]
+
         if len(subset) == 1:
             ds_ = df.groupby(groupby)[subset].nunique()[subset[0]]
         else:
             ds_ = df.groupby(groupby).apply(
                 lambda df: len(df.loc[:, subset].drop_duplicates())
             )
+        
     ds_=ds_.sort_values(ascending=False)
     if out:
         ## no logging
@@ -2078,6 +2080,12 @@ class log:
                 **kws_check_nunique,
             )
             label = f"{suffix_} {label}"
+        elif groupby is not None:
+            # value_counts in pipe
+            ds_ = self._obj.groupby(groupby,observed=True).size().sort_values(ascending=False)
+            suffix_ = f"by '{groupby}': {to_str(ds_)}"
+            label = f"{suffix_} {label}"
+            
         logging.info(f"shape = {self._obj.shape} {label}")
         return self._obj
 
