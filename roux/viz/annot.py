@@ -714,7 +714,7 @@ def show_crosstab_stats(
     Returns:
         plt.Axes: `plt.Axes` object.
     """
-    if not cols is None:
+    if cols is not None:
         from roux.stat.diff import compare_classes
     
         stat, pval = compare_classes(data[cols[0]], data[cols[1]], method=method)
