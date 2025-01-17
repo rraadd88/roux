@@ -686,7 +686,7 @@ def show_scatter_stats(
 
 def show_crosstab_stats(
     data: pd.DataFrame,
-    cols: list,
+    cols: list=None,
     method: str = None,
     alpha: float = 0.05,
     loc: str = None,
@@ -714,13 +714,19 @@ def show_crosstab_stats(
     Returns:
         plt.Axes: `plt.Axes` object.
     """
-    from roux.stat.diff import compare_classes
-
-    stat, pval = compare_classes(data[cols[0]], data[cols[1]], method=method)
+    if not cols is None:
+        from roux.stat.diff import compare_classes
+    
+        stat, pval = compare_classes(data[cols[0]], data[cols[1]], method=method)
+        ## get the label for the stat method
+        data_ = pd.crosstab(data[cols[0]], data[cols[1]])
+    else:
+        from scipy.stats import fisher_exact
+        stat, pval = fisher_exact(data.values)
+        data_=data.copy()
+        
     logging.info(f"stat={stat},pval={pval}")
 
-    ## get the label for the stat method
-    data_ = pd.crosstab(data[cols[0]], data[cols[1]])
     if data_.shape != (2, 2) or method == "chi2":
         stat_label = "${\chi}^2$"
     else:

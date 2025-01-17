@@ -1469,3 +1469,30 @@ def check_chunks(outd, col, plot=True):
 
         sns.swarmplot(df3)
     return df3
+
+def is_table_empty(
+    p,
+    ):
+    """
+    Check for empty table without opening the file.
+    
+    Tests:
+    
+        p=to_table(
+        pd.DataFrame(
+            ),
+            # 'test/test.tsv'
+            'test/test.pqt'
+        )
+        
+        Path(p).stat().st_size
+    """
+    if (
+        Path(p).suffix in ['.tsv'] and Path(p).stat().st_size<2
+        or 
+        Path(p).suffix in ['.pqt','.parquet'] and Path(p).stat().st_size<977
+    ):
+        return True
+    else:
+        logging.info(Path(p).stat().st_size)
+        return False
