@@ -199,7 +199,7 @@ def plot_intersection_counts(
     else:
         raise ValueError(kind)
     if show_pval:
-        # from roux.viz.annot import show_crosstab_stats
+        from roux.viz.annot import show_crosstab_stats
         show_crosstab_stats(
             df1,
             cols=cols,

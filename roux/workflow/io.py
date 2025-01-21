@@ -9,6 +9,8 @@ import pandas as pd
 from pathlib import Path
 import shutil  # for copying files
 
+import re
+
 from roux.lib.sys import (
     abspath,
     basename,
@@ -85,7 +87,109 @@ def to_py(
         fh.writelines(l1)
     return pyp
 
+def extract_kws(
+    lines,
+    fmt='dict',
+    ):
+    if fmt=='dict':
+        parameters = {}
+    else:
+        parameters=[]
+    for line in lines:
+        # Remove comments
+        line = re.sub(r'#.*', '', line).strip()
+        # Match valid assignments
+        match = re.match(r'(\w+)\s*=\s*(.+)', line)
+        if match:
+            key, value = match.groups()
+            # Evaluate value if it's a valid literal, otherwise keep it as a string
+            try:
+                eval(value)
+                string=False
+            except:
+                string=True
+            if fmt=='dict':
+                parameters[key] = value.strip() if string else eval(value)
+            else:
+                parameters.append(
+                    f"{key}={"'"+value+"'" if string else value}"
+                )
+    return parameters
+    
+def to_src(
+    p='gae.ipynb',
+    outp='../src/gae.py', 
+    validate=True,
+    ):
+    """
+    Notebook to command line script.
+    """
+    pyp=to_py(
+        p,
+        pyp=f'.to_src/{Path(p).stem}.py',
+        force=True,
+        )
+    
+    t_raw=open(pyp,'r').read()
+    
+    t_tab=t_raw.replace('\n','\n    ')
+    
+    def split_by_pms(text):
+        splits1=re.split(r"# In\[\s*\d*\s*\]:\n    ## param", text)
+        return (
+            [splits1[0], re.split(r"\n    # In\[\s*\d*\s*\]:", splits1[1],1)[1]],
+            re.split(r"\n    # In\[\s*\d*\s*\]:", splits1[1])[0]
+        )
+        
+    t_splits,params=split_by_pms(t_tab)
+    # t_splits
+    
+    params_str=',\n    '.join(
+        extract_kws(
+            params.split('    ')[1:],
+            fmt='str',
+        )
+    )
+    print(params_str)
+    
+    t_def=(
+    """
+def run(
+    """+
+    params_str+
+    """
+    ):
+    """
+    )
+    
+    t_end="""
+run_rec=run
 
+
+import argh
+parser = argh.ArghParser()
+parser.add_commands(
+    [
+        run,
+    ]
+)
+if __name__ == "__main__": # and sys.stdin.isatty():
+    parser.dispatch()
+    """
+    
+    t_src=t_splits[0]+t_def+t_splits[1]+t_end
+    # print(t_src)
+    open(outp,'w').write(t_src)
+
+    com=f"ruff check {outp} --ignore E402"
+    if validate:
+        import os
+        res=os.system(com)
+        assert res==0, res
+    else:
+        logging.warning(f"validate by running: {com}")        
+    return outp
+    
 def to_nb_cells(
     notebook,
     outp,
@@ -703,11 +807,11 @@ def to_clean_nb(
         r"^\s*#\s*$",
         r"^\s*#\s*break\s*$",
         ## unused
-        "\[X",
-        "\[old ",
+        # "\[X", #noqa
+        # "\[old ", #noqa
         "#old",
         "# old",
-        "\[not used",
+        # "\[not used", #noqa
         "# not used",
         ## development
         "#tmp",
@@ -717,7 +821,7 @@ def to_clean_nb(
         "check ",
         "checking",
         "# check",
-        "\[SKIP",
+        # "\[SKIP", #noqa
         "DEBUG ",
         # "#todos","# todos",'todos',
     ],
