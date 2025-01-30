@@ -1222,7 +1222,25 @@ def to_table_pqt(
     df.to_parquet(p, engine=engine, compression=compression, **kws_pqt)
     return p
 
-
+def to_tables(
+    dfs,
+    outp,
+    ):
+    mdata_raw={k:dict(shape=df.shape,cols=df.columns.tolist()) for k,df in dfs.items()}
+    logging.info({k:d['shape'] for k,d in mdata_raw.items()})
+    
+    p=to_dict(
+        mdata_raw,
+        outp,
+    )
+    ps={}
+    for k,df in dfs.items():
+        ps[k]=to_table(
+            df,
+            f"{Path(p).with_suffix('').as_posix()}/{k}.pqt"
+        )
+    return ps
+    
 def tsv2pqt(
     p: str,
 ) -> str:

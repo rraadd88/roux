@@ -151,6 +151,11 @@ def to_path(
 make_pathable_string = to_path
 # get_path=to_path
 
+def to_label(p):
+    """Path to label e.g. dataset name."""
+    import re
+    cleaned = re.sub(r'[^a-zA-Z0-9/]', '', Path(p).with_suffix('').as_posix()).replace('/', '_')
+    return re.sub(r'^[^a-zA-Z0-9]+|[^a-zA-Z0-9]+$', '', cleaned)
 
 def makedirs(p: str, exist_ok=True, **kws):
     """Make directories recursively.

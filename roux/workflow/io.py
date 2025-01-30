@@ -112,14 +112,15 @@ def extract_kws(
                 parameters[key] = value.strip() if string else eval(value)
             else:
                 parameters.append(
-                    f"{key}={"'"+value+"'" if string else value}"
+                    f"{key}="+("'"+value+"'" if string else value)
                 )
     return parameters
     
 def to_src(
-    p='gae.ipynb',
-    outp='../src/gae.py', 
+    p,
+    outp, 
     validate=True,
+    verbose=False,
     ):
     """
     Notebook to command line script.
@@ -136,9 +137,16 @@ def to_src(
     
     def split_by_pms(text):
         splits1=re.split(r"# In\[\s*\d*\s*\]:\n    ## param", text)
+
+        pre_pms=splits1[0].replace('\n    ','\n')
+        
+        pms=re.split(r"\n    # In\[\s*\d*\s*\]:", splits1[1])[0]
+        
+        post_pms=re.split(r"\n    # In\[\s*\d*\s*\]:", splits1[1],1)[1]
+        post_pms=re.sub(r"\n    # In\[\s*\d*\s*\]:", '\n', post_pms)
         return (
-            [splits1[0], re.split(r"\n    # In\[\s*\d*\s*\]:", splits1[1],1)[1]],
-            re.split(r"\n    # In\[\s*\d*\s*\]:", splits1[1])[0]
+            [pre_pms, post_pms],
+            pms
         )
         
     t_splits,params=split_by_pms(t_tab)
@@ -150,7 +158,8 @@ def to_src(
             fmt='str',
         )
     )
-    print(params_str)
+    if verbose:
+        print(params_str)
     
     t_def=(
     """
@@ -163,9 +172,11 @@ def run(
     )
     
     t_end="""
+    
+## for recursive operations
 run_rec=run
 
-
+## CLI-setup
 import argh
 parser = argh.ArghParser()
 parser.add_commands(
@@ -992,8 +1003,9 @@ def to_html(
         verbose=verbose,
     )
     ## clean
-    run_com(
-        "sed -i '' 's/<\/head>/<style>summary { display: none; }<\/style><\/head>/' "+outp,
-        verbose=verbose,
-    )
+    # invalid escape sequence '\/'
+    # run_com(
+    #     "sed -i '' 's/<\/head>/<style>summary { display: none; }<\/style><\/head>/' "+outp,
+    #     verbose=verbose,
+    # )
     return outp
