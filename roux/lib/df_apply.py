@@ -27,7 +27,7 @@ def apply_async(
     if len(idx)==0:
         return
     else:    
-        assert idx==list(range(len(df))), f"before apply_async, need: .reset_index(drop=True)"#, {idx}, {list(range(len(df)))}"
+        assert idx==list(range(len(df))), "before apply_async, need: .reset_index(drop=True)"#, {idx}, {list(range(len(df)))}"
     
     import concurrent.futures
     with concurrent.futures.ThreadPoolExecutor(
