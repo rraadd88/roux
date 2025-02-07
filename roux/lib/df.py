@@ -1100,6 +1100,12 @@ def filter_rows(
         df1 = df1.rd.drop_constants()
     return df1
 
+@to_rd
+def tri(df,k=-1,**kws_np_tri):
+    """
+    Get tringle of adjacency matrix.
+    """
+    return df.where(np.tri(*(df.shape),k,**kws_np_tri).astype('bool'))
 
 ## conversion to type
 @to_rd

@@ -16,9 +16,10 @@ from roux.lib.io import read_table, to_table
 @to_rd
 def apply_async(
     df: pd.DataFrame,
-    func,
+    func, # lambda x: 
     cpus: int,
     unstack: bool=True,
+    axis=1, #noqa ## unused, for swappability with .apply
     ) -> list:
     
     idx=df.index.tolist()
@@ -26,7 +27,7 @@ def apply_async(
     if len(idx)==0:
         return
     else:    
-        assert idx==list(range(len(df))), f"before apply_async, need: .reset_index(drop=True), {idx}, {list(range(len(df)))}"
+        assert idx==list(range(len(df))), f"before apply_async, need: .reset_index(drop=True)"#, {idx}, {list(range(len(df)))}"
     
     import concurrent.futures
     with concurrent.futures.ThreadPoolExecutor(
