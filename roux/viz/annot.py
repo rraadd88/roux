@@ -392,6 +392,55 @@ def show_outlines(
             )
     return ax
 
+def outline_scatter(
+    data,
+    x,
+    y,
+    color='lightgray',
+    linestyle=':',
+    ax=None,
+    test=False,
+    return_data=False,
+    plot=True,
+    **kws_line,
+    ):
+    if ax is None:
+        ax=plt.gca()
+    points=data.loc[:,[x,y]].values
+    
+    from scipy.spatial import ConvexHull    
+    # Compute the convex hull
+    hull = ConvexHull(points)
+    out_pts=np.vstack([points[hull.vertices, 0],points[hull.vertices, 1]]).T
+    
+    # Plot the convex hull    
+    if plot:
+        ax.plot(
+            list(out_pts[:, 0])+[out_pts[0, 0]],
+            list(out_pts[:, 1])+[out_pts[0, 1]],
+            **{
+                **dict(
+                    color=color,
+                    linestyle=linestyle,
+                    clip_on=False,
+                ),
+                **kws_line,
+            }
+           )
+        
+        # Plot the points
+        if test:
+            ax.scatter(points[:, 0], points[:, 1], label="Points")
+            # Optional: Fill the convex hull
+            ax.fill(points[hull.vertices, 0], points[hull.vertices, 1], color='red', alpha=0.2, label="Hull Area")
+    
+    if not return_data:
+        return ax
+    else:
+        return pd.DataFrame(
+            out_pts,
+            columns=[x,y],
+        )
 
 ## variance
 def show_confidence_ellipse(x, y, ax, n_std=3.0, facecolor="none", **kwargs):
@@ -637,7 +686,7 @@ def show_scatter_stats(
 
 def show_crosstab_stats(
     data: pd.DataFrame,
-    cols: list,
+    cols: list=None,
     method: str = None,
     alpha: float = 0.05,
     loc: str = None,
@@ -665,13 +714,19 @@ def show_crosstab_stats(
     Returns:
         plt.Axes: `plt.Axes` object.
     """
-    from roux.stat.diff import compare_classes
-
-    stat, pval = compare_classes(data[cols[0]], data[cols[1]], method=method)
+    if cols is not None:
+        from roux.stat.diff import compare_classes
+    
+        stat, pval = compare_classes(data[cols[0]], data[cols[1]], method=method)
+        ## get the label for the stat method
+        data_ = pd.crosstab(data[cols[0]], data[cols[1]])
+    else:
+        from scipy.stats import fisher_exact
+        stat, pval = fisher_exact(data.values)
+        data_=data.copy()
+        
     logging.info(f"stat={stat},pval={pval}")
 
-    ## get the label for the stat method
-    data_ = pd.crosstab(data[cols[0]], data[cols[1]])
     if data_.shape != (2, 2) or method == "chi2":
         stat_label = "${\chi}^2$"
     else:

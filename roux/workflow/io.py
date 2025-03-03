@@ -9,6 +9,8 @@ import pandas as pd
 from pathlib import Path
 import shutil  # for copying files
 
+import re
+
 from roux.lib.sys import (
     abspath,
     basename,
@@ -85,7 +87,120 @@ def to_py(
         fh.writelines(l1)
     return pyp
 
+def extract_kws(
+    lines,
+    fmt='dict',
+    ):
+    if fmt=='dict':
+        parameters = {}
+    else:
+        parameters=[]
+    for line in lines:
+        # Remove comments
+        line = re.sub(r'#.*', '', line).strip()
+        # Match valid assignments
+        match = re.match(r'(\w+)\s*=\s*(.+)', line)
+        if match:
+            key, value = match.groups()
+            # Evaluate value if it's a valid literal, otherwise keep it as a string
+            try:
+                eval(value)
+                string=False
+            except:
+                string=True
+            if fmt=='dict':
+                parameters[key] = value.strip() if string else eval(value)
+            else:
+                parameters.append(
+                    f"{key}="+("'"+value+"'" if string else value)
+                )
+    return parameters
+    
+def to_src(
+    p,
+    outp, 
+    validate=True,
+    verbose=False,
+    ):
+    """
+    Notebook to command line script.
+    """
+    pyp=to_py(
+        p,
+        pyp=f'.to_src/{Path(p).stem}.py',
+        force=True,
+        )
+    
+    t_raw=open(pyp,'r').read()
+    
+    t_tab=t_raw.replace('\n','\n    ')
+    
+    def split_by_pms(text):
+        splits1=re.split(r"# In\[\s*\d*\s*\]:\n    ## param", text)
 
+        pre_pms=splits1[0].replace('\n    ','\n')
+        
+        pms=re.split(r"\n    # In\[\s*\d*\s*\]:", splits1[1])[0]
+        
+        post_pms=re.split(r"\n    # In\[\s*\d*\s*\]:", splits1[1],1)[1]
+        post_pms=re.sub(r"\n    # In\[\s*\d*\s*\]:", '\n', post_pms)
+        return (
+            [pre_pms, post_pms],
+            pms
+        )
+        
+    t_splits,params=split_by_pms(t_tab)
+    # t_splits
+    
+    params_str=',\n    '.join(
+        extract_kws(
+            params.split('    ')[1:],
+            fmt='str',
+        )
+    )
+    if verbose:
+        print(params_str)
+    
+    t_def=(
+    """
+def run(
+    """+
+    params_str+
+    """
+    ):
+    """
+    )
+    
+    t_end="""
+    
+## for recursive operations
+run_rec=run
+
+## CLI-setup
+import argh
+parser = argh.ArghParser()
+parser.add_commands(
+    [
+        run,
+    ]
+)
+if __name__ == "__main__": # and sys.stdin.isatty():
+    parser.dispatch()
+    """
+    
+    t_src=t_splits[0]+t_def+t_splits[1]+t_end
+    # print(t_src)
+    open(outp,'w').write(t_src)
+
+    com=f"ruff check {outp} --ignore E402"
+    if validate:
+        import os
+        res=os.system(com)
+        assert res==0, res
+    else:
+        logging.warning(f"validate by running: {com}")        
+    return outp
+    
 def to_nb_cells(
     notebook,
     outp,
@@ -191,7 +306,14 @@ def read_config(
         else:
             logging.warning(f"Base config path not found: {config_base}")
     ## read config
-    d1 = read_dict(p)
+    if isinstance(p,(str)) and Path(p).is_file():
+        d1 = read_dict(p)
+    elif isinstance(p,(str)) and not Path(p).is_file():
+        import yaml
+        d1 =yaml.safe_load(p)
+    elif isinstance(p,(dict)):
+        d1=p
+    
     ## merge
     if config_base is not None:
         if append_to_key is not None:
@@ -696,11 +818,11 @@ def to_clean_nb(
         r"^\s*#\s*$",
         r"^\s*#\s*break\s*$",
         ## unused
-        "\[X",
-        "\[old ",
+        # "\[X", #noqa
+        # "\[old ", #noqa
         "#old",
         "# old",
-        "\[not used",
+        # "\[not used", #noqa
         "# not used",
         ## development
         "#tmp",
@@ -710,7 +832,7 @@ def to_clean_nb(
         "check ",
         "checking",
         "# check",
-        "\[SKIP",
+        # "\[SKIP", #noqa
         "DEBUG ",
         # "#todos","# todos",'todos',
     ],
@@ -881,8 +1003,9 @@ def to_html(
         verbose=verbose,
     )
     ## clean
-    run_com(
-        "sed -i '' 's/<\/head>/<style>summary { display: none; }<\/style><\/head>/' "+outp,
-        verbose=verbose,
-    )
+    # invalid escape sequence '\/'
+    # run_com(
+    #     "sed -i '' 's/<\/head>/<style>summary { display: none; }<\/style><\/head>/' "+outp,
+    #     verbose=verbose,
+    # )
     return outp

@@ -681,19 +681,21 @@ def to_concat_images(
         #     widths, heights = zip(*(i.size for i in images))
         #     total_width = sum(widths)
         #     max_height = max(heights)
-        if how == "h":
-            imgs_comb = Image.fromarray(images)
-            # for a vertical stacking it is simple: use vstack
-        elif how == "v":
-            min_shape = sorted([(np.sum(i.size), i.size) for i in images])[0][1]
-            imgs_stacked=np.vstack(
-                [np.asarray(i.resize(min_shape)) for i in images]
-                )
-            imgs_comb = Image.fromarray(
-                imgs_stacked
+        # if how == "h":
+        #     images=np.asarray(images)
+        #     imgs_comb = Image.fromarray(images)
+        #     # for a vertical stacking it is simple: use vstack
+        # el
+        # if how == "v":
+        min_shape = sorted([(np.sum(i.size), i.size) for i in images])[0][1]
+        imgs_stacked=getattr(np,f"{how}stack")(
+            [np.asarray(i.resize(min_shape)) for i in images]
             )
-        else:
-            raise ValueError(how)
+        imgs_comb = Image.fromarray(
+            imgs_stacked
+        )
+        # else:
+        #     raise ValueError(how)
         imgs_comb.save(outp)
     return outp
 

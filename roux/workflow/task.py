@@ -295,6 +295,9 @@ def run_tasks(
     #     clean=False
 
     ## run tasks
+    ## for log
+    from datetime import datetime
+    _start_time = datetime.now()
 
     df1 = (
         pd.Series(parameters_list)
@@ -365,7 +368,9 @@ def run_tasks(
                 cpus=fast_workers,
             )
             )
-        
+            
+    ## log
+    logging.info(f"Time taken: {datetime.now()-_start_time}")
     if not out_paths:
         return before
     else:

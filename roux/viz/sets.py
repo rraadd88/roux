@@ -87,6 +87,7 @@ def plot_intersection_counts(
     confusion: bool = False,
     rename_cols: bool = False,
     sort_cols: tuple = [True, True],
+    perc_counts=False,
     order_x: list = None,
     order_y: list = None,
     cmap: str = "Reds",
@@ -131,11 +132,9 @@ def plot_intersection_counts(
         dplot = pd.crosstab(df1[cols[0]], df1[cols[1]])
     else:
         dplot = df1.copy()
-
-    dplot = dplot.sort_index(axis=0, ascending=sort_cols[0]).sort_index(
-        axis=1, ascending=sort_cols[1]
-    )
-    if dplot.shape == (2, 2) and rename_cols:
+    ##  dplot is crosstab
+    assert dplot.shape == (2, 2)
+    if rename_cols:
         dplot = dplot.rename(
             columns={True: dplot.columns.name, False: "not"},
             index={True: dplot.index.name, False: "not"},
@@ -146,6 +145,22 @@ def plot_intersection_counts(
             dplot = dplot.loc[:, [s for s in dplot.columns if s != "not"] + ["not"]]
         if "not" in dplot.index:
             dplot = dplot.loc[[s for s in dplot.index if s != "not"] + ["not"], :]
+            
+    if dplot.index.dtype == 'bool':
+        dplot.index=[str(s) for s in dplot.index]
+    if dplot.columns.dtype == 'bool':
+        dplot.columns=[str(s) for s in dplot.columns]
+    
+    dplot = (
+        dplot
+        .sort_index(
+            axis=0, ascending=sort_cols[0]
+        )
+        .sort_index(
+            axis=1, ascending=sort_cols[1]
+        )
+        )
+
     # dplot=dplot.sort_index(ascending=False,axis=1).sort_index(ascending=False,axis=0)
     if order_y is None:
         order_y = dplot.index.tolist()
@@ -162,8 +177,17 @@ def plot_intersection_counts(
             **kws_plot,
         )
     elif kind == "bar":
-        ax = dplot.plot.barh(stacked=True, ax=ax)
-        ax.set(xlabel="count")
+        # print(dplot)
+        if perc_counts:
+            dplot_=(dplot.div(dplot.sum(axis=1),axis=0))*100
+            print(dplot_)
+        else:
+            dplot_=dplot.copy()
+        ax = dplot_.plot.barh(stacked=True, ax=ax)
+        ax.set(
+            xlabel="count" if not perc_counts else '%',
+            # ylabel=None if not dplot_.index.name is None else dplot_.index.name,
+        )
         if show_counts:
             ## show counts
             for pa, n in zip(ax.get_children()[:4], dplot.melt()["value"].tolist()):
@@ -176,13 +200,13 @@ def plot_intersection_counts(
         raise ValueError(kind)
     if show_pval:
         from roux.viz.annot import show_crosstab_stats
-
         show_crosstab_stats(
             df1,
             cols=cols,
             ax=ax,
             **kws_show_stats,
         )
+    ax.legend(ncols=2)
     return ax
 
 

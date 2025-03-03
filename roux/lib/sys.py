@@ -55,7 +55,7 @@ def remove_exts(
     #     p=p[:-len(e)]
     # return p
     while "." in Path(p).name:
-        p = Path(p).with_suffix("")
+        p = Path(p).with_suffix("").as_posix()
     return p
 
 
@@ -83,6 +83,12 @@ def read_ps(
             if Path(ps).is_dir() and verbose:
                 tree(ps,tree_depth=tree_depth)
             ps = [ps]
+
+    if isinstance(ps,list):
+        if len(ps)==0:
+            return ps
+        assert isinstance(ps[0],str), ps[0]
+    
     ps = sorted(ps)
     if test or verbose:
         import pandas as pd
@@ -145,6 +151,11 @@ def to_path(
 make_pathable_string = to_path
 # get_path=to_path
 
+def to_label(p):
+    """Path to label e.g. dataset name."""
+    import re
+    cleaned = re.sub(r'[^a-zA-Z0-9/]', '', Path(p).with_suffix('').as_posix()).replace('/', '_')
+    return re.sub(r'^[^a-zA-Z0-9]+|[^a-zA-Z0-9]+$', '', cleaned)
 
 def makedirs(p: str, exist_ok=True, **kws):
     """Make directories recursively.

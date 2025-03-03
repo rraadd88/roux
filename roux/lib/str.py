@@ -617,6 +617,38 @@ def num2str(
             )
 
 
+def type_str(s):
+    """
+    Usage: 
+        CLI
+    Examples:
+        Numbers as strings e.g. '1.2' to 1.2 
+    """
+    if not isinstance(s,str):
+        return s       
+    try:
+        # Try converting to an integer
+        result=int(s)
+    except ValueError:
+        try:
+            # Try converting to a float
+            result=float(s)
+        except ValueError:
+            # If it cannot be converted to a number, keep it as is
+            if s=='True':
+                result=True
+            elif s=='False':
+                result=False
+            elif s.startswith('['):
+                try:
+                    # Try converting to a list
+                    result=eval(s)
+                except ValueError:            
+                    result=s
+            else:
+                result=s
+    return result
+    
 ## ids
 
 

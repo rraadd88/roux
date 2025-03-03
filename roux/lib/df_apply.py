@@ -16,8 +16,10 @@ from roux.lib.io import read_table, to_table
 @to_rd
 def apply_async(
     df: pd.DataFrame,
-    func,
+    func, # lambda x: 
     cpus: int,
+    unstack: bool=True,
+    axis=1, #noqa ## unused, for swappability with .apply
     ) -> list:
     
     idx=df.index.tolist()
@@ -25,7 +27,7 @@ def apply_async(
     if len(idx)==0:
         return
     else:    
-        assert idx==list(range(len(df))), f"before apply_async, need: .reset_index(drop=True), {idx}, {list(range(len(df)))}"
+        assert idx==list(range(len(df))), "before apply_async, need: .reset_index(drop=True)"#, {idx}, {list(range(len(df)))}"
     
     import concurrent.futures
     with concurrent.futures.ThreadPoolExecutor(
@@ -40,7 +42,10 @@ def apply_async(
     if isinstance(results[0],(pd.Series)):
         return pd.concat([ds.to_frame().T for ds in results],axis=0)
     elif isinstance(results[0],(pd.DataFrame)):
-        return pd.concat(results,axis=0).unstack(1)
+        df1 = pd.concat(results,axis=0)
+        if unstack:
+            df1=df1.unstack(1)
+        return df1
     else: 
         return pd.Series(results)
 
