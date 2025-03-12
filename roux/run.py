@@ -5,10 +5,14 @@ import logging
 logging.getLogger().setLevel(logging.INFO)
 
 import argh
+
 from roux.lib.io import backup, to_version, to_zip
 from roux.lib.io import pqt2tsv
 from roux.lib.sys import read_ps
+
+from roux.workflow.log import test_params
 from roux.workflow.io import read_config, read_metadata, replacestar, to_clean_nb, to_html, to_src
+
 from roux.workflow.task import (
     # run_task, 
     run_tasks ## preferred because it infers setup for the outputs
@@ -54,7 +58,7 @@ parser.add_commands(
         read_config,
         read_metadata,
         ## workflow execution
-        # run_task,
+        test_params,
         run_tasks,
         ## notebook
         ### post-processing
