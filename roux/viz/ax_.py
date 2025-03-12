@@ -70,6 +70,7 @@ def set_axes_minimal(
 
 def set_axes_arrows(
     ax: plt.Axes,
+    axes=['x','y'],
     length: float = 0.1,
     pad: float = 0.2,
     color: str = "k",
@@ -99,8 +100,10 @@ def set_axes_arrows(
         ## overwrite
         **kws_arrow,
     }
-    ax.arrow(1 - length, -1 * (length * (1 + pad)), length, 0, **kws)
-    ax.arrow(-1 * length, 1 + (length * pad), 0.0, length, **kws)
+    if 'x' in axes:
+        ax.arrow(1 - length, -1 * (length * (1 + pad)), length, 0, **kws)
+    elif 'y' in axes:
+        ax.arrow(-1 * length, 1 + (length * pad), 0.0, length, **kws)
     return ax
 
 
@@ -255,7 +258,10 @@ def format_labels(
             labelpad=0,
         )
         ax.yaxis.set_label_coords(-0.05, 1.02)
-        set_axes_arrows(ax=ax)
+        set_axes_arrows(
+            ax=ax,
+            axes=['y'],
+        )
         
     if isinstance(textwrap_width,int):
         from roux.lib.str import linebreaker

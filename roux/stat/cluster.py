@@ -221,20 +221,29 @@ def get_gmm_params(
         out (str): `coff` only or `params` for all the parameters.
 
     """
-    assert n_clusters == 2
     weights = g.weights_
     means = g.means_
     covars = g.covariances_
     stds = np.sqrt(covars).ravel().reshape(n_clusters, 1)
+    # assert n_clusters == 2, 'not implemented'
     # logging.info(f'weights {weights}')
     f = x.reshape(-1, 1)
     x.sort()
-    two_pdfs = sc.stats.norm.pdf(np.array([x, x]), means, stds)
+    two_pdfs = sc.stats.norm.pdf(np.array([x]*n_clusters), means, stds)
     mix_pdf = np.matmul(weights.reshape(1, n_clusters), two_pdfs)
     return mix_pdf, two_pdfs, means, weights
 
 
-def get_gmm_intersection(x, two_pdfs, means, weights, test=False):
+def get_gmm_intersection(
+    x, 
+    two_pdfs, 
+    means, 
+    weights, 
+    # method=None, # middle. 
+    method='mean low', # 1st intersection towards low mean dist. 
+    # method='weight high', # high weight
+    test=False
+    ):
     from roux.stat.solve import get_intersection_locations
 
     idxs = get_intersection_locations(
@@ -249,11 +258,21 @@ def get_gmm_intersection(x, two_pdfs, means, weights, test=False):
             logging.info(x_intersections)
             logging.info(ms)
             logging.info([i for i in x_intersections if i > ms[0] and i < ms[1]])
-        coffs_ = [i for i in x_intersections if i > ms[0] and i < ms[1]]
-        if len(coffs_) != 0:
-            coff = coffs_[0]
+            
+        if method=='mean low':
+            coff = x_intersections[list(ms).index(min(ms))]            
+        elif method=='mean high':
+            coff = x_intersections[list(ms).index(max(ms))]            
+        elif method=='weight low':
+            coff = x_intersections[list(weights).index(min(weights))]            
+        elif method=='weight high':
+            coff = x_intersections[list(weights).index(max(weights))]            
         else:
-            coff = None
+            coffs_ = [i for i in x_intersections if i > ms[0] and i < ms[1]]
+            if len(coffs_) != 0:
+                coff = coffs_[0]
+            else:
+                raise ValueError(f"method={method}, coffs_={coffs_} (x_intersections={x_intersections}, ms={ms}, weights={weights})")
         if test:
             logging.info(coff)
     else:
@@ -313,6 +332,7 @@ def cluster_1d(
             n_clusters=n_clusters,
             test=test,
         )
+        logging.info(f"means: {means}, weights: {weights}")
         coff = get_gmm_intersection(x, two_pdfs, means, weights, test=test)
     d = {}
     for k in returns:

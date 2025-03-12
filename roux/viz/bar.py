@@ -605,3 +605,76 @@ def plot_sankey(
     else:
         fig.show()
     return fig
+
+
+def plot_bar_line(
+    ds: pd.Series,
+    x,
+    y,
+    colors : dict,
+    ylen=5,
+    yoff=0,
+    lw=10,
+    orient='v',
+    ax=None,
+    ):
+    """
+    Plots stacked bar plot using ax{v/h}lines.
+
+    Example:
+        ax=plt.subplot()
+        plot_bar_line(
+            pd.Series({'a':2,'b':34,'c':54}),
+            x=1,
+            y=1,#=0.5,0.5
+            colors={
+                'a':'r',
+                'b':'g',
+                'c':'w',        
+            },
+            ylen=5,
+            yoff=0,
+            lw=10,
+            orient='h',
+            )
+    """
+    if ax is None:
+        ax=plt.gca()
+    data=(
+        (ds/ds.sum()).to_frame('frac')
+        .assign(
+            ymax_=lambda df: df['frac'].cumsum(),
+            ymin_=lambda df: df['ymax_']-df['frac'],
+    
+            ymin=lambda df: y+yoff+(df['ymin_']*ylen),
+            ymax=lambda df: y+yoff+(df['ymax_']*ylen),
+            # ymin=lambda df: df['ymin_'],
+            # ymax=lambda df: df['ymax_'],
+        )
+        .rename_axis('id')
+        .reset_index()
+    )
+    (
+        data
+        .apply(
+            lambda x: getattr(ax,orient+'lines')(
+                **(
+                    dict(
+                        x=x,
+                        ymin=x['ymin'],
+                        ymax=x['ymax'],
+                    ) if orient=='v' else 
+                  dict(
+                    y=x,
+                    xmin=x['ymin'],
+                    xmax=x['ymax'],
+                 )
+                ),
+                color=colors[x['id']],
+                lw=lw,
+                # for .plot solid_capstyle='butt',
+            ),
+            axis=1,
+        )
+    )
+    return ax

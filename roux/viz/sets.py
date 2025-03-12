@@ -585,6 +585,7 @@ def plot_pie(
     remove_wedges: list = None,
     remove_wedges_index: list = [],
     line_color: str = "k",
+    annot: bool = True,
     annot_side: bool = False,
     kws_annot_side: dict = {},
     ax: plt.Axes = None,
@@ -614,94 +615,95 @@ def plot_pie(
     """
     if ax is None:
         ax = plt.gca()
-    wedges, texts = ax.pie(
+    t = ax.pie(
         counts,
         startangle=90,
         counterclock=False,
         **kws_pie,
     )
-
-    kws_annotate = dict(
-        arrowprops=dict(arrowstyle="-", color=line_color, shrinkB=0),
-        zorder=0,
-        va="center",
-    )
-    if remove_wedges is not None:
-        remove_wedges_index += [labels.index(k) for k in remove_wedges]
-    if annot_side:
-        ## collect inputs
-        ks, xs, ys = [], [], []
-    for i, (p, t) in enumerate(zip(wedges, texts)):
-        ## remove wedge/s
-        if i in remove_wedges_index:
-            p.set_visible(False)
-            t.set_visible(False)
-            continue
-        ## labels
-        ang = (p.theta2 - p.theta1) / 2.0 + p.theta1
-        y = np.sin(np.deg2rad(ang))
-        x = np.cos(np.deg2rad(ang))
-        if not annot_side:
-            horizontalalignment = {-1: "right", 1: "left"}[int(np.sign(x))]
-            # horizontalalignment = 'center'
-            connectionstyle = f"angle,angleA=0,angleB={ang}"
-            kws_annotate["arrowprops"].update({"connectionstyle": connectionstyle})
-
-            ax.annotate(
-                labels[i],
-                xy=(x, y),
-                xytext=(scales_line_xy[0] * np.sign(x), scales_line_xy[1] * y),
-                horizontalalignment=horizontalalignment,
-                **kws_annotate,
+    if annot:
+        assert isinstance(t,tuple), t
+        kws_annotate = dict(
+            arrowprops=dict(arrowstyle="-", color=line_color, shrinkB=0),
+            zorder=0,
+            va="center",
+        )
+        if remove_wedges is not None:
+            remove_wedges_index += [labels.index(k) for k in remove_wedges]
+        if annot_side:
+            ## collect inputs
+            ks, xs, ys = [], [], []
+        for i, (p, t) in enumerate(zip(wedges, texts)):
+            ## remove wedge/s
+            if i in remove_wedges_index:
+                p.set_visible(False)
+                t.set_visible(False)
+                continue
+            ## labels
+            ang = (p.theta2 - p.theta1) / 2.0 + p.theta1
+            y = np.sin(np.deg2rad(ang))
+            x = np.cos(np.deg2rad(ang))
+            if not annot_side:
+                horizontalalignment = {-1: "right", 1: "left"}[int(np.sign(x))]
+                # horizontalalignment = 'center'
+                connectionstyle = f"angle,angleA=0,angleB={ang}"
+                kws_annotate["arrowprops"].update({"connectionstyle": connectionstyle})
+    
+                ax.annotate(
+                    labels[i],
+                    xy=(x, y),
+                    xytext=(scales_line_xy[0] * np.sign(x), scales_line_xy[1] * y),
+                    horizontalalignment=horizontalalignment,
+                    **kws_annotate,
+                )
+            else:
+                ks.append(labels[i])
+                xs.append(x)
+                ys.append(y)
+        if annot_side:
+            df1 = pd.DataFrame(dict(labels=ks, xs=xs, ys=ys))
+            from roux.viz.annot import annot_side
+    
+            ## right
+            df1_ = df1.query("`xs` >= 0")
+            ax = annot_side(
+                ax=ax,
+                df1=df1_,
+                loc="right",
+                colx="xs",
+                coly="ys",
+                cols="labels",
+                color=line_color,
+                kws_line=dict(lw=1),
+                **(
+                    kws_annot_side
+                    if len(df1_) != 1
+                    else {
+                        k: v
+                        for k, v in kws_annot_side.items()
+                        if k not in ["offymin", "offymax"]
+                    }
+                ),
             )
-        else:
-            ks.append(labels[i])
-            xs.append(x)
-            ys.append(y)
-    if annot_side:
-        df1 = pd.DataFrame(dict(labels=ks, xs=xs, ys=ys))
-        from roux.viz.annot import annot_side
-
-        ## right
-        df1_ = df1.query("`xs` >= 0")
-        ax = annot_side(
-            ax=ax,
-            df1=df1_,
-            loc="right",
-            colx="xs",
-            coly="ys",
-            cols="labels",
-            color=line_color,
-            kws_line=dict(lw=1),
-            **(
-                kws_annot_side
-                if len(df1_) != 1
-                else {
-                    k: v
-                    for k, v in kws_annot_side.items()
-                    if k not in ["offymin", "offymax"]
-                }
-            ),
-        )
-        ## left
-        df1_ = df1.query("`xs` < 0")
-        ax = annot_side(
-            ax=ax,
-            loc="left",
-            df1=df1_,
-            colx="xs",
-            coly="ys",
-            cols="labels",
-            color=line_color,
-            kws_line=dict(lw=1),
-            **(
-                kws_annot_side
-                if len(df1_) != 1
-                else {
-                    k: v
-                    for k, v in kws_annot_side.items()
-                    if k not in ["offymin", "offymax"]
-                }
-            ),
-        )
+            ## left
+            df1_ = df1.query("`xs` < 0")
+            ax = annot_side(
+                ax=ax,
+                loc="left",
+                df1=df1_,
+                colx="xs",
+                coly="ys",
+                cols="labels",
+                color=line_color,
+                kws_line=dict(lw=1),
+                **(
+                    kws_annot_side
+                    if len(df1_) != 1
+                    else {
+                        k: v
+                        for k, v in kws_annot_side.items()
+                        if k not in ["offymin", "offymax"]
+                    }
+                ),
+            )
     return ax
