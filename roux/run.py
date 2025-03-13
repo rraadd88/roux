@@ -11,7 +11,7 @@ from roux.lib.io import pqt2tsv
 from roux.lib.sys import read_ps
 
 from roux.workflow.log import test_params
-from roux.workflow.io import read_config, read_metadata, replacestar, to_clean_nb, to_html, to_src
+from roux.workflow.io import read_config, read_metadata, replacestar, to_clean_nb, to_html, to_src, to_nb_kernel
 
 from roux.workflow.task import (
     # run_task, 
@@ -61,6 +61,8 @@ parser.add_commands(
         test_params,
         run_tasks,
         ## notebook
+        ### pre-processing        
+        to_nb_kernel,
         ### post-processing
         replacestar,
         to_clear_unused_cells,

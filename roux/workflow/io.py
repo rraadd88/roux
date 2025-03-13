@@ -281,6 +281,46 @@ def to_parameters(f: object, test: bool = False) -> dict:
     #     break
     return params
 
+def to_nb_kernel(
+    p : str,
+    kernel : str = None,
+    outp : str = None,
+    ):
+    """
+    Because no-kernel means previous kernel. 
+    """
+    from glob import glob
+    if len(glob(p))>1:
+        # recursive
+        d={}
+        for p_ in glob(p):
+            d[p_]=to_nb_kernel(
+                p_,
+                kernel = kernel,# : str = None,
+                outp = outp,# : str = None,
+            )
+            print(p_,d[p_])
+        return # d
+        
+    import nbformat
+    
+    # Load the notebook
+    nb = nbformat.read(p, as_version=nbformat.NO_CONVERT)
+    
+    # Update the kernelspec (or remove it)
+    if "kernelspec" in nb.metadata:
+        if kernel is None:
+            return nb.metadata.kernelspec.name
+        else:
+            nb.metadata.kernelspec.name = kernel
+            nb.metadata.kernelspec.display_name = kernel
+            # Or to remove it entirely:
+            # del nb.metadata["kernelspec"]
+            # Save the modified notebook
+            outp = p if outp is None else outp
+            nbformat.write(nb, outp)
+            return kernel
+
 
 def read_config(
     p: str,

@@ -153,6 +153,7 @@ def run_tasks(
     to_filter_nbby_patterns_kws=None,
     input_notebook_temp_path=None,
     out_paths: bool = True,
+    pre: bool = True,
     post: bool = False,
     test1: bool = False,
     force: bool = False,
@@ -293,7 +294,13 @@ def run_tasks(
     #     clean=True
     # else:
     #     clean=False
-
+    if pre: 
+        logging.debug("pre-processing nb ..")
+        from roux.workflow.io import to_nb_kernel
+        to_nb_kernel(
+            input_notebook_path,
+            kernel=kernel,
+        )
     ## run tasks
     ## for log
     from datetime import datetime
@@ -355,6 +362,7 @@ def run_tasks(
             )
         )
     # return ds2
+    
     if post==True and not fast:        
         from roux.workflow.io import valid_post_task_deps, to_html
         if valid_post_task_deps:
