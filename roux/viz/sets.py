@@ -615,7 +615,7 @@ def plot_pie(
     """
     if ax is None:
         ax = plt.gca()
-    t = ax.pie(
+    wedges, texts = ax.pie(
         counts,
         startangle=90,
         counterclock=False,

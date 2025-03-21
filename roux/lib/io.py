@@ -866,7 +866,16 @@ def apply_on_paths(
             else:
                 return (p,)
         else:
-            df = read_table(p, params=params, verbose=verbose, **kws_read_table)
+            try:
+                df = read_table(
+                    p,
+                    params=params,
+                    verbose=verbose,
+                    **kws_read_table
+                )
+            except Exception as e:
+                raise ValueError(f"An error occurred for {p}: {e}.")
+                
             if filter_rows is not None:
                 df = df.rd.filter_rows(filter_rows)
             return (df,)
@@ -1048,7 +1057,7 @@ def read_tables(
         df_ = ps2time(ps)
         ps = df_.loc[df_["time"].str.contains(filterby_time), "p"].unique().tolist()
         kws_apply_on_paths["drop_index"] = False  # see which files are read
-    if not to_dict:
+    if not to_dict and not isinstance(ps,dict):
         df2 = apply_on_paths(
             ps,
             func=lambda df: df,
@@ -1061,7 +1070,10 @@ def read_tables(
         )
         return df2
     else:
-        return {p: read_table(p, params=params) for p in read_ps(ps)}
+        if not isinstance(ps,dict):
+            ps=read_ps(ps)
+            ps=dict(zip(ps,ps))
+        return {k: read_table(p, params=params) for k,p in ps.items()}
 
 
 ## save table
@@ -1240,6 +1252,63 @@ def to_tables(
             f"{Path(p).with_suffix('').as_posix()}/{k}.pqt"
         )
     return ps
+
+# import pandas as pd
+# from roux.lib.io import to_table
+# from glob import glob
+def to_tables_flt(
+    dir_path,
+    outp,
+    ids: list,
+    force=False,
+    test1=False,
+    check=False, # not save
+    ):
+    """
+    Links the file input file paths. Thereby avoids copying of files.
+    """
+    from roux.lib.set import flatten
+    if  isinstance(dir_path,dict): 
+        dir_paths=dir_path
+        ## recursive
+        to_var={}
+        for var,dir_path in dir_paths.items():
+            to_var[var]=to_tables_flt(
+                dir_path=dir_path,
+                outp=f"{outp}/{var}.tsv",
+                ids=ids,
+            )
+        return to_var    
+    if not Path(outp).exists() or force:
+        logging.info("writing: "+outp)
+        # ps=[read_ps(f"{dir_path}/{k}.*",verbose=False) for k in tqdm(ids)]
+        # if '*' in dir_path and exists()
+        ps=flatten(
+            [glob(f"{dir_path}/{k}.pqt") for k in ids]
+            )
+        # ps=[f"{dir_path}/{k}.pqt" for k in ids]
+        # logging.info(f"len(ps)={len(ps)}")
+        # ps=[p for p in ps if Path(p).exists()]
+        if len(ps)==0:
+            logging.warning(f"not found  = {dir_path} ..")
+            return
+        logging.info(f"exist  = {len(ps)}")
+        assert len(ps)<=len(ids),(len(ps), len(ids))
+        if len(ps)<len(ids):
+            logging.warning(f"{len(ps), len(ids)}")
+        df_=pd.DataFrame(
+            {
+                'path':ps
+            }
+            ).drop_duplicates().log()
+        if not check:
+            to_table(
+                df_,
+                outp,
+            )
+        if test1:
+            print(read_table(df_['path'].tolist()[0]).head(1))
+    return outp
     
 def tsv2pqt(
     p: str,

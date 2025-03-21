@@ -148,8 +148,9 @@ def run_tasks(
     output_path_base: str = None,
     params=None,
     parameters_list=None, # same as params
-    fast: bool = False,
-    fast_workers: int = 6,
+    cpus: int = 1,
+    fast: bool = None, ## to be deprecated
+    fast_workers: int = None, ## to be deprecated
     to_filter_nbby_patterns_kws=None,
     input_notebook_temp_path=None,
     out_paths: bool = True,
@@ -174,7 +175,7 @@ def run_tasks(
         post (bool): post-process (Defaults to False).
         test1 (bool): test only first task in the list (Defaults to False).
         fast (bool): enable parallel-processing.
-        fast_workers (bool): number of parallel-processes.
+        cpus (bool): number of parallel-processes.
         force (bool): overwrite the outputs.
         test (bool): test-mode.
         verbose (bool): verbose.
@@ -253,7 +254,7 @@ def run_tasks(
     if isinstance(parameters_list, list):
         parameters_list=flt_params(
             parameters_list,
-            force=False,
+            force=force,
         )
         if len(parameters_list) == 0:
             return 
@@ -319,8 +320,13 @@ def run_tasks(
     if test1:
         df1 = df1.head(1)
         logging.warning("testing only the first input.")
-        
-    if not fast or len(df1)==1:
+    
+    ## backcompatibility
+    if fast_workers is not None:
+        cpus=fast_workers
+    fast= cpus > 1
+    
+    if (not fast) or len(df1)==1:
         df1['nb path'] = getattr(
             df1['params'],
             "progress_apply"
@@ -335,8 +341,8 @@ def run_tasks(
                 force=force,
             )
         )
-    else:        
-        logging.info(f"running in parallel (cpus={fast_workers})..")
+    else:
+        logging.info(f"running in parallel (cpus={cpus})..")
         
         # disable logging
         sorted(list(logging.root.manager.loggerDict.keys()))
@@ -358,7 +364,7 @@ def run_tasks(
                         **kws_papermill,
                         force=force,
                     ),
-                cpus=fast_workers,
+                cpus=cpus,
             )
         )
     # return ds2
@@ -367,14 +373,14 @@ def run_tasks(
         from roux.workflow.io import valid_post_task_deps, to_html
         if valid_post_task_deps:
             df1['html path']=(
-            df1
-            .rd.apply_async(
-                lambda x: 
-                    to_html(
-                        x['nb path'],                    
-                    ),
-                cpus=fast_workers,
-            )
+                df1
+                .rd.apply_async(
+                    lambda x: 
+                        to_html(
+                            x['nb path'],                    
+                        ),
+                    cpus=cpus,
+                )
             )
             
     ## log

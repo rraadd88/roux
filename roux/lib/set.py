@@ -71,7 +71,7 @@ def check_non_overlaps_with(
     if log:
         from roux.stat.io import perc_label
         logging.info(
-            f"{perc_label(len(l_),len(set(l1)))} non overlapping items found in l1: {l_}"
+            f"{perc_label(len(l_),len(set(l1)))} non overlapping items found in l1 {'' if len(l_)<=20 else 'e.g.'} : {list(l_)[:20]}"
         )
     if not out_count:
         return l_
@@ -82,9 +82,14 @@ def check_non_overlaps_with(
 def validate_overlaps_with(
     l1,
     l2,
+    verbose=False,
     **kws_check
     ):
-    return len(check_non_overlaps_with(l1, l2, **kws_check)) == 0
+    if verbose:
+        print(check_non_overlaps_with(l1, l2, **kws_check))
+        print(set(l1) & set(l2))
+        
+    return (len(check_non_overlaps_with(l1, l2, **kws_check)) == 0) and len(set(l1) & set(l2))>0
 
 
 def assert_overlaps_with(
@@ -99,6 +104,49 @@ def assert_overlaps_with(
     ), f"Non-ovelapping item/s: {check_non_overlaps_with(l1,l2,out_count=out_count)}"
 
 
+def intersections(dn2list, jaccard=False, count=True, fast=False, test=False):
+    """Get intersections between lists.
+
+    Parameters:
+        dn2list (dist): dictionary mapping to lists.
+        jaccard (bool): return jaccard indices.
+        count (bool): return counts.
+        fast (bool): fast.
+        test (bool): verbose.
+
+    Returns:
+        df (DataFrame): output dataframe.
+
+    TODOs:
+        1. feed as an estimator to `df.corr()`.
+        2. faster processing by filling up the symetric half of the adjacency matrix.
+    """
+    dn2list = {k: dropna(dn2list[k]) for k in dn2list}
+    df = pd.DataFrame(index=dn2list.keys(), columns=dn2list.keys())
+    if jaccard:
+        dn2list = {k: set(dn2list[k]) for k in dn2list}
+    from tqdm import tqdm
+
+    for k1i, k1 in tqdm(enumerate(dn2list.keys())):
+        #         if test:
+        #             print(f"{(k1i/len(dn2list.keys()))*100:.02f}")
+        for k2i, k2 in enumerate(dn2list.keys()):
+            if fast and k1i >= k2i:
+                continue
+            if jaccard:
+                if len(dn2list[k1].union(dn2list[k2])) != 0:
+                    l = jaccard_index(dn2list[k1], dn2list[k2])
+                    # l=len(set(dn2list[k1]).intersection(dn2list[k2]))/len(dn2list[k1].union(dn2list[k2]))
+                else:
+                    l = np.nan
+            else:
+                l = list(set(dn2list[k1]).intersection(dn2list[k2]))
+            if count:
+                df.loc[k1, k2] = len(l)
+            else:
+                df.loc[k1, k2] = l
+    return df
+    
 def jaccard_index(l1, l2):
     # if len(l1)==0 or len(l2)==0:
     #     return 0,0,0
@@ -264,50 +312,6 @@ def get_alt(
     """
     assert s in l1, (s, l1)
     return [i for i in l1 if i != s][0]
-
-
-def intersections(dn2list, jaccard=False, count=True, fast=False, test=False):
-    """Get intersections between lists.
-
-    Parameters:
-        dn2list (dist): dictionary mapping to lists.
-        jaccard (bool): return jaccard indices.
-        count (bool): return counts.
-        fast (bool): fast.
-        test (bool): verbose.
-
-    Returns:
-        df (DataFrame): output dataframe.
-
-    TODOs:
-        1. feed as an estimator to `df.corr()`.
-        2. faster processing by filling up the symetric half of the adjacency matrix.
-    """
-    dn2list = {k: dropna(dn2list[k]) for k in dn2list}
-    df = pd.DataFrame(index=dn2list.keys(), columns=dn2list.keys())
-    if jaccard:
-        dn2list = {k: set(dn2list[k]) for k in dn2list}
-    from tqdm import tqdm
-
-    for k1i, k1 in tqdm(enumerate(dn2list.keys())):
-        #         if test:
-        #             print(f"{(k1i/len(dn2list.keys()))*100:.02f}")
-        for k2i, k2 in enumerate(dn2list.keys()):
-            if fast and k1i >= k2i:
-                continue
-            if jaccard:
-                if len(dn2list[k1].union(dn2list[k2])) != 0:
-                    l = jaccard_index(dn2list[k1], dn2list[k2])
-                    # l=len(set(dn2list[k1]).intersection(dn2list[k2]))/len(dn2list[k1].union(dn2list[k2]))
-                else:
-                    l = np.nan
-            else:
-                l = list(set(dn2list[k1]).intersection(dn2list[k2]))
-            if count:
-                df.loc[k1, k2] = len(l)
-            else:
-                df.loc[k1, k2] = l
-    return df
 
 
 ## ranges

@@ -40,6 +40,39 @@ def head_table(
         use_paths=use_paths,
         **kws,
     ).head(n)
+
+def query_table(
+    p : str,
+    expr: str,
+    # n : int = 5,
+    # use_dir_paths : bool = True,
+    # not_use_dir_paths : bool = False,
+    # use_paths : bool = True,
+    # not_use_paths : bool = False,
+    **kws,
+    ):
+    """
+    Notes:
+    
+        ` -> \`
+    """
+    # if not_use_dir_paths: 
+    #     use_dir_paths=False
+    # if not_use_paths: 
+    #     use_paths=False
+        
+    from roux.lib.io import read_table
+    return (
+        read_table(
+            p,
+            # use_dir_paths=use_dir_paths,
+            # use_paths=use_paths,
+            **kws,
+        )
+        .query(
+            expr=expr,    
+        )
+    )
     
 ## begin
 parser = argh.ArghParser()
@@ -49,6 +82,7 @@ parser.add_commands(
         read_ps,
         ## checks
         head_table,
+        query_table,
         ## backup
         backup,
         to_version,
