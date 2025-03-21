@@ -1063,7 +1063,6 @@ def query(
     kws_query={},
     **kws_log,
 ):
-    from roux.lib.str import get_bracket
     df.log(label='(init)')
     for e in expr.split('&'):
         df=(
