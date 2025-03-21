@@ -1057,6 +1057,30 @@ def get_totals(ds1):
 
 # filter df
 @to_rd
+def query(
+    df,
+    expr,
+    kws_query={},
+    **kws_log,
+):
+    from roux.lib.str import get_bracket
+    df.log(label='(init)')
+    for e in expr.split('&'):
+        df=(
+            df
+            .log.query(
+                expr=e,
+                **kws_query
+           )
+           .log(
+               # label=f"(queried by: {get_bracket(e,'`','`')})",
+               label=f"({e.strip()})",
+               **kws_log,
+           ) 
+           )
+    return df
+
+@to_rd
 def filter_rows(
     df,
     d,

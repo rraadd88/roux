@@ -303,7 +303,13 @@ def get_bracket(
     #     import re
     #     re.search(r'{l}(.*?){r}', s).group(1)
     if leftmarker in s and righttmarker in s:
-        return s[s.find(leftmarker) + 1 : s.find(righttmarker)]
+        if leftmarker!=righttmarker:
+            return s[s.find(leftmarker) + 1 : s.find(righttmarker)]
+        else:
+            import re
+            pattern = re.escape(leftmarker) + r"(.*?)" + re.escape(righttmarker)
+            match = re.search(pattern, s)
+            return match.group(1) if match else None        
     else:
         return ""
 
