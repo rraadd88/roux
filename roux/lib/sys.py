@@ -107,7 +107,7 @@ def read_ps(
             ):
                 logging.info(f"{k_}: {k}\t{v}")
         elif len(ds1) == 0:
-            if errors=='raise':
+            if errors in ['raise', True]:
                 logging.error("paths do not exist.")
                 return
             logging.warning("paths do not exist.")

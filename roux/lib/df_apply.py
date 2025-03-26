@@ -148,7 +148,7 @@ def apply_async_chunks(
                 return df_out
                 
     logging.info("collecting processed chunks ..")
-    assert df['chunk'].nunique()==len(outps)
+    assert df['chunk'].nunique()==len(read_ps(outps,errors='raise'))
     
     df1=read_table(
         outps,

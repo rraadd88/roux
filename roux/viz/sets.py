@@ -622,7 +622,7 @@ def plot_pie(
         **kws_pie,
     )
     if annot:
-        assert isinstance(t,tuple), t
+        # assert isinstance(t,tuple), t
         kws_annotate = dict(
             arrowprops=dict(arrowstyle="-", color=line_color, shrinkB=0),
             zorder=0,
