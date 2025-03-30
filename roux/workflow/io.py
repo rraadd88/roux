@@ -346,11 +346,12 @@ def read_config(
         else:
             logging.warning(f"Base config path not found: {config_base}")
     ## read config
-    if isinstance(p,(str)) and Path(p).is_file():
-        d1 = read_dict(p)
-    elif isinstance(p,(str)) and not Path(p).is_file():
-        import yaml
-        d1 =yaml.safe_load(p)
+    if isinstance(p,(str)):
+        if '\n' not in p and Path(p).is_file():
+            d1 = read_dict(p)
+        else:
+            import yaml
+            d1 =yaml.safe_load(p)
     elif isinstance(p,(dict)):
         d1=p
     

@@ -63,7 +63,7 @@ def read_ps(
     ps,
     errors=None,
     tree_depth=None,
-    test: bool = True,
+    test: bool = False,
     verbose: bool = True,
 ) -> list:
     """Read a list of paths.

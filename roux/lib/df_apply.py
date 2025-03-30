@@ -148,7 +148,9 @@ def apply_async_chunks(
                 return df_out
                 
     logging.info("collecting processed chunks ..")
-    assert df['chunk'].nunique()==len(read_ps(outps,errors='raise'))
+    
+    from roux.lib.sys import read_ps
+    assert df['chunk'].nunique()==len(read_ps(outps,errors='raise',verbose=False))
     
     df1=read_table(
         outps,
