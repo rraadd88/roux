@@ -11,10 +11,7 @@ Note: Post-development, to remove *s from the code, use removestar (pip install 
 
     removestar file
 """
-## begin replacestar
-## logging functions
-import logging #noqa
-    
+## begin replacestar    
 ## data functions
 # import itertools
 import numpy as np #noqa
@@ -56,10 +53,12 @@ from roux.workflow.log import test_params, print_parameters #noqa
 from roux.workflow.task import run_tasks #noqa
 
 ## logging functions
-from tqdm import tqdm #noqa
-
 ## setting states
-logging.basicConfig(level=logging.INFO)
+# import logging #noqa
+# logging.basicConfig(level=logging.INFO)
+from roux.lib.log import Logger
+logging = Logger() # level='INFO'
+from tqdm import tqdm #noqa
 ## end replacestar
 
 ## system functions from roux
