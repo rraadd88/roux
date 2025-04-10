@@ -27,16 +27,16 @@ logos={
 
     "ℹ️": {"name": "info", "color": "\033[0m", 'level':20},
     "💬": {"name": "commenting", "color": "\033[97m", 'level':21},
-    "🔎": {"name": "testing", "color": "\033[94m", 'level':22},
+    "🔬": {"name": "testing", "color": "\033[94m", 'level':22},
     "🚀": {"name": "launching", "color": "\033[96m", 'level':23},
-    "📥": {"name": "loading", "color": "\033[94m", 'level':24},
+    "💽": {"name": "loading", "color": "\033[94m", 'level':24},
     "⚙️": {"name": "configuring", "color": "\033[96m", 'level':25},
     "⏳": {"name": "processing", "color": "\033[93m", 'level':26},
     "📊": {"name": "plotting", "color": "\033[96m", 'level':27},
     "🗂️": {"name": "saving", "color": "\033[94m", 'level':28},    
     "✅": {"name": "done", "color": "\033[92m", 'level':29},
     
-    "⚠️": {"name": "warning", "color": "\033[91m", 'level':30},
+    "⚠️": {"name": "warning", "color": "\033[38;5;208m", 'level':30},
     "🚫": {"name": "skipping", "color": "\033[91m", 'level':31},
     
     "❌": {"name": "error", "color": "\033[91m", 'level':40},
@@ -74,7 +74,7 @@ class CustomFormatter(logging_base.Formatter):
         if hasattr(record, "n") and record.n:
             n=record.n
         # print(dir(record))
-        return f"{text_color}{logo*n}{record.levelname.capitalize()}: {record.msg}"+'\033[0m'+time_str
+        return f"{text_color}{logo*n} {record.levelname.capitalize()}: {record.msg}"+'\033[0m'+time_str
         
 class Logger(logging_base.Logger):    
     def __init__(self, name: str = "roux", level: int = 'INFO'):
@@ -83,7 +83,17 @@ class Logger(logging_base.Logger):
         self._verbosity = 1
         self.indent = ""
         self._setup_handler()
-        self.setLevel(level=level)
+        # self.setLevel(level=level)
+        self.force_level = level
+
+    def setLevel(self, level):
+        # Update the forced level attribute
+        self.force_level = level
+        # Update all the handlers so that they use the forced level
+        for handler in self.handlers:
+            handler.setLevel(level)
+        # Also set the logger’s own level
+        super().setLevel(level)
         
     def _setup_handler(self):
         handler = logging_base.StreamHandler(sys.stderr)

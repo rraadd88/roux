@@ -54,10 +54,14 @@ from roux.workflow.task import run_tasks #noqa
 
 ## logging functions
 ## setting states
-# import logging #noqa
-# logging.basicConfig(level=logging.INFO)
+
+# try:
 from roux.lib.log import Logger
 logging = Logger() # level='INFO'
+# except:
+    # import logging #noqa
+    # logging.basicConfig(level='INFO', force=True)
+
 from tqdm import tqdm #noqa
 ## end replacestar
 
