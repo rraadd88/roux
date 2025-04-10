@@ -3,12 +3,16 @@ name: build
 on:
   push:
     branches: "*"
+    paths:
+      - "roux/*"
   pull_request:
     branches: "*"
+    paths:
+      - "roux/*"
 
 jobs:
   build-n-test-n-coverage:
-    name: Build, test and code coverage
+    name: Build and test
     runs-on: ubuntu-latest
     strategy:
       fail-fast: true
@@ -17,10 +21,6 @@ jobs:
     env:
       OS: ubuntu-latest
       PYTHON: "3.12.8"
-      # https://raw.githubusercontent.com/actions/python-versions/main/versions-manifest.json
-    # "arch": "x64",
-    # "platform": "linux",
-    # "platform_version": "20.04",
         
     steps:
       - name: Checkout
@@ -36,10 +36,21 @@ jobs:
           pip install tox-gh-actions
       - name: Run the tests
         run: tox
-      # - name: Upload coverage to Codecov
-      #   uses: codecov/codecov-action@v1
-      #   with:
-      #     file: ./coverage.xml
-      #     flags: unittests
-      #     name: codecov-umbrella
-      #     fail_ci_if_error: false
+
+        
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: astral-sh/setup-uv@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+          
+      - name: Install dependencies
+        run: |
+          uv sync --all-extras --dev
+          uv pip install -e .
+          
+      - name: Run the tests
+        # run: tox
+        run: uv run tox
