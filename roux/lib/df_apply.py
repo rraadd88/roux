@@ -20,34 +20,64 @@ def apply_async(
     cpus: int,
     unstack: bool=True,
     axis=1, #noqa ## unused, for swappability with .apply
+    by=None, ## groupby
+    **kws, ## to by
     ) -> list:
-    
-    idx=df.index.tolist()
-    
-    if len(idx)==0:
-        return
-    else:    
-        assert idx==list(range(len(df))), "before apply_async, need: .reset_index(drop=True)"#, {idx}, {list(range(len(df)))}"
-    
     import concurrent.futures
-    with concurrent.futures.ThreadPoolExecutor(
-        max_workers=cpus
-    ) as executor:
-        results = list(
-            executor.map(
-                func,
-                [x for _, x in df.iterrows()],
+    
+    if by is None:
+        idx=df.index.tolist()        
+        if len(idx)==0:
+            return
+        else:    
+            assert idx==list(range(len(df))), "before apply_async, need: .reset_index(drop=True)"#, {idx}, {list(range(len(df)))}"
+        
+        with concurrent.futures.ThreadPoolExecutor(
+            max_workers=cpus
+        ) as executor:
+            results = list(
+                executor.map(
+                    func,
+                    [x for _, x in df.iterrows()],
+                )
             )
-        )
-    if isinstance(results[0],(pd.Series)):
-        return pd.concat([ds.to_frame().T for ds in results],axis=0)
-    elif isinstance(results[0],(pd.DataFrame)):
-        df1 = pd.concat(results,axis=0)
-        if unstack:
-            df1=df1.unstack(1)
-        return df1
-    else: 
-        return pd.Series(results)
+        if isinstance(results[0],(pd.Series)):
+            return pd.concat([ds.to_frame().T for ds in results],axis=0)
+        elif isinstance(results[0],(pd.DataFrame)):
+            df1 = pd.concat(results,axis=0)
+            if unstack:
+                df1=df1.unstack(1)
+            return df1
+        else: 
+            return pd.Series(results)
+    else:
+        # Perform parallel by processing
+        results = {}
+        with concurrent.futures.ThreadPoolExecutor(max_workers=cpus) as executor:
+            futures = {
+                executor.submit(func, group): name
+                for name, group in df.groupby(by,**kws)
+            }
+            for future in tqdm(concurrent.futures.as_completed(futures)):
+                name = futures[future]
+                try:
+                    results[name] = future.result()
+                except:
+                    raise ValueError(name)
+                # Add group key to the result
+            
+        #     if isinstance(group_result, (pd.DataFrame,pd.Series)):
+        #         # group_result[by] = name
+        #     else:
+        #         # group_result = pd.DataFrame({by: [name], 'result': [group_result]})
+        #         results[by]=group_result
+        # return results
+        # # Combine all group results into a single DataFrame
+        return  pd.concat(
+            results,
+            names=by,
+            # ignore_index=True
+            ) 
 
 @to_rd
 def apply_async_chunks(

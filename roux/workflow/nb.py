@@ -282,15 +282,19 @@ def to_clear_outputs(
         notebook = nbformat.read(notebook_file, as_version=4)
 
     # Clear all outputs in code cells
+    new_cells = []
     for cell in notebook.cells:
         if cell.cell_type == "code":
             cell.outputs = []
+        new_cells.append(cell)
 
-    # Save the modified notebook
-    with open(new_notebook_path, "w", encoding="utf-8") as new_notebook_file:
-        nbformat.write(notebook, new_notebook_file)
-    return new_notebook_path
-
+    # # Save the modified notebook
+    return to_nb_cells(
+        notebook=notebook,
+        outp=new_notebook_path,
+        new_cells=new_cells,
+        # validate_diff=validate_diff,
+    )
 
 def to_filtered_outputs(
     input_path,

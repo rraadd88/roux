@@ -613,7 +613,7 @@ def plot_volcano(
                 # hue=show_outlines if isinstance(show_outlines, str) else None,
                 ec="k",
                 # ec="face",
-                lw=4,
+                lw=1,
                 s=50,
                 fc="none",
                 style=style,

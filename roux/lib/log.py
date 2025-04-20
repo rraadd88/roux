@@ -26,7 +26,7 @@ logos={
     # "🖥️": {"name": "system", "color": "\033[96m", 'level':'INFO'},    
 
     "ℹ️": {"name": "info", "color": "\033[0m", 'level':20},
-    "💬": {"name": "commenting", "color": "\033[97m", 'level':21},
+    "💬": {"name": "status", "color": "\033[97m", 'level':21},
     "🔬": {"name": "testing", "color": "\033[94m", 'level':22},
     "🚀": {"name": "launching", "color": "\033[96m", 'level':23},
     "💽": {"name": "loading", "color": "\033[94m", 'level':24},

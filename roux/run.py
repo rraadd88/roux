@@ -53,8 +53,6 @@ def query_table(
     ):
     """
     Notes:
-    
-        ` -> \`
     """
     # if not_use_dir_paths: 
     #     use_dir_paths=False

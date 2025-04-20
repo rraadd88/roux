@@ -886,6 +886,7 @@ def to_clean_nb(
         "[tmp",
     ],
     ## ruff
+    fix_stars=False,
     lint=False,
     format=False,
     **kws_fix_code,
@@ -933,13 +934,6 @@ def to_clean_nb(
                 )
             )
         return
-    try:
-        __import__("removestar")
-        __import__("ruff")
-    except:
-        raise ModuleNotFoundError(
-            "Optional interactive-use dependencies missing, install by running: pip install roux[workflow]"
-        )
 
     from roux.workflow.nb import (
         to_clear_unused_cells,
@@ -1000,18 +994,26 @@ def to_clean_nb(
 
     assert len(_l) == 0, (p, _l)
 
-    res = replacestar(
-        input_path=temp_outp,
-        output_path=outp,
-        replace_from="from roux.global_imports import *",
-        in_place=False,
-        attributes={"pandarallel": ["parallel_apply"], "rd": [".rd.", ".log."]},
-        verbose=False,
-        test=False,
-        **kws_fix_code,
-    )
-    if res is None:
-        return
+    if fix_stars:
+        try:    
+            __import__("removestar")
+        except:
+            raise ModuleNotFoundError(
+                "Optional interactive-use dependencies missing, install by running: pip install removestar"
+            )
+        
+        res = replacestar(
+            input_path=temp_outp,
+            output_path=outp,
+            replace_from="from roux.global_imports import *",
+            in_place=False,
+            attributes={"pandarallel": ["parallel_apply"], "rd": [".rd.", ".log."]},
+            verbose=False,
+            test=False,
+            **kws_fix_code,
+        )
+        if res is None:
+            return
     post_code(
         p=outp,
         lint=lint,

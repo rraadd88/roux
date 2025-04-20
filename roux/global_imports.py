@@ -56,6 +56,11 @@ from roux.workflow.task import run_tasks #noqa
 ## setting states
 
 # try:
+import logging
+# root logger level for the imported functions
+root_logger = logging.getLogger()
+root_logger.setLevel(logging.INFO)
+## for the notebook
 from roux.lib.log import Logger
 logging = Logger() # level='INFO'
 # except:
@@ -77,6 +82,7 @@ else:
         notebook.tqdm().pandas()
     except ImportError as e:
         logging.warning(f"{e}: IProgress not found. Please update jupyter and ipywidgets. See https://ipywidgets.readthedocs.io/en/stable/user_install.html")
+        
 ## extra
 
     # from IPython.display import Markdown as info_nb #noqa    

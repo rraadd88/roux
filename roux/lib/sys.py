@@ -379,6 +379,7 @@ def run_com(
     template=None,
     test: bool = False, 
     verbose: bool = True, 
+    simulate: bool = False,
     returncodes: list = [0],
     **kws,
     ):
@@ -400,8 +401,12 @@ def run_com(
         1. logp
         2. error ignoring
     """
+    if simulate:
+        verbose=True
     if verbose:
         logging.info(com)
+    if simulate:
+        return 
         
     if template is not None:
         com=template.safe_substitute(com=com)
