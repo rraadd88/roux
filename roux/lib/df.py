@@ -1976,7 +1976,13 @@ def sort_columns_by_values(
     return df1
 
 ## tables io
-def dict2df(d, colkey="key", colvalue="value"):
+def dict2df(
+    d,
+    colkey="key",
+    colvalue="value",
+    recursive=True,
+    depth=None,
+    ):
     """Dictionary to DataFrame.
 
     Parameters:
@@ -1987,10 +1993,13 @@ def dict2df(d, colkey="key", colvalue="value"):
     Returns:
         df (DataFrame): output dataframe.
     """
+    if len(d)==0:
+        return
+        
     if not isinstance(list(d.values())[0], list):
-        return pd.DataFrame({colkey: d.keys(), colvalue: d.values()})
+        df_=pd.DataFrame({colkey: d.keys(), colvalue: d.values()})
     else:
-        return (
+        df_=(
             pd.DataFrame(pd.concat({k: pd.Series(d[k]) for k in d}))
             .droplevel(1)
             .reset_index()
@@ -1999,6 +2008,52 @@ def dict2df(d, colkey="key", colvalue="value"):
                 errors="raise",
             )
         )
+
+    if (not isinstance(df_[colvalue].values[0],dict)) or not recursive:
+        return df_
+        
+    cols_groupby=[colkey]
+    _depth=1
+    while isinstance(df_[colvalue].values[0],dict):
+        _cols_groupby=df_.columns.tolist()
+        _len=len(df_)
+        df_=(
+            df_                        
+            .groupby(cols_groupby,sort=False)
+                .apply(
+                    # recurse
+                    lambda df: dict2df(                                                             
+                        df[colvalue].values[0],
+                        colkey=f'key{_depth}',
+                        colvalue=colvalue,
+                        recursive=False,
+                    ),
+                )
+                .reset_index(
+                    # drop=True,
+                )
+            .rd.dropby_patterns('level_')
+        )
+        logging.info(df_.columns)
+        cols_groupby+=list(set(df_.columns.tolist()) - set(_cols_groupby))
+
+
+        logging.info(f"{_len} -> {len(df_)}")
+        if len(df_)>_len:
+            df_=(
+                df_
+                .assign(
+                    **{
+                        f'list{_depth} id': lambda df: df.groupby(cols_groupby,sort=False)[colkey].transform(lambda x: range(len(x)))
+                    }                                                                                            
+                 )
+            )
+            cols_groupby+=[f'list{_depth} id']
+        if _depth==depth:
+            break
+        _depth+=1
+
+    return df_
     
 ## log
 def log_shape_change(d1, fun=""):
