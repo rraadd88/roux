@@ -11,7 +11,6 @@ from roux.lib.sys import (
     exists,
     get_datetime,
     glob,
-    is_interactive_notebook,
     isdir,
     makedirs,
     read_ps,

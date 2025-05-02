@@ -103,7 +103,7 @@ def apply_async_chunks(
         - [x] Parallel.
         - [x] Resumable.
     """
-    assert not 'out' in data
+    assert 'out' not in data
     
     if test1:
         force=True
