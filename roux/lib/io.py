@@ -1094,8 +1094,8 @@ def to_table(
     Returns:
         p (str): path of the output.
     """
-    if is_interactive_notebook():
-        test = True
+    # if is_interactive_notebook():
+    #     test = True
     p = to_path(p)
     if df is None:
         df = pd.DataFrame()
@@ -1118,7 +1118,7 @@ def to_table(
     elif p.endswith(".pqt"):
         to_table_pqt(df, p, **kws)
     else:
-        logging.error(f"unknown extension {p}")
+        raise ValueError(f"unknown extension {p}")
     return p
 
 

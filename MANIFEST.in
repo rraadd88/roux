@@ -1,6 +1,5 @@
 include MANIFEST.in
 include setup.py
-include LICENSE
 prune README.md
 prune examples/*
 prune tests

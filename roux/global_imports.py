@@ -1,5 +1,5 @@
 """
-For importing commonly used functions at the development phase.
+(*Mise en place*) Importing commonly used functions.
 
 Requirements: 
 

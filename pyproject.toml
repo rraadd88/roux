@@ -17,7 +17,9 @@ classifiers = [
         "Programming Language :: Python :: 3.11",
         "Programming Language :: Python :: 3.12",
 ]
+
 license = "GPL-3.0-or-later"
+
 readme = "README.md"
 dependencies = [
     "numpy>=1.17.3",

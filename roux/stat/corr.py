@@ -10,7 +10,6 @@ import pandas as pd
 # attributes
 import roux.lib.dfs as rd  # noqa
 
-
 def _pre(
     x: str,
     y: str,
@@ -269,11 +268,15 @@ def get_corrs(
     method: str,
     cols: list = None,
     cols_with: list = None,
-    coff_inflation_min: float = None,
+    coff_inflation_min: float = None, # fast
     get_pairs_kws={},
-    fast: bool = False,
+
+    cpus: bool = 1,
+    out_q=True, # False, # fast
+    
     test: bool = False,
     verbose: bool = False,
+    kws_chunks={},
     **kws_get_corr,
 ) -> pd.DataFrame:
     """
@@ -284,19 +287,13 @@ def get_corrs(
         method (str): method of correlation `spearman` or `pearson`.
         cols (str): columns.
         cols_with (str): columns to correlate with i.e. variable2.
-        fast (bool): use parallel-processing if True.
+        cpus (int): cpus to use.
 
     Keyword arguments:
         kws_get_corr: parameters provided to `get_corr` function.
 
     Returns:
         DataFrame: output dataframe.
-
-    Notes:
-        In the fast mode (fast=True), to set the number of processes, before executing the `get_corrs` command, run
-
-            from pandarallel import pandarallel
-            pandarallel.initialize(nb_workers={},progress_bar=True,use_memory_fs=False)
     """
     # check inflation/over-representations
     if coff_inflation_min is not None:
@@ -328,29 +325,58 @@ def get_corrs(
     )
     if verbose:
         logging.info(df0.shape)
+    # debug
+    # return df0, data
     ## get correlations
-    df1 = getattr(
-        df0,
-        "parallel_apply"
-        if fast
-        else "progress_apply"
-        if hasattr(df0, "progress_apply")
-        else "apply",
-    )(
-        lambda x: pd.Series(
-            {
-                **{"variable1": x["variable1"], "variable2": x["variable2"]},
-                **get_corr(
-                    data[x["variable1"]],
-                    data[x["variable2"]],
-                    method=method,
-                    **kws_get_corr,
-                ),
-            }
-        ),
-        axis=1,
-    )
-    if "P" in df1:
+    if cpus==1:
+        df1 = getattr(
+            df0,
+            "apply" if not hasattr(df0, "progress_apply") else "progress_apply",
+        )(
+            lambda x: pd.Series(
+                {
+                    **{"variable1": x["variable1"], "variable2": x["variable2"]},
+                    **get_corr(
+                        data[x["variable1"]],
+                        data[x["variable2"]],
+                        method=method,
+                        **kws_get_corr,
+                    ),
+                }
+            ),
+            axis=1,
+        )
+    else:
+        ## paralel
+        import roux.lib.df_apply as rd  # noqa
+        
+        # return df0,data
+        # logging.error('rd.apply_async not implemented.')
+        if 'out_df' in kws_chunks:
+            assert not kws_chunks['out_df'], kws_chunks
+            
+        df1=(
+            df0
+            .reset_index(drop=True) # for join later
+            .assign(
+                res=lambda df: df.rd.apply(
+                    func=lambda x: get_corr(
+                        data[x['variable1']],
+                        data[x['variable2']],
+                        method=method,
+                        **kws_get_corr,
+                    ),
+                    axis=1,
+                    cpus=cpus,
+                    kws_chunks=kws_chunks,
+                )
+            )
+            .rd.explode(
+                'res'
+            )
+        )        
+
+    if out_q and "P" in df1:
         ## FDR
         return df1.assign(
             **{

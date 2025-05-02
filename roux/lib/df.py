@@ -1210,6 +1210,18 @@ def agg_bools(df1, cols):
         df1.loc[df1[c], col] = c
     return df1[col]
 
+## reshape
+@to_rd
+def explode(
+    df1,
+    col
+):
+    """
+    Notes:
+        -[x] dicts in a col.
+    """
+    df1=df1.reset_index(drop=True)
+    return df1.join(pd.DataFrame(df1[col].tolist())).drop(columns=col)
 
 ## paired dfs
 @to_rd
