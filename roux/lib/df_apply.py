@@ -52,7 +52,11 @@ def apply_async(
                 executor.submit(func, group): name
                 for name, group in df.groupby(by,**kws)
             }
-        for future in tqdm(as_completed(futures)):
+            
+        iterable=as_completed(futures)
+        if verbose:
+            iterable=tqdm(iterable)
+        for future in iterable:
             name = futures[future]
             try:
                 results[name] = future.result()

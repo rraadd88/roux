@@ -96,6 +96,7 @@ all = [
 ## development and maintenance
 dev = [
     "pytest",
+    "tox",
     "tox-gh-actions",
     "jupyter","ipywidgets","ipykernel",
     # "sphinx","recommonmark",
