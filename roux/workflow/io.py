@@ -121,6 +121,7 @@ def to_src(
     outp, 
     validate=True,
     verbose=False,
+    mark_end='## END'
     ):
     """
     Notebook to command line script.
@@ -132,6 +133,8 @@ def to_src(
         )
     
     t_raw=open(pyp,'r').read()
+
+    t_raw=t_raw.split(mark_end)[0]
     
     t_tab=t_raw.replace('\n','\n    ')
     

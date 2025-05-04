@@ -96,6 +96,7 @@ def apply_async_chunks(
     kws_get_chunks : dict = {},
     outd : str = None,
     out_df=False, ## for assign
+    out_p=False, ## for i/o tables
     clean : bool = True,
     verbose : bool = False,
     force : bool = False,
@@ -153,6 +154,7 @@ def apply_async_chunks(
         temp_outd=False
 
     collect_from_paths=False
+    
     outps=[]
     dfs_out={}
     for k,df_ in tqdm(data.groupby('chunk')):
@@ -230,6 +232,8 @@ def apply_async_chunks(
         )
         .reset_index(drop=True)
        )
+    if out_p:
+        return outps
     
     if not out_df:
         assert len(df1) == len(data), (len(data), len(df1))
