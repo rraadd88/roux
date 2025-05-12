@@ -364,7 +364,7 @@ def plot_volcano(
         ">", #+inf
     ],
     show_labels: int = None,
-    labels_layout: str = None,
+    labels_layout: str = 'side',
     labels_kws: dict = {},
     show_outlines: int = None,
     outline_colors: list = ["k"],
@@ -378,11 +378,16 @@ def plot_volcano(
     text_decrease: str = None,
     text_diff: str = None,
     legend: bool = False,
+    legend_kws=dict(
+        bbox_to_anchor=[1,-0.2],
+        loc='lower left',
+    ),    
     verbose: bool = False,
     p_min: float = None,
     ax: plt.Axes = None,
     outmore: bool = False,
     kws_legend: dict = {},
+    errors='raise',
     **kws_scatterplot,
 ) -> plt.Axes:
     """
@@ -399,7 +404,8 @@ def plot_volcano(
         fig, ax = plt.subplots(figsize=[4, 3])
     if collabel is None:
         collabel = colindex
-    assert not data[colindex].duplicated().any()
+    if errors=='raise':
+        assert not data[colindex].duplicated().any(), 'set errors=None if this is un-necessary ..'
     from roux.stat.transform import log_pval
 
     # to avoid insert index error of seaborn
@@ -579,8 +585,9 @@ def plot_volcano(
             linestyle=":",
         )
     ## set labels
-    if show_labels is not None:  # show_labels overrides show_outlines
-        show_outlines = show_labels
+    # if show_labels is not None:  # show_labels overrides show_outlines
+    #     show_outlines = show_labels
+    
     if show_outlines is not None:
         if isinstance(show_outlines, int):
             ## show_outlines top n
@@ -639,6 +646,14 @@ def plot_volcano(
                 kws_legend=kws_legend,
                 ax=ax,
             )
+            if legend:
+                ax.legend(
+                    title=column_outlines,
+                    **legend_kws,
+                )
+            else:
+                logging.warning("set legend=True to show legends for outlines ..")
+            
     ## setting ylim before setting the labels
     ax.set(
         xlabel="Log$_\mathrm{2}$ Fold Change (LFC)",
@@ -649,14 +664,20 @@ def plot_volcano(
     if show_labels:
         if labels_layout == "side":
             from roux.viz.annot import annot_side
-
+            kws_annot_side={
+                    **dict(
+                        colx=colx,
+                        coly=coly,
+                        col_label=collabel,
+                        kind='curved',
+                    ),
+                    **labels_kws,
+                }
+            # print(kws_annot_side)
             ax = annot_side(
+                data1,
                 ax=ax,
-                df1=data1,
-                colx=colx,
-                coly=coly,
-                cols=collabel,
-                **labels_kws,
+                **kws_annot_side
             )
         else:
             texts = data1.apply(

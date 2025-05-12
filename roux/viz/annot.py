@@ -11,196 +11,6 @@ from roux.viz.ax_ import set_label
 # redirects
 from roux.stat.io import pval2annot
 
-
-def annot_side(
-    ax: plt.Axes,
-    df1: pd.DataFrame,
-    colx: str,
-    coly: str,
-    cols: str = None,
-    hue: str = None,
-    loc: str = "right",
-    scatter=False,
-    scatter_marker="|",
-    scatter_alpha=0.75,
-    lines=True,
-    offx3: float = 0.15,
-    offymin: float = 0.1,
-    offymax: float = 0.9,
-    length_axhline: float = 3,
-    text=True,
-    text_offx: float = 0,
-    text_offy: float = 0,
-    invert_xaxis: bool = False,
-    break_pt: int = 25,
-    va: str = "bottom",
-    zorder: int = 2,
-    color: str = "gray",
-    kws_line: dict = {},
-    kws_scatter: dict = {},  #'zorder':2,'alpha':0.75,'marker':'|','s':100},
-    **kws_text,
-) -> plt.Axes:
-    """Annot elements of the plots on the of the side plot.
-
-    Args:
-        df1 (pd.DataFrame): input data
-        colx (str): column with x values.
-        coly (str): column with y values.
-        cols (str): column with labels.
-        hue (str): column with colors of the labels.
-        ax (plt.Axes, optional): `plt.Axes` object. Defaults to None.
-        loc (str, optional): location. Defaults to 'right'.
-        invert_xaxis (bool, optional): invert xaxis. Defaults to False.
-        offx3 (float, optional): x-offset for bend position of the arrow. Defaults to 0.15.
-        offymin (float, optional): x-offset minimum. Defaults to 0.1.
-        offymax (float, optional): x-offset maximum. Defaults to 0.9.
-        break_pt (int, optional): break point of the labels. Defaults to 25.
-        length_axhline (float, optional): length of the horizontal line i.e. the "underline". Defaults to 3.
-        zorder (int, optional): z-order. Defaults to 1.
-        color (str, optional): color of the line. Defaults to 'gray'.
-        kws_line (dict, optional): parameters for formatting the line. Defaults to {}.
-
-    Keyword Args:
-        kws: parameters provided to the `ax.text` function.
-
-    Returns:
-        plt.Axes: `plt.Axes` object.
-    """
-    if len(df1) == 0:
-        logging.warning("annot_side: no data found")
-        return
-    assert colx != "x", colx
-    assert coly != "y", coly
-    assert cols != "s", cols
-    if isinstance(colx, float):
-        df1["colx"] = colx
-        colx = "colx"
-    if isinstance(coly, float):
-        df1["coly"] = coly
-        coly = "coly"
-    # assert not 'y' in df1, 'table should not contain a column named `y`'
-    df1 = df1.sort_values(coly if loc != "top" else colx, ascending=True)
-    from roux.viz.ax_ import get_axlims
-
-    d1 = get_axlims(ax)
-    # if loc=='top', annotations x is y and y is x
-    df1["y"] = np.linspace(
-        d1["y" if loc != "top" else "x"]["min"]
-        + ((d1["y" if loc != "top" else "x"]["len"]) * offymin),
-        d1["y" if loc != "top" else "x"]["max"] * offymax,
-        len(df1),
-    )
-    x2 = (
-        d1["x" if loc != "top" else "y"]["min" if not invert_xaxis else "max"]
-        if loc == "left"
-        else d1["x" if loc != "top" else "y"]["max" if not invert_xaxis else "min"]
-    )
-    x3 = (
-        d1["x"]["min"] - (d1["x"]["len"] * offx3)
-        if (loc == "left" and not invert_xaxis)
-        else d1["y"]["max"] + (d1["y"]["len"] * offx3)
-        if loc == "top"
-        else d1["x"]["max"] + (d1["x"]["len"] * offx3)
-    )
-
-    # line#1
-    if lines:
-        df1.apply(
-            lambda x: ax.plot(
-                [x[colx], x2] if loc != "top" else [x[colx], x["y"]],
-                [x[coly], x["y"]] if loc != "top" else [x[coly], x2],
-                color=color,
-                zorder=zorder - 1,
-                clip_on=False,
-                **kws_line,
-            ),
-            axis=1,
-        )
-    if scatter:
-        df1.plot.scatter(
-            x=colx,
-            y=coly,
-            ax=ax,
-            marker=scatter_marker,
-            alpha=scatter_alpha,
-            zorder=zorder,
-            **kws_scatter,
-        )
-    ## text
-    if text:
-        if "ha" not in kws_text:
-            kws_text["ha"] = (
-                "right" if loc == "left" else "center" if loc == "top" else "left"
-            )
-        if "rotation" not in kws_text:
-            kws_text["rotation"] = 0 if loc != "top" else 90
-        else:
-            kws_text["ha"] = "left"
-        df1.apply(
-            lambda x: ax.text(
-                (x3 if loc != "top" else x["y"])
-                + text_offx * (1 if loc == "right" else -1),
-                (x["y"] if loc != "top" else x3) + text_offy,
-                x[cols]
-                if break_pt is None
-                else linebreaker(
-                    x[cols],
-                    break_pt=break_pt,
-                ),
-                va=va,
-                color="k"
-                if hue is None
-                else x[hue]
-                if hue in x
-                else hue,  ## prefer if column is present
-                # **{k:v for k,v in kws_text.items() if not (k==color and not hue is None)},
-                **kws_text,
-                zorder=zorder + 1,
-            ),
-            axis=1,
-        )
-    # line #2
-    if lines:
-        if loc != "top":
-            df1.apply(
-                lambda x: ax.axhline(
-                    y=x["y"],
-                    xmin=0 if loc == "left" else 1,
-                    xmax=0 - (length_axhline - 1) - offx3
-                    if loc == "left"
-                    else length_axhline + offx3,
-                    clip_on=False,
-                    color=color,
-                    zorder=zorder - 1,
-                    **kws_line,
-                ),
-                axis=1,
-            )
-        else:
-            df1.apply(
-                lambda x: ax.axvline(
-                    x=x["y"],
-                    ymin=0 if loc == "left" else 1,
-                    ymax=0 - (length_axhline - 1) - offx3
-                    if loc == "left"
-                    else length_axhline + offx3,
-                    clip_on=False,
-                    color=color,
-                    zorder=zorder - 1,
-                    **kws_line,
-                ),
-                axis=1,
-            )
-    if loc == "left":
-        ax.yaxis.tick_right()
-        ax.yaxis.set_label_position("right")
-    ax.set(
-        xlim=[d1["x"]["min"], d1["x"]["max"]],
-        ylim=[d1["y"]["min"], d1["y"]["max"]],
-    )
-    return ax
-
-
 def annot_side_curved(
     data,
     colx: str,
@@ -330,6 +140,250 @@ def annot_side_curved(
     ax.set(**lims)
     if test:
         print(data2)
+    return ax
+    
+def annot_side(
+    df1: pd.DataFrame,
+    colx: str,
+    coly: str,
+
+    kind='straight',
+    
+    ## comp. with curved
+    col_label: str = None,
+    off: float=0.5,
+    lim: tuple=None,
+    limf: tuple=None, ## limits as fractions
+    
+    loc: str = "right",
+    
+    hue: str = None,
+    scatter=False,
+    scatter_marker="|",
+    scatter_alpha=0.75,
+    lines=True,
+    offx3: float = 0.15,
+    offymin: float = 0.1,
+    offymax: float = 0.9,
+    length_axhline: float = 3,
+    text=True,
+    text_offx: float = 0,
+    text_offy: float = 0,
+    invert_xaxis: bool = False,
+    break_pt: int = 25,
+    va: str = "bottom",
+    zorder: int = 2,
+    color: str = "gray",
+    kws_line: dict = {},
+    kws_scatter: dict = {},  #'zorder':2,'alpha':0.75,'marker':'|','s':100},
+    
+    ## deprecated
+    cols: str = None,
+    
+    ax: plt.Axes=None,
+    test=False,
+    **kws_text,
+) -> plt.Axes:
+    """Annot elements of the plots on the of the side plot.
+
+    Args:
+        df1 (pd.DataFrame): input data
+        colx (str): column with x values.
+        coly (str): column with y values.
+        col_label (str): column with labels.
+        hue (str): column with colors of the labels.
+        ax (plt.Axes, optional): `plt.Axes` object. Defaults to None.
+        loc (str, optional): location. Defaults to 'right'.
+        invert_xaxis (bool, optional): invert xaxis. Defaults to False.
+        offx3 (float, optional): x-offset for bend position of the arrow. Defaults to 0.15.
+        offymin (float, optional): x-offset minimum. Defaults to 0.1.
+        offymax (float, optional): x-offset maximum. Defaults to 0.9.
+        break_pt (int, optional): break point of the labels. Defaults to 25.
+        length_axhline (float, optional): length of the horizontal line i.e. the "underline". Defaults to 3.
+        zorder (int, optional): z-order. Defaults to 1.
+        color (str, optional): color of the line. Defaults to 'gray'.
+        kws_line (dict, optional): parameters for formatting the line. Defaults to {}.
+
+    Keyword Args:
+        kws: parameters provided to the `ax.text` function.
+
+    Returns:
+        plt.Axes: `plt.Axes` object.
+    """
+    if kind=='curved':
+        return annot_side_curved(
+            df1,
+            colx = colx, #: str,
+            coly = coly, #: str,
+            col_label = col_label, #: str,
+            off = off, #: float=0.5,
+            lim = lim, #: tuple=None,
+            limf = limf, #: tuple=None, ## limits as fractions
+            loc = loc, #: str='right',
+            # x: float=None, ## todo: deprecate
+            # ylim: tuple=None, ## todo: deprecate
+            ax = ax, #=None,
+            test = test, #: bool = False,
+            kws_text = kws_text, #={},
+            
+            # **kws_line,
+            **kws_text
+        )
+    
+    if ax is None:
+        ax = plt.gca()        
+    if len(df1) == 0:
+        logging.warning("annot_side: no data found")
+        return
+    if cols is not None and col_label is None:
+        logging.warning(
+            'cols arg. is deprecated over col_label'
+        )
+        col_label=cols
+        del cols    
+    
+    ## straight
+    if lim is not None:
+        logging.warning(
+            'over-riding offymin,offymax with lim'
+        )
+        offymin,offymax=lim
+        
+    logging.warning(
+        'over-riding offx3 with off'
+    )
+    offx3=off
+        
+    assert colx != "x", colx
+    assert coly != "y", coly
+    assert col_label != "s", col_label
+    
+    if isinstance(colx, float):
+        df1["colx"] = colx
+        colx = "colx"
+    if isinstance(coly, float):
+        df1["coly"] = coly
+        coly = "coly"
+    # assert not 'y' in df1, 'table should not contain a column named `y`'
+    df1 = df1.sort_values(coly if loc != "top" else colx, ascending=True)
+    from roux.viz.ax_ import get_axlims
+
+    d1 = get_axlims(ax)
+    # if loc=='top', annotations x is y and y is x
+    df1["y"] = np.linspace(
+        d1["y" if loc != "top" else "x"]["min"]
+        + ((d1["y" if loc != "top" else "x"]["len"]) * offymin),
+        d1["y" if loc != "top" else "x"]["max"] * offymax,
+        len(df1),
+    )
+    x2 = (
+        d1["x" if loc != "top" else "y"]["min" if not invert_xaxis else "max"]
+        if loc == "left"
+        else d1["x" if loc != "top" else "y"]["max" if not invert_xaxis else "min"]
+    )
+    x3 = (
+        d1["x"]["min"] - (d1["x"]["len"] * offx3)
+        if (loc == "left" and not invert_xaxis)
+        else d1["y"]["max"] + (d1["y"]["len"] * offx3)
+        if loc == "top"
+        else d1["x"]["max"] + (d1["x"]["len"] * offx3)
+    )
+
+    # line#1
+    if lines:
+        df1.apply(
+            lambda x: ax.plot(
+                [x[colx], x2] if loc != "top" else [x[colx], x["y"]],
+                [x[coly], x["y"]] if loc != "top" else [x[coly], x2],
+                color=color,
+                zorder=zorder - 1,
+                clip_on=False,
+                **kws_line,
+            ),
+            axis=1,
+        )
+    if scatter:
+        df1.plot.scatter(
+            x=colx,
+            y=coly,
+            ax=ax,
+            marker=scatter_marker,
+            alpha=scatter_alpha,
+            zorder=zorder,
+            **kws_scatter,
+        )
+    ## text
+    if text:
+        if "ha" not in kws_text:
+            kws_text["ha"] = (
+                "right" if loc == "left" else "center" if loc == "top" else "left"
+            )
+        if "rotation" not in kws_text:
+            kws_text["rotation"] = 0 if loc != "top" else 90
+        else:
+            kws_text["ha"] = "left"
+        df1.apply(
+            lambda x: ax.text(
+                (x3 if loc != "top" else x["y"])
+                + text_offx * (1 if loc == "right" else -1),
+                (x["y"] if loc != "top" else x3) + text_offy,
+                x[col_label]
+                if break_pt is None
+                else linebreaker(
+                    x[col_label],
+                    break_pt=break_pt,
+                ),
+                va=va,
+                color="k"
+                if hue is None
+                else x[hue]
+                if hue in x
+                else hue,  ## prefer if column is present
+                # **{k:v for k,v in kws_text.items() if not (k==color and not hue is None)},
+                **kws_text,
+                zorder=zorder + 1,
+            ),
+            axis=1,
+        )
+    # line #2
+    if lines:
+        if loc != "top":
+            df1.apply(
+                lambda x: ax.axhline(
+                    y=x["y"],
+                    xmin=0 if loc == "left" else 1,
+                    xmax=0 - (length_axhline - 1) - offx3
+                    if loc == "left"
+                    else length_axhline + offx3,
+                    clip_on=False,
+                    color=color,
+                    zorder=zorder - 1,
+                    **kws_line,
+                ),
+                axis=1,
+            )
+        else:
+            df1.apply(
+                lambda x: ax.axvline(
+                    x=x["y"],
+                    ymin=0 if loc == "left" else 1,
+                    ymax=0 - (length_axhline - 1) - offx3
+                    if loc == "left"
+                    else length_axhline + offx3,
+                    clip_on=False,
+                    color=color,
+                    zorder=zorder - 1,
+                    **kws_line,
+                ),
+                axis=1,
+            )
+    if loc == "left":
+        ax.yaxis.tick_right()
+        ax.yaxis.set_label_position("right")
+    ax.set(
+        xlim=[d1["x"]["min"], d1["x"]["max"]],
+        ylim=[d1["y"]["min"], d1["y"]["max"]],
+    )
     return ax
 
 
