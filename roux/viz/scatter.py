@@ -369,10 +369,15 @@ def plot_volcano(
     show_outlines: int = None,
     outline_colors: list = ["k"],
     collabel: str = None,
-    show_line=True,
+
+    ## thresholds
     line_pvalue=0.1,
-    line_x: float = 0.0,
+    line_x: float = 0.0,  
+    
+    ## dotted line
+    show_lines: bool = False,
     line_x_min: float = None,
+    
     show_text: bool = True,
     text_increase: str = None,
     text_decrease: str = None,
@@ -566,24 +571,27 @@ def plot_volcano(
             if "palette" not in kws_scatterplot
             else kws_scatterplot["palette"][1],
         )
-    ## set lines
+        
     xlim = ax.get_xlim()
     ylim = ax.get_ylim()
-    for side in [-1, 1]:
-        print(
-            [xlim[0 if side == -1 else 1], line_x * side, line_x * side],
-            [log_pval(line_pvalue), log_pval(line_pvalue), ylim[1]],
-        )
-        ax.plot(
-            [
-                xlim[0 if side == -1 else 1],
-                (line_x_min if line_x_min is not None else line_x * side),
-                (line_x_min if line_x_min is not None else line_x * side),
-            ],
-            [log_pval(line_pvalue), log_pval(line_pvalue), ylim[1]],
-            color="gray",
-            linestyle=":",
-        )
+    
+    ## set lines
+    if show_lines:
+        for side in [-1, 1]:
+            print(
+                [xlim[0 if side == -1 else 1], line_x * side, line_x * side],
+                [log_pval(line_pvalue), log_pval(line_pvalue), ylim[1]],
+            )
+            ax.plot(
+                [
+                    xlim[0 if side == -1 else 1],
+                    (line_x_min if line_x_min is not None else line_x * side),
+                    (line_x_min if line_x_min is not None else line_x * side),
+                ],
+                [log_pval(line_pvalue), log_pval(line_pvalue), ylim[1]],
+                color="gray",
+                linestyle=":",
+            )
     ## set labels
     # if show_labels is not None:  # show_labels overrides show_outlines
     #     show_outlines = show_labels

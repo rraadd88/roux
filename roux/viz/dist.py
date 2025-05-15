@@ -338,6 +338,11 @@ def plot_dists(
 
     ## get stats
     if show_p:
+        if 'func' not in kws_stats or kws_stats['func'] is None:
+            col_pval='P (MWU test)'
+        else:
+            col_pval='P'
+                
         if (hue is None) and (isinstance(show_p, bool)):
             from roux.stat.diff import get_stats
 
@@ -359,7 +364,10 @@ def plot_dists(
                 # df1=df1.rd.renameby_replace({f"{} ":''})
                 df2 = df2.loc[(df2["subset1"] == order[0]), :]
                 # print(df2)
-                d1 = df2.rd.to_dict(["subset2", "P (MWU test)"])
+                try:
+                    d1 = df2.rd.to_dict(["subset2", col_pval])
+                except:
+                    raise ValueError(df2.columns.tolist())
         elif (hue is not None) and (isinstance(show_p, bool)):
             from roux.stat.diff import get_stats_groupby
 
@@ -376,7 +384,7 @@ def plot_dists(
             # df1=df1.rd.renameby_replace({f"{} ":''})
             # df2=df2.loc[(df2['subset1']==hue_order[1]),:]
             # d1=df2.rd.to_dict([y,'P (MWU test)'])
-            d1 = df2.set_index(y)["P (MWU test)"].to_dict()
+            d1 = df2.set_index(y)[col_pval].to_dict()
             if test:
                 logging.info(d1)
         if df2 is not None:
