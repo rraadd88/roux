@@ -144,12 +144,59 @@ def to_path(
             logging.info("replacements not done; possible long IDs in the path.")
     return s.replace(f"/My{replacewith}Drive/", "/My Drive/")  # google drive
 
-
 #     return re.sub('\W+',replacewith, s.lower() )
 
 # alias to be deprecated in the future
 make_pathable_string = to_path
 # get_path=to_path
+
+def get_glob(
+    paths,
+    star_only=True
+    ):
+    from pathlib import PurePath
+    windows = any('\\' in p or ':' in p for p in paths)
+    sep = '\\' if windows else '/'
+
+    parts_list = [list(PurePath(p).parts) for p in paths]
+    max_len = max(len(p) for p in parts_list)
+    for p in parts_list:
+        p += [''] * (max_len - len(p))
+
+    pattern_parts = []
+    for col in range(max_len):
+        column = [p[col] for p in parts_list]
+        if all(x == column[0] for x in column):
+            pattern_parts.append(column[0])
+            continue
+
+        # drop empty
+        strs = [s for s in column if s]
+        # find common prefix/suffix
+        shortest, longest = min(strs), max(strs)
+        # prefix
+        pre = ''.join(a for a, b in zip(shortest, longest) if a == b)
+        # suffix
+        suf = ''.join(a for a, b in zip(shortest[::-1], longest[::-1]) if a == b)[::-1]
+        if star_only:
+            # always use one '*' to cover differences
+            pattern_parts.append(f"{pre}*{suf}" if pre or suf else "*")
+        else:
+            # equal-length: build char-by-char or fallback to prefix*suffix
+            if len({len(s) for s in strs}) == 1:
+                length = len(shortest)
+                pat = ""
+                for i in range(length):
+                    chars = {s[i] for s in strs}
+                    if len(chars) == 1:
+                        pat += chars.pop()
+                    else:
+                        pat += f"[{''.join(sorted(chars))}]"
+                pattern_parts.append(pat)
+            else:
+                pattern_parts.append(f"{pre}*{suf}" if pre or suf else "*")
+
+    return sep.join(pattern_parts)
 
 def to_label(p):
     """Path to label e.g. dataset name."""

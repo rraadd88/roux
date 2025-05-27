@@ -870,8 +870,28 @@ def append_legends(ax: plt.Axes, labels: list, handles: list, **kws) -> plt.Axes
     ax.legend(handles=h1 + handles, labels=l1 + labels, **kws)
     return ax
 
-
-def sort_legends(ax: plt.Axes, sort_order: list = None, **kws) -> plt.Axes:
+def get_legend_kws_aes(
+    ax,
+    ):
+    """
+    for restoring
+    """
+    legend=ax.get_legend()
+    return dict(
+        title = legend.get_title().get_text(),
+        loc = legend._loc,
+        # bbox_to_anchor = legend.get_bbox_to_anchor(),
+        bbox_to_anchor = ax.transAxes.inverted().transform(legend.get_bbox_to_anchor().bounds[:2]).tolist(),
+        frameon = legend.get_frame_on(),
+        ncol = legend._ncols,
+        fontsize = legend.get_texts()[0].get_fontsize() if legend.get_texts() else None,
+    )
+    
+def sort_legends(
+    ax: plt.Axes,
+    sort_order: list = None,
+    **kws
+    ) -> plt.Axes:
     """Sort or filter legends.
 
     Args:
@@ -884,10 +904,16 @@ def sort_legends(ax: plt.Axes, sort_order: list = None, **kws) -> plt.Axes:
     Notes:
         1. Filter the legends by providing the indices of the legends to keep.
     """
+    kws_aes=get_legend_kws_aes(
+        ax,
+    )
+    
     handles, labels = ax.get_legend_handles_labels()
     # sort both labels and handles by labels
     if sort_order is None:
         handles, labels = zip(*sorted(zip(handles, labels), key=lambda t: t[1]))
+    elif sort_order=='reverse':
+        handles, labels=handles[::-1], labels[::-1]
     else:
         if all([isinstance(i, str) for i in sort_order]):
             sort_order = [labels.index(s) for s in sort_order]
@@ -898,7 +924,15 @@ def sort_legends(ax: plt.Axes, sort_order: list = None, **kws) -> plt.Axes:
             [labels[idx] for idx in sort_order],
         )
         # print(handles,labels)
-    return ax.legend(handles, labels, **kws)
+    # print(kws_aes)
+    return ax.legend(
+        handles,
+        labels,
+        **{
+            **kws_aes,
+            **kws,
+        }
+    )
 
 
 def drop_duplicate_legend(ax, **kws):

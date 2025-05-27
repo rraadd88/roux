@@ -651,8 +651,20 @@ def type_str(s):
                     result=eval(s)
                 except ValueError:            
                     result=s
+            elif s.startswith('{'):
+                try:
+                    # Try converting to a dict
+                    result=eval(s)
+                except ValueError:            
+                    result=s
             else:
                 result=s
+                try:
+                    # last Try
+                    result=eval(s)
+                except ValueError as e:
+                    # logging.warning
+                    e(f"{str(e)} for {s}")
     return result
     
 ## ids

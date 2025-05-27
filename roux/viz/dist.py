@@ -318,6 +318,12 @@ def plot_dists(
     if test:
         logging.info(x_stat, y_stat)
 
+    if order is None:
+        if df1[y_stat].dtype.name=='category':
+            if not df1[y_stat].dtype.ordered:
+                logging.warning('categories are not ordered ..')
+            order=df1[y_stat].dtype.categories.tolist()
+            
     ## formatting the table
     df1 = df1.log.dropna(subset=colindex + [x, y]).assign(
         **{y_stat: lambda df: df[y_stat].astype(str)}
