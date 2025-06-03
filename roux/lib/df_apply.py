@@ -3,6 +3,9 @@
 ## logging
 import logging
 from tqdm import tqdm 
+## os
+import os
+
 ## paths
 from pathlib import Path
 
@@ -276,6 +279,8 @@ def apply(
     
     **kws, ## to by   
 ):
+    logging.info(f"available cpus: {os.cpu_count()}")
+    
     if len(kws_chunks)==0:
         return apply_async(
             data,  #: pd.DataFrame,
