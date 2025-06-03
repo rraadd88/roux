@@ -243,7 +243,8 @@ def apply_async_chunks(
     
     if not out_df:
         assert len(df1) == len(data), (len(data), len(df1))
-        return df1['out']
+        # if out_df:
+        return df1[0]
         
     df2=(
         data
