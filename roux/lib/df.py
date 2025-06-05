@@ -1791,6 +1791,19 @@ def to_ranges(
         
     return df2
 
+## Assign bools
+@to_rd
+def assignby_expr(
+    df,
+    col,
+    expr, # .query-style
+):
+    df=df.reset_index(drop=True)
+    df_=df.query(expr=expr)
+    df[col]=False
+    df.loc[df_.index.tolist(),col]=True
+    return df
+
 
 @to_rd
 def to_boolean(df1):
@@ -1808,7 +1821,6 @@ def to_boolean(df1):
     low, high = np.array(df1).T[:, :, None]
     a = np.arange(high.max() + 1)
     return ((a >= low) & (a <= high)).any(axis=0)
-
 
 ## sorting
 def to_cat(

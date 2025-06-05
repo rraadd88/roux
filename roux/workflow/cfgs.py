@@ -5,6 +5,7 @@ from glob import glob
 
 from roux.lib.sys import (
     isdir,
+    read_ps,
 )
 
 from roux.lib.io import read_dict, is_dict
@@ -16,6 +17,7 @@ def read_config(
     append_to_key=None,
     convert_dtype: bool = True,
     verbose: bool = True,
+    infer_bases: bool= False,
 ):
     """
     Read configuration.
@@ -24,6 +26,22 @@ def read_config(
         p (str): input path.
         config_base: base config with the inputs for the interpolations
     """
+    if infer_bases:
+        cfg={}
+        for p_ in read_ps(p,with_prefix=True):
+            # cfg={**pms,**read_config(
+            cfg=read_config(
+                p_,
+                config_base=cfg,#None,
+                inputs=inputs,#None,  # overwrite with
+                append_to_key=append_to_key,#None,
+                convert_dtype=convert_dtype,#True,
+                # verbose: bool = True,                
+                infer_bases= False,
+            )
+                # }
+        return cfg
+        
     from omegaconf import OmegaConf
 
     if isinstance(config_base, str):

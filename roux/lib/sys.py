@@ -58,12 +58,30 @@ def remove_exts(
         p = Path(p).with_suffix("").as_posix()
     return p
 
+def get_ps_with_prefix(file_path):
+    file = Path(file_path)
+    directory = file.parent
+    extension = file.suffix
+    basename = file.stem
+
+    matches = []
+    for other_file in directory.iterdir():
+        if (
+            other_file.is_file() and
+            other_file.suffix == extension and
+            other_file.stem != basename and
+            basename.startswith(other_file.stem)
+        ):
+            matches.append(other_file.as_posix())
+
+    return sorted(matches)
 
 def read_ps(
     ps,
     errors=None,
     tree_depth=None,
     test: bool = False,
+    with_prefix: bool= False,
     verbose: bool = True,
 ) -> list:
     """Read a list of paths.
@@ -76,6 +94,7 @@ def read_ps(
     Returns:
         ps (list): list of paths.
     """
+    
     if isinstance(ps, str):
         if "*" in ps:
             ps = glob(ps)
@@ -88,8 +107,13 @@ def read_ps(
         if len(ps)==0:
             return ps
         assert isinstance(ps[0],str), ps[0]
-    
+        
+    if with_prefix:
+        assert len(ps)==1, ps
+        ps=get_ps_with_prefix(ps[0])+ps
+        
     ps = sorted(ps)
+        
     if test or verbose:
         import pandas as pd
 
