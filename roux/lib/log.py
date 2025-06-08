@@ -69,7 +69,7 @@ class CustomFormatter(logging_base.Formatter):
             return record.getMessage()
         
         if hasattr(record, "time_elapsed") and record.time_elapsed:
-            time_str += f" (⏱️{str(record.time_elapsed).split('.')[0]})"
+            time_str += f" (⏱️ {str(record.time_elapsed).split('.')[0]})"
         
         if hasattr(record, "n") and record.n:
             n=record.n

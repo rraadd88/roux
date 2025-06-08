@@ -50,6 +50,8 @@ def apply_async(
                 for name, row in df.iterrows()
             }             
         else:
+            if isinstance(by,str):
+                by=[by]
             ## groupby
             futures = {
                 executor.submit(func, group): name
@@ -185,7 +187,11 @@ def apply_async_chunks(
                         col_id:df_[col_id].tolist(),
                     },
                 )
-                .rename(columns={0:'out'})
+                )
+            if 'out' in df_out and df_out.shape[1]<50:
+                df_out=(
+                    df_out
+                    .rename(columns={0:'out'})
                 )
             if func_to_df is not None:
                 df_out=func_to_df(df_out)
@@ -240,7 +246,8 @@ def apply_async_chunks(
     
     if not out_df:
         assert len(df1) == len(data), (len(data), len(df1))
-        return df1['out']
+        # if out_df:
+        return df1[0]
         
     df2=(
         data

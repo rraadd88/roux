@@ -1344,31 +1344,6 @@ def get_bin_labels(
         df_.loc[x.name, "label"] = f"$>${x['start']}"  ## left-inclusive (()
     return df_["label"].tolist()
 
-
-@to_rd
-def get_bins(
-    df: pd.DataFrame,
-    col: str,
-    bins: list,
-    dtype: str = "int",  # dtype of bins
-    labels: list = None,
-    **kws_cut,
-):
-    if labels is None:
-        if df[col].dtype == "int" or dtype == "int":
-            labels = get_bin_labels(
-                bins=bins,
-                # dtype='int',
-            )
-    return df.assign(
-        **{
-            f"{col} bin": lambda df: pd.cut(
-                df[col], bins=bins, labels=labels, **kws_cut
-            ),
-        },
-    )
-
-
 @to_rd
 def get_qbins(df: pd.DataFrame, col: str, bins: list, labels: list = None, **kws_qcut):
     return df.assign(
@@ -1378,6 +1353,54 @@ def get_qbins(df: pd.DataFrame, col: str, bins: list, labels: list = None, **kws
             ),
         },
     )
+    
+@to_rd
+def get_bins(
+    df: pd.DataFrame,
+    col: str,
+    bins: list,
+    kind: str= '',
+    dtype: str = "int",  # dtype of bins
+    infer_labels=True,
+    labels: list = None,
+    **kws_cut,
+):
+    """
+    kind: quantile
+    """
+    if kind.startswith('q'):
+        return get_qbins(
+            df,#: pd.DataFrame,
+            col=col,#: str,
+            bins=bins,#: list,
+            labels=labels,#: list = None,
+            **{k:v for k,v in kws_cut.items() if k not in ['include_lowest']}, ## **kws_qcut
+        )
+        ## label auto
+    else:
+        if isinstance(bins,int):
+            ## for labeling
+            bins=list(
+                    np.linspace(
+                        df[col].min(),
+                        df[col].max(),
+                        bins+1,
+                    )
+                )
+            logging.info(f"bins={bins}" )
+        if infer_labels and labels is None:
+            if df[col].dtype == "int" or dtype == "int":
+                labels = get_bin_labels(
+                    bins=bins,
+                    # dtype='int',
+                )
+        return df.assign(
+            **{
+                f"{col} bin": lambda df: pd.cut(
+                    df[col], bins=bins, labels=labels, **kws_cut
+                ),
+            },
+        )
 
 
 @to_rd
