@@ -14,15 +14,10 @@ import re
 from roux.lib.sys import (
     abspath,
     exists,
-    glob,
-    isdir,
     makedirs,
-    splitext,
 )
-from roux.lib.io import read_dict
 
 ## for backcompatibility
-from roux.workflow.cfgs import read_config, read_metadata
 
 
 ## variables
