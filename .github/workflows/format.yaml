@@ -1,8 +1,9 @@
 name: format
 on:
   push:
+    branches: [ '**' ]      # triggers on all branches
     paths:
-      - "roux/*"
+      - "roux/**"           # triggers on any file change in roux/ or its subfolders
 
 permissions:
   contents: write
