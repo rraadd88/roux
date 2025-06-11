@@ -2,13 +2,13 @@ name: build
 
 on:
   push:
-    branches: "*"
+    branches: [ '**' ]      # triggers on all branches
     paths:
-      - "roux/*"
+      - "roux/**"           # triggers on any file change in roux/ or its subfolders
   pull_request:
-    branches: "*"
+    branches: [ '**' ]      # triggers on all branches
     paths:
-      - "roux/*"
+      - "roux/**"           # triggers on any file change in roux/ or its subfolders
 
 jobs:
   build-n-test-n-coverage:

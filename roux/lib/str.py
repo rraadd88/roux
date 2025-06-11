@@ -623,7 +623,9 @@ def num2str(
             )
 
 
-def type_str(s):
+def type_str(
+    s
+    ):
     """
     Usage: 
         CLI
@@ -655,16 +657,17 @@ def type_str(s):
                 try:
                     # Try converting to a dict
                     result=eval(s)
-                except ValueError:            
+                except ValueError:
                     result=s
             else:
-                result=s
                 try:
                     # last Try
                     result=eval(s)
-                except ValueError as e:
+                except NameError:                    
                     # logging.warning
-                    e(f"{str(e)} for {s}")
+                    # logging.warning(f"{str(e)} for {s}")
+                    logging.warning(f"not type converted: {s}")
+                    result=s
     return result
     
 ## ids
