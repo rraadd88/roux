@@ -35,6 +35,9 @@ jobs:
           uv sync --all-extras --dev
           uv pip install -e .
       
+      - name: Ensure tox
+        run: uv pip install tox
+      
       - name: Verify installed packages
         run: uv pip list
         

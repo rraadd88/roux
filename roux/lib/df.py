@@ -1823,25 +1823,15 @@ def to_boolean(df1):
     return ((a >= low) & (a <= high)).any(axis=0)
 
 ## sorting
-def to_cat(
-    ds1: pd.Series,
-    cats: list,
-    ordered: bool=True,
-    ):
-    """To series containing categories.
-
-    Parameters:
-        ds1 (Series): input series.
-        cats (list): categories.
-        ordered (bool): if the categories are ordered (True).
-
-    Returns:
-        ds1 (Series): output series.
-    """
-    ds1 = ds1.astype("category")
-    ds1 = ds1.cat.set_categories(new_categories=cats, ordered=ordered)
-    assert not ds1.isnull().any()
-    return ds1
+@to_rd
+def sort_values(
+    df,
+    by: dict,
+    **kws,
+):
+    if isinstance(by,dict): 
+        kws['by'],kws['ascending']=list(by.keys()),list(by.values())
+    return df.sort_values(**kws)
 
 @to_rd
 def astype_cat(
@@ -1849,6 +1839,7 @@ def astype_cat(
     col: str,
     cats: list,
 ):
+    from roux.lib.ds import to_cat
     return df1.assign(
         **{
             col: lambda df: to_cat(df[col], cats=cats, ordered=True),

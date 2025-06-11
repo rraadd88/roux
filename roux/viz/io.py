@@ -577,7 +577,7 @@ def label_pdf(
     color=[0.5,0.5,0.5],
     font="Helvetica",
     ):
-    from PyPDF2 import PdfReader
+    from pypdf import PdfReader
     from reportlab.pdfgen import canvas
     from reportlab.lib.pagesizes import letter
     from reportlab.lib.units import inch
@@ -621,7 +621,7 @@ def to_concat_pdfs(
     outp,
     **kws_label_pdf,
     ):
-    from PyPDF2 import PdfWriter
+    from pypdf import PdfWriter
     output_writer = PdfWriter()
 
     # Add each PDF file with filenames at the top
