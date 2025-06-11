@@ -48,8 +48,9 @@ from roux.viz.diagram import diagram_nb #noqa
 from roux.viz.io import begin_plot,to_plot,read_plot #noqa
 
 ## workflow functions from roux
-from roux.workflow.io import read_metadata,infer_parameters #noqa #, read_config, to_diff_notebooks
-from roux.workflow.log import test_params, print_parameters #noqa
+from roux.workflow.io import infer_parameters #noqa #, read_config, to_diff_notebooks
+from roux.workflow.cfgs import read_config, read_metadata
+from roux.workflow.log import test_params #noqa
 from roux.workflow.task import run_tasks #noqa
 
 ## logging functions

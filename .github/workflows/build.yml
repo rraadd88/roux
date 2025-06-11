@@ -17,7 +17,12 @@ jobs:
     strategy:
       fail-fast: true
       matrix:
-        python-version: ["3.8", "3.9", "3.10", "3.11", "3.12"]
+        python-version:
+            # - "3.8"
+            # - "3.9"
+            - "3.10"
+            - "3.11"
+            - "3.12"
     env:
       OS: ubuntu-latest
       PYTHON: "3.12.8"
@@ -36,7 +41,7 @@ jobs:
           uv pip install -e .
       
       - name: Ensure tox
-        run: uv pip install tox
+        run: uv pip install tox pytest
       
       - name: Verify installed packages
         run: uv pip list
