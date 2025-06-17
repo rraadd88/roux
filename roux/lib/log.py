@@ -7,7 +7,6 @@ import sys
 if hasattr(sys.stdout, "reconfigure"):
     sys.stdout.reconfigure(errors="backslashreplace")
 
-
 # DEBUG (10), INFO (20), WARNING (30), ERROR (40), and FATAL (100). 
 logos={
     "🧪": {"name": "debug", "color": "\033[94m", 'level':10},
@@ -106,16 +105,15 @@ class Logger(logging_base.Logger):
         msg: str,
         *,
         time = None,
-        get_time=False,
+        # get_time=False,
+        time_elapsed = None,
         n=1,
         **kwargs,
     ) -> datetime:
-        if get_time or time is not None:
-            now = datetime.now()
         if time is not None:
-            time_elapsed = now - time
-        else:
-            time_elapsed = None
+            now = datetime.now()
+            if time!=True:
+                time_elapsed = now - time
 
         extra = {
             "time_elapsed": time_elapsed,
@@ -130,7 +128,7 @@ class Logger(logging_base.Logger):
             extra=extra
         )
         
-        if get_time:
+        if time==True:
             return now
             
     # Simplified log methods using loop
@@ -141,3 +139,32 @@ class Logger(logging_base.Logger):
 def {level_name}(self, msg: str="", **kwargs) -> datetime:
     return self.log({level_code}, msg, **kwargs)
 """)
+
+
+import logging
+def log_dict(
+    d: dict,
+    sort_keys=False,
+    indent=2,
+    
+    ## only keys
+    max_depth: int=None,
+    _depth: int = 0,
+
+    **kws,
+    ) -> None:
+    """
+    Recursively print keys of dict `d` up to `max_depth`.
+    """
+    if max_depth is not None:
+        if _depth > max_depth or not isinstance(d, dict):
+            return
+    
+        for key, value in d.items():
+            logging.info("  " * _depth + str(key))
+            # only recurse if we haven’t hit max_depth yet
+            if isinstance(value, dict) and _depth < max_depth:
+                log_dict(value, max_depth=max_depth, _depth=_depth + 1)
+    else:
+        import yaml
+        logging.info('\n'+yaml.dump(d, sort_keys=sort_keys, indent=indent,**kws))

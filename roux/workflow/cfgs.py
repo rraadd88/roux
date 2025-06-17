@@ -215,3 +215,24 @@ def read_metadata(
     if 'version' in d1:
         logging.info(f"version: {str(d1['version'])}")        
     return d1
+
+
+def get_cfg_run(d, keys=("pms_run", "kws_run")):
+    groups = {}
+
+    def recurse(obj, path=""):
+        if isinstance(obj, dict):
+            group = {}
+            for key in keys:
+                if key in obj and isinstance(obj[key], dict):
+                    group[key] = obj[key]
+            if group:
+                groups[path.strip("-")] = group
+            for k, v in obj.items():
+                recurse(v, f"{path}-{k}" if path else k)
+        elif isinstance(obj, list):
+            for i, item in enumerate(obj):
+                recurse(item, f"{path}-{i}")
+
+    recurse(d)
+    return groups

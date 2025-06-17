@@ -101,7 +101,7 @@ def apply_async_chunks(
     kws_get_chunks : dict = {},
     outd : str = None,
     out_df=False, ## for assign
-    out_p=False, ## for i/o tables
+    out_ps=False, ## for i/o tables
     clean : bool = True,
     verbose : bool = False,
     force : bool = False,
@@ -113,6 +113,8 @@ def apply_async_chunks(
         - [x] Parallel.
         - [x] Resumable.
     """
+    assert not (out_df and out_ps), "out_df and out_ps" 
+    
     assert 'out' not in data
     
     if test1:
@@ -157,13 +159,24 @@ def apply_async_chunks(
         temp_outd=True #todo delete temp dir in post.
     else:
         temp_outd=False
+    
+    data=(
+        data
+        .assign(
+            _chunk_path=lambda df: df['chunk'].apply(
+                lambda x: f"{outd}/{x:0{fn_len}d}.pqt"
+            )
+        )
+        )
 
     collect_from_paths=False
     
     outps=[]
     dfs_out={}
     for k,df_ in tqdm(data.groupby('chunk')):
-        outp=f"{outd}/{k:0{fn_len}d}.pqt"
+        # outp=f"{outd}/{k:0{fn_len}d}.pqt"
+        outp=df_['_chunk_path'].tolist()[0]
+             
         outps.append(outp)
         if (not Path(outp).exists() or force) or temp_outd:
             if verbose:
@@ -212,6 +225,10 @@ def apply_async_chunks(
     from roux.lib.sys import read_ps
     assert data['chunk'].nunique()==len(read_ps(outps,errors='raise',verbose=False))
     
+    if out_ps:
+        ## fast
+        return data
+    
     if not collect_from_paths:
         if verbose:
             logging.info(f"{collect_from_paths:=}")
@@ -241,13 +258,10 @@ def apply_async_chunks(
         )
         .reset_index(drop=True)
        )
-    if out_p:
-        return outps
     
-    if not out_df:
-        assert len(df1) == len(data), (len(data), len(df1))
-        # if out_df:
-        return df1[0]
+    if not out_df and not out_ps:
+        assert len(df1) == len(data), (len(data), len(df1))        
+        return df1[0] if 0 in df1 else df1
         
     df2=(
         data

@@ -18,7 +18,7 @@ from roux.lib.sys import (
 )
 
 ## for backcompatibility
-
+from roux.workflow.cfgs import read_config, read_metadata
 
 ## variables
 def clear_variables(
