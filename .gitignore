@@ -48,3 +48,4 @@ examples/outputs/
 outputs/
 examples/test.ipynb
 cufile.log
+.roux/

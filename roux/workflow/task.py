@@ -346,13 +346,14 @@ def run_tasks_nb(
         logging.info(f"running in parallel (cpus={cpus})..")
         
         # disable logging
-        sorted(list(logging.root.manager.loggerDict.keys()))
+        import logging as logging_base 
+        sorted(list(logging_base.root.manager.loggerDict.keys()))
         for k in [
             'papermill',
             'papermill.translators',
             'papermill.utils',
         ]:
-            logging.getLogger(k).setLevel(logging.CRITICAL)
+            logging_base.getLogger(k).setLevel(logging_base.CRITICAL)
         
         df1['nb path']=(
             df1
@@ -389,7 +390,7 @@ def run_tasks_nb(
     if not out_paths:
         return parameters_list
     else:
-        return df1
+        return df1.set_index('nb path')['params'].apply(pd.Series)
 
 ## server       
 import os
@@ -602,28 +603,56 @@ def has_slurm(
     ):
     return run_com('sbatch --help',returncodes=[0,1,127])!=''
 
+def infer_runner(
+    runner=None,
+    script_type=None,
+):
+    runner_in=runner
+    del runner
+    
+    if runner_in=='slurm':
+        if not has_slurm():
+            runner='bash'
+    elif runner_in is None:
+        from roux.lib.sys import is_interactive_notebook
+        if script_type in ['ipynb'] and is_interactive_notebook():
+            runner='py' ## run_tasks_nb        
+        # if script_type in ['sh','py',None]:
+        else:
+            runner='bash'
+    else:
+        runner=runner_in
+            
+    if runner_in is not None and runner!=runner_in:
+        logging.warning(f'runner={runner}')    
+    else:
+        logging.debug(f'runner={runner}')
+        
+    return runner
+
 def _expand_pms(
     pms
     ):
     return ' '.join([f"--{k.replace('_','-')} {v}" for k,v in pms.items()])
     
 def to_sbatch_script(
-    sbatch_path,
-    pms,
     script_path,
-    script_pre,
+    pms,
+    sbatch_path, # outp
+    script_pre=None,
     
-    job_pre,
-    modules,
-    packages,
+    job_pre=None,
+    modules=None,
+    packages=None,
 
-    mem,# "5gb",
-    cpus,# 1,
-    time,# "01:00:00",
+    # mem,# "5gb",
+    # cpus,# 1,
+    # time,# "01:00:00",
     append_header="",
 
     expand_pms=True, # argh
-    
+
+    force=False,
     test=False,
     verbose=False,
     **kws_runner,
@@ -690,9 +719,9 @@ def to_sbatch_script(
         job_name=f"roux:{Path(sbatch_path).stem}",
         log_path=log_dir_path,
 
-        mem=mem,#"4G",
-        cpus=cpus,#3,
-        time=time,#"01:00:00",
+        # mem=mem,#"4G",
+        # cpus=cpus,#3,
+        # time=time,#"01:00:00",
         append_header=append_header,
         
         **kws_runner,
@@ -766,19 +795,21 @@ def feed_jobs(
     start_time = datetime.now()
     end_time = start_time + duration
 
-    print(f"Start Time: {start_time}")
-    print(f"End Time: {end_time}")
+    logging.info(f"Start Time: {start_time}")
+    logging.info(f"End Time: {end_time}")
+    # logging.status('feeding start',time=True)
+    # logging.status('feeding end',time=True)
 
     i=0
     while datetime.now() < end_time:
         
         remaining = end_time - datetime.now()
-        # Print only every second
+        # log only every second
         # if remaining.total_seconds() % 600 == 0:
-        print(f"Time remaining: {remaining}", end='\r')  
+        logging.status(f"Time remaining: {remaining}", end='\r')  
                     
         if get_jobsn()<=(jobs*feed_if_jobs_max) and get_jobsn()<jobs_max:
-            print("submitting new jobs...")
+            logging.status("submitting new jobs...")
 
             if isinstance(com,str):
                 if com.endswith('.yaml'):
@@ -808,13 +839,13 @@ def feed_jobs(
                     )
                     i+=1
                 else:
-                    print("\nall jobs processed!")
+                    logging.status("\nall jobs processed!")
                     break
 
-        print(f"{get_jobsn()} jobs are still running, waiting for {interval}s and jobs <= {jobs*feed_if_jobs_max} ..")
+        logging.status(f"{get_jobsn()} jobs are still running, waiting for {interval}s and jobs <= {jobs*feed_if_jobs_max} ..")
         time.sleep(interval.total_seconds())
         
-    print("\nDuration elapsed!")
+    logging.info("\nDuration elapsed!")
 
 ## wrapper
 def run_tasks(
@@ -834,19 +865,14 @@ def run_tasks(
     script_pre : str ='', ## e.g. micromamba run -n env
     
     ## for slurm if available
-    append_header: str = "",
-    mem : str ="5gb",
-    time : str ="01:00:00",
-    
-    ## deps
-    job_pre : str = None, 
-    modules : list =[],
-    packages : list =[],
-    
-    force_setup : bool =True,
-    cpus_test: int = 3,
-        
-    feedn : int =None,
+    slurm_header= "",
+    slurm_kws=dict(
+        # cpus=1,
+        # mem="5gb",
+        # time="01:00:00",
+    ),
+
+    ## slurm feeding
     feed_duration : str ='1h', #hr 
     feed_interval : str ='10m',
     feed_if_jobs_max : float =0.5,
@@ -857,12 +883,14 @@ def run_tasks(
     test1 : bool =False,
     testn : int =None,
     test : bool =False,
+    test_cpus: int = 3, 
     
+    force_setup : bool =True,
     cache_dir_path='.roux/',
     wd_path=None,  
     
     verbose: bool = False,
-    log_level: str = 'WARNING',  
+    log_level: str = 'INFO',
 
     **kws_runner,
     ):
@@ -894,28 +922,28 @@ def run_tasks(
     ## script_path
     logging.setLevel(level=log_level)
     script_path=Path(script_path).resolve().as_posix()
-    script_type=Path(script_path).suffix()
+    script_type=Path(script_path).suffix[1:]
+    
+    runner=infer_runner(
+        runner=runner,
+        script_type=script_type,
+    )
+    
+    ## params
+    params=flt_params(
+            params,
+            force=force,
+        )
+    if test1:
+        testn=1
+    if testn is not None:
+        params=params[:testn]
+        logging.warning(f"filtered to {len(params)} jobs ..")
 
-    runner_in=runner
-    del runner
-    if script_type in ['sh','py']:
-        if has_slurm():
-            runner='slurm'    
-        else:
-            runner='bash'
-    else:
-        ## nbs
-        from roux.lib.sys import is_interactive_notebook
-        if is_interactive_notebook():
-            runner='py' ## run_tasks_nb
-        else:
-            runner='bash'
-            
-    if runner!=runner_in:
-        logging.warning(f'runner={runner}')    
-    else:
-        logging.info(f'runner={runner}')
-                
+    assert all(['input_path' in pms for pms in params])
+    assert all(['output_path' in pms for pms in params])
+
+    
     if runner.startswith('py'):
         # return
         return run_tasks_nb(
@@ -944,59 +972,35 @@ def run_tasks(
     if isinstance(params,dict):
         params=list(params.values())
                 
-    log_start=logging.configuring("paths ..",get_time=True)
+    _time=logging.configuring("paths ..",get_time=True)
     
     if wd_path is None:
         wd_path=os.getcwd()
     cache_dir_path=f"{wd_path}/{cache_dir_path}"
-        
-    params=flt_params(
-            params,
-            force=force,
-        )
 
-    assert all(['input_path' in pms for pms in params])
-    assert all(['output_path' in pms for pms in params])
-
-    logging.launching("jobs ..",n=min([cpus,5]))
-    logging.processing("on slurm ..",n=min([cpus,5]))
-
-    logging.launching("tasks ..",n=cpus)
-    logging.processing(f"{cpus} at a time ..",n=cpus)
-
-    # logging.saving('outputs.')
-    logging.done('processing.',time=log_start)
-
+    if runner=='slurm':
+        logging.launching("jobs ..",n=min([cpus,5]))
+    
+    logging.processing(f"on {runner}, {cpus} at a time ..",n=min([cpus,5]))
     
     coms=[]
-    if feedn is not None and runner=='slurm':
+    if runner in ['slurm','bash']:
         ## recursive
-        assert isinstance(feedn,int), feedn
+        assert isinstance(cpus,int), cpus
         
         kws_runner={
             **dict(
                 script_path= script_path, #, ## preffix
                 script_pre= script_pre, #='', ## e.g. micromamba run -n env
 
-                mem= mem, #="5gb",
-                cpus= cpus, #=1,
-                time= time, #="01:00:00",
-                append_header=append_header,
-                
-                ## deps
-                modules= modules, #=[],
-                packages= packages, #=[],
-
-                force= force, #=False,
-                force_setup= force_setup, #=False,
-                test1= test1, #=False,
-                testn= testn, #=None,
-                test= test, #=False,
+                append_header=slurm_header,                            
             ),
             **kws_runner,
+            **slurm_kws,
         }
+
         
-        ## each round feed feedn jobs from run_tasks
+        ## each round feed cpus jobs from run_tasks
         # from random import shuffle
         # shuffle(params)
         if isinstance(params,dict):
@@ -1009,31 +1013,30 @@ def run_tasks(
                 **{k:d for k,d in params.items() if k in job_keys_tried},
             }
         
-        feed_jobs(
-            com=params, ## all
-            jobs=feedn, ## feed each time
-            # user=user,
-            feed_duration=feed_duration,
-            feed_interval=feed_interval,
-            feed_if_jobs_max=feed_if_jobs_max,
+        if runner in ['slurm']:
+            feed_jobs(
+                com=params, ## all
+                jobs=cpus, ## feed each time
+                # user=user,
+                feed_duration=feed_duration,
+                feed_interval=feed_interval,
+                feed_if_jobs_max=feed_if_jobs_max,
+                
+                force= force, #=False,
+                test= test, #=False,
+
+                kws_runner=kws_runner,
+            )
             
-            test=test,            
-            
-            kws_runner=kws_runner,
-        )
-        
-        return
-    
-    logging.info("q.ing jobs.. ")
+            return
+
+    if runner=='slurm':
+        logging.status("q.ing jobs.. ")
     
     sbatch_paths=[]
     params_jobs={}
     job_ids=[]
-    
-    if testn is not None:
-        params=params[:testn]
-        logging.warning(f"filtered to {len(params)} jobs ..")
-        
+            
     for pms in tqdm(params):
         key=encode(
             pms,#['output_path']
@@ -1049,19 +1052,6 @@ def run_tasks(
             to_sbatch_script(
                 sbatch_path=sbatch_path,
                 pms=pms,
-                script_path=script_path,
-                script_pre=script_pre,
-                
-                job_pre=job_pre,
-                modules=modules,
-                packages=packages,
-                
-                mem=mem,# "5gb",
-                cpus=cpus,# 1,
-                time=time,# "01:00:00",
-                append_header=append_header,
-                
-                test=test,
                 **kws_runner,
             )
     
@@ -1075,17 +1065,20 @@ def run_tasks(
             
         if runner!='slurm':
             coms.append(
-                f"bash {sbatch_path} &> {cache_dir_path}/stdout",                
+                f"bash {sbatch_path} &> {Path(sbatch_path).with_suffix('').as_posix()}/stdout",
             )
         
         sbatch_paths.append(sbatch_path)
         params_jobs[sbatch_path]=pms
         
+    if len(coms)==0:
+        logging.warning("len(coms)==0")
+    
     if runner!='slurm':
-        cpus_bash=min([cpus,cpus_test])
+        cpus_bash=min([cpus,test_cpus])
         
         if cpus>cpus_bash:
-            logging.warning(f"using cpus_test = {cpus_bash}")
+            logging.warning(f"using test_cpus = {cpus_bash}")
             
         from multiprocessing import Pool
         # Create a pool of worker processes
@@ -1102,4 +1095,11 @@ def run_tasks(
     # logging.info("jobs submitted.")
     if runner=='slurm':
         logging.info(get_sq())  
-    return params_jobs_path
+        
+    logging.saving(f"params_jobs_path={params_jobs_path}")
+        
+    # logging.saving('outputs.')
+    logging.done('processing.',time=_time)
+
+    ## uniform output
+    return pd.Series(params_jobs).to_frame('params')['params'].apply(pd.Series)
