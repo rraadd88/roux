@@ -48,6 +48,89 @@ def validate_params(
 ) -> bool:
     return ("input_path" in d) and ("output_path" in d)
 
+def pre_params(
+    params=None,
+    inputs=None,
+    output_path_base=None,
+    verbose=False,
+    force=False,
+    test1: bool = False,
+    testn: int = None,
+):
+    """
+    Unified pre-processing for params, used by both run_tasks_nb and run_tasks.
+    Handles conversion, checks, output path inference, and filtering (including test1/testn).
+    Returns a list of parameter dicts ready for execution.
+    """
+    # --- Handle input formats and output path inference ---
+    param_list = params
+
+    if param_list is None and inputs is not None and output_path_base is not None:
+        from roux.lib.sys import to_output_paths
+        param_list = to_output_paths(
+            inputs=inputs,
+            output_path_base=output_path_base,
+            encode_short=True,
+            key_output_path="output_path",
+            verbose=verbose,
+            force=force,
+        )
+        # Optionally save all parameters (as in run_tasks_nb)
+        for k, parameters in param_list.items():
+            output_dir_path = output_path_base.split("{KEY}")[0]
+            to_dict(
+                parameters,
+                f"{output_dir_path}/{k.split(output_dir_path)[1].split('/')[0]}/.parameters.yaml",
+            )
+
+    if isinstance(param_list, str):
+        param_list = read_dict(param_list)
+
+    if not param_list or (isinstance(param_list, (list, dict)) and len(param_list) == 0):
+        logging.info("nothing to process. use `force`=True to rerun.")
+        return []
+
+    # --- Convert dict to list if needed ---
+    if isinstance(param_list, dict):
+        if not any(['input_path' in d for d in param_list.values()]):
+            logging.warning("setting keys of params as input_path s ..")
+            param_list = {k: {**d, **{'input_path': k}} for k, d in param_list.items()}
+        if validate_params(list(param_list.values())[0]):
+            param_list = list(param_list.values())
+        else:
+            raise ValueError(param_list)
+
+    # --- Filtering by output existence, as in flt_params ---
+    before = len(param_list)
+    param_list = [
+        d
+        for d in param_list
+        if (force if force else not Path(d["output_path"]).exists())
+    ]
+    if not force:
+        if before - len(param_list) != 0:
+            logging.info(
+                f"parameters_list_flt reduced because force=False: {before} -> {len(param_list)}"
+            )
+
+    # --- Filtering by test1 and testn ---
+    if test1:
+        testn = 1
+    if testn is not None:
+        param_list = param_list[:testn]
+        logging.warning(f"filtered to {len(param_list)} jobs ..")
+
+    if len(param_list) == 0:
+        # logging.info("No tasks remaining after filtering.")
+        return []
+
+    # --- Final assertions ---
+    assert len(set([d["output_path"] for d in param_list])) == len(param_list), \
+        "Duplicate output_path found in params."
+    assert all([Path(d["input_path"]) != Path(d["output_path"]) for d in param_list]), \
+        "Some input_path == output_path in params."
+
+    return param_list
 
 ## execution
 def run_task_nb(
@@ -137,7 +220,7 @@ def run_tasks_nb(
     
     test1: bool = False,
     force: bool = False,
-    test: bool = False,
+    # test: bool = False,
     verbose: bool = False,
 
     ## make the params
@@ -151,7 +234,7 @@ def run_tasks_nb(
     
     ## back.c.
     input_notebook_path: str=None, 
-    parameters_list=None, # same as params
+    # parameters_list=None, # same as params
     fast: bool = None, ## to be deprecated
     fast_workers: int = None, ## to be deprecated
     
@@ -197,77 +280,88 @@ def run_tasks_nb(
         del input_notebook_path
     assert exists(script_path), script_path
     
-    assert not (params is not None and parameters_list is not None)
-    if params is not None and parameters_list is None:
-        parameters_list=params
-        del params
+    # assert not (params is not None and parameters_list is not None)
+    # if params is not None and parameters_list is None:
+    #     parameters_list=params
+    #     del params
 
-    if test:
-        force = True
-    ## save task in unique directories
-    if parameters_list is None:
-        ## infer output paths
-        from roux.lib.sys import to_output_paths
+    # if test:
+    #     force = True
+    # ## save task in unique directories
+    # if parameters_list is None:
+    #     ## infer output paths
+    #     from roux.lib.sys import to_output_paths
 
-        parameters_list = to_output_paths(
-            inputs=inputs,
-            output_path_base=output_path_base,
-            encode_short=True,
-            key_output_path="output_path",
-            verbose=verbose,
-            force=force,
-        )
-        ## save all parameters
-        for k, parameters in parameters_list.items():
-            ## save parameters
-            output_dir_path = output_path_base.split("{KEY}")[0]
-            to_dict(
-                parameters,
-                f"{output_dir_path}/{k.split(output_dir_path)[1].split('/')[0]}/.parameters.yaml",
-            )
-    # print(parameters_list)
+    #     parameters_list = to_output_paths(
+    #         inputs=inputs,
+    #         output_path_base=output_path_base,
+    #         encode_short=True,
+    #         key_output_path="output_path",
+    #         verbose=verbose,
+    #         force=force,
+    #     )
+    #     ## save all parameters
+    #     for k, parameters in parameters_list.items():
+    #         ## save parameters
+    #         output_dir_path = output_path_base.split("{KEY}")[0]
+    #         to_dict(
+    #             parameters,
+    #             f"{output_dir_path}/{k.split(output_dir_path)[1].split('/')[0]}/.parameters.yaml",
+    #         )
+    # # print(parameters_list)
     
-    if isinstance(parameters_list, str):
-        parameters_list = read_dict(parameters_list)
+    # if isinstance(parameters_list, str):
+    #     parameters_list = read_dict(parameters_list)
         
-    if len(parameters_list) == 0:
-        logging.info("nothing to process. use `force`=True to rerun.")
-        return
+    # if len(parameters_list) == 0:
+    #     logging.info("nothing to process. use `force`=True to rerun.")
+    #     return
         
-    if isinstance(parameters_list, dict):
-        ## input_paths used as keys
-        if not any(['input_path' in d for d in parameters_list.values()]):
-            logging.warning("setting keys of params as input_path s ..")
-            parameters_list={k:{**d,**{'input_path':k}} for k,d in parameters_list.items()}
-        if validate_params(
-            parameters_list[
-                list(parameters_list.keys())[0]
-            ]
-            ):
-            parameters_list = list(parameters_list.values())
-        else:
-            raise ValueError(parameters_list)
+    # if isinstance(parameters_list, dict):
+    #     ## input_paths used as keys
+    #     if not any(['input_path' in d for d in parameters_list.values()]):
+    #         logging.warning("setting keys of params as input_path s ..")
+    #         parameters_list={k:{**d,**{'input_path':k}} for k,d in parameters_list.items()}
+    #     if validate_params(
+    #         parameters_list[
+    #             list(parameters_list.keys())[0]
+    #         ]
+    #         ):
+    #         parameters_list = list(parameters_list.values())
+    #     else:
+    #         raise ValueError(parameters_list)
             
-    if test:
-        logging.info("Aborting run because of the test mode")
-        return parameters_list
+    # if test:
+    #     logging.info("Aborting run because of the test mode")
+    #     return parameters_list
         
-    if isinstance(parameters_list, list):
-        parameters_list=flt_params(
-            parameters_list,
-            force=force,
-        )
-        if len(parameters_list) == 0:
-            return 
-    else:
-        raise ValueError(parameters_list)
-    ## chech for duplicate output paths
-    assert len(set([d["output_path"] for d in parameters_list])) == len(
-        parameters_list
-    ), (len(set([d["output_path"] for d in parameters_list])), len(parameters_list))
-    ## input_path!=output_path
-    assert [Path(d["input_path"])!=Path(d["output_path"]) for d in parameters_list], [d for d in parameters_list if Path(d["input_path"])==Path(d["output_path"])]
+    # if isinstance(parameters_list, list):
+    #     parameters_list=flt_params(
+    #         parameters_list,
+    #         force=force,
+    #     )
+    #     if len(parameters_list) == 0:
+    #         return 
+    # else:
+    #     raise ValueError(parameters_list)
+    # ## chech for duplicate output paths
+    # assert len(set([d["output_path"] for d in parameters_list])) == len(
+    #     parameters_list
+    # ), (len(set([d["output_path"] for d in parameters_list])), len(parameters_list))
+    # ## input_path!=output_path
+    # assert [Path(d["input_path"])!=Path(d["output_path"]) for d in parameters_list], [d for d in parameters_list if Path(d["input_path"])==Path(d["output_path"])]
     
+    params=pre_params(
+        params=params,
+        inputs=inputs,
+        output_path_base=output_path_base,
+        verbose=verbose,
+        force=force,
+        test1 = test1,
+        # testn = testn,
+    )
+
+    ## nb
     if to_filter_nbby_patterns_kws is not None:
         logging.info("filtering the notebook")
         if input_notebook_temp_path is None:
@@ -309,7 +403,7 @@ def run_tasks_nb(
     _start_time = datetime.now()
 
     df1 = (
-        pd.Series(parameters_list)
+        pd.Series(params)
         # to df
         .to_frame('params')
     )
@@ -388,7 +482,7 @@ def run_tasks_nb(
     ## log
     logging.info(f"Time taken: {datetime.now()-_start_time}")
     if not out_paths:
-        return parameters_list
+        return params
     else:
         return df1.set_index('nb path')['params'].apply(pd.Series)
 
@@ -405,61 +499,61 @@ from roux.lib.sys import run_com
 
 from datetime import datetime, timedelta
 
-def flt_params(
-    parameters_list,
-    force=False,
-    verbose=False,
-    out_type=None,
-):
-    before = len(parameters_list)
-    if isinstance(parameters_list,list):
-        ## TODO: use `to_outp`?
-        parameters_list_flt = [
-            d
-            for d in parameters_list
-            if (force if force else not Path(d["output_path"]).exists())
-        ]
-    elif isinstance(parameters_list,dict):
-        parameters_list_flt ={ 
-            k:d
-            for k,d in parameters_list.items()
-            if (force if force else not Path(d["output_path"]).exists())
-        }
-    else:
-        raise ValueError(type(parameters_list))
-    if not force:
-        if before - len(parameters_list_flt) != 0:
-            logging.info(
-                f"parameters_list_flt reduced because force=False: {before} -> {len(parameters_list_flt)}"
-            )
-    if out_type == 'list':
-        if isinstance(parameters_list_flt,dict):
-            parameters_list_flt=list(parameters_list_flt.values())
-#     if verbose:
-#         # check_tasks
-#         outps=[pms['output_path'] for pms in parameters_list]
-#         outps_flt=[pms['output_path'] for pms in parameters_list_flt]
+# def flt_params(
+#     parameters_list,
+#     force=False,
+#     verbose=False,
+#     out_type=None,
+# ):
+#     before = len(parameters_list)
+#     if isinstance(parameters_list,list):
+#         ## TODO: use `to_outp`?
+#         parameters_list_flt = [
+#             d
+#             for d in parameters_list
+#             if (force if force else not Path(d["output_path"]).exists())
+#         ]
+#     elif isinstance(parameters_list,dict):
+#         parameters_list_flt ={ 
+#             k:d
+#             for k,d in parameters_list.items()
+#             if (force if force else not Path(d["output_path"]).exists())
+#         }
+#     else:
+#         raise ValueError(type(parameters_list))
+#     if not force:
+#         if before - len(parameters_list_flt) != 0:
+#             logging.info(
+#                 f"parameters_list_flt reduced because force=False: {before} -> {len(parameters_list_flt)}"
+#             )
+#     if out_type == 'list':
+#         if isinstance(parameters_list_flt,dict):
+#             parameters_list_flt=list(parameters_list_flt.values())
+# #     if verbose:
+# #         # check_tasks
+# #         outps=[pms['output_path'] for pms in parameters_list]
+# #         outps_flt=[pms['output_path'] for pms in parameters_list_flt]
             
-#         for outp in outps:
-#             print(f"{not outp in outps_flt} :{outp}")
+# #         for outp in outps:
+# #             print(f"{not outp in outps_flt} :{outp}")
             
-    return parameters_list_flt
+#     return parameters_list_flt
 
-# from functools import partial
-def check_tasks(
-    params,
-    ):
-    if isinstance(params,str):
-        params=read_dict(params)
+# # from functools import partial
+# def check_tasks(
+#     params,
+#     ):
+#     if isinstance(params,str):
+#         params=read_dict(params)
         
-    if isinstance(params,dict):
-        params=list(params.values())
+#     if isinstance(params,dict):
+#         params=list(params.values())
 
-    flt_params(
-        params,
-        verbose=True,
-        out_type='list',    
-    )
+#     flt_params(
+#         params,
+#         verbose=True,
+#         out_type='list',    
+#     )
 
 def get_sq(
     user=None,
@@ -936,26 +1030,22 @@ def run_tasks(
         del params
         dfs_run={}
         for step in cfg_run:
+            logging.processing(step)
             dfs_run[step]=run_tasks(
                 params=[cfg_run[step]['pms_run']],
                 **cfg_run[step]['kws_run'],
             )
         return dfs_run
         
-    params=flt_params(
-            params,
-            force=force,
-        )
-    
-    if test1:
-        testn=1
-    if testn is not None:
-        params=params[:testn]
-        logging.warning(f"filtered to {len(params)} jobs ..")
-
-    assert all(['input_path' in pms for pms in params])
-    assert all(['output_path' in pms for pms in params])
-
+    params=pre_params(
+        params=params,
+        # inputs=inputs,
+        # output_path_base=output_path_base,
+        verbose=verbose,
+        force=force,
+        test1 = test1,
+        testn = testn,
+    )
     
     if runner.startswith('py'):
         # return

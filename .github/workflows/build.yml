@@ -41,7 +41,7 @@ jobs:
           uv pip install -e .
       
       - name: Ensure tox
-        run: uv pip install tox pytest
+        run: uv pip install tox pytest pytest-cov testbook
       
       - name: Verify installed packages
         run: uv pip list
