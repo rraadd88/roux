@@ -92,13 +92,17 @@ def pre_params(
 
     # --- Convert dict to list if needed ---
     if isinstance(param_list, dict):
-        if not any(['input_path' in d for d in param_list.values()]):
-            logging.warning("setting keys of params as input_path s ..")
-            param_list = {k: {**d, **{'input_path': k}} for k, d in param_list.items()}
-        if validate_params(list(param_list.values())[0]):
-            param_list = list(param_list.values())
+        if 'input_path' in param_list and 'output_path' in param_list:
+            ## pms
+            param_list=[param_list]
         else:
-            raise ValueError(param_list)
+            if not any(['input_path' in d for d in param_list.values()]):
+                logging.warning("setting keys of params as input_path s ..")
+                param_list = {k: {**d, **{'input_path': k}} for k, d in param_list.items()}
+            if validate_params(list(param_list.values())[0]):
+                param_list = list(param_list.values())
+            else:
+                raise ValueError(param_list)
 
     # --- Filtering by output existence, as in flt_params ---
     before = len(param_list)
@@ -1092,7 +1096,7 @@ def run_tasks(
                 script_path= script_path, #, ## preffix
                 script_pre= script_pre, #='', ## e.g. micromamba run -n env
 
-                append_header=slurm_header,                            
+                append_header=slurm_header,                       
             ),
             **kws_runner,
             **slurm_kws,

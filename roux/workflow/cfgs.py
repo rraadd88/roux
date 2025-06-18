@@ -8,7 +8,8 @@ from roux.lib.sys import (
     read_ps,
 )
 
-from roux.lib.io import read_dict, is_dict
+from roux.lib.io import read_dict, to_dict, is_dict
+from roux.lib.log import log_dict
 
 def read_config(
     p: str,
@@ -89,6 +90,8 @@ def read_config(
         d1 = OmegaConf.to_object(d1)
     return d1
 
+read_cfg=read_config
+
 def read_sub_configs(
     d1,
     config_path_key: str = "config_path",
@@ -98,6 +101,7 @@ def read_sub_configs(
     ## read dicts
     if not isinstance(d1,dict):
         return d1
+        
     keys = d1.keys()
     for k in keys:
         if isinstance(d1[k], dict):
@@ -129,15 +133,37 @@ def read_sub_configs(
                         logging.warning(f"not exists: {d1[k][config_base_path_key]}")           
     return d1
 
+def read_sub_configs_rly(d, depth, **kws):
+    """
+    Recursively apply read_sub_configs to a nested dict `d` up to `depth` levels.
+    depth=0 → only one call on the root;
+    depth=1 → root + one level of children; etc.
+    """
+    # Always read this level
+    d_read = read_sub_configs(d, **kws)
+
+    # If we’ve reached max depth or got a non-dict, stop
+    if depth <= 0 or not isinstance(d_read, dict):
+        return d_read
+
+    # Otherwise recurse into each sub-dict
+    return {
+        key: read_sub_configs_rly(sub, depth - 1, **kws)
+        for key, sub in d_read.items()
+    }
+    
 ## metadata-related
 def read_metadata(
     p: str,
     ind: str = None,
     max_paths: int = 30,
-    config_path_key: str = "config_path",
-    config_base_path_key: str = "config_base_path",
+    config_path_key: str = "config_path", ## side-load (apppend, common use)
+    config_base_path_key: str = "config_base_path", ## base-load (apppended to)
     config_paths: list = [],
     config_paths_auto=False,
+
+    sub_configs_depth=3,
+    
     verbose: bool = False,
     **kws_read_config,
 ) -> dict:
@@ -155,27 +181,35 @@ def read_metadata(
         logging.warning(f"not found: {p}")
 
     d0 = read_config(p, verbose=verbose, **kws_read_config)
-    
+
+    ## subs
     kws_read_sub_configs=dict(
         config_path_key = config_path_key,
         config_base_path_key = config_base_path_key,    
         verbose=verbose,
     )
-    
-    d1={}
-    for k1,d_1 in d0.items():
-        ## level1
-        d1[k1]=read_sub_configs(
-            d_1,
-            **kws_read_sub_configs,
-        )
-        if isinstance(d1[k1],dict):
-            for k2,d_2 in d1[k1].items():
-                ## level2
-                d1[k1][k2]=read_sub_configs(
-                    d_2,
-                    **kws_read_sub_configs,
-                )        
+
+    # ## level0
+    # d0_with_sub=read_sub_configs(
+    #         d0,
+    #         **kws_read_sub_configs,
+    #     )
+    # d1={}
+    # for k1,d_1 in d0_with_sub.items():
+    #     ## level1
+    #     d1[k1]=read_sub_configs(
+    #         d_1,
+    #         **kws_read_sub_configs,
+    #     )
+    #     if isinstance(d1[k1],dict):
+    #         for k2,d_2 in d1[k1].items():
+    #             ## level2
+    #             d1[k1][k2]=read_sub_configs(
+    #                 d_2,
+    #                 **kws_read_sub_configs,
+    #             )     
+
+    d1=read_sub_configs_rly(d0, depth=sub_configs_depth, **kws_read_sub_configs)
             
     ## read files from directory containing specific setings and other data to be incorporated into metadata
     if config_paths_auto:
@@ -216,23 +250,51 @@ def read_metadata(
         logging.info(f"version: {str(d1['version'])}")        
     return d1
 
-
+from collections import OrderedDict
 def get_cfg_run(d, keys=("pms_run", "kws_run")):
-    groups = {}
+    groups = OrderedDict()
 
     def recurse(obj, path=""):
         if isinstance(obj, dict):
-            group = {}
-            for key in keys:
-                if key in obj and isinstance(obj[key], dict):
-                    group[key] = obj[key]
-            if group:
-                groups[path.strip("-")] = group
+            # Will emit the group for this level once we hit the first _run key
+            group_emitted = False
             for k, v in obj.items():
+                # If this key is one of our keys, and we haven't yet emitted:
+                if (k in keys) and not group_emitted:
+                    # collect all siblings at this level
+                    sib_group = {
+                        s: obj[s]
+                        for s in keys
+                        if s in obj and isinstance(obj[s], dict)
+                    }
+                    groups[path or "<root>"] = sib_group
+                    group_emitted = True
+
+                # Recurse into child
                 recurse(v, f"{path}-{k}" if path else k)
+
         elif isinstance(obj, list):
             for i, item in enumerate(obj):
                 recurse(item, f"{path}-{i}")
 
     recurse(d)
-    return groups
+    return dict(groups)
+
+def to_cfg_run(
+    d,
+    outp=None,
+    keys=("pms_run", "kws_run"),
+    verbose=True,
+    validate=True,
+    ):
+    if isinstance(d,str):
+        d=read_config(d)
+    cfg_run=get_cfg_run(d, keys=keys)
+    if verbose:
+        log_dict(cfg_run)
+    if validate:
+        assert cfg_run==get_cfg_run(cfg_run), get_cfg_run(cfg_run)
+    if outp is not None:
+        return to_dict(cfg_run,outp)
+    else:
+        return cfg_run

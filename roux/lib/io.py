@@ -412,16 +412,29 @@ def read_list(p):
 read_lines = read_list
 
 
-## dict
 def is_dict(p):
     return p.endswith((".yml", ".yaml", ".json", ".joblib", ".pickle"))
+def is_table(p):
+    return p.endswith((".tsv", ".csv", ".pqt", ".parquet",))
+def is_data(p):
+    return is_dict(p) or is_table(p)     
+def read_data(p,**kws):
+    if is_dict(p):
+        return read_dict(p,**kws)
+    elif is_table(p):
+        return read_table(p,**kws)
+    else:
+        logging.error(f"not detected as data {p}")
+        return 
 
+## dict
 
 def read_dict(
     p,
     fmt: str = "",
     apply_on_keys=None,
     # encoding=None,
+    sort_ps=True,
     **kws,
 ) -> dict:
     """Read dictionary file.
@@ -438,7 +451,11 @@ def read_dict(
     """
     assert isinstance(p, (str, list)), p
     if "*" in p or isinstance(p, list):
-        d1 = {p: read_dict(p) for p in read_ps(p)}
+        if sort_ps:
+            p=read_ps(p)
+        else:
+            assert isinstance(p,list)
+        d1 = {p: read_dict(p) for p in p}
         if apply_on_keys is not None:
             assert len(
                 set(
@@ -517,7 +534,7 @@ def to_dict(d, p, **kws):
         import yaml
 
         with open(p, "w") as f:
-            yaml.safe_dump(d, f, **kws)
+            yaml.safe_dump(d, f, **{**dict(sort_keys=False),**kws})
         return p
     elif p.endswith(".json"):
         import json

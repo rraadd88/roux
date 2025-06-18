@@ -298,9 +298,9 @@ def apply(
     ## chunks
     kws_chunks={},
     
-    **kws, ## to by   
+    **kws, ## to by
 ):
-    logging.info(f"available cpus: {os.cpu_count()}")
+    logging.info(f"using {cpus}/{os.cpu_count()} cpus/threads ..")
     
     if len(kws_chunks)==0:
         return apply_async(
