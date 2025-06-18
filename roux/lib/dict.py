@@ -110,3 +110,23 @@ def flip_dict(d):
     #         for v in d[k]:
     #             d_[v]=k
     #     return d_
+
+## find
+def contains_keys(
+    obj,
+    keys_to_find
+    ):
+    found = set()
+
+    def recurse(o):
+        if isinstance(o, dict):
+            for k, v in o.items():
+                if k in keys_to_find:
+                    found.add(k)
+                recurse(v)
+        elif isinstance(o, list):
+            for item in o:
+                recurse(item)
+
+    recurse(obj)
+    return all(k in found for k in keys_to_find)

@@ -847,6 +847,7 @@ def feed_jobs(
         
     logging.info("\nDuration elapsed!")
 
+from roux.lib.dict import contains_keys
 ## wrapper
 def run_tasks(
     script_path: str, ## preffix
@@ -906,18 +907,10 @@ def run_tasks(
         
     Examples:    
         Feeding:
-        
-            feed_duration = '1h',
-            feed_interval = '10m',
-            feed_if_jobs_max = 0.5,
-
-            feedn = None,
             feed_duration = '99h',
             feed_interval = '1s',
             feed_if_jobs_max = 0.5,    
     """
-    # if cfg_run:
-    # # recurse
     
     ## script_path
     logging.setLevel(level=log_level)
@@ -930,10 +923,30 @@ def run_tasks(
     )
     
     ## params
+    
+    if isinstance(params,str):
+        from roux.lib.io import is_dict
+        assert is_dict(params), f"expected params in dict format: {params}"
+        params=read_dict(params)
+
+    if contains_keys(params,['pms_run','kws_run']):
+        # cfg_run:
+        # recurse
+        cfg_run=params.copy()
+        del params
+        dfs_run={}
+        for step in cfg_run:
+            dfs_run[step]=run_tasks(
+                params=[cfg_run[step]['pms_run']],
+                **cfg_run[step]['kws_run'],
+            )
+        return dfs_run
+        
     params=flt_params(
             params,
             force=force,
         )
+    
     if test1:
         testn=1
     if testn is not None:
@@ -964,11 +977,7 @@ def run_tasks(
         )
         
     logging.loading('params from the input_path ..')
-    
-    if isinstance(params,str):
-        from roux.lib.io import is_dict
-        assert is_dict(params), f"expected params in dict format: {params}"
-        params=read_dict(params)
+            
     if isinstance(params,dict):
         params=list(params.values())
                 
