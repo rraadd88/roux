@@ -9,7 +9,12 @@ def print_parameters(d: dict):
         d (dict): directory with parameters
     """
     assert isinstance(d, dict)
-    print(
+    
+    if logging.root.level <= logging.INFO:
+        logger=logging.info
+    else:
+        logger=print
+    logger(
         f"## for testing\nimport os\nos.chdir('{Path.cwd().as_posix()}')\n\n## parameters\n"+(
             "\n".join(
                 [

@@ -150,7 +150,8 @@ def log_dict(
     ## only keys
     max_depth: int=None,
     _depth: int = 0,
-
+    
+    out=False,
     **kws,
     ) -> None:
     """
@@ -167,4 +168,53 @@ def log_dict(
                 log_dict(value, max_depth=max_depth, _depth=_depth + 1)
     else:
         import yaml
-        logging.info('\n'+yaml.dump(d, sort_keys=sort_keys, indent=indent,**kws))
+        s=yaml.dump(d, sort_keys=sort_keys, indent=indent,**kws)
+        if not out:
+            logging.info('\n'+s)
+        else:
+            return s
+
+
+def to_diff(
+    file1,
+    file2,
+    outp=None,
+    ):
+    from pathlib import Path
+    import difflib
+    if isinstance(file1,str) and Path(file1).isfile():# and Path(file2).isfile():  
+        with open(file1) as f1, open(file2) as f2:
+            lines1 = f1.readlines()
+            lines2 = f2.readlines()
+    elif isinstance(file1,dict):# and isinstance(file2,dict):
+        lines1=log_dict(file1,out=True).splitlines()
+        lines2=log_dict(file2,out=True).splitlines()
+        
+    diff_html = (
+        difflib.HtmlDiff(
+            tabsize=4
+        )
+        # .make_table(
+        .make_file(
+            lines1, lines2,
+            fromdesc='from',
+            todesc='to',
+            context=True,
+            numlines=5
+        )
+    )
+    # return diff
+    if outp is None:
+        from IPython.display import display, HTML
+        # diff_html = f"<div style='text-align: left; margin-left: 0;'>{diff_html}</div>"
+        # diff_html = diff_html.replace(
+        #     '<table class="diff" id="difflib_chg_to0__top">',
+        #     '<table class="diff" id="difflib_chg_to0__top" style="margin-left:0; text-align:left;">'
+        # )    
+        display(HTML(diff_html))
+    else:
+        Path(outp).parent.mkdir(parents=True,exist_ok=True)
+        with open(outp, "w") as f:
+            f.write(diff_html)
+        logging.info(f"diff: {Path(outp).absolute()}")
+        return outp

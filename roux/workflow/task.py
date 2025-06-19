@@ -10,6 +10,8 @@ logging = Logger() # level='INFO'
 
 ## internal
 from roux.lib.io import read_dict, to_dict
+from roux.workflow.log import test_params
+
 from pathlib import Path
 from roux.lib.sys import (
     basenamenoext,
@@ -221,7 +223,8 @@ def run_tasks_nb(
     cpus: int = 1,
     pre: bool = True,
     post: bool = False,
-    
+
+    simulate: bool = False, #~dry
     test1: bool = False,
     force: bool = False,
     # test: bool = False,
@@ -425,70 +428,73 @@ def run_tasks_nb(
         cpus=fast_workers
     fast= cpus > 1
     
-    if (not fast) or len(df1)==1:
-        df1['nb path'] = getattr(
-            df1['params'],
-            "progress_apply"
-            if hasattr(df1, "progress_apply") and len(df1) > 1
-            else "apply",
-        )(
-            lambda x: apply_run_task_nb(
-                x,
-                script_path=script_path,
-                kernel=kernel,
-                **kws_papermill,
-                force=force,
+    if not simulate:
+        if (not fast) or len(df1)==1:
+            df1['nb path'] = getattr(
+                df1['params'],
+                "progress_apply"
+                if hasattr(df1, "progress_apply") and len(df1) > 1
+                else "apply",
+            )(
+                lambda x: apply_run_task_nb(
+                    x,
+                    script_path=script_path,
+                    kernel=kernel,
+                    **kws_papermill,
+                    force=force,
+                )
             )
-        )
-    else:
-        logging.info(f"running in parallel (cpus={cpus})..")
-        
-        # disable logging
-        import logging as logging_base 
-        sorted(list(logging_base.root.manager.loggerDict.keys()))
-        for k in [
-            'papermill',
-            'papermill.translators',
-            'papermill.utils',
-        ]:
-            logging_base.getLogger(k).setLevel(logging_base.CRITICAL)
-        
-        df1['nb path']=(
-            df1
-            .rd.apply_async(
-                lambda x: 
-                    apply_run_task_nb(
-                        x['params'],
-                        script_path=script_path,
-                        kernel=kernel,
-                        **kws_papermill,
-                        force=force,
-                    ),
-                cpus=cpus,
-            )
-        )
-    # return ds2
-    
-    if post and not fast:        
-        from roux.workflow.io import valid_post_task_deps, to_html
-        if valid_post_task_deps:
-            df1['html path']=(
+        else:
+            logging.info(f"running in parallel (cpus={cpus})..")
+            
+            # disable logging
+            import logging as logging_base 
+            sorted(list(logging_base.root.manager.loggerDict.keys()))
+            for k in [
+                'papermill',
+                'papermill.translators',
+                'papermill.utils',
+            ]:
+                logging_base.getLogger(k).setLevel(logging_base.CRITICAL)
+            
+            df1['nb path']=(
                 df1
                 .rd.apply_async(
                     lambda x: 
-                        to_html(
-                            x['nb path'],                    
+                        apply_run_task_nb(
+                            x['params'],
+                            script_path=script_path,
+                            kernel=kernel,
+                            **kws_papermill,
+                            force=force,
                         ),
                     cpus=cpus,
                 )
             )
+        # return ds2
+        
+        if post and not fast:        
+            from roux.workflow.io import valid_post_task_deps, to_html
+            if valid_post_task_deps:
+                df1['html path']=(
+                    df1
+                    .rd.apply_async(
+                        lambda x: 
+                            to_html(
+                                x['nb path'],                    
+                            ),
+                        cpus=cpus,
+                    )
+                )
             
     ## log
     logging.info(f"Time taken: {datetime.now()-_start_time}")
     if not out_paths:
         return params
     else:
-        return df1.set_index('nb path')['params'].apply(pd.Series)
+        if 'nb path' in df1:
+            df1=df1.set_index('nb path')
+        return df1['params']#.apply(pd.Series)
 
 ## server       
 import os
@@ -699,7 +705,7 @@ f"""#!/bin/bash
     
 def has_slurm(
     ):
-    return run_com('sbatch --help',returncodes=[0,1,127])!=''
+    return run_com('sbatch --help',returncodes=[0,1,127],verbose=False)!=''
 
 def infer_runner(
     runner=None,
@@ -949,7 +955,7 @@ from roux.lib.dict import contains_keys
 ## wrapper
 def run_tasks(
     script_path: str, ## preffix
-    params,
+    params=None,
 
     runner=None, ## py, bash, slurm (None:auto)
     cpus: int = 1,
@@ -976,20 +982,24 @@ def run_tasks(
     feed_interval : str ='10m',
     feed_if_jobs_max : float =0.5,
 
+    ## cfg_run
+    script_type: str=None, ## preffix
+    
     ## common
+    force_setup : bool =True,
+    cache_dir_path='.roux/',
+    wd_path=None,    
+    
     force : bool =False,
     simulate: bool = False,
+    
+    verbose: bool = False,
+    log_level: str = 'INFO',    
+    
     test1 : bool =False,
     testn : int =None,
     test : bool =False,
     test_cpus: int = 3, 
-    
-    force_setup : bool =True,
-    cache_dir_path='.roux/',
-    wd_path=None,  
-    
-    verbose: bool = False,
-    log_level: str = 'INFO',
 
     **kws_runner,
     ):
@@ -1013,7 +1023,7 @@ def run_tasks(
     ## script_path
     logging.setLevel(level=log_level)
     script_path=Path(script_path).resolve().as_posix()
-    script_type=Path(script_path).suffix[1:]
+    script_type=Path(script_path.split(' ')[0]).suffix[1:]# if not '.py run' in script_path else 'py'
     
     runner=infer_runner(
         runner=runner,
@@ -1022,24 +1032,62 @@ def run_tasks(
     
     ## params
     
-    if isinstance(params,str):
-        from roux.lib.io import is_dict
-        assert is_dict(params), f"expected params in dict format: {params}"
-        params=read_dict(params)
+    # if isinstance(params,str):
+    #     from roux.lib.io import is_dict
+    #     assert is_dict(params), f"expected params in dict format: {params}"
+    #     params=read_dict(params)
 
-    if contains_keys(params,['pms_run','kws_run']):
+    # if contains_keys(params,['pms_run','kws_run']):
+    from roux.lib.io import is_dict
+    if is_dict(script_path):
         # cfg_run:
         # recurse
-        cfg_run=params.copy()
-        del params
+        cfg_run=read_dict(script_path)
+        del script_path
         dfs_run={}
         for step in cfg_run:
             logging.processing(step)
+            
+            sp=cfg_run[step]['kws_run']['script_path']
+            if isinstance(sp,dict):
+                if script_type is None:
+                    st=list(sp.keys())[0]
+                sp=sp[st]
+                assert isinstance(sp,str), sp
+                del st
+                
             dfs_run[step]=run_tasks(
-                params=[cfg_run[step]['pms_run']],
-                **cfg_run[step]['kws_run'],
-            )
-        return dfs_run
+                params=cfg_run[step]['pms_run'],
+                **{
+                    **dict(
+                        runner=runner,
+                        
+                        force_setup = force_setup,# True,
+                        cache_dir_path = cache_dir_path, # roux/',
+                        wd_path = wd_path,# None,
+                        
+                        force  = force,# False,
+                        simulate = simulate,#  False,
+                        
+                        verbose = verbose,#  False,
+                        log_level = log_level,#  'INFO',    
+                        
+                    ),
+                    **cfg_run[step]['kws_run'],
+                    **dict(
+                        script_path=sp
+                    )
+                    },
+                )
+            if not simulate:
+                ## wait 
+                while not Path(cfg_run[step]['pms_run']['output_path']).exists():
+                    time.sleep(2)
+            else:
+                test_params([cfg_run[step]['pms_run']])            
+            del sp
+            
+        return pd.concat(dfs_run)
         
     params=pre_params(
         params=params,
@@ -1061,7 +1109,8 @@ def run_tasks(
             cpus = cpus,
             pre = pre,
             post = post,
-            
+
+            simulate=simulate,
             test1 = test1,
             force = force,
             test = test,
@@ -1115,23 +1164,23 @@ def run_tasks(
                 **{k:d for k,d in params.items() if k not in job_keys_tried},
                 **{k:d for k,d in params.items() if k in job_keys_tried},
             }
-        
-        if runner in ['slurm']:
-            feed_jobs(
-                com=params, ## all
-                jobs=cpus, ## feed each time
-                # user=user,
-                feed_duration=feed_duration,
-                feed_interval=feed_interval,
-                feed_if_jobs_max=feed_if_jobs_max,
+        if not simulate:
+            if runner in ['slurm']:
+                feed_jobs(
+                    com=params, ## all
+                    jobs=cpus, ## feed each time
+                    # user=user,
+                    feed_duration=feed_duration,
+                    feed_interval=feed_interval,
+                    feed_if_jobs_max=feed_if_jobs_max,
+                    
+                    force= force, #=False,
+                    test= test, #=False,
+    
+                    kws_runner=kws_runner,
+                )
                 
-                force= force, #=False,
-                test= test, #=False,
-
-                kws_runner=kws_runner,
-            )
-            
-            return
+                return
 
     if runner=='slurm':
         logging.status("q.ing jobs.. ")
@@ -1152,6 +1201,7 @@ def run_tasks(
             if runner!='slurm':
                 logging.warning("forcing setup (re-rewiting the sbatch scripts)..")
             # job=
+            # if not simulate:
             to_sbatch_script(
                 sbatch_path=sbatch_path,
                 pms=pms,
@@ -1159,12 +1209,13 @@ def run_tasks(
             )
     
         if runner=='slurm':
-            # submit the jobs
-            job_ids.append(
-                submit_job(
-                    sbatch_path
+            if not simulate:
+                # submit the jobs
+                job_ids.append(
+                    submit_job(
+                        sbatch_path
+                    )
                 )
-            )
             
         if runner!='slurm':
             coms.append(
@@ -1183,10 +1234,12 @@ def run_tasks(
         if cpus>cpus_bash:
             logging.warning(f"using test_cpus = {cpus_bash}")
             
-        from multiprocessing import Pool
-        # Create a pool of worker processes
-        with Pool(processes=cpus_bash) as pool:
-            pool.map(run_com, coms)
+        if not simulate:
+            
+            from multiprocessing import Pool
+            # Create a pool of worker processes
+            with Pool(processes=cpus_bash) as pool:
+                pool.map(run_com, coms)
         
     params_jobs_path=f"{cache_dir_path}/{encode(params_jobs,short=True)}.yaml"
     
@@ -1205,4 +1258,4 @@ def run_tasks(
     logging.done('processing.',time=_time)
 
     ## uniform output
-    return pd.Series(params_jobs).to_frame('params')['params'].apply(pd.Series)
+    return pd.Series(params_jobs).to_frame('params')['params']#.apply(pd.Series)

@@ -81,7 +81,7 @@ def read_config(
             inputs,  ## child overwrite with
         )
         if verbose:
-            print("inputs incorporated.")
+            logging.info("inputs incorporated.")
     if isinstance(d1, dict):
         ## no-merging
         d1 = OmegaConf.create(d1)
@@ -298,3 +298,166 @@ def to_cfg_run(
         return to_dict(cfg_run,outp)
     else:
         return cfg_run
+
+def to_cfg_run_arc(
+    input_path,
+    arc_name,
+    output_path=None,
+    mod_path=None,
+    new_run=False,
+    force=False,
+    simulate=True,
+    validate=True,
+    verbose=True,
+    ):
+    """
+    Arc. in a config
+
+    Examples:
+        input_path='../configs/main.yaml'
+    """
+    import logging
+    logging.basicConfig(level='INFO',force=True)
+    from pathlib import Path
+    from roux.lib.sys import get_datetime
+    from roux.lib.log import log_dict
+    from roux.lib.io import read_dict,to_dict
+    from roux.workflow.log import test_params
+    from roux.workflow.task import run_tasks
+
+    if validate:
+        verbose=True
+
+    cfg_path=input_path
+    del input_path
+    if output_path is None:
+        cfg_run_arc_path=f"{Path(cfg_path if mod_path is None else mod_path).with_suffix('').as_posix()}/{arc_name}.yaml"
+    else:
+        cfg_run_arc_path=output_path
+        
+    logging.info(cfg_run_arc_path)
+    output_dir_path=Path(cfg_run_arc_path).with_suffix('').as_posix()
+    cfg_run_path=f"{output_dir_path}/run.yaml"
+    # ## Inputs
+    # ### Config
+
+    from roux.workflow.io import read_config,read_metadata
+    kws_read_metadata=dict(
+        p=cfg_path,
+        inputs=read_dict(mod_path) if not mod_path is None else None,
+        # infer_bases=True,
+        )
+    cfg=read_metadata(
+        **kws_read_metadata
+    )
+
+    ## TODO: save as tmp and print inline diff
+    from roux.lib.log import to_diff
+    if not mod_path is None and validate:
+        outp=to_diff(
+            read_metadata(
+                **{
+                    **kws_read_metadata,
+                    **dict(
+                        inputs=None,
+                    )
+                }
+            ),
+            cfg,
+            f"{output_dir_path}/.cfg_diff.html"
+        )
+    # ### Arc.
+
+    cfg_arc=cfg[arc_name]        
+    # ## Run cfg
+    # ## Arc. run
+    to_cfg_run(
+        cfg_arc,
+        cfg_run_path,
+        verbose=False,
+    )
+    # ### Mod.s in the main run of a step
+
+    # cfg_arc['attention']['pre']['pms_run']['cfg_replace']['node_feats']
+
+    # (cfg_arc.keys())
+
+    # mod_step_ins={
+    #     k:{'GemsPexp2Fit_gat': {'attention': {'pre': {'node_feats_name': k}}}}
+    #     for k in ['x1','x2','z1','z2']
+    # }
+    # log_dict(mod_step_ins)
+
+    cfg_attention_mods_paths={}
+    for i,(mod_name,ins) in enumerate(cfg_arc.get('mods',{}).items()):
+        logging.info(mod_name)
+        ## to input to cfg the inpuuts needs to be rooted
+        ins={arc_name:ins}
+        
+        # assert list(ins.keys())[0]==arc_name    
+        
+        step_name=list(ins[arc_name].keys())[0]
+        ## output_path
+        ins[arc_name][step_name]={
+            'main':{
+                'pms_run':{
+                    
+                }
+            }
+        }
+        ins[arc_name][step_name]['main']['pms_run']['output_path']=f"{Path(cfg_arc[step_name]['main']['pms_run']['output_path']).with_suffix('')}_Mod_{mod_name}.yaml"
+        
+        # break
+        # kws_rm['inputs']={
+        #     **(kws_rm['inputs'] if 'inputs' in kws_rm else {}),
+        #     **ins,
+        # }
+        kws_rm={
+            **kws_read_metadata,
+            **dict(
+                inputs=ins,
+            ),
+        }
+        
+        cfg_attention_mods_paths[mod_name]=to_cfg_run(
+            read_metadata(
+                **kws_rm,
+            )[arc_name][step_name],
+            f"{output_dir_path}/{step_name}_{mod_name}.yaml",
+            # verbose=i==0,
+            verbose=False,
+        )
+        # break
+    ## output
+    from roux.lib.io import read_dict
+    cfg_run_arc=read_dict(cfg_run_path)
+    for mod_name,p in cfg_attention_mods_paths.items():
+        cfg_run_arc={
+            **cfg_run_arc,
+            **{f"{Path(p).stem}-{k}":v for k,v in read_dict(p).items()},
+        }
+        
+    if verbose:
+        log_dict(cfg_run_arc)
+        
+    # ## Runs
+    to_dict(
+        cfg_run_arc,
+        cfg_run_arc_path
+    )
+    
+    if validate:
+        from roux.workflow.task import run_tasks
+        # %run ../../roux/roux/workflow/task.py
+        dfs_=run_tasks(
+            cfg_run_arc_path,
+            
+            runner='slurm',
+            simulate=simulate,
+            # kernel=kernel,
+        )
+        logging.info(dfs_)
+        
+    logging.info(f"roux run-tasks {cfg_run_arc_path} -r 'slurm' --simulate")
+        
+    return cfg_run_arc_path
