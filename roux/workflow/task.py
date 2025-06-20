@@ -958,6 +958,7 @@ def feed_jobs(
         
     logging.info("\nDuration elapsed!")
 
+<<<<<<< HEAD
 def pre_cfg_run(
     cfg_run,
     script_type=None,
@@ -991,6 +992,8 @@ def pre_cfg_run(
 
     return cfg_run
 
+=======
+>>>>>>> 98465d273530120713e447051c53640edb32a883
 ## wrapper
 def run_tasks(
     script_path: str, ## preffix

@@ -319,10 +319,8 @@ def to_cfg_run_arc(
     import logging
     logging.basicConfig(level='INFO',force=True)
     from pathlib import Path
-    from roux.lib.sys import get_datetime
     from roux.lib.log import log_dict
     from roux.lib.io import read_dict,to_dict
-    from roux.workflow.log import test_params
     from roux.workflow.task import run_tasks
 
     if validate:
@@ -341,10 +339,10 @@ def to_cfg_run_arc(
     # ## Inputs
     # ### Config
 
-    from roux.workflow.io import read_config,read_metadata
+    from roux.workflow.io import read_metadata
     kws_read_metadata=dict(
         p=cfg_path,
-        inputs=read_dict(mod_path) if not mod_path is None else None,
+        inputs=read_dict(mod_path) if mod_path is not None else None,
         # infer_bases=True,
         )
     cfg=read_metadata(
@@ -353,7 +351,7 @@ def to_cfg_run_arc(
 
     ## TODO: save as tmp and print inline diff
     from roux.lib.log import to_diff
-    if not mod_path is None and validate:
+    if mod_path is not None and validate:
         outp=to_diff(
             read_metadata(
                 **{
