@@ -38,7 +38,7 @@ jobs:
       - name: Install dependencies
         run: |
           uv sync --all-extras --dev
-          uv pip install -e .
+          uv pip install -e ".[all]"
       
       - name: Ensure tox
         run: uv pip install tox pytest pytest-cov testbook

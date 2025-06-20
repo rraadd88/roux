@@ -14,12 +14,8 @@ from roux.workflow.log import test_params
 
 from pathlib import Path
 from roux.lib.sys import (
-    basenamenoext,
-    dirname,
     exists,
     get_datetime,
-    makedirs,
-    splitext,
 )
 
 import pandas as pd
@@ -138,6 +134,19 @@ def pre_params(
 
     return param_list
 
+
+def pre_task(
+    pms,
+):
+    if isinstance(pms,list):
+        assert len(pms)==1, pms
+    log_dir_path=f"{Path(pms['output_path']).with_suffix('').as_posix()}_logs/{get_datetime()}"
+    to_dict(
+        pms,
+        f"{log_dir_path}/pms.yaml"
+    )    
+    return log_dir_path
+    
 ## execution
 def run_task_nb(
     parameters: dict,
@@ -167,14 +176,18 @@ def run_task_nb(
     """
     if exists(parameters["output_path"]) and not force:
         return parameters["output_path"]
+        
+    # ## save parameters
+    # to_dict(parameters, f"{dirname(output_notebook_path)}/pms_latest.yaml")
+
+    log_dir_path=pre_task(
+        parameters,
+    )
     if not output_notebook_path:
         ## save report i.e. output notebook
-        output_notebook_path = f"{splitext(parameters['output_path'])[0]}_reports/{get_datetime()}_{basenamenoext(script_path)}.ipynb"
-        makedirs(output_notebook_path)
+        output_notebook_path = f"{log_dir_path}_{Path(script_path).name}"
     if verbose:
         logging.info(parameters["output_path"], output_notebook_path)
-    ## save parameters
-    to_dict(parameters, f"{dirname(output_notebook_path)}/parameters.yaml")
 
     if verbose:
         logging.info(parameters)
@@ -503,7 +516,6 @@ import time
 from tqdm import tqdm
 # from pprint import pprint
 
-from roux.lib.str import encode
 from roux.lib.sys import run_com
 # from roux.workflow.task import flt_params
 
@@ -743,6 +755,8 @@ def to_sbatch_script(
     script_path,
     pms,
     sbatch_path, # outp
+    log_dir_path,
+    
     script_pre=None,
     
     job_pre=None,
@@ -761,24 +775,17 @@ def to_sbatch_script(
     verbose=False,
     **kws_runner,
 ):
-    sbatch_dir_path=Path(sbatch_path).with_suffix("").as_posix()
-    params_path=f"{sbatch_dir_path}/params.yaml"
-    log_dir_path=f"{sbatch_dir_path}/logs/"
+    # sbatch_dir_path=Path(sbatch_path).with_suffix("").as_posix()
+    
+    pms_path=f"{log_dir_path}/pms.yaml"
+    assert Path(pms_path).exists(), 'check pre_task()'
 
-    Path(sbatch_dir_path).mkdir(parents=True,exist_ok=True)
-    Path(log_dir_path).mkdir(parents=True,exist_ok=True)
-
-    ## save parameters
-    to_dict(
-        pms,
-        params_path,
-    )
-    if test:
-        logging.info(f"params_path={params_path}")
+    if verbose:
+        logging.debug(f"pms_path={pms_path}")
 
     ## create command
     if script_path.endswith('.sh') or '.sh ' in script_path:
-        com=f"{script_pre}{'bash ' if not script_path.startswith('bash ') else ''}{script_path} {params_path}"
+        com=f"{script_pre}{'bash ' if not script_path.startswith('bash ') else ''}{script_path} {pms_path}"
         # pass
         # return "under dev"
     else:
@@ -787,7 +794,7 @@ def to_sbatch_script(
         if script_path.endswith('.py') or '.py ' in script_path:
             com=f"{script_pre}{'python ' if not script_path.startswith('python ') else ''}{script_path} "
             if not expand_pms:
-                 com+=f" --pms {params_path}"
+                 com+=f" --pms {pms_path}"
             else:
                  com+=_expand_pms(pms)   
             # packages.append('argh')
@@ -799,7 +806,7 @@ def to_sbatch_script(
         elif script_path.endswith('.ipynb'):
             log_path=f"{log_dir_path}/{Path(script_path).name}"
             com=(
-                f"{script_pre}papermill --parameters_file {params_path} "
+                f"{script_pre}papermill --parameters_file {pms_path} "
                 f"--stdout-file {Path(log_path).with_suffix('.out')} --stderr-file {Path(log_path).with_suffix('.err')} "
                 # kernel_name=kernel,
                 "--start-timeout=600 "
@@ -815,8 +822,8 @@ def to_sbatch_script(
         else:
             raise ValueError(script_path)
 
-    if test:
-        logging.info(com)
+    if verbose:
+        logging.debug(com)
 
     # write the slurm script 
     job = SLURMJob(
@@ -951,7 +958,39 @@ def feed_jobs(
         
     logging.info("\nDuration elapsed!")
 
-from roux.lib.dict import contains_keys
+def pre_cfg_run(
+    cfg_run,
+    script_type=None,
+    ):
+    # cfg_run={}
+    outps={}
+    for step in cfg_run:
+        sp=cfg_run[step]['kws_run']['script_path']
+        if isinstance(sp,dict):
+            if script_type is None:
+                st=list(sp.keys())[0]
+            sp=sp[st]
+            assert isinstance(sp,str), sp
+            del st
+            cfg_run[step]['kws_run']['script_path']=sp
+        assert isinstance(cfg_run[step]['kws_run']['script_path'],str), cfg_run[step]['kws_run']['script_path']
+        outp=cfg_run[step]['pms_run']['output_path']
+        if outp in outps:
+            # dup
+            if cfg_run[step]['pms_run']==outps[outp]:
+                # exact dup
+                pass
+            else:
+                raise ValueError(f"found same output for two tasks: {step} {cfg_run[step]['pms_run']} {outps[outp]}")
+        outps[outp]=cfg_run[step]['pms_run']
+
+    ## assert no dups
+    outps=list(outps.keys())
+    from collections import Counter
+    assert len(outps)==len(set(outps)), Counter(outps)
+
+    return cfg_run
+
 ## wrapper
 def run_tasks(
     script_path: str, ## preffix
@@ -1044,18 +1083,16 @@ def run_tasks(
         # recurse
         cfg_run=read_dict(script_path)
         del script_path
+        
+        cfg_run=pre_cfg_run(
+            cfg_run,
+            script_type=script_type,
+            )
+        
         dfs_run={}
-        for step in cfg_run:
-            logging.processing(step)
+        for step in tqdm(cfg_run):
+            logging.processing(step)    
             
-            sp=cfg_run[step]['kws_run']['script_path']
-            if isinstance(sp,dict):
-                if script_type is None:
-                    st=list(sp.keys())[0]
-                sp=sp[st]
-                assert isinstance(sp,str), sp
-                del st
-                
             dfs_run[step]=run_tasks(
                 params=cfg_run[step]['pms_run'],
                 **{
@@ -1074,9 +1111,9 @@ def run_tasks(
                         
                     ),
                     **cfg_run[step]['kws_run'],
-                    **dict(
-                        script_path=sp
-                    )
+                    # **dict(
+                    #     script_path=sp
+                    # )
                     },
                 )
             if not simulate:
@@ -1085,7 +1122,6 @@ def run_tasks(
                     time.sleep(2)
             else:
                 test_params([cfg_run[step]['pms_run']])            
-            del sp
             
         return pd.concat(dfs_run)
         
@@ -1129,6 +1165,7 @@ def run_tasks(
     if wd_path is None:
         wd_path=os.getcwd()
     cache_dir_path=f"{wd_path}/{cache_dir_path}"
+    Path(cache_dir_path).mkdir(parents=True, exist_ok=True)
 
     if runner=='slurm':
         logging.launching("jobs ..",n=min([cpus,5]))
@@ -1189,13 +1226,17 @@ def run_tasks(
     params_jobs={}
     job_ids=[]
             
-    for pms in tqdm(params):
-        key=encode(
-            pms,#['output_path']
-            short=True,
+    for pms in tqdm(params):  
+        log_dir_path=pre_task(
+            pms,
         )
         
-        sbatch_path=f"{cache_dir_path}/{key}.sh"
+        # key=encode(
+        #     pms,#['output_path']
+        #     short=True,
+        # )
+        # sbatch_path=f"{cache_dir_path}/{key}.sh"
+        sbatch_path=f"{log_dir_path}/run.sh"
         
         if not Path(sbatch_path).exists() or force_setup:
             if runner!='slurm':
@@ -1205,6 +1246,7 @@ def run_tasks(
             to_sbatch_script(
                 sbatch_path=sbatch_path,
                 pms=pms,
+                log_dir_path=log_dir_path,
                 **kws_runner,
             )
     
@@ -1219,7 +1261,7 @@ def run_tasks(
             
         if runner!='slurm':
             coms.append(
-                f"bash {sbatch_path} &> {Path(sbatch_path).with_suffix('').as_posix()}/stdout",
+                f"bash {sbatch_path} &> {log_dir_path}/stdout",
             )
         
         sbatch_paths.append(sbatch_path)
@@ -1241,18 +1283,17 @@ def run_tasks(
             with Pool(processes=cpus_bash) as pool:
                 pool.map(run_com, coms)
         
-    params_jobs_path=f"{cache_dir_path}/{encode(params_jobs,short=True)}.yaml"
-    
-    to_dict(
-        params_jobs,
-        params_jobs_path,
-    )
+    # logging.saving(f"params_jobs_path={params_jobs_path}")
+    # params_jobs_path=f"{cache_dir_path}/{encode(params_jobs,short=True)}.yaml"    
+    # to_dict(
+    #     params_jobs,
+    #     params_jobs_path,
+    # )
     
     # logging.info("jobs submitted.")
     if runner=='slurm':
         logging.info(get_sq())  
         
-    logging.saving(f"params_jobs_path={params_jobs_path}")
         
     # logging.saving('outputs.')
     logging.done('processing.',time=_time)

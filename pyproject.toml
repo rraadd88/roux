@@ -58,37 +58,37 @@ workflow = [
     "removestar",
 ]
 
-## union (perhaps would be made default)
-all = [
-## interactive = [
-    "ipywidgets",
-    "ipykernel",
-    # "watermark", # session info
-## ]
-## data = [
-    "openpyxl", # special io
-## ]
-## fast = [
-    "pyarrow", # fast
-## ]
-## stat = [
-    "scipy>=1.1.0",
-    "statsmodels",
-    "networkx",
-    "scikit-learn",
-##        ]
-## viz = [
-    "altair",
-##       ]
-## workflow = [
-    "omegaconf",
-    "papermill",
-    "argh",
-    "ruff",
-    "nbconvert",
-    "removestar",
-## ]    
-]
+# ## union (perhaps would be made default)
+# all = [
+# ## interactive = [
+#     "ipywidgets",
+#     "ipykernel",
+#     # "watermark", # session info
+# ## ]
+# ## data = [
+#     "openpyxl", # special io
+# ## ]
+# ## fast = [
+#     "pyarrow", # fast
+# ## ]
+# ## stat = [
+#     "scipy>=1.1.0",
+#     "statsmodels",
+#     "networkx",
+#     "scikit-learn",
+# ##        ]
+# ## viz = [
+#     "altair",
+# ##       ]
+# ## workflow = [
+#     "omegaconf",
+#     "papermill",
+#     "argh",
+#     "ruff",
+#     "nbconvert",
+#     "removestar",
+# ## ]    
+# ]
 
 ## development and maintenance
 dev = [
@@ -109,8 +109,8 @@ lint = [
   "ruff"
 ]
 
-[project.scripts]
-roux = "roux.run:parser.dispatch"
+[tool.uv]
+default-groups = "all"
 
 [tool.black]
 experimental-string-processing = true
@@ -120,7 +120,5 @@ skip-string-normalization = true
 [tool.isort]
 profile = "black"
 
-[dependency-groups]
-dev = [
-    "ipykernel>=6.16.2",
-]
+[project.scripts]
+roux = "roux.run:parser.dispatch"

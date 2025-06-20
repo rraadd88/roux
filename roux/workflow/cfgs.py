@@ -397,14 +397,20 @@ def to_cfg_run_arc(
         # assert list(ins.keys())[0]==arc_name    
         
         step_name=list(ins[arc_name].keys())[0]
+        
         ## output_path
+        ### frame 
         ins[arc_name][step_name]={
-            'main':{
-                'pms_run':{
-                    
+            **{
+                'main':{
+                    'pms_run':{
+                        
+                    }
                 }
-            }
+            },
+            **ins[arc_name][step_name]
         }
+        # print(ins)
         ins[arc_name][step_name]['main']['pms_run']['output_path']=f"{Path(cfg_arc[step_name]['main']['pms_run']['output_path']).with_suffix('')}_Mod_{mod_name}.yaml"
         
         # break

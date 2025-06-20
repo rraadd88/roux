@@ -127,10 +127,13 @@ def read_ps(
             from roux.lib.str import get_suffix
 
             d0 = ds1.iloc[[0, -1]].to_dict()
+            log_str=f"total {len(ds1)}:"
             for k_, k, v in zip(
                 ["oldest", "latest"], get_suffix(*d0.keys(), common=False), d0.values()
             ):
-                logging.info(f"{k_}: {k}\t{v}")
+                log_str+=f"\t {k_}: {k}\t{v}"
+            logging.info(log_str)
+                
         elif len(ds1) == 0:
             if errors in ['raise', True]:
                 logging.error("paths do not exist.")
