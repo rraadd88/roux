@@ -48,6 +48,6 @@ def test_params(
     print_parameters(params[i])
 
     ## tests
-    if 'input_path' in params[i] and Path(params[i]['input_path']).is_file():
+    if 'input_path' in params[i] and isinstance(params[i]['input_path'],str) and Path(params[i]['input_path']).is_file():
         if not Path(params[i]['input_path']).exists():
             logging.warning(f"not found: {params[i]['input_path']}")

@@ -129,7 +129,7 @@ def pre_params(
     # --- Final assertions ---
     assert len(set([d["output_path"] for d in param_list])) == len(param_list), \
         "Duplicate output_path found in params."
-    assert all([Path(d["input_path"]) != Path(d["output_path"]) for d in param_list]), \
+    assert all([Path(d["input_path"]) != Path(d["output_path"]) if isinstance(d["input_path"],str) else True for d in param_list]), \
         "Some input_path == output_path in params."
 
     return param_list
@@ -958,7 +958,6 @@ def feed_jobs(
         
     logging.info("\nDuration elapsed!")
 
-<<<<<<< HEAD
 def pre_cfg_run(
     cfg_run,
     script_type=None,
@@ -992,8 +991,6 @@ def pre_cfg_run(
 
     return cfg_run
 
-=======
->>>>>>> 98465d273530120713e447051c53640edb32a883
 ## wrapper
 def run_tasks(
     script_path: str, ## preffix
