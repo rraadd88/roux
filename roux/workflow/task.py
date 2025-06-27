@@ -129,7 +129,7 @@ def pre_params(
     # --- Final assertions ---
     assert len(set([d["output_path"] for d in param_list])) == len(param_list), \
         "Duplicate output_path found in params."
-    assert all([Path(d["input_path"]) != Path(d["output_path"]) for d in param_list]), \
+    assert all([Path(d["input_path"]) != Path(d["output_path"]) if isinstance(d["input_path"],str) else True for d in param_list]), \
         "Some input_path == output_path in params."
 
     return param_list
@@ -254,7 +254,7 @@ def run_tasks_nb(
     
     ## back.c.
     input_notebook_path: str=None, 
-    # parameters_list=None, # same as params
+    parameters_list=None, # same as params
     fast: bool = None, ## to be deprecated
     fast_workers: int = None, ## to be deprecated
     
@@ -299,11 +299,13 @@ def run_tasks_nb(
         logging.warning("input_notebook_path will be deprec.")    
         del input_notebook_path
     assert exists(script_path), script_path
-    
-    # assert not (params is not None and parameters_list is not None)
-    # if params is not None and parameters_list is None:
-    #     parameters_list=params
-    #     del params
+
+    if len(params)==0:
+        params=None
+    assert not (params is not None and parameters_list is not None), (params,parameters_list)
+    if params is None and parameters_list is not None:
+        params=parameters_list
+        del parameters_list
 
     # if test:
     #     force = True
@@ -958,7 +960,6 @@ def feed_jobs(
         
     logging.info("\nDuration elapsed!")
 
-<<<<<<< HEAD
 def pre_cfg_run(
     cfg_run,
     script_type=None,
@@ -992,8 +993,6 @@ def pre_cfg_run(
 
     return cfg_run
 
-=======
->>>>>>> 98465d273530120713e447051c53640edb32a883
 ## wrapper
 def run_tasks(
     script_path: str, ## preffix
