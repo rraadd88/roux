@@ -110,7 +110,7 @@ lint = [
 ]
 
 [tool.uv]
-default-groups = "all"
+default-groups = ["all"]
 
 [tool.black]
 experimental-string-processing = true

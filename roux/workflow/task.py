@@ -62,7 +62,6 @@ def pre_params(
     """
     # --- Handle input formats and output path inference ---
     param_list = params
-
     if param_list is None and inputs is not None and output_path_base is not None:
         from roux.lib.sys import to_output_paths
         param_list = to_output_paths(
@@ -597,7 +596,7 @@ def get_jobsn(
     lines = get_sq(
         user=user,
     ).splitlines()
-    lines=[s for s in lines if "spawner-jupyte" not in s]
+    lines=[s for s in lines if  not any([k in s for k in ['JOBID',"spawner-jupyte"]])]
     if verbose:
         print(len(lines),lines)
     return len(lines)
@@ -721,6 +720,45 @@ def has_slurm(
     ):
     return run_com('sbatch --help',returncodes=[0,1,127],verbose=False)!=''
 
+def load_module(
+    m,
+    validate=True,
+    ):
+    import os
+    import subprocess
+    if isinstance(m,list):
+        for m_ in m:
+            load_module(
+            m_,
+            validate=validate,
+            )
+        return 
+        
+    # Load the module and modify the current environment
+    # load_module_command = f"source $(realpath ~/.bashrc) && module load {m}"
+    load_module_command = f"module load {m} && env"
+    logging.info(load_module_command)
+    result = subprocess.run(
+        load_module_command,
+        shell=True,
+        executable="/bin/bash",
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        text=True,
+        check=True,
+    )
+
+    # Parse the output and set environment variables
+    if result.returncode == 0:
+        for line in result.stdout.splitlines():
+            if "=" in line:
+                key, value = line.split("=", 1)
+                os.environ[key] = value
+
+    if validate: 
+        # Verify samtools is accessible
+        os.system(f"{m} --version")
+
 def infer_runner(
     runner=None,
     script_type=None,
@@ -728,9 +766,8 @@ def infer_runner(
     runner_in=runner
     del runner
     
-    if runner_in=='slurm':
-        if not has_slurm():
-            runner='bash'
+    if runner_in=='slurm' and not has_slurm():
+        runner='bash'
     elif runner_in is None:
         from roux.lib.sys import is_interactive_notebook
         if script_type in ['ipynb'] and is_interactive_notebook():
@@ -955,7 +992,7 @@ def feed_jobs(
                     logging.status("\nall jobs processed!")
                     break
 
-        logging.status(f"{get_jobsn()} jobs are still running, waiting for {interval}s and jobs <= {jobs*feed_if_jobs_max} ..")
+        logging.status(f"{get_jobsn()} job/s are still running, waiting for {interval}s and jobs <= {jobs*feed_if_jobs_max} ..")
         time.sleep(interval.total_seconds())
         
     logging.info("\nDuration elapsed!")
@@ -1175,51 +1212,52 @@ def run_tasks(
     logging.processing(f"on {runner}, {cpus} at a time ..",n=min([cpus,5]))
     
     coms=[]
-    if runner in ['slurm','bash']:
-        ## recursive
-        assert isinstance(cpus,int), cpus
-        
-        kws_runner={
-            **dict(
-                script_path= script_path, #, ## preffix
-                script_pre= script_pre, #='', ## e.g. micromamba run -n env
-
-                append_header=slurm_header,                       
-            ),
-            **kws_runner,
-            **slurm_kws,
-        }
-
-        
-        ## each round feed cpus jobs from run_tasks
-        # from random import shuffle
-        # shuffle(params)
-        if isinstance(params,dict):
-            job_keys_tried=get_tried_job_keys(
-                cache_dir_path
-            )
-            logging.info(f"found {len(job_keys_tried)} tried jobs, they will be deprioritized.")
-            params={
-                **{k:d for k,d in params.items() if k not in job_keys_tried},
-                **{k:d for k,d in params.items() if k in job_keys_tried},
-            }
-        if not simulate:
-            if runner in ['slurm']:
-                feed_jobs(
-                    com=params, ## all
-                    jobs=cpus, ## feed each time
-                    # user=user,
-                    feed_duration=feed_duration,
-                    feed_interval=feed_interval,
-                    feed_if_jobs_max=feed_if_jobs_max,
-                    
-                    force= force, #=False,
-                    test= test, #=False,
+    # if runner in ['slurm','bash']:
+    ## recursive
+    assert isinstance(cpus,int), cpus
     
-                    kws_runner=kws_runner,
-                )
+    kws_runner={
+        **dict(
+            script_path= script_path, #, ## preffix
+            script_pre= script_pre, #='', ## e.g. micromamba run -n env
+
+            append_header=slurm_header,                       
+        ),
+        **kws_runner,
+        **slurm_kws,
+    }
+
+    
+    ## feed
+    ## each round feed cpus jobs from run_tasks
+    # from random import shuffle
+    # shuffle(params)
+    # if isinstance(params,dict):
+    #     job_keys_tried=get_tried_job_keys(
+    #         cache_dir_path
+    #     )
+    #     logging.info(f"found {len(job_keys_tried)} tried jobs, they will be deprioritized.")
+    #     params={
+    #         **{k:d for k,d in params.items() if k not in job_keys_tried},
+    #         **{k:d for k,d in params.items() if k in job_keys_tried},
+    #     }
+    # if not simulate:
+    #     if runner in ['slurm']:
+    #         feed_jobs(
+    #             com=params, ## all
+    #             jobs=cpus, ## feed each time
+    #             # user=user,
+    #             feed_duration=feed_duration,
+    #             feed_interval=feed_interval,
+    #             feed_if_jobs_max=feed_if_jobs_max,
                 
-                return
+    #             force= force, #=False,
+    #             test= test, #=False,
+
+    #             kws_runner=kws_runner,
+    #         )
+            
+    #         return
 
     if runner=='slurm':
         logging.status("q.ing jobs.. ")
@@ -1227,7 +1265,8 @@ def run_tasks(
     sbatch_paths=[]
     params_jobs={}
     job_ids=[]
-            
+
+    _logged=False    
     for pms in tqdm(params):  
         log_dir_path=pre_task(
             pms,
@@ -1240,9 +1279,11 @@ def run_tasks(
         # sbatch_path=f"{cache_dir_path}/{key}.sh"
         sbatch_path=f"{log_dir_path}/run.sh"
         
+        logging.info(runner)
         if not Path(sbatch_path).exists() or force_setup:
-            if runner!='slurm':
+            if runner!='slurm' and not _logged:
                 logging.warning("forcing setup (re-rewiting the sbatch scripts)..")
+                _logged=True
             # job=
             # if not simulate:
             to_sbatch_script(
@@ -1251,6 +1292,7 @@ def run_tasks(
                 log_dir_path=log_dir_path,
                 **kws_runner,
             )
+        logging.info(runner)
     
         if runner=='slurm':
             if not simulate:
@@ -1260,7 +1302,7 @@ def run_tasks(
                         sbatch_path
                     )
                 )
-            
+        logging.info(runner)
         if runner!='slurm':
             coms.append(
                 f"bash {sbatch_path} &> {log_dir_path}/stdout",
