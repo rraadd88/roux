@@ -611,7 +611,10 @@ def is_q_empty(
         verbose=verbose,    
     ) == 0  # No jobs, just the header
 
-def submit_job(p):
+def submit_job(
+    p,
+    verbose=False,
+    ):
     """Submit a SLURM job using sbatch."""
     job_name=f"roux:{Path(p).stem}"
     if job_name in get_sq():
@@ -619,18 +622,23 @@ def submit_job(p):
         return 
     
     com = f'sbatch {p}'
-    res=run_com(com)
+    res=run_com(
+        com,
+        verbose=verbose,
+        )
     # Submitted batch job 3325831
     job_id=res.rsplit(' ')[-1]
-    logging.info(f"job_id={job_id}")
+    if verbose:
+        logging.info(f"job_id={job_id}")
     return job_id
 
 class SLURMJob:
     def __init__(
         self, 
-        job_name, 
         log_path, 
         
+        job_name=None, 
+
         mem="4G", 
         cpus=4, 
         time="01:00:00", 
@@ -666,6 +674,7 @@ class SLURMJob:
         modules=None,
         packages=None,
         
+        verbose=False,
         ):
         """Generate the SLURM script"""
         
@@ -673,6 +682,15 @@ class SLURMJob:
         
         # if outp is None and not com is None:
         #     outp=f".slurm/{encode(com)}.sh"
+        if self.job_name is None:
+            try:
+                self.job_name='/'.join(s.rsplit('/',3)[-3:-1])
+            except Exception as e:
+                if verbose:
+                    logging.error(e)
+                self.job_name=outp
+        self.job_name=f"roux:{self.job_name}"
+
         modules_load_str=''
         packages_install_str=''
         
@@ -720,6 +738,51 @@ def has_slurm(
     ):
     return run_com('sbatch --help',returncodes=[0,1,127],verbose=False)!=''
 
+def check_tasks(
+    state='COMPLETED',
+    job_name_expr="",
+    query_expr='| tail -n 3',
+    eff=False,
+    ):
+    cols=['JobID','State','Elapsed','End','JobName']
+    com=f"sacct -u $USER --format={','.join(cols)}%200 | grep '.*{state}.*roux:.*{job_name_expr}.*' {query_expr}"
+    txt=run_com(
+        com,
+        # text=True,
+        verbose=True,
+        )
+    from io import StringIO
+    df_sacct=(
+        pd.read_fwf(
+            StringIO(txt),
+            header=None,
+            names=cols,
+        )
+        .rename(
+            columns={'JobID':'Job ID'},
+        )
+        )
+    if not eff:
+        return df_sacct.set_index('Job ID').to_string()
+    
+    ds_seff=df_sacct['Job ID'].apply(lambda x: run_com(f"seff {x}"))
+    df_seff=ds_seff.apply(lambda x: {s.split(': ')[0]:s.split(': ')[1] for s in x.split('\n') if ': ' in s} if x.startswith('Job ID') else {}).apply(pd.Series)
+    
+    ## clean
+    for c in ['Cluster','User/Group','State','Job Wall-clock time','Nodes','Cores per node','CPU Utilized','Memory Utilized','State']:
+        if c in df_seff:
+            df_seff=df_seff.drop([c],axis=1)
+    
+    return (
+        df_seff.astype({'Job ID':int})
+        .merge(
+            right=df_sacct.astype({'Job ID':int}),
+            how='right',
+            on='Job ID',
+            validate="1:1",
+        ).set_index('Job ID').to_string()
+    )    
+    
 def load_module(
     m,
     validate=True,
@@ -866,7 +929,6 @@ def to_sbatch_script(
 
     # write the slurm script 
     job = SLURMJob(
-        job_name=f"roux:{Path(sbatch_path).stem}",
         log_path=log_dir_path,
 
         # mem=mem,#"4G",
@@ -937,6 +999,8 @@ def feed_jobs(
     force=False,
     
     kws_runner={},
+
+    verbose=False,
 ):
     """Monitor SLURM queue and submit new jobs when queue is empty."""        
     duration = parse_time(feed_duration)
@@ -975,7 +1039,8 @@ def feed_jobs(
                             
                         else:
                             run_com(
-                                com
+                                com,
+                                verbose=verbose,
                             )
                     continue
             
@@ -1279,7 +1344,7 @@ def run_tasks(
         # sbatch_path=f"{cache_dir_path}/{key}.sh"
         sbatch_path=f"{log_dir_path}/run.sh"
         
-        logging.info(runner)
+        # logging.info(runner)
         if not Path(sbatch_path).exists() or force_setup:
             if runner!='slurm' and not _logged:
                 logging.warning("forcing setup (re-rewiting the sbatch scripts)..")
@@ -1292,7 +1357,7 @@ def run_tasks(
                 log_dir_path=log_dir_path,
                 **kws_runner,
             )
-        logging.info(runner)
+        # logging.info(runner)
     
         if runner=='slurm':
             if not simulate:
@@ -1302,7 +1367,7 @@ def run_tasks(
                         sbatch_path
                     )
                 )
-        logging.info(runner)
+        # logging.info(runner)
         if runner!='slurm':
             coms.append(
                 f"bash {sbatch_path} &> {log_dir_path}/stdout",
