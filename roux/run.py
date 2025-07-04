@@ -18,7 +18,7 @@ from roux.workflow.task import (
     # run_task, 
     run_tasks ## preferred because it infers setup for the outputs
 )
-from roux.workflow.task import check_tasks 
+from roux.workflow.task import check_tasks, post_tasks
 from roux.workflow.nb import to_clear_unused_cells, to_clear_outputs
 from roux.workflow.cfgs import read_config, read_metadata, to_cfg_run_arc
 
@@ -101,6 +101,7 @@ parser.add_commands(
             run_tasks,
             ## slurm
             check_tasks,
+            post_tasks,
         ## notebook
         ### pre-processing        
             to_nb_kernel,

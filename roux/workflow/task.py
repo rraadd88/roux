@@ -9,7 +9,7 @@ logging = Logger() # level='INFO'
     # logging.basicConfig(level='INFO', force=True)
 
 ## internal
-from roux.lib.io import read_dict, to_dict
+from roux.lib.io import read_dict, to_dict, read_ps
 from roux.workflow.log import test_params
 
 from pathlib import Path
@@ -716,7 +716,9 @@ f"""#!/bin/bash
 #SBATCH --ntasks={self.ntasks}
 #SBATCH --cpus-per-task={self.cpus}
 #SBATCH --mem={self.mem}
-{self.append_header}
+
+## overriding settings (--slurm-header)
+{self.append_header.replace(' #SBATCH','\n#SBATCH')}
 
 {job_pre}
 
@@ -981,7 +983,6 @@ def parse_time(duration_str):
 def get_tried_job_keys(
     cache_dir_path, #'.roux/'
     ):
-    from roux.lib.io import read_ps
     return list(set([Path(p).parent.parent.stem for p in read_ps(f'{cache_dir_path}/*/logs/*.out')]))
 
 def feed_jobs(
@@ -1409,3 +1410,41 @@ def run_tasks(
 
     ## uniform output
     return pd.Series(params_jobs).to_frame('params')['params']#.apply(pd.Series)
+
+def post_tasks(
+    ind,
+    outp=None,
+
+    clean=True,
+
+    simulate=False,
+    validate= False,
+    verbose=True,
+    ):
+    """
+    Notes:
+        Count files:
+        
+            for d in */; do if [ -d "$d" ]; then echo $d": "$(find $d | wc -l) ;fi;done
+    """
+    if outp is None:
+        # from roux.lib.sys import get_datetime
+        outp=f'.roux/post_tasks_{get_datetime()}.zip'
+
+    outd=Path(outp).parent.mkdir(parents=True,exist_ok=True)
+
+    if clean:
+        if validate:
+            read_ps(ind,tree_depth=3)
+        
+        com=f"find {ind} -type f \( -name '*.ipynb' -o -name '*.out'  -o -name '*.err' -o -name '*.log' -o -name 'run.sh' \) "
+        if simulate:
+            print(run_com(com))
+        else:
+            com+=f"-print0 | xargs -0 zip -m -q {outp}"
+            print(run_com(com))
+
+        if validate:
+            read_ps(ind,tree_depth=3)
+
+    return outp
