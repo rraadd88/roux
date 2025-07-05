@@ -136,10 +136,19 @@ def pre_params(
 
 def pre_task(
     pms,
+    test=False,
 ):
     if isinstance(pms,list):
         assert len(pms)==1, pms
-    log_dir_path=f"{Path(pms['output_path']).with_suffix('').as_posix()}_logs/{get_datetime()}"
+
+    log_dir_path_=f"{Path(pms['output_path']).with_suffix('').as_posix()}_logs"
+
+    if test:
+        log_dir_path=f"{log_dir_path_}/{get_datetime()}"
+    else:
+        import tempfile    
+        log_dir_path=tempfile.mkdtemp(prefix=get_datetime())
+
     to_dict(
         pms,
         f"{log_dir_path}/pms.yaml"
@@ -155,6 +164,7 @@ def run_task_nb(
     start_timeout: int = 600,
     verbose=False,
     force=False,
+    test=True,
     **kws_papermill,
 ) -> str:
     """
@@ -181,6 +191,7 @@ def run_task_nb(
 
     log_dir_path=pre_task(
         parameters,
+        test=test,
     )
     if not output_notebook_path:
         ## save report i.e. output notebook
@@ -1142,7 +1153,7 @@ def run_tasks(
     
     test1 : bool =False,
     testn : int =None,
-    test : bool =False,
+    test : bool =False, ## saves more log files
     test_cpus: int = 3, 
 
     **kws_runner,
@@ -1162,8 +1173,11 @@ def run_tasks(
             feed_duration = '99h',
             feed_interval = '1s',
             feed_if_jobs_max = 0.5,    
-    """
-    
+    """    
+    if simulate:
+        test=True
+        verbose=True
+
     ## script_path
     logging.setLevel(level=log_level)
     script_path=Path(script_path).resolve().as_posix()
@@ -1293,7 +1307,6 @@ def run_tasks(
         **slurm_kws,
     }
 
-    
     ## feed
     ## each round feed cpus jobs from run_tasks
     # from random import shuffle
@@ -1336,6 +1349,7 @@ def run_tasks(
     for pms in tqdm(params):  
         log_dir_path=pre_task(
             pms,
+            test=test,
         )
         
         # key=encode(
