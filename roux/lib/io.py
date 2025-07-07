@@ -151,9 +151,24 @@ def to_zip(
 
 def to_arxv(
     ind,
+    outp=None,
     verbose=True,
     force=False,
+    wait=True,
+    simulate=False,
     ):
+    """
+    Notes:
+        # test reversibility
+        tree tests/input/
+        tar --remove-files -czf tests/input/roux_workflow_cfgs.tar.gz tests/input/roux_workflow_cfgs
+        tree tests/input/
+        tar -xzf tests/input/roux_workflow_cfgs.tar.gz && rm tests/input/roux_workflow_cfgs.tar.gz
+        tree tests/input/    
+    """
+    if simulate:
+        verbose=True
+
     if len(read_ps(ind,verbose=verbose))>1:
         ## recurse
         outps={}
@@ -168,28 +183,41 @@ def to_arxv(
         ind=Path(ind).with_suffix('').as_posix()
         if verbose:
             logging.warning(f"archiving sub.dir. instead: {ind}")        
-    if Path(ind).exists():
-        ## test reversibility
-        # tree tests/input/
-        # tar --remove-files -czf tests/input/roux_workflow_cfgs.tar.gz tests/input/roux_workflow_cfgs
-        # tree tests/input/
-        # tar -xzf tests/input/roux_workflow_cfgs.tar.gz && rm tests/input/roux_workflow_cfgs.tar.gz
-        # tree tests/input/
+    if not Path(ind).exists():
+        logging.error(f"not found: {ind}")
+        return 
 
-        ## low priority
-        # nice -n 10 ionice -c2 -n7 
+    if outp is None:
         outp=f"{ind}.tar.gz"
-        if not Path(force).exists() or force:
+    ## low priority
+    com=''
+    if not wait:
+        com+="nice -n 10 ionice -c2 -n7 "
+    com+=f" tar --remove-files -czf {outp} {ind} &"
+
+    if verbose:
+        logging.info(com)
+
+    if not simulate:
+        if not Path(outp).exists() or force:
             from roux.lib.sys import run_com
             run_com(
-                f"tar --remove-files -czf {outp} {ind} &",
+                com,
                 verbose=verbose,
+                wait=wait, # do not wait for the process to finish
                 )
+        if wait:
+            assert Path(outp).exists(), outp
     return outp
 
 def read_arxv(
     p, # path to the file in arxv
     tree_depth=3, ## search the root arxv upto
+
+    ap=None,
+
+    outd=None, ## base of output dir. path
+
     verbose=True,
     force=False,
     **kws_extract,
@@ -197,26 +225,33 @@ def read_arxv(
     """
     Read (from) archive. 
     """
+    if p.startswith('../'):
+        assert p.count('../')==1, p
     p=Path(p).as_posix()
     if Path(p).exists() and not force:
         return p
-    # find root arxv
-    for i in range(1,tree_depth+1):
-        ap=f"{p.rsplit('/',i)[0]}.tar.gz"
-        if Path(ap).exists():
-            if verbose:
-                logging.info(f"root arxv: {ap}")
-            break
+    if ap is None:
+        # find root arxv
+        for i in range(1,tree_depth+1):
+            ap=f"{p.rsplit('/',i)[0]}.tar.gz"
+            if Path(ap).exists():
+                if verbose:
+                    logging.info(f"root arxv: {ap}")
+                break
     # read from the arxv    
     import tarfile
     with tarfile.open(ap,'r') as tar:
         ps=tar.getnames()
         if verbose:
-            logging.info(ps)
+            logging.info(ps if len(ps)<10 else len(ps))
 
-        assert p in ps, ps
+        assert p.split('../')[-1] in ps, ps
     # with tarfile.open(ap,'r') as tar:    
-        outp=tar.extractall(path='.', members=[p], **kws_extract)
+        outp=tar.extractall(
+            path=outd if outd is not None else '../' if p.startswith('../') else '.',
+            members=[p.split('../')[-1]],
+            **kws_extract
+            )
     assert Path(p).exists(), p
     return p
 

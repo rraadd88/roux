@@ -693,7 +693,7 @@ class SLURMJob:
         ):
         
         self.job_name = job_name
-        self.output = log_path
+        self.log_path = log_path
         
         self.time = time
         self.cpus = cpus
@@ -754,8 +754,8 @@ class SLURMJob:
 #SBATCH --partition={self.partition}
 f"""#!/bin/bash
 #SBATCH --job-name={self.job_name}
-#SBATCH --err={self.output}/%j.err
-#SBATCH --output={self.output}/%j.out                
+#SBATCH --err={self.log_path}/%j.err
+#SBATCH --output={self.log_path}/%j.out                
 #SBATCH --time={self.time}
 #SBATCH --ntasks={self.ntasks}
 #SBATCH --cpus-per-task={self.cpus}
@@ -773,7 +773,12 @@ f"""#!/bin/bash
 """)
             for command in self.commands:
                 f.write(f"{command}\n")
-                
+            f.write(
+f"""
+## archive the subdir (if job completed)
+roux post-tasks -p {self.log_path}/pms.yaml --arxv
+"""
+            )
             # f.write("exit(0)\n")
             
     def submit(self, outp):
@@ -1469,11 +1474,11 @@ def run_tasks(
 def post_tasks(
     params=None,
 
+    arxv=False,
+    clean=False, ## remove logs
+
     ind=None,
     outp=None,
-
-    clean=True,
-    compress=False,
 
     simulate=False,
     validate= False,
@@ -1508,14 +1513,23 @@ def post_tasks(
         if validate:
             read_ps(ind,tree_depth=3)
 
-    if compress:
+    if arxv:
         assert params is not None
         params=pre_params(
             params,
             flt_output_exists=True, # completed, output exists
         )
+        from roux.lib.io import to_arxv
         for pms in params:
-            output_path=pms['output_path']
+            to_arxv(
+                pms['output_path'],
+                outp=None,
+                simulate=simulate,
+                verbose=verbose,
+                force=False,
+                wait=False,
+            )
+            if simulate:
+                break
 
-
-    return outp
+        # return outp
