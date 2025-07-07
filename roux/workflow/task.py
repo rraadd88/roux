@@ -9,7 +9,6 @@ logging = Logger() # level='INFO'
     # logging.basicConfig(level='INFO', force=True)
 
 from pathlib import Path
-import tempfile    
 
 ## internal
 from roux.lib.io import read_dict, to_dict, read_ps
@@ -802,7 +801,7 @@ def check_tasks(
         # text=True,
         verbose=True,
         )
-    if not '\n' in txt:
+    if '\n' not in txt:
         logging.warning(f"no output from {com}")
         return None
     from io import StringIO
