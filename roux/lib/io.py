@@ -149,6 +149,77 @@ def to_zip(
         ]
         return to_zip_dir(outd + "/", destination=outp, fmt=fmt)
 
+def to_arxv(
+    ind,
+    verbose=True,
+    force=False,
+    ):
+    if len(read_ps(ind,verbose=verbose))>1:
+        ## recurse
+        outps={}
+        for p_ in read_ps(ind,verbose=False):
+            outps[p_]=to_arxv(
+                p_,
+                verbose=verbose,
+                )
+        return outps
+
+    if Path(ind).is_file() and Path(ind).exists():
+        ind=Path(ind).with_suffix('').as_posix()
+        if verbose:
+            logging.warning(f"archiving sub.dir. instead: {ind}")        
+    if Path(ind).exists():
+        ## test reversibility
+        # tree tests/input/
+        # tar --remove-files -czf tests/input/roux_workflow_cfgs.tar.gz tests/input/roux_workflow_cfgs
+        # tree tests/input/
+        # tar -xzf tests/input/roux_workflow_cfgs.tar.gz && rm tests/input/roux_workflow_cfgs.tar.gz
+        # tree tests/input/
+
+        ## low priority
+        # nice -n 10 ionice -c2 -n7 
+        outp=f"{ind}.tar.gz"
+        if not Path(force).exists() or force:
+            from roux.lib.sys import run_com
+            run_com(
+                f"tar --remove-files -czf {outp} {ind} &",
+                verbose=verbose,
+                )
+    return outp
+
+def read_arxv(
+    p, # path to the file in arxv
+    tree_depth=3, ## search the root arxv upto
+    verbose=True,
+    force=False,
+    **kws_extract,
+    ):
+    """
+    Read (from) archive. 
+    """
+    p=Path(p).as_posix()
+    if Path(p).exists() and not force:
+        return p
+    # find root arxv
+    for i in range(1,tree_depth+1):
+        ap=f"{p.rsplit('/',i)[0]}.tar.gz"
+        if Path(ap).exists():
+            if verbose:
+                logging.info(f"root arxv: {ap}")
+            break
+    # read from the arxv    
+    import tarfile
+    with tarfile.open(ap,'r') as tar:
+        ps=tar.getnames()
+        if verbose:
+            logging.info(ps)
+
+        assert p in ps, ps
+    # with tarfile.open(ap,'r') as tar:    
+        outp=tar.extractall(path='.', members=[p], **kws_extract)
+    assert Path(p).exists(), p
+    return p
+
 def to_copy(
     paths: dict,
     flatten=False,
@@ -416,6 +487,8 @@ def is_dict(p):
     return p.endswith((".yml", ".yaml", ".json", ".joblib", ".pickle"))
 def is_table(p):
     return p.endswith((".tsv", ".csv", ".pqt", ".parquet",))
+
+## meta
 def is_data(p):
     return is_dict(p) or is_table(p)     
 def read_data(p,**kws):

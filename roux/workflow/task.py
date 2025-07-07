@@ -53,6 +53,7 @@ def pre_params(
     inputs=None,
     output_path_base=None,
     flt_input_exists=False,
+    flt_output_exists=False,
     verbose=False,
     force=False,
     test1: bool = False,
@@ -106,11 +107,22 @@ def pre_params(
 
     # --- Filtering by output existence, as in flt_params ---
     before = len(param_list)
-    param_list = [
-        d
-        for d in param_list
-        if (force if force else not Path(d["output_path"]).exists())
-    ]
+
+    if flt_output_exists:
+        print(len(param_list),end='->')
+        param_list = [
+            d
+            for d in param_list
+            if Path(d["output_path"]).exists()
+        ]
+        print(len(param_list))
+    else:
+        param_list = [
+            d
+            for d in param_list
+            if (force if force else not Path(d["output_path"]).exists())
+        ]
+
     if flt_input_exists:
         print(len(param_list),end='->')
         param_list = [
@@ -120,6 +132,7 @@ def pre_params(
         ]
         print(len(param_list))
 
+    
     if not force:
         if before - len(param_list) != 0:
             logging.info(
@@ -1454,10 +1467,13 @@ def run_tasks(
     return pd.Series(params_jobs).to_frame('params')['params']#.apply(pd.Series)
 
 def post_tasks(
-    ind,
+    params=None,
+
+    ind=None,
     outp=None,
 
     clean=True,
+    compress=False,
 
     simulate=False,
     validate= False,
@@ -1469,24 +1485,37 @@ def post_tasks(
         
             for d in */; do if [ -d "$d" ]; then echo $d": "$(find $d | wc -l) ;fi;done
     """
-    if outp is None:
-        # from roux.lib.sys import get_datetime
-        outp=f'.roux/post_tasks_{get_datetime()}.zip'
-
-    outd=Path(outp).parent.mkdir(parents=True,exist_ok=True)
 
     if clean:
+        assert ind is not None
+        if outp is None:
+            # from roux.lib.sys import get_datetime
+            outp=f'.roux/post_tasks_{get_datetime()}.zip'
+
+        outd=Path(outp).parent.mkdir(parents=True,exist_ok=True)
+
         if validate:
             read_ps(ind,tree_depth=3)
         
-        com=f"find {ind}"+r" -type f \( -name '*.ipynb' -o -name '*.out'  -o -name '*.err' -o -name '*.log' -o -name 'run.sh' -o -name 'pms.yaml' \) "
+        # com=f"find {ind}"+r" -type f \( -name '*.ipynb' -o -name '*.out'  -o -name '*.err' -o -name '*.log' -o -name 'run.sh' -o -name 'pms.yaml' \) "
+        com=f"find {ind}"+r" -type d -name '*_logs' "
         if simulate:
             print(run_com(com))
         else:
-            com+=f"-print0 | xargs -0 zip -m -q {outp}"
+            com+=f" -print0 | xargs -0 zip -r -m -q {outp}"
             print(run_com(com))
 
         if validate:
             read_ps(ind,tree_depth=3)
+
+    if compress:
+        assert params is not None
+        params=pre_params(
+            params,
+            flt_output_exists=True, # completed, output exists
+        )
+        for pms in params:
+            output_path=pms['output_path']
+
 
     return outp
