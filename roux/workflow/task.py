@@ -8,11 +8,13 @@ logging = Logger() # level='INFO'
     # import logging #noqa
     # logging.basicConfig(level='INFO', force=True)
 
+from pathlib import Path
+import tempfile    
+
 ## internal
 from roux.lib.io import read_dict, to_dict, read_ps
 from roux.workflow.log import test_params
 
-from pathlib import Path
 from roux.lib.sys import (
     exists,
     get_datetime,
@@ -50,6 +52,7 @@ def pre_params(
     params=None,
     inputs=None,
     output_path_base=None,
+    flt_input_exists=False,
     verbose=False,
     force=False,
     test1: bool = False,
@@ -108,6 +111,15 @@ def pre_params(
         for d in param_list
         if (force if force else not Path(d["output_path"]).exists())
     ]
+    if flt_input_exists:
+        print(len(param_list),end='->')
+        param_list = [
+            d
+            for d in param_list
+            if (force if force else Path(d["input_path"]).exists())
+        ]
+        print(len(param_list))
+
     if not force:
         if before - len(param_list) != 0:
             logging.info(
@@ -141,13 +153,19 @@ def pre_task(
     if isinstance(pms,list):
         assert len(pms)==1, pms
 
-    log_dir_path_=f"{Path(pms['output_path']).with_suffix('').as_posix()}_logs"
-
     if test:
+        log_dir_path_=f"{Path(pms['output_path']).with_suffix('').as_posix()}_logs"
         log_dir_path=f"{log_dir_path_}/{get_datetime()}"
     else:
-        import tempfile    
-        log_dir_path=tempfile.mkdtemp(prefix=get_datetime())
+        from roux.lib.str import encode
+        log_dir_path_=f"{Path('~/scratch/.roux/').expanduser().as_posix()}"
+        log_dir_path=f"{log_dir_path_}/{get_datetime()}_{encode(pms['output_path'])}"
+
+    # else:
+        # [tmp dir not found by slurm]
+        # log_dir_path=tempfile.mkdtemp(prefix=get_datetime())
+
+        # log_dir_path=tempfile.mkdtemp(prefix=get_datetime())
 
     to_dict(
         pms,
@@ -627,7 +645,8 @@ def submit_job(
     verbose=False,
     ):
     """Submit a SLURM job using sbatch."""
-    job_name=f"roux:{Path(p).stem}"
+    # job_name=f"roux:{Path(p).stem}"
+    job_name=f"roux:{Path(p).as_posix()}"
     if job_name in get_sq():
         logging.error(f"skipped because already running: {job_name}.")
         return 
@@ -693,14 +712,15 @@ class SLURMJob:
         
         # if outp is None and not com is None:
         #     outp=f".slurm/{encode(com)}.sh"
-        if self.job_name is None:
-            try:
-                self.job_name='/'.join(s.rsplit('/',3)[-3:-1])
-            except Exception as e:
-                if verbose:
-                    logging.error(e)
-                self.job_name=outp
-        self.job_name=f"roux:{self.job_name}"
+        # if self.job_name is None:
+        #     # try:
+        #     #     self.job_name='/'.join(s.rsplit('/',3)[-3:-1])
+        #     # except Exception as e:
+        #     #     if verbose:
+        #     #         logging.error(e)
+        #     self.job_name=outp
+        # self.job_name=f"roux:{self.job_name}"
+        self.job_name=f"roux:{Path(outp).as_posix()}"
 
         modules_load_str=''
         packages_install_str=''
@@ -764,6 +784,9 @@ def check_tasks(
         # text=True,
         verbose=True,
         )
+    if not '\n' in txt:
+        logging.warning(f"no output from {com}")
+        return None
     from io import StringIO
     df_sacct=(
         pd.read_fwf(
@@ -1151,6 +1174,8 @@ def run_tasks(
     verbose: bool = False,
     log_level: str = 'INFO',    
     
+    ## pre_params
+    flt_input_exists=False, # should input_path exist
     test1 : bool =False,
     testn : int =None,
     test : bool =False, ## saves more log files
@@ -1252,10 +1277,13 @@ def run_tasks(
         force=force,
         test1 = test1,
         testn = testn,
+        flt_input_exists = flt_input_exists,
     )
     
     if runner.startswith('py'):
-        # return
+        from roux.lib.sys import is_interactive_notebook
+        test=is_interactive_notebook()
+
         return run_tasks_nb(
             script_path,
             params=params,
@@ -1451,7 +1479,7 @@ def post_tasks(
         if validate:
             read_ps(ind,tree_depth=3)
         
-        com=f"find {ind} -type f \( -name '*.ipynb' -o -name '*.out'  -o -name '*.err' -o -name '*.log' -o -name 'run.sh' \) "
+        com=f"find {ind}"+r" -type f \( -name '*.ipynb' -o -name '*.out'  -o -name '*.err' -o -name '*.log' -o -name 'run.sh' -o -name 'pms.yaml' \) "
         if simulate:
             print(run_com(com))
         else:
