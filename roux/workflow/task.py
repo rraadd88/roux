@@ -1226,6 +1226,11 @@ def run_tasks(
     script_path=Path(script_path).resolve().as_posix()
     script_type=Path(script_path.split(' ')[0]).suffix[1:]# if not '.py run' in script_path else 'py'
     
+    if kernel is None:
+        ## inferring kernel
+        kernel=Path(os.environ.get('VIRTUAL_ENV')).parent.stem
+        logging.info(f"inferred kernel: {kernel}")
+
     runner=infer_runner(
         runner=runner,
         script_type=script_type,
@@ -1527,7 +1532,7 @@ def post_tasks(
                 simulate=simulate,
                 verbose=verbose,
                 force=False,
-                wait=False,
+                wait=True,
             )
             if simulate:
                 break
