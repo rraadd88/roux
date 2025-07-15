@@ -2059,7 +2059,7 @@ def check_corr(
     df1=pd.Series(res).to_frame().T
     if verbose:
         logging.info(df1)
-    if not validate is None: 
+    if validate is not None: 
         assert df1.query(validate).shape[0]==1, df1
     if out:
         return df1
