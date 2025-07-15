@@ -6,10 +6,17 @@ logging.getLogger().setLevel(logging.INFO)
 
 import argh
 
-from roux.lib.io import backup, to_version, to_zip
-from roux.lib.io import pqt2tsv
 from roux.lib.sys import read_ps
 from roux.lib.log import to_diff
+
+from roux.lib.io import (
+    pqt2tsv,
+    # backup,
+    # to_version,
+    # to_zip,
+    read_arxv,
+    to_arxv,
+    )
 
 from roux.workflow.log import test_params
 from roux.workflow.io import replacestar, to_clean_nb, to_html, to_src, to_nb_kernel
@@ -18,6 +25,7 @@ from roux.workflow.task import (
     # run_task, 
     run_tasks ## preferred because it infers setup for the outputs
 )
+from roux.workflow.task import check_tasks, post_tasks
 from roux.workflow.nb import to_clear_unused_cells, to_clear_outputs
 from roux.workflow.cfgs import read_config, read_metadata, to_cfg_run_arc
 
@@ -86,9 +94,11 @@ parser.add_commands(
         ### logs
             to_diff,
         ## backup
-            backup,
-            to_version,
-            to_zip,
+            read_arxv,
+            to_arxv,
+            # backup,
+            # to_version,
+            # to_zip,
             pqt2tsv,
         ## workflow io
             ## cfgs
@@ -98,6 +108,9 @@ parser.add_commands(
         ## workflow execution
             test_params,
             run_tasks,
+            ## slurm
+            check_tasks,
+            post_tasks,
         ## notebook
         ### pre-processing        
             to_nb_kernel,

@@ -17,7 +17,7 @@ from pathlib import Path
 
 ## internal
 from roux.lib.sys import run_com
-from roux.lib.io import read_dict, to_dict
+from roux.lib.io import read_dict, to_dict, read_ps
 from roux.workflow.log import test_params
 
 from roux.lib.sys import (
@@ -57,6 +57,8 @@ def pre_params(
     params=None,
     inputs=None,
     output_path_base=None,
+    flt_input_exists=False,
+    flt_output_exists=False,
     verbose=False,
     force=False,
     test1: bool = False,
@@ -110,11 +112,32 @@ def pre_params(
 
     # --- Filtering by output existence, as in flt_params ---
     before = len(param_list)
-    param_list = [
-        d
-        for d in param_list
-        if (force if force else not Path(d["output_path"]).exists())
-    ]
+
+    if flt_output_exists:
+        print(len(param_list),end='->')
+        param_list = [
+            d
+            for d in param_list
+            if Path(d["output_path"]).exists()
+        ]
+        print(len(param_list))
+    else:
+        param_list = [
+            d
+            for d in param_list
+            if (force if force else not Path(d["output_path"]).exists())
+        ]
+
+    if flt_input_exists:
+        print(len(param_list),end='->')
+        param_list = [
+            d
+            for d in param_list
+            if (force if force else Path(d["input_path"]).exists())
+        ]
+        print(len(param_list))
+
+    
     if not force:
         if before - len(param_list) != 0:
             logging.info(
@@ -143,10 +166,25 @@ def pre_params(
 
 def pre_task(
     pms,
+    test=False,
 ):
     if isinstance(pms,list):
         assert len(pms)==1, pms
-    log_dir_path=f"{Path(pms['output_path']).with_suffix('').as_posix()}_logs/{get_datetime()}"
+
+    if test:
+        log_dir_path_=f"{Path(pms['output_path']).with_suffix('').as_posix()}_logs"
+        log_dir_path=f"{log_dir_path_}/{get_datetime()}"
+    else:
+        from roux.lib.str import encode
+        log_dir_path_=f"{Path('~/scratch/.roux/').expanduser().as_posix()}"
+        log_dir_path=f"{log_dir_path_}/{get_datetime()}_{encode(pms['output_path'])}"
+
+    # else:
+        # [tmp dir not found by slurm]
+        # log_dir_path=tempfile.mkdtemp(prefix=get_datetime())
+
+        # log_dir_path=tempfile.mkdtemp(prefix=get_datetime())
+
     to_dict(
         pms,
         f"{log_dir_path}/pms.yaml"
@@ -162,6 +200,7 @@ def run_task_nb(
     start_timeout: int = 600,
     verbose=False,
     force=False,
+    test=True,
     **kws_papermill,
 ) -> str:
     """
@@ -188,6 +227,7 @@ def run_task_nb(
 
     log_dir_path=pre_task(
         parameters,
+        test=test,
     )
     if not output_notebook_path:
         ## save report i.e. output notebook
@@ -564,26 +604,35 @@ def is_q_empty(
         verbose=verbose,    
     ) == 0  # No jobs, just the header
 
-def submit_job(p):
+def submit_job(
+    p,
+    verbose=False,
+    ):
     """Submit a SLURM job using sbatch."""
-    job_name=f"roux:{Path(p).stem}"
+    # job_name=f"roux:{Path(p).stem}"
+    job_name=f"roux:{Path(p).as_posix()}"
     if job_name in get_sq():
         logging.error(f"skipped because already running: {job_name}.")
         return 
     
     com = f'sbatch {p}'
-    res=run_com(com)
+    res=run_com(
+        com,
+        verbose=verbose,
+        )
     # Submitted batch job 3325831
     job_id=res.rsplit(' ')[-1]
-    logging.info(f"job_id={job_id}")
+    if verbose:
+        logging.info(f"job_id={job_id}")
     return job_id
 
 class SLURMJob:
     def __init__(
         self, 
-        job_name, 
         log_path, 
         
+        job_name=None, 
+
         mem="4G", 
         cpus=4, 
         time="01:00:00", 
@@ -595,7 +644,7 @@ class SLURMJob:
         ):
         
         self.job_name = job_name
-        self.output = log_path
+        self.log_path = log_path
         
         self.time = time
         self.cpus = cpus
@@ -619,6 +668,7 @@ class SLURMJob:
         modules=None,
         packages=None,
         
+        verbose=False,
         ):
         """Generate the SLURM script"""
         
@@ -626,6 +676,16 @@ class SLURMJob:
         
         # if outp is None and not com is None:
         #     outp=f".slurm/{encode(com)}.sh"
+        # if self.job_name is None:
+        #     # try:
+        #     #     self.job_name='/'.join(s.rsplit('/',3)[-3:-1])
+        #     # except Exception as e:
+        #     #     if verbose:
+        #     #         logging.error(e)
+        #     self.job_name=outp
+        # self.job_name=f"roux:{self.job_name}"
+        self.job_name=f"roux:{Path(outp).as_posix()}"
+
         modules_load_str=''
         packages_install_str=''
         
@@ -645,13 +705,15 @@ class SLURMJob:
 #SBATCH --partition={self.partition}
 f"""#!/bin/bash
 #SBATCH --job-name={self.job_name}
-#SBATCH --err={self.output}/%j.err
-#SBATCH --output={self.output}/%j.out                
+#SBATCH --err={self.log_path}/%j.err
+#SBATCH --output={self.log_path}/%j.out                
 #SBATCH --time={self.time}
 #SBATCH --ntasks={self.ntasks}
 #SBATCH --cpus-per-task={self.cpus}
 #SBATCH --mem={self.mem}
-{self.append_header}
+
+## overriding settings (--slurm-header)
+{self.append_header.replace(' #SBATCH','\n#SBATCH')}
 
 {job_pre}
 
@@ -662,7 +724,12 @@ f"""#!/bin/bash
 """)
             for command in self.commands:
                 f.write(f"{command}\n")
-                
+            f.write(
+f"""
+## archive the subdir (if job completed)
+roux post-tasks -p {self.log_path}/pms.yaml --arxv
+"""
+            )
             # f.write("exit(0)\n")
             
     def submit(self, outp):
@@ -673,6 +740,54 @@ def has_slurm(
     ):
     return run_com('sbatch --help',returncodes=[0,1,127],verbose=False)!=''
 
+def check_tasks(
+    state='COMPLETED',
+    job_name_expr="",
+    query_expr='| tail -n 3',
+    eff=False,
+    ):
+    cols=['JobID','State','Elapsed','End','JobName']
+    com=f"sacct -u $USER --format={','.join(cols)}%200 | grep '.*{state}.*roux:.*{job_name_expr}.*' {query_expr}"
+    txt=run_com(
+        com,
+        # text=True,
+        verbose=True,
+        )
+    if '\n' not in txt:
+        logging.warning(f"no output from {com}")
+        return None
+    from io import StringIO
+    df_sacct=(
+        pd.read_fwf(
+            StringIO(txt),
+            header=None,
+            names=cols,
+        )
+        .rename(
+            columns={'JobID':'Job ID'},
+        )
+        )
+    if not eff:
+        return df_sacct.set_index('Job ID').to_string()
+    
+    ds_seff=df_sacct['Job ID'].apply(lambda x: run_com(f"seff {x}"))
+    df_seff=ds_seff.apply(lambda x: {s.split(': ')[0]:s.split(': ')[1] for s in x.split('\n') if ': ' in s} if x.startswith('Job ID') else {}).apply(pd.Series)
+    
+    ## clean
+    for c in ['Cluster','User/Group','State','Job Wall-clock time','Nodes','Cores per node','CPU Utilized','Memory Utilized','State']:
+        if c in df_seff:
+            df_seff=df_seff.drop([c],axis=1)
+    
+    return (
+        df_seff.astype({'Job ID':int})
+        .merge(
+            right=df_sacct.astype({'Job ID':int}),
+            how='right',
+            on='Job ID',
+            validate="1:1",
+        ).set_index('Job ID').to_string()
+    )    
+    
 def load_module(
     m,
     validate=True,
@@ -819,7 +934,6 @@ def to_sbatch_script(
 
     # write the slurm script 
     job = SLURMJob(
-        job_name=f"roux:{Path(sbatch_path).stem}",
         log_path=log_dir_path,
 
         # mem=mem,#"4G",
@@ -872,7 +986,6 @@ def parse_time(duration_str):
 def get_tried_job_keys(
     cache_dir_path, #'.roux/'
     ):
-    from roux.lib.io import read_ps
     return list(set([Path(p).parent.parent.stem for p in read_ps(f'{cache_dir_path}/*/logs/*.out')]))
 
 def feed_jobs(
@@ -890,6 +1003,8 @@ def feed_jobs(
     force=False,
     
     kws_runner={},
+
+    verbose=False,
 ):
     """Monitor SLURM queue and submit new jobs when queue is empty."""        
     duration = parse_time(feed_duration)
@@ -928,7 +1043,8 @@ def feed_jobs(
                             
                         else:
                             run_com(
-                                com
+                                com,
+                                verbose=verbose,
                             )
                     continue
             
@@ -1033,9 +1149,11 @@ def run_tasks(
     verbose: bool = False,
     log_level: str = 'INFO',    
     
+    ## pre_params
+    flt_input_exists=False, # should input_path exist
     test1 : bool =False,
     testn : int =None,
-    test : bool =False,
+    test : bool =False, ## saves more log files
     test_cpus: int = 3, 
 
     **kws_runner,
@@ -1062,13 +1180,21 @@ def run_tasks(
             feed_duration = '99h',
             feed_interval = '1s',
             feed_if_jobs_max = 0.5,    
-    """
-    
+    """    
+    if simulate:
+        test=True
+        verbose=True
+
     ## script_path
     logging.setLevel(level=log_level)
     script_path=Path(script_path).resolve().as_posix()
     script_type=Path(script_path.split(' ')[0]).suffix[1:]# if not '.py run' in script_path else 'py'
     
+    if kernel is None:
+        ## inferring kernel
+        kernel=Path(os.environ.get('VIRTUAL_ENV')).parent.stem
+        logging.info(f"inferred kernel: {kernel}")
+
     runner=infer_runner(
         runner=runner,
         script_type=script_type,
@@ -1142,13 +1268,16 @@ def run_tasks(
         force=force,
         test1 = test1,
         testn = testn,
+        flt_input_exists = flt_input_exists,
     )
 
     if len(params)==0:
         return 
     
     if runner.startswith('py'):
-        # return
+        from roux.lib.sys import is_interactive_notebook
+        test=is_interactive_notebook()
+
         return run_tasks_nb(
             script_path,
             params=params,
@@ -1200,7 +1329,6 @@ def run_tasks(
         **slurm_kws,
     }
 
-    
     ## feed
     ## each round feed cpus jobs from run_tasks
     # from random import shuffle
@@ -1243,6 +1371,7 @@ def run_tasks(
     for pms in tqdm(params):  
         log_dir_path=pre_task(
             pms,
+            test=test,
         )
         
         # key=encode(
@@ -1273,6 +1402,7 @@ def run_tasks(
                         sbatch_path
                     )
                 )
+
         if runner!='slurm':
             coms.append(
                 f"bash {sbatch_path} &> {log_dir_path}/stdout",
@@ -1315,3 +1445,66 @@ def run_tasks(
         
     ## uniform output
     return pd.Series(params_jobs).to_frame('params')['params']#.apply(pd.Series)
+
+def post_tasks(
+    params=None,
+
+    arxv=False,
+    clean=False, ## remove logs
+
+    ind=None,
+    outp=None,
+
+    simulate=False,
+    validate= False,
+    verbose=True,
+    ):
+    """
+    Notes:
+        Count files:
+        
+            for d in */; do if [ -d "$d" ]; then echo $d": "$(find $d | wc -l) ;fi;done
+    """
+
+    if clean:
+        assert ind is not None
+        if outp is None:
+            # from roux.lib.sys import get_datetime
+            outp=f'.roux/post_tasks_{get_datetime()}.zip'
+
+        outd=Path(outp).parent.mkdir(parents=True,exist_ok=True)
+
+        if validate:
+            read_ps(ind,tree_depth=3)
+        
+        # com=f"find {ind}"+r" -type f \( -name '*.ipynb' -o -name '*.out'  -o -name '*.err' -o -name '*.log' -o -name 'run.sh' -o -name 'pms.yaml' \) "
+        com=f"find {ind}"+r" -type d -name '*_logs' "
+        if simulate:
+            print(run_com(com))
+        else:
+            com+=f" -print0 | xargs -0 zip -r -m -q {outp}"
+            print(run_com(com))
+
+        if validate:
+            read_ps(ind,tree_depth=3)
+
+    if arxv:
+        assert params is not None
+        params=pre_params(
+            params,
+            flt_output_exists=True, # completed, output exists
+        )
+        from roux.lib.io import to_arxv
+        for pms in params:
+            to_arxv(
+                pms['output_path'],
+                outp=None,
+                simulate=simulate,
+                verbose=verbose,
+                force=False,
+                wait=True,
+            )
+            if simulate:
+                break
+
+        # return outp

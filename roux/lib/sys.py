@@ -450,8 +450,13 @@ def get_env(
 
 def run_com(
     com: str, 
+    
     env=None, 
+    
     template=None,
+
+    wait=True,
+    
     test: bool = False, 
     verbose: bool = True, 
     simulate: bool = False,
@@ -500,17 +505,20 @@ def run_com(
             "\nset `test=True` for more verbose." if not test else ""
         )
     else:
-        response = subprocess.run(
-            com,
-            shell=True,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
-            text=True
-            )
-        # print(res.stdout)
-        assert response.returncode in returncodes, response
-        return response.stdout
-    
+        if wait:
+            response = subprocess.run(
+                com,
+                shell=True,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                text=True
+                )
+            # print(res.stdout)
+            assert response.returncode in returncodes, response
+            return response.stdout
+        else:
+            return subprocess.Popen(com.split(' '))            
+
 # alias to be deprecated in the future
 runbash=run_com
 
