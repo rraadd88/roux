@@ -9,6 +9,7 @@ if hasattr(sys.stdout, "reconfigure"):
 
 # DEBUG (10), INFO (20), WARNING (30), ERROR (40), and FATAL (100). 
 logos={
+    ">": {"name": "noset", "color": "\033[94m", 'level':0},
     "🧪": {"name": "debug", "color": "\033[94m", 'level':10},
     # "📄": {"name": "documenting", "color": "\033[97m", 'level':'INFO'},
     # "📝": {"name": "noting", "color": "\033[97m", 'level':'INFO'},
@@ -39,6 +40,7 @@ logos={
     "🚫": {"name": "skipping", "color": "\033[91m", 'level':31},
     
     "❌": {"name": "error", "color": "\033[91m", 'level':40},
+    "🛑": {"name": "critical", "color": "\033[91m", 'level':50},
     "🛑": {"name": "fatal", "color": "\033[91m", 'level':100},
 }
 log_types={d['name']:[k,d['color'],d['level']] for k,d in logos.items()}
@@ -218,3 +220,14 @@ def to_diff(
             f.write(diff_html)
         logging.info(f"diff: {Path(outp).absolute()}")
         return outp
+
+from contextlib import contextmanager
+@contextmanager
+def no_logging(level=logging.CRITICAL):
+    logger = logging.getLogger()
+    previous_level = logger.level
+    logger.setLevel(level + 1)
+    try:
+        yield
+    finally:
+        logger.setLevel(previous_level)

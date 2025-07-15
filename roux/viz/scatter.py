@@ -84,6 +84,7 @@ def plot_scatter(
     line_kws={},
     ## stats
     stat_method: str = "spearman",
+    stat_resample: bool = False,
     stat_kws={},
     # stats_annot_kws={},
     ## aes
@@ -207,18 +208,22 @@ def plot_scatter(
     ## stats
     from roux.viz.annot import show_scatter_stats
 
-    show_scatter_stats(
+    ax=show_scatter_stats(
         ax,
         data=data,
         x=x,
         y=y,
         z=z,
-        method=stat_method[0],
         zorder=5,
-        **stat_kws,
+        **{
+            **dict(
+                method=stat_method[0],
+                resample=stat_resample,
+            ),
+            **stat_kws,
+        },
     )
     return ax
-
 
 def plot_qq(x: pd.Series) -> plt.Axes:
     """plot QQ.
@@ -664,8 +669,8 @@ def plot_volcano(
             
     ## setting ylim before setting the labels
     ax.set(
-        xlabel="Log$_\mathrm{2}$ Fold Change (LFC)",
-        ylabel="Significance\n(-Log$_\mathrm{10}$($q$))",
+        xlabel=r"Log$_\mathrm{2}$ Fold Change (LFC)",
+        ylabel=r"Significance\n(-Log$_\mathrm{10}$($q$))",
         xlim=xlim,
         ylim=ylim,
     )

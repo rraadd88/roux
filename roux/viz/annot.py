@@ -735,8 +735,8 @@ def show_scatter_stats(
         loc=loc,
         **kws_set_label,
     )
-    return ax
-
+    ax.stats=res   
+    return ax    
 
 def show_crosstab_stats(
     data: pd.DataFrame,
@@ -782,7 +782,7 @@ def show_crosstab_stats(
     logging.info(f"stat={stat},pval={pval}")
 
     if data_.shape != (2, 2) or method == "chi2":
-        stat_label = "${\chi}^2$"
+        stat_label = r"${\chi}^2$"
     else:
         stat_label = "OR"
 

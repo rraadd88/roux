@@ -2013,6 +2013,64 @@ def sort_columns_by_values(
         )
     return df1
 
+## paired stats
+@to_rd
+def check_corr(
+    data,
+    x,
+    y,
+    method='pearson',
+    resample=False,
+    verbose=True,
+
+    validate=None, 
+    
+    plot=False,
+    
+    out=False,
+    kws_plot={},
+    **kws_get_corr,
+    ):
+    kws_stat={
+        **dict(
+            method=method,
+            resample=resample,        
+        ),
+        **kws_get_corr,
+    }
+    if not plot:
+        from roux.stat.corr import get_corr
+        res = get_corr(
+            data[x],
+            data[y],
+            verbose=verbose,
+            **kws_stat,
+        )    
+    else:
+        from roux.viz.scatter import plot_scatter
+        ax=plot_scatter(
+            data,
+            x=x,
+            y=y,
+            stat_kws=kws_stat,
+            **kws_plot,
+        )
+        res=ax.stats
+    df1=pd.Series(res).to_frame().T
+    if verbose:
+        logging.info(df1)
+    if not validate is None: 
+        assert df1.query(validate).shape[0]==1, df1
+    if out:
+        return df1
+    else:
+        #pipe
+        return data
+
+## TODO
+# @to_rd
+# def check_diff(
+
 ## tables io
 def dict2df(
     d,

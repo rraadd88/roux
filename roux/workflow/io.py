@@ -857,7 +857,7 @@ def valid_post_task_deps(
 def to_html(
     p,
     # outp=None,
-    env=None,
+    env='docs',
     verbose=False,
     ):
     if env is not None:
@@ -879,3 +879,20 @@ def to_html(
     #     verbose=verbose,
     # )
     return outp
+
+
+## tasks
+
+def check_for_exit(
+    p,
+    cfg,
+    output_path,
+    ):
+    """
+    Check for early exit.
+    """
+    from roux.lib.io import is_table_empty
+    if is_table_empty(p):
+        logging.warning("exiting early because table is empty..")
+        to_dict(cfg,output_path)
+        sys.exit(0)
