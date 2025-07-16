@@ -2058,18 +2058,67 @@ def check_corr(
         res=ax.stats
     df1=pd.Series(res).to_frame().T
     if verbose:
-        logging.info(df1)
+        logging.info('\n'+df1.to_string())
     if not validate is None: 
-        assert df1.query(validate).shape[0]==1, df1
+        assert df1.query(validate).shape[0]==df1.shape[0], df1
     if out:
         return df1
     else:
         #pipe
         return data
 
-## TODO
-# @to_rd
-# def check_diff(
+
+@to_rd
+def check_diff(
+    data,
+    x,
+    y,
+    cols_id,
+    method=None, # mannwhitneyu
+    verbose=True,
+
+    validate=None, 
+    
+    plot=True, 
+    
+    out=False,
+    kws_plot={},
+    **kws_stats,
+    ):
+    kws_stat={
+        **dict(
+            method=method,
+        ),
+        **kws_stats,
+    }
+    if not plot:
+        raise NotImplementedError('## TODO: calc stat -> show on plot')
+    else:
+        from roux.viz.dist import plot_dists
+        ax=plot_dists(
+            data,
+            x=x,
+            y=y,
+            colindex=cols_id,
+            kws_stats=dict(
+                func=method,
+            ),
+            verbose=False,
+            **kws_plot,
+        )
+        res=ax.stats
+    # df1=pd.Series(res).to_frame().T
+    df1=res
+    if verbose:
+        logging.info('\n'+df1.to_string())
+    if not validate is None: 
+        assert df1.query(validate).shape[0]==df1.shape[0], df1
+    if out:
+        return df1
+    else:
+        #pipe
+        return data
+
 
 ## tables io
 def dict2df(

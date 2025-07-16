@@ -120,17 +120,14 @@ def get_pval(
             df.loc[(df[colsubset] == subsets[1]), colvalue].tolist(),
         )
         if len(x) != 0 and len(y) != 0 and (nunique(x + y) != 1):
+            
             if func is None:
-                if test:
-                    logging.warning("mannwhitneyu used")
                 return sc.stats.mannwhitneyu(
                     x,
                     y,
                     alternative="two-sided",
                 )
             else:
-                if test:
-                    logging.warning(f"custom function used: {str(func)}")
                 return func(
                     # df.loc[(df[colsubset] == subsets[0]), colvalue],
                     # df.loc[(df[colsubset] == subsets[1]), colvalue],
@@ -215,6 +212,12 @@ def get_stat(
             else [subsets]
         )
         df2.columns = cols_subsets
+        
+    if func is None:
+        logging.info("mannwhitneyu used")
+    else:
+        logging.info(f"custom function used: {str(func)}")
+        
     df2 = (
         df2.groupby(cols_subsets)
         .apply(
@@ -233,8 +236,8 @@ def get_stat(
     )
     df2 = df2.rename(
         columns={
-            0: "stat"+(f" ({'MWU' if not colvalue_bool else 'FE'} test)" if func is None else ""),
-            1: "P"+(f" ({'MWU' if not colvalue_bool else 'FE'} test)" if func is None else ""),
+            0: "stat",
+            1: "P",
         },
     ).reset_index()
     from roux.lib.dfs import merge_paired
@@ -295,6 +298,13 @@ def get_stats(
     stats=["mean", "median", "var", "size"],
     axis=0,  # concat
     test=False,
+    
+    ## diff
+    change_type=["diff", "ratio"],
+    changeby="mean",
+    # fdr=True,
+    value_aggs=["mean", "median"],
+    
     **kws,
 ) -> pd.DataFrame:
     """Get statistics by iterating over columns wuth values.
@@ -359,6 +369,27 @@ def get_stats(
     )
     if axis == 1:
         df3 = df3.reset_index().rd.flatten_columns()
+
+    if df3.filter(regex="|".join([f"{s} subset(1|2)" for s in value_aggs])).shape[1]:
+        for s in value_aggs:
+            if "diff" in change_type:
+                df3[f"difference between {s} (subset1-subset2)"] = (
+                    df3[f"{s} subset1"] - df3[f"{s} subset2"]
+                )
+                df3.loc[
+                    (df3[f"difference between {changeby} (subset1-subset2)"] > 0),
+                    "change",
+                ] = "increase"
+                df3.loc[
+                    (df3[f"difference between {changeby} (subset1-subset2)"] < 0),
+                    "change",
+                ] = "decrease"
+            if "ratio" in change_type:
+                df3[f"ratio between {s} (subset1-subset2)"] = (
+                    df3[f"{s} subset1"] / df3[f"{s} subset2"]
+                )
+        df3["change"] = df3["change"].fillna("ns")
+        
     return df3
 
 
@@ -367,10 +398,6 @@ def get_significant_changes(
     coff_p=0.025,
     coff_q=0.1,
     alpha=None,
-    change_type=["diff", "ratio"],
-    changeby="mean",
-    # fdr=True,
-    value_aggs=["mean", "median"],
 ) -> pd.DataFrame:
     """Get significant changes.
 
@@ -387,28 +414,7 @@ def get_significant_changes(
     """
     if coff_p is None and alpha is not None:
         coff_p = alpha
-    logging.info(changeby)
-    if df1.filter(regex="|".join([f"{s} subset(1|2)" for s in value_aggs])).shape[1]:
-        for s in value_aggs:
-            if "diff" in change_type:
-                df1[f"difference between {s} (subset1-subset2)"] = (
-                    df1[f"{s} subset1"] - df1[f"{s} subset2"]
-                )
-                df1.loc[
-                    (df1[f"difference between {changeby} (subset1-subset2)"] > 0),
-                    "change",
-                ] = "increase"
-                df1.loc[
-                    (df1[f"difference between {changeby} (subset1-subset2)"] < 0),
-                    "change",
-                ] = "decrease"
-            if "ratio" in change_type:
-                df1[f"ratio between {s} (subset1-subset2)"] = (
-                    df1[f"{s} subset1"] / df1[f"{s} subset2"]
-                )
-                # df1.loc[(df1[f'ratio between {changeby} (subset1-subset2)']>1),'change']='increase'
-                # df1.loc[(df1[f'ratio between {changeby} (subset1-subset2)']<1),'change']='decrease'
-        df1["change"] = df1["change"].fillna("ns")
+
     stat_suffixs=[c.split('P')[1] if c.startswith('P ') else "" for c in df1.filter(regex="^P.*").columns]
     # for stat in ["MWU", "FE"]:
     #     stat_suffix=f" ({stat} test)"
@@ -584,10 +590,10 @@ def get_diff(
         **kws,
     )
     if coff_p is not None:
-        df3 = df3.loc[(df3["P"+(" (MWU test)" if func is None else "")] < coff_p), :]
+        df3 = df3.loc[(df3["P"] < coff_p), :]
     else:
         logging.warning("not filtered by P-value cutoff")
-    return df3.sort_values("P"+(" (MWU test)" if func is None else ""))
+    return df3.sort_values("P")
 
 
 def binby_pvalue_coffs(
