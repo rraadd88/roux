@@ -403,7 +403,10 @@ def plot_dists(
             # logging.info(stats)
             # del stats
             if verbose:
-                logging.info('\n'+df2.to_string())
+                try:
+                    logging.info('\n'+df2.to_string())
+                except Exception as e:
+                    pass
         else:
             show_p = False
             logging.error(

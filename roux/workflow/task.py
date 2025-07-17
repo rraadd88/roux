@@ -232,6 +232,9 @@ def run_task_nb(
     if not output_notebook_path:
         ## save report i.e. output notebook
         output_notebook_path = f"{log_dir_path}_{Path(script_path).name}"
+    ## to open 
+    output_notebook_path=Path(output_notebook_path).absolute()
+    
     if verbose:
         logging.info(parameters["output_path"], output_notebook_path)
 

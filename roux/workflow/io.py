@@ -884,15 +884,15 @@ def to_html(
 ## tasks
 
 def check_for_exit(
-    p,
-    cfg,
-    output_path,
+    p, # table
+    data, # e.g cfg
+    output_path, # in a script
     ):
     """
     Check for early exit.
     """
-    from roux.lib.io import is_table_empty
+    from roux.lib.io import is_table_empty, to_data
     if is_table_empty(p):
         logging.warning("exiting early because table is empty..")
-        to_dict(cfg,output_path)
+        to_data(data,output_path)
         sys.exit(0)

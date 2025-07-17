@@ -528,10 +528,9 @@ def get_stats_groupby(
     )
     return get_significant_changes(
         df1=df2,
-        alpha=alpha,
         coff_p=coff_p,
         coff_q=coff_q,
-        change_type=change_type,
+        alpha=alpha,
         **kws_signi,
     )
 

@@ -534,7 +534,14 @@ def read_data(p,**kws):
     else:
         logging.error(f"not detected as data {p}")
         return 
-
+def to_data(data,p,**kws):
+    if is_dict(p):
+        return to_dict(data,p,**kws)
+    elif is_table(p):
+        return to_table(data,p,**kws)
+    else:
+        logging.error(f"not detected as data {p}")
+        return 
 ## dict
 
 def read_dict(
