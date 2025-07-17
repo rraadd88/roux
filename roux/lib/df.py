@@ -2113,6 +2113,9 @@ def check_diff(
         logging.info('\n'+df1.to_string())
     if not validate is None: 
         assert df1.query(validate).shape[0]==df1.shape[0], df1
+        logging.info(df1)
+    if validate is not None: 
+        assert df1.query(validate).shape[0]==1, df1
     if out:
         return df1
     else:
