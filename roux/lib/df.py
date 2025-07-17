@@ -2059,7 +2059,7 @@ def check_corr(
     df1=pd.Series(res).to_frame().T
     if verbose:
         logging.info('\n'+df1.to_string())
-    if not validate is None: 
+    if validate is not None: 
         assert df1.query(validate).shape[0]==df1.shape[0], df1
     if out:
         return df1
@@ -2111,7 +2111,7 @@ def check_diff(
     df1=res
     if verbose:
         logging.info('\n'+df1.to_string())
-    if not validate is None: 
+    if validate is not None: 
         assert df1.query(validate).shape[0]==df1.shape[0], df1
         logging.info(df1)
     if validate is not None: 
