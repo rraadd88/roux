@@ -2085,12 +2085,12 @@ def check_diff(
     kws_plot={},
     **kws_stats,
     ):
-    kws_stat={
-        **dict(
-            method=method,
-        ),
-        **kws_stats,
-    }
+    # kws_stat={
+    #     **dict(
+    #         method=method,
+    #     ),
+    #     **kws_stats,
+    # }
     if not plot:
         raise NotImplementedError('## TODO: calc stat -> show on plot')
     else:
@@ -2114,8 +2114,6 @@ def check_diff(
     if validate is not None: 
         assert df1.query(validate).shape[0]==df1.shape[0], df1
         logging.info(df1)
-    if validate is not None: 
-        assert df1.query(validate).shape[0]==1, df1
     if out:
         return df1
     else:

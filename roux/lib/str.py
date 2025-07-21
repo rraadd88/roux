@@ -632,6 +632,7 @@ def type_str(
     Examples:
         Numbers as strings e.g. '1.2' to 1.2 
     """
+
     if not isinstance(s,str):
         return s       
     try:
@@ -647,27 +648,29 @@ def type_str(
                 result=True
             elif s=='False':
                 result=False
-            elif s.startswith('['):
-                try:
-                    # Try converting to a list
-                    result=eval(s)
-                except ValueError:            
-                    result=s
-            elif s.startswith('{'):
-                try:
-                    # Try converting to a dict
-                    result=eval(s)
-                except ValueError:
-                    result=s
             else:
-                try:
-                    # last Try
-                    result=eval(s)
-                except NameError:                    
-                    # logging.warning
-                    # logging.warning(f"{str(e)} for {s}")
-                    logging.warning(f"not type converted: {s}")
-                    result=s
+                result=s
+                if s.startswith('['):
+                    try:
+                        # Try converting to a list
+                        result=eval(s)
+                    except ValueError:            
+                        pass
+                elif s.startswith('{'):
+                    try:
+                        # Try converting to a dict
+                        result=eval(s)
+                    except ValueError:
+                        pass
+                elif s[0].isalnum():
+                    try:
+                        # last Try
+                        result=eval(s)
+                    except NameError:                    
+                        # logging.warning
+                        # logging.warning(f"{str(e)} for {s}")
+                        logging.warning(f"not type converted: {s}")
+                        pass
     return result
     
 ## ids

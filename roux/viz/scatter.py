@@ -600,30 +600,42 @@ def plot_volcano(
     ## set labels
     # if show_labels is not None:  # show_labels overrides show_outlines
     #     show_outlines = show_labels
-    
-    if show_outlines is not None:
-        if isinstance(show_outlines, int):
-            ## show_outlines top n
-            data1 = data.query(expr="`significance direction bin` != 'ns'").sort_values(
+    if show_labels is not None:
+        query_expr=show_labels
+    elif show_outlines is not None:
+        query_expr=show_outlines
+    else:
+        query_expr=None
+
+    ## filtering to data1 to highlight
+    if query_expr is not None:
+        if isinstance(query_expr, int):
+            ## query_expr top n
+            data1 = data.query(
+                expr="`significance direction bin` != 'ns'").sort_values(
                 colx
             )
             ## sort the data
             data1 = pd.concat(
                 [
-                    data1.head(show_outlines),  # left
-                    data1.tail(show_outlines),  # right
+                    data1.head(query_expr),  # left
+                    data1.tail(query_expr),  # right
                 ],
                 axis=0,
             ).drop_duplicates(subset=[colindex])
-        elif isinstance(show_outlines, dict):
-            ## subset
-            data1 = data.rd.filter_rows(show_outlines)
-        elif isinstance(show_outlines, str):
+        elif isinstance(query_expr, str) and '`' in query_expr:
+            data1 = data.query(expr=query_expr)
+        elif isinstance(query_expr, str) and '`' not in query_expr:
             ## column with categories
-            data1 = data.dropna(subset=[show_outlines])
+            data1 = data.dropna(subset=[query_expr])
+        elif isinstance(query_expr, dict):
+            ## subset
+            data1 = data.rd.filter_rows(query_expr)
         if verbose:
             print(data1)
-        # plot
+
+    # plot
+    if show_outlines is not None:        
         if not isinstance(show_outlines, str):
             # borders
             ax = sns.scatterplot(

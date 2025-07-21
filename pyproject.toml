@@ -28,17 +28,15 @@ dependencies = [
     # "regex>=2018.7.11",
 ]
 
-[dependencies.groups]
+[dependency-groups]
 interactive = [
     "ipywidgets",
     "ipykernel",
     # "watermark", # session info
 ]
 data = [
-    "openpyxl", # special io
-]
-fast = [
     "pyarrow", # fast
+    "openpyxl", # special io
 ]
 stat = [
     "scipy>=1.1.0",
@@ -57,38 +55,14 @@ workflow = [
     "nbconvert",
     "removestar",
 ]
-
-# ## union (perhaps would be made default)
-# all = [
-# ## interactive = [
-#     "ipywidgets",
-#     "ipykernel",
-#     # "watermark", # session info
-# ## ]
-# ## data = [
-#     "openpyxl", # special io
-# ## ]
-# ## fast = [
-#     "pyarrow", # fast
-# ## ]
-# ## stat = [
-#     "scipy>=1.1.0",
-#     "statsmodels",
-#     "networkx",
-#     "scikit-learn",
-# ##        ]
-# ## viz = [
-#     "altair",
-# ##       ]
-# ## workflow = [
-#     "omegaconf",
-#     "papermill",
-#     "argh",
-#     "ruff",
-#     "nbconvert",
-#     "removestar",
-# ## ]    
-# ]
+# An 'all' group that includes all other groups
+all = [
+    {include-group = "interactive"},
+    {include-group = "data"}, # This effectively includes all, as 'docs' includes 'test' etc.
+    {include-group = "stat"}, # This effectively includes all, as 'docs' includes 'test' etc.
+    {include-group = "viz"}, # This effectively includes all, as 'docs' includes 'test' etc.
+    {include-group = "workflow"}, # This effectively includes all, as 'docs' includes 'test' etc.
+]
 
 ## development and maintenance
 dev = [
@@ -103,15 +77,14 @@ dev = [
     "isort",
     "pytest-cov >= 2,< 6",
     "papermill",
-    "lazydocs", "regex", ## docs
-]
-lint = [
-  "ruff"
+    "lazydocs",
+    "regex", ## docs
+    {include-group = "all"},    
 ]
 
 [tool.uv]
 default-groups = "all"
-# tool.uv.package = true
+package = true
 
 [tool.black]
 experimental-string-processing = true

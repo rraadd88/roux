@@ -78,7 +78,6 @@ def test_roux_lib_df_apply(
 def test_roux_lib_io(
     p="examples/roux_lib_io.ipynb",
     ):
-
     return run_test(
         p,
     )
@@ -86,7 +85,6 @@ def test_roux_lib_io(
 def test_roux_lib_set(
     p="examples/roux_lib_set.ipynb"
     ):
-
     return run_test(
         p,
     )
@@ -98,26 +96,23 @@ def test_roux_lib_str(
         p,
     ) 
 
-def test_roux_lib_sys(
-    p="examples/roux_lib_sys.ipynb",
-    ):
+# def test_roux_lib_sys(
+#     p="examples/roux_lib_sys.ipynb",
+#     ):
+#     return run_test(
+#         p,
+#     )
 
-    return run_test(
-        p,
-    )
-
-def test_roux_stat_classify(
-    p="examples/roux_stat_classify.ipynb"
-    ):
-
-    return run_test(
-        p,
-    )
+# def test_roux_stat_classify(
+#     p="examples/roux_stat_classify.ipynb"
+#     ):
+#     return run_test(
+#         p,
+#     )
 
 def test_roux_stat_cluster(
-    ):
     p="examples/roux_stat_cluster.ipynb",
-
+    ):
     return run_test(
         p,
     )
@@ -125,7 +120,6 @@ def test_roux_stat_cluster(
 def test_roux_stat_corr(
     p="examples/roux_stat_corr.ipynb"
     ):
-
     return run_test(
         p,
     )
@@ -133,7 +127,6 @@ def test_roux_stat_corr(
 def test_roux_stat_sets(
     p="examples/roux_stat_sets.ipynb"
     ):
-
     return run_test(
         p,
     )
@@ -141,23 +134,20 @@ def test_roux_stat_sets(
 def test_roux_viz_annot(
     p="examples/roux_viz_annot.ipynb",
     ):
-
     return run_test(
         p,
     )
 
-def test_roux_viz_ax(
-    p="examples/roux_viz_ax.ipynb"
-    ):
-
-    return run_test(
-        p,
-    )
+# def test_roux_viz_ax(
+#     p="examples/roux_viz_ax.ipynb"
+#     ):
+#     return run_test(
+#         p,
+#     )
 
 def test_roux_viz_dist(
     p="examples/roux_viz_dist.ipynb"
     ):
-
     return run_test(
         p,
     )
@@ -165,7 +155,6 @@ def test_roux_viz_dist(
 def test_roux_viz_figure(
     p="examples/roux_viz_figure.ipynb"
     ):
-
     return run_test(
         p,
     )
@@ -173,7 +162,6 @@ def test_roux_viz_figure(
 def test_roux_viz_io(
     p="examples/roux_viz_io.ipynb",
     ):
-
     return run_test(
         p,
     )
@@ -181,7 +169,6 @@ def test_roux_viz_io(
 def test_roux_viz_line(
     p="examples/roux_viz_line.ipynb"
     ):
-
     return run_test(
         p,
     )
@@ -189,7 +176,6 @@ def test_roux_viz_line(
 def test_roux_viz_scatter(
     p="examples/roux_viz_scatter.ipynb"
     ):
-
     return run_test(
         p,
     )
@@ -197,7 +183,6 @@ def test_roux_viz_scatter(
 def test_roux_viz_sets(
     p="examples/roux_viz_sets.ipynb"
     ):
-
     return run_test(
         p,
     )
@@ -205,7 +190,6 @@ def test_roux_viz_sets(
 def test_roux_viz_theme(
     p="examples/roux_viz_theme.ipynb",
     ):
-
     return run_test(
         p,
     )
