@@ -652,7 +652,7 @@ class SLURMJob:
         self.time = time
         self.cpus = cpus
         self.mem = mem
-        self.append_header = append_header
+        self.append_header = append_header.replace(' #SBATCH','\n#SBATCH')
         
         self.ntasks = ntasks
         self.partition = partition
@@ -716,7 +716,7 @@ f"""#!/bin/bash
 #SBATCH --mem={self.mem}
 
 ## overriding settings (--slurm-header)
-{self.append_header.replace(' #SBATCH','\n#SBATCH')}
+{self.append_header}
 
 {job_pre}
 
