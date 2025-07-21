@@ -110,7 +110,8 @@ lint = [
 ]
 
 [tool.uv]
-default-groups = ["all"]
+default-groups = "all"
+# tool.uv.package = true
 
 [tool.black]
 experimental-string-processing = true
@@ -122,3 +123,7 @@ profile = "black"
 
 [project.scripts]
 roux = "roux.run:parser.dispatch"
+
+[build-system]
+requires = ["setuptools", "wheel"]
+build-backend = "setuptools.build_meta"

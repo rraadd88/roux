@@ -10,18 +10,20 @@
 """
 
 import sys
+
 if (sys.version_info[0]) != (3):
-    raise RuntimeError('Python 3 required ')
+    raise RuntimeError("Python 3 required ")
 
 import setuptools
 
-with open('README.md', 'r') as fh:
+with open("README.md", "r") as fh:
     long_description = fh.read()
 
 setuptools.setup(
-    name='roux',
+    name="roux",
     long_description=long_description,
     long_description_content_type="text/markdown",
-
-    packages=setuptools.find_packages('.',exclude=['test','tests', 'unit','deps','data','examples']),
+    packages=setuptools.find_packages(
+        ".", exclude=["test", "tests", "unit", "deps", "data", "examples"]
+    ),
 )
