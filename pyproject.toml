@@ -102,7 +102,7 @@ dev = [
     "flake8",
     "isort",
     "pytest-cov >= 2,< 6",
-    "testbook",
+    "papermill",
     "lazydocs", "regex", ## docs
 ]
 lint = [

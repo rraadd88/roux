@@ -2,13 +2,18 @@ name: build
 
 on:
   push:
-    branches: [ '**' ]      # triggers on all branches
+    # triggers on all branches
+    branches: [ '**' ]
     paths:
-      - "roux/**"           # triggers on any file change in roux/ or its subfolders
+    # triggers on any file change in subfolders
+      - "roux/**"           
+      - "tests/**"           
+      - ".github/**"           
   pull_request:
-    branches: [ '**' ]      # triggers on all branches
+    # triggers on all branches
+    branches: [ '**' ]
     paths:
-      - "roux/**"           # triggers on any file change in roux/ or its subfolders
+      - "roux/**"           
 
 jobs:
   build-n-test-n-coverage:
@@ -41,7 +46,7 @@ jobs:
           uv pip install -e ".[all]"
       
       - name: Ensure tox
-        run: uv pip install tox pytest pytest-cov testbook
+        run: uv pip install tox pytest pytest-cov papermill
       
       - name: Verify installed packages
         run: uv pip list
