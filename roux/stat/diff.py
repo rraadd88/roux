@@ -108,11 +108,13 @@ def get_pval(
         return
 
     assert not df.duplicated(
-        subset=([colindex] if isinstance(colindex,str) else colindex) + ([colsubset] if isinstance(colsubset,str) else colsubset)
+        subset=([colindex] if isinstance(colindex, str) else colindex)
+        + ([colsubset] if isinstance(colsubset, str) else colsubset)
     ).any(), df.rd.check_dups(
-        subset=([colindex] if isinstance(colindex,str) else colindex) + ([colsubset] if isinstance(colsubset,str) else colsubset)
+        subset=([colindex] if isinstance(colindex, str) else colindex)
+        + ([colsubset] if isinstance(colsubset, str) else colsubset)
     )
-    
+
     if not colvalue_bool:
         #         try:
         x, y = (
@@ -120,7 +122,6 @@ def get_pval(
             df.loc[(df[colsubset] == subsets[1]), colvalue].tolist(),
         )
         if len(x) != 0 and len(y) != 0 and (nunique(x + y) != 1):
-            
             if func is None:
                 return sc.stats.mannwhitneyu(
                     x,
@@ -212,12 +213,12 @@ def get_stat(
             else [subsets]
         )
         df2.columns = cols_subsets
-        
+
     if func is None:
         logging.info("mannwhitneyu used")
     else:
         logging.info(f"custom function used: {str(func)}")
-        
+
     df2 = (
         df2.groupby(cols_subsets)
         .apply(
@@ -298,13 +299,11 @@ def get_stats(
     stats=["mean", "median", "var", "size"],
     axis=0,  # concat
     test=False,
-    
     ## diff
     change_type=["diff", "ratio"],
     changeby="mean",
     # fdr=True,
     value_aggs=["mean", "median"],
-    
     **kws,
 ) -> pd.DataFrame:
     """Get statistics by iterating over columns wuth values.
@@ -389,7 +388,7 @@ def get_stats(
                     df3[f"{s} subset1"] / df3[f"{s} subset2"]
                 )
         df3["change"] = df3["change"].fillna("ns")
-        
+
     return df3
 
 
@@ -415,25 +414,28 @@ def get_significant_changes(
     if coff_p is None and alpha is not None:
         coff_p = alpha
 
-    stat_suffixs=[c.split('P')[1] if c.startswith('P ') else "" for c in df1.filter(regex="^P.*").columns]
+    stat_suffixs = [
+        c.split("P")[1] if c.startswith("P ") else ""
+        for c in df1.filter(regex="^P.*").columns
+    ]
     # for stat in ["MWU", "FE"]:
     #     stat_suffix=f" ({stat} test)"
     for stat_suffix in stat_suffixs:
-        if "P"+stat_suffix not in df1:
+        if "P" + stat_suffix not in df1:
             continue
         # without fdr
         df1[f"change is significant, P{stat_suffix} < {coff_p}"] = (
-            df1["P"+stat_suffix] < coff_p
+            df1["P" + stat_suffix] < coff_p
         )
         if coff_q is not None:
             from roux.stat.transform import get_q
 
-            df1["Q"+stat_suffix] = get_q(df1["P"+stat_suffix])
+            df1["Q" + stat_suffix] = get_q(df1["P" + stat_suffix])
             # df1[f'change is significant, Q{stat_suffix} < {coff_q}']=df1[f'Q{stat_suffix}']<coff_q
             #     info(f"corrected alpha alphacSidak={alphacSidak},alphacBonf={alphacBonf}")
             # if test!='FE':
             df1[f"significant change, Q{stat_suffix} < {coff_q}"] = df1.apply(
-                lambda x: x["change"] if x["Q"+stat_suffix] < coff_q else "ns",
+                lambda x: x["change"] if x["Q" + stat_suffix] < coff_q else "ns",
                 axis=1,
             )
             # df1.loc[df1[f'change is significant, Q{stat_suffix} < {coff_q}'],f"significant change, Q{stat_suffix} < {coff_q}"]=df1.loc[df1[f"change is significant, Q{stat_suffix} < {coff_q}"],'change']
@@ -495,7 +497,6 @@ def get_stats_groupby(
     coff_q: float = 0.1,
     alpha=None,
     fast=False,
-    
     change_type=["diff", "ratio"],
     kws_signi={},
     **kws,
@@ -516,7 +517,7 @@ def get_stats_groupby(
     df2 = (
         getattr(
             df1.groupby(cols_group),
-            f"{'progress_' if not fast and hasattr(df1.groupby(cols_group),'progress_apply') else '' if not fast else 'parallel_'}apply",
+            f"{'progress_' if not fast and hasattr(df1.groupby(cols_group), 'progress_apply') else '' if not fast else 'parallel_'}apply",
         )(
             lambda df: get_stats(
                 df1=df,
@@ -558,9 +559,9 @@ def get_diff(
     ## melt the table to make it linear
     d_ = {}
     for colx in cols_x:
-        assert (
-            df1[colx].nunique() == 2
-        ), f"df1[{colx}].nunique() = {df1[colx].nunique()}"
+        assert df1[colx].nunique() == 2, (
+            f"df1[{colx}].nunique() = {df1[colx].nunique()}"
+        )
         d_[colx] = df1.melt(
             id_vars=cols_index + [colx] + cols_group,
             value_vars=cols_y,
@@ -696,7 +697,7 @@ def binby_pvalue_coffs(
             )
             d4["change"] = k
             d4["text"] = (
-                f"{df1.loc[(df1[col]==k),colindex].nunique()}/{df1.loc[(df1[col]==k),colgroup].nunique()}"
+                f"{df1.loc[(df1[col] == k), colindex].nunique()}/{df1.loc[(df1[col] == k), colgroup].nunique()}"
             )
             d4["color"] = d1[coff][k]
             d3[i] = d4
