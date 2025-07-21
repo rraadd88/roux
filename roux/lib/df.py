@@ -169,7 +169,7 @@ def dropby_patterns(
         patterns = [patterns]
     if patterns is None or patterns == []:
         return df1
-    s0 = "|".join(patterns).replace("(", "\(").replace(")", "\)")
+    s0 = "|".join(patterns).replace("(", r"\(").replace(")", r"\)")
     s1 = f"{'^' if strict else ''}.*({s0}).*{'$' if strict else ''}"
     cols = df1.filter(regex=s1).columns.tolist()
     if test:
@@ -298,7 +298,7 @@ def clean(
         df.filter(
             regex="^(?:index|level|temporary|Unnamed|chunk|_).*$"
         ).columns.tolist()
-        + df.filter(regex="^.*(?:\.1)$").columns.tolist()
+        + df.filter(regex=r"^.*(?:\.1)$").columns.tolist()
         + cols
     )
     # exceptions
@@ -1337,7 +1337,7 @@ def get_bin_labels(
     ## first bin
     x = df_.iloc[0, :]
     if (x["end"] - x["start"]) > 1:
-        df_.loc[x.name, "label"] = f"$\leq${x['end']}"  ## right-inclusive (])
+        df_.loc[x.name, "label"] = r"$\leq$"+f"{x['end']}"  ## right-inclusive (])
     ## last bin
     x = df_.iloc[-1, :]
     if (x["end"] - x["start"]) > 1:

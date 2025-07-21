@@ -858,18 +858,27 @@ def to_html(
     p,
     # outp=None,
     env='docs',
+    kws="",
     verbose=False,
     ):
+    """
+    Args:
+        verbose: True: include stderr        
+    """
     if env is not None:
         pre=f"micromamba run -n {env} "
     else:
         pre=""
     # if outp is None:
     outp=Path(p).with_suffix(".html").as_posix()
-        
+
+    if isinstance(kws,list):
+        kws=" -M ".join(kws)
+    if verbose:
+        kws+=" -M warning:false -M error:false" 
     ## convert
     run_com(
-        f"{pre}quarto render {p} --to html --toc -M code-fold:true -M code-summary:'_' -M code-tools:true -M self-contained:true",# --output-dir {Path(outp).parent.as_posix()} --output {Path(outp).name}",
+        f"{pre}quarto render {p} --to html --toc -M code-fold:true -M code-summary:'_' -M code-tools:true -M self-contained:true -M mermaid-theme=default "+kws,# --output-dir {Path(outp).parent.as_posix()} --output {Path(outp).name}",
         verbose=verbose,
     )
     ## clean
