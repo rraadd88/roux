@@ -267,6 +267,7 @@ def plot_dists(
     # saturate_color_alpha: float=1.5,
     ax: plt.Axes = None,
     test: bool = False,
+    verbose=True,
     kws_stats: dict = {},
     **kws,
 ) -> plt.Axes:
@@ -344,10 +345,10 @@ def plot_dists(
 
     ## get stats
     if show_p:
-        if 'func' not in kws_stats or kws_stats['func'] is None:
-            col_pval='P (MWU test)'
-        else:
-            col_pval='P'
+        # if 'func' not in kws_stats or kws_stats['func'] is None:
+        #     col_pval='P (MWU test)'
+        # else:
+        col_pval='P'
                 
         if (hue is None) and (isinstance(show_p, bool)):
             from roux.stat.diff import get_stats
@@ -395,12 +396,17 @@ def plot_dists(
                 logging.info(d1)
         if df2 is not None:
             # print(df2.set_index(['subset1','subset2']).T)
-            ## stats printing
-            stats = df2.set_index(["subset1", "subset2"]).rd.dropby_patterns(
-                ["median ", "mean ", "var ", "variable"], verbose=False
-            )
-            logging.info(stats)
-            del stats
+            # ## stats printing            
+            # stats = df2.set_index(["subset1", "subset2"]).rd.dropby_patterns(
+            #     ["median ", "mean ", "var ", "variable"], verbose=False
+            # )
+            # logging.info(stats)
+            # del stats
+            if verbose:
+                try:
+                    logging.info('\n'+df2.to_string())
+                except Exception as e:
+                    pass
         else:
             show_p = False
             logging.error(
@@ -409,7 +415,8 @@ def plot_dists(
     ## axes
     if ax is None:
         ax = plt.gca()
-
+        ax.stats=df2
+    
     ## distributions
     if isinstance(kind, str):
         kind = {kind: {}}
@@ -463,7 +470,6 @@ def plot_dists(
                 for k in d1
             }
         else:
-            #     d1=show_p
             d1 = {}
         if offs_pval is None:
             offs_pval = {}

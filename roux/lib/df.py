@@ -169,7 +169,7 @@ def dropby_patterns(
         patterns = [patterns]
     if patterns is None or patterns == []:
         return df1
-    s0 = "|".join(patterns).replace("(", "\(").replace(")", "\)")
+    s0 = "|".join(patterns).replace("(", r"\(").replace(")", r"\)")
     s1 = f"{'^' if strict else ''}.*({s0}).*{'$' if strict else ''}"
     cols = df1.filter(regex=s1).columns.tolist()
     if test:
@@ -298,7 +298,7 @@ def clean(
         df.filter(
             regex="^(?:index|level|temporary|Unnamed|chunk|_).*$"
         ).columns.tolist()
-        + df.filter(regex="^.*(?:\.1)$").columns.tolist()
+        + df.filter(regex=r"^.*(?:\.1)$").columns.tolist()
         + cols
     )
     # exceptions
@@ -1337,7 +1337,7 @@ def get_bin_labels(
     ## first bin
     x = df_.iloc[0, :]
     if (x["end"] - x["start"]) > 1:
-        df_.loc[x.name, "label"] = f"$\leq${x['end']}"  ## right-inclusive (])
+        df_.loc[x.name, "label"] = r"$\leq$"+f"{x['end']}"  ## right-inclusive (])
     ## last bin
     x = df_.iloc[-1, :]
     if (x["end"] - x["start"]) > 1:
@@ -2012,6 +2012,114 @@ def sort_columns_by_values(
             axis=1,
         )
     return df1
+
+## paired stats
+@to_rd
+def check_corr(
+    data,
+    x,
+    y,
+    method='pearson',
+    resample=False,
+    verbose=True,
+
+    validate=None, 
+    
+    plot=False,
+    
+    out=False,
+    kws_plot={},
+    **kws_get_corr,
+    ):
+    kws_stat={
+        **dict(
+            method=method,
+            resample=resample,        
+        ),
+        **kws_get_corr,
+    }
+    if not plot:
+        from roux.stat.corr import get_corr
+        res = get_corr(
+            data[x],
+            data[y],
+            verbose=verbose,
+            **kws_stat,
+        )    
+    else:
+        from roux.viz.scatter import plot_scatter
+        ax=plot_scatter(
+            data,
+            x=x,
+            y=y,
+            stat_kws=kws_stat,
+            **kws_plot,
+        )
+        res=ax.stats
+    df1=pd.Series(res).to_frame().T
+    if verbose:
+        logging.info('\n'+df1.to_string())
+    if validate is not None: 
+        assert df1.query(validate).shape[0]==df1.shape[0], df1
+    if out:
+        return df1
+    else:
+        #pipe
+        return data
+
+
+@to_rd
+def check_diff(
+    data,
+    x,
+    y,
+    cols_id,
+    method=None, # mannwhitneyu
+    verbose=True,
+
+    validate=None, 
+    
+    plot=True, 
+    
+    out=False,
+    kws_plot={},
+    **kws_stats,
+    ):
+    # kws_stat={
+    #     **dict(
+    #         method=method,
+    #     ),
+    #     **kws_stats,
+    # }
+    if not plot:
+        raise NotImplementedError('## TODO: calc stat -> show on plot')
+    else:
+        from roux.viz.dist import plot_dists
+        ax=plot_dists(
+            data,
+            x=x,
+            y=y,
+            colindex=cols_id,
+            kws_stats=dict(
+                func=method,
+            ),
+            verbose=False,
+            **kws_plot,
+        )
+        res=ax.stats
+    # df1=pd.Series(res).to_frame().T
+    df1=res
+    if verbose:
+        logging.info('\n'+df1.to_string())
+    if validate is not None: 
+        assert df1.query(validate).shape[0]==df1.shape[0], df1
+        logging.info(df1)
+    if out:
+        return df1
+    else:
+        #pipe
+        return data
+
 
 ## tables io
 def dict2df(

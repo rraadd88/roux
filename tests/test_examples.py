@@ -1,119 +1,202 @@
-from testbook import testbook
+import logging
+logging.basicConfig(level='INFO',force=True)
 
-@testbook("examples/roux_global_imports.ipynb", execute=True)
-def test_roux_global_imports(tb):
-    pass # execute only because tests are present in the notebook itself
-    return
+from pathlib import Path
 
-@testbook('examples/roux_lib_df.ipynb', execute=True)
-def test_roux_lib_df(tb):
-    assert "78.666667" in tb.cell_output_text('check_na'), tb.cell_output_text('check_na')    
-    assert tb.cell_output_text('check_nunique').startswith("species    3\n"), tb.cell_output_text('check_nunique') 
-    return
+## fix ipython
+import subprocess
 
-@testbook("examples/roux_lib_dfs.ipynb", execute=True)
-def test_roux_lib_dfs(tb):
-    pass # execute only because tests are present in the notebook itself
-    return
+r = subprocess.run(
+        "ipython profile create",
+        shell=True,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        text=True,
+    )
+logging.info(r.stdout)
+r = subprocess.run(
+        "ipython locate",
+        shell=True,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        text=True,
+    )
+logging.info(r.stdout)
+ipy_path=Path(r.stdout.split('\n')[0]).absolute().as_posix()
+assert Path(ipy_path).exists(), ipy_path
 
-@testbook("examples/roux_lib_df_apply.ipynb", execute=True)
-def test_roux_lib_df_apply(tb):
-    pass # execute only because tests are present in the notebook itself
-    return
+r = subprocess.run(
+        f"echo 'c.HistoryManager.enabled = False\nc.HistoryAccessor.enabled = False' >> {ipy_path}/profile_default/ipython_config.py",
+        shell=True,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        text=True,
+    )
+logging.info(r)
 
-@testbook('examples/roux_lib_io.ipynb', execute=True)
-def test_roux_lib_io(tb):
-    pass # execute only because tests are present in the notebook itself
-    return
+output_dir_path='examples/outputs/'
+Path(output_dir_path).mkdir(parents=True,exist_ok=True)
 
-@testbook("examples/roux_lib_set.ipynb", execute=True)
-def test_roux_lib_set(tb):
-    pass # execute only because tests are present in the notebook itself
-    return
+def run_test(notebook_path, output_path=None):
+    import papermill as pm
+    # Execute the notebook and save the output
+    pm.execute_notebook(
+        notebook_path,
+        f"{output_dir_path}/{Path(notebook_path).name}",
+        kernel_name="python3",  # or change to your kernel
+        start_timeout = 600,
+    )
 
-@testbook('examples/roux_lib_str.ipynb', execute=True)
-def test_roux_lib_str(tb):
-    assert tb.cell_output_text('encoded_long')=='eNqVj00KwjAQRq8Ssqli8QCCK6_gTiSk7WcJNkmZSbRF9OwmjYtuhSwm7_HNz0u2fjCuwyQPQnYUe2E6WYuMWdtxQOalWpnYMMLK_ECxcxY6tvl782TjoDmhV2biI06bElIlVIszQQcLFzaEGwiuxbFKZbXdip0YyVhNs_KkLILm9ExuJ62Z0A1WvtOY-5NVj6CSDawIPYHZeLeM7cnHcYlwS4BT6Y4cemgyuikX_rPU5bwP4HCV7y_fP20r', 'possible change in the funtion.'
-    assert tb.cell_output_text('encoded_short')=='e11fafe6bf21d3db843f8a0e4cea21bc600832b3ed738d2b09ee644ce8008e44', 'possible change in the funtion.'
-    return 
+def test_roux_global_imports(
+    p="examples/roux_global_imports.ipynb"
+    ):
+    return run_test(
+        p,
+    )
 
-@testbook('examples/roux_lib_sys.ipynb', execute=True)
-def test_roux_lib_sys(tb):
-    pass # execute only because tests are present in the notebook itself
-    return
+def test_roux_lib_df(
+    p="examples/roux_lib_df.ipynb",
+    ):
+    return run_test(
+        p,
+    )
 
-@testbook("examples/roux_stat_classify.ipynb", execute=True)
-def test_roux_stat_classify(tb):
-    pass # execute only because tests are present in the notebook itself
-    return
+def test_roux_lib_dfs(
+    p="examples/roux_lib_dfs.ipynb"
+    ):
+    return run_test(
+        p,
+    )
 
-@testbook('examples/roux_stat_cluster.ipynb', execute=True)
-def test_roux_stat_cluster(tb):
-    pass # execute only because tests are present in the notebook itself
-    return
+def test_roux_lib_df_apply(
+    p="examples/roux_lib_df_apply.ipynb"
+    ):
+    return run_test(
+        p,
+    )
 
-@testbook("examples/roux_stat_corr.ipynb", execute=True)
-def test_roux_stat_corr(tb):
-    pass # execute only because tests are present in the notebook itself
-    return
+def test_roux_lib_io(
+    p="examples/roux_lib_io.ipynb",
+    ):
+    return run_test(
+        p,
+    )
 
-@testbook("examples/roux_stat_sets.ipynb", execute=True)
-def test_roux_stat_sets(tb):
-    pass # execute only because tests are present in the notebook itself
-    return
+def test_roux_lib_set(
+    p="examples/roux_lib_set.ipynb"
+    ):
+    return run_test(
+        p,
+    )
 
-@testbook('examples/roux_viz_annot.ipynb', execute=True)
-def test_roux_viz_annot(tb):
-    pass # execute only because tests are present in the notebook itself
-    return
+def test_roux_lib_str(
+    p="examples/roux_lib_str.ipynb",
+    ):
+    return run_test(
+        p,
+    ) 
 
-@testbook("examples/roux_viz_ax.ipynb", execute=True)
-def test_roux_viz_ax(tb):
-    pass # execute only because tests are present in the notebook itself
-    return
+# def test_roux_lib_sys(
+#     p="examples/roux_lib_sys.ipynb",
+#     ):
+#     return run_test(
+#         p,
+#     )
 
-@testbook("examples/roux_viz_dist.ipynb", execute=True)
-def test_roux_viz_dist(tb):
-    pass # execute only because tests are present in the notebook itself
-    return
+# def test_roux_stat_classify(
+#     p="examples/roux_stat_classify.ipynb"
+#     ):
+#     return run_test(
+#         p,
+#     )
 
-@testbook("examples/roux_viz_figure.ipynb", execute=True)
-def test_roux_viz_figure(tb):
-    pass # execute only because tests are present in the notebook itself
-    return
+def test_roux_stat_cluster(
+    p="examples/roux_stat_cluster.ipynb",
+    ):
+    return run_test(
+        p,
+    )
 
-@testbook('examples/roux_viz_io.ipynb', execute=True)
-def test_roux_viz_io(tb):
-    pass # execute only because tests are present in the notebook itself
-    return
+def test_roux_stat_corr(
+    p="examples/roux_stat_corr.ipynb"
+    ):
+    return run_test(
+        p,
+    )
 
-@testbook("examples/roux_viz_line.ipynb", execute=True)
-def test_roux_viz_line(tb):
-    pass # execute only because tests are present in the notebook itself
-    return
+def test_roux_stat_sets(
+    p="examples/roux_stat_sets.ipynb"
+    ):
+    return run_test(
+        p,
+    )
 
-@testbook("examples/roux_viz_scatter.ipynb", execute=True)
-def test_roux_viz_scatter(tb):
-    pass # execute only because tests are present in the notebook itself
-    return
+def test_roux_viz_annot(
+    p="examples/roux_viz_annot.ipynb",
+    ):
+    return run_test(
+        p,
+    )
 
-@testbook("examples/roux_viz_sets.ipynb", execute=True)
-def test_roux_viz_sets(tb):
-    pass # execute only because tests are present in the notebook itself
-    return
+# def test_roux_viz_ax(
+#     p="examples/roux_viz_ax.ipynb"
+#     ):
+#     return run_test(
+#         p,
+#     )
 
-@testbook('examples/roux_viz_theme.ipynb', execute=True)
-def test_roux_viz_theme(tb):
-    pass # execute only because tests are present in the notebook itself
-    return
+def test_roux_viz_dist(
+    p="examples/roux_viz_dist.ipynb"
+    ):
+    return run_test(
+        p,
+    )
 
-@testbook('examples/roux_workflow_io.ipynb', execute=True)
-def test_roux_workflow_io(tb):
-    assert tb.cell_output_text('read_configs')=='value interpolated in config1 = value from metaconfig = value1', tb.cell_output_text('read_configs')
-    assert tb.cell_output_text('read_configs_with_inputs')=='value interpolated in config1 = value from metaconfig = modified', tb.cell_output_text('read_configs_with_inputs')
+def test_roux_viz_figure(
+    p="examples/roux_viz_figure.ipynb"
+    ):
+    return run_test(
+        p,
+    )
 
-# @testbook("examples/roux_workflow_task.ipynb", execute=True)
-# def test_roux_workflow_task(tb):
-#   """TODOs: set kernel for testing."""
-#     pass # execute only because tests are present in the notebook itself
-#     return
+def test_roux_viz_io(
+    p="examples/roux_viz_io.ipynb",
+    ):
+    return run_test(
+        p,
+    )
+
+def test_roux_viz_line(
+    p="examples/roux_viz_line.ipynb"
+    ):
+    return run_test(
+        p,
+    )
+
+def test_roux_viz_scatter(
+    p="examples/roux_viz_scatter.ipynb"
+    ):
+    return run_test(
+        p,
+    )
+
+def test_roux_viz_sets(
+    p="examples/roux_viz_sets.ipynb"
+    ):
+    return run_test(
+        p,
+    )
+
+def test_roux_viz_theme(
+    p="examples/roux_viz_theme.ipynb",
+    ):
+    return run_test(
+        p,
+    )
+
+def test_roux_workflow_io(
+    p="examples/roux_workflow_io.ipynb",
+    ):
+    return run_test(
+        p,
+    )

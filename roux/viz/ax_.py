@@ -224,10 +224,10 @@ def format_labels(
         return s[0].upper() + s[1:]
 
     for k in ["legend"] + [f"{k}label" for k in axes] + ["title"]:
-        if k == "title":
-            kws = dict(fontdict=dict(fontsize=title_fontsize))
-        else:
-            kws = {}
+        # if k == "title":
+        #     kws = dict(fontdict=dict(fontsize=title_fontsize))
+        # else:
+        kws = {}
         if hasattr(ax, "get_" + k):
             if k == "legend":
                 ## adjust legend first, because setting other labels can have unexpected effects on the legend.

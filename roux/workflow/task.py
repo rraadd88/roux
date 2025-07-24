@@ -1,5 +1,10 @@
 """For task management."""
 
+import os
+import time
+from tqdm import tqdm
+from datetime import datetime, timedelta
+
 ## logging
 # try:
 from roux.lib.log import Logger
@@ -11,6 +16,7 @@ logging = Logger() # level='INFO'
 from pathlib import Path
 
 ## internal
+from roux.lib.sys import run_com
 from roux.lib.io import read_dict, to_dict, read_ps
 from roux.workflow.log import test_params
 
@@ -226,6 +232,9 @@ def run_task_nb(
     if not output_notebook_path:
         ## save report i.e. output notebook
         output_notebook_path = f"{log_dir_path}_{Path(script_path).name}"
+    ## to open 
+    output_notebook_path=Path(output_notebook_path).absolute()
+    
     if verbose:
         logging.info(parameters["output_path"], output_notebook_path)
 
@@ -264,8 +273,11 @@ def apply_run_task_nb(
             force=force,
             **kws_papermill,
         )
-    except Exception:
-        raise RuntimeError(f"tb: check {x}")
+    except RuntimeError as e:
+        logging.error(f"during output_path: {x['output_path']}")
+        import traceback
+        traceback_string = traceback.format_exc()
+        print(traceback_string)
 
 def run_tasks_nb(
     script_path: str=None,
@@ -334,6 +346,18 @@ def run_tasks_nb(
         import nest_asyncio
         nest_asyncio.apply()
     """
+    def _to_out(
+        out_paths,
+        params,
+        df1,
+    ):
+        if not out_paths:
+            return params
+        else:
+            if 'nb path' in df1:
+                df1=df1.set_index('nb path')
+            return df1['params']#.apply(pd.Series)
+    
     if script_path is None and input_notebook_path is not None:
         script_path=input_notebook_path
         logging.warning("input_notebook_path will be deprec.")    
@@ -346,72 +370,6 @@ def run_tasks_nb(
     if params is None and parameters_list is not None:
         params=parameters_list
         del parameters_list
-
-    # if test:
-    #     force = True
-    # ## save task in unique directories
-    # if parameters_list is None:
-    #     ## infer output paths
-    #     from roux.lib.sys import to_output_paths
-
-    #     parameters_list = to_output_paths(
-    #         inputs=inputs,
-    #         output_path_base=output_path_base,
-    #         encode_short=True,
-    #         key_output_path="output_path",
-    #         verbose=verbose,
-    #         force=force,
-    #     )
-    #     ## save all parameters
-    #     for k, parameters in parameters_list.items():
-    #         ## save parameters
-    #         output_dir_path = output_path_base.split("{KEY}")[0]
-    #         to_dict(
-    #             parameters,
-    #             f"{output_dir_path}/{k.split(output_dir_path)[1].split('/')[0]}/.parameters.yaml",
-    #         )
-    # # print(parameters_list)
-    
-    # if isinstance(parameters_list, str):
-    #     parameters_list = read_dict(parameters_list)
-        
-    # if len(parameters_list) == 0:
-    #     logging.info("nothing to process. use `force`=True to rerun.")
-    #     return
-        
-    # if isinstance(parameters_list, dict):
-    #     ## input_paths used as keys
-    #     if not any(['input_path' in d for d in parameters_list.values()]):
-    #         logging.warning("setting keys of params as input_path s ..")
-    #         parameters_list={k:{**d,**{'input_path':k}} for k,d in parameters_list.items()}
-    #     if validate_params(
-    #         parameters_list[
-    #             list(parameters_list.keys())[0]
-    #         ]
-    #         ):
-    #         parameters_list = list(parameters_list.values())
-    #     else:
-    #         raise ValueError(parameters_list)
-            
-    # if test:
-    #     logging.info("Aborting run because of the test mode")
-    #     return parameters_list
-        
-    # if isinstance(parameters_list, list):
-    #     parameters_list=flt_params(
-    #         parameters_list,
-    #         force=force,
-    #     )
-    #     if len(parameters_list) == 0:
-    #         return 
-    # else:
-    #     raise ValueError(parameters_list)
-    # ## chech for duplicate output paths
-    # assert len(set([d["output_path"] for d in parameters_list])) == len(
-    #     parameters_list
-    # ), (len(set([d["output_path"] for d in parameters_list])), len(parameters_list))
-    # ## input_path!=output_path
-    # assert [Path(d["input_path"])!=Path(d["output_path"]) for d in parameters_list], [d for d in parameters_list if Path(d["input_path"])==Path(d["output_path"])]
     
     params=pre_params(
         params=params,
@@ -423,6 +381,10 @@ def run_tasks_nb(
         # testn = testn,
     )
 
+    if len(params)==0:
+        # logging.status('exiting ..')
+        return 
+        
     ## nb
     if to_filter_nbby_patterns_kws is not None:
         logging.info("filtering the notebook")
@@ -472,6 +434,11 @@ def run_tasks_nb(
         
     if len(df1) == 0:
         logging.warning("No tasks remaining.")
+        # _to_out(
+        #         out_paths,
+        #         params,
+        #         df1,
+        #     )
         return 
         
     if test1:
@@ -544,25 +511,13 @@ def run_tasks_nb(
             
     ## log
     logging.info(f"Time taken: {datetime.now()-_start_time}")
-    if not out_paths:
-        return params
-    else:
-        if 'nb path' in df1:
-            df1=df1.set_index('nb path')
-        return df1['params']#.apply(pd.Series)
 
+    return _to_out(
+        out_paths,
+        params,
+        df1,        
+    )
 ## server       
-import os
-import time
-
-from tqdm import tqdm
-# from pprint import pprint
-
-from roux.lib.sys import run_com
-# from roux.workflow.task import flt_params
-
-from datetime import datetime, timedelta
-
 # def flt_params(
 #     parameters_list,
 #     force=False,
@@ -697,7 +652,7 @@ class SLURMJob:
         self.time = time
         self.cpus = cpus
         self.mem = mem
-        self.append_header = append_header
+        self.append_header = append_header.replace(' #SBATCH','\n#SBATCH')
         
         self.ntasks = ntasks
         self.partition = partition
@@ -761,7 +716,7 @@ f"""#!/bin/bash
 #SBATCH --mem={self.mem}
 
 ## overriding settings (--slurm-header)
-{self.append_header.replace(' #SBATCH','\n#SBATCH')}
+{self.append_header}
 
 {job_pre}
 
@@ -1149,9 +1104,10 @@ def pre_cfg_run(
 
 ## wrapper
 def run_tasks(
-    script_path: str, ## preffix
+    script_path: str, ## prefix
     params=None,
 
+    
     runner=None, ## py, bash, slurm (None:auto)
     cpus: int = 1,
     kernel: str = None,
@@ -1184,7 +1140,12 @@ def run_tasks(
     force_setup : bool =True,
     cache_dir_path='.roux/',
     wd_path=None,    
-    
+
+
+    ## back-compatible
+    parameters_list=None,
+
+    ## exec.
     force : bool =False,
     simulate: bool = False,
     
@@ -1209,6 +1170,13 @@ def run_tasks(
 
     Notes:
         Slurm script is created even if runner=='bash'
+
+        Back-compatible: input_notebook_path:script_path
+    
+            grep -rl 'input_notebook_path=' ../*.ipynb
+            sed -i -e 's/input_notebook_path=//g' ../*.ipynb
+            
+            sed -i -e 's/parameters_list=/params=/g' ../*.ipynb
         
     Examples:    
         Feeding:
@@ -1236,7 +1204,10 @@ def run_tasks(
     )
     
     ## params
-    
+    if params is None and parameters_list is not None:
+        params=parameters_list
+        del parameters_list
+        logging.warning("arg: parameters_list will be depr.d.")
     # if isinstance(params,str):
     #     from roux.lib.io import is_dict
     #     assert is_dict(params), f"expected params in dict format: {params}"
@@ -1257,7 +1228,7 @@ def run_tasks(
         
         dfs_run={}
         for step in tqdm(cfg_run):
-            logging.processing(step)    
+            logging.processing(step) 
             
             dfs_run[step]=run_tasks(
                 params=cfg_run[step]['pms_run'],
@@ -1287,7 +1258,8 @@ def run_tasks(
                 while not Path(cfg_run[step]['pms_run']['output_path']).exists():
                     time.sleep(2)
             else:
-                test_params([cfg_run[step]['pms_run']])            
+                if not Path(cfg_run[step]['pms_run']['output_path']).exists():
+                    test_params([cfg_run[step]['pms_run']])
             
         return pd.concat(dfs_run)
         
@@ -1301,6 +1273,9 @@ def run_tasks(
         testn = testn,
         flt_input_exists = flt_input_exists,
     )
+
+    if len(params)==0:
+        return 
     
     if runner.startswith('py'):
         from roux.lib.sys import is_interactive_notebook
@@ -1339,7 +1314,7 @@ def run_tasks(
     if runner=='slurm':
         logging.launching("jobs ..",n=min([cpus,5]))
     
-    logging.processing(f"on {runner}, {cpus} at a time ..",n=min([cpus,5]))
+    logging.status(f"processing on {runner}, {cpus} at a time ..",n=min([cpus,5]))
     
     coms=[]
     # if runner in ['slurm','bash']:
@@ -1409,7 +1384,6 @@ def run_tasks(
         # sbatch_path=f"{cache_dir_path}/{key}.sh"
         sbatch_path=f"{log_dir_path}/run.sh"
         
-        # logging.info(runner)
         if not Path(sbatch_path).exists() or force_setup:
             if runner!='slurm' and not _logged:
                 logging.warning("forcing setup (re-rewiting the sbatch scripts)..")
@@ -1422,7 +1396,6 @@ def run_tasks(
                 log_dir_path=log_dir_path,
                 **kws_runner,
             )
-        # logging.info(runner)
     
         if runner=='slurm':
             if not simulate:
@@ -1432,7 +1405,7 @@ def run_tasks(
                         sbatch_path
                     )
                 )
-        # logging.info(runner)
+
         if runner!='slurm':
             coms.append(
                 f"bash {sbatch_path} &> {log_dir_path}/stdout",
@@ -1470,8 +1443,9 @@ def run_tasks(
         
         
     # logging.saving('outputs.')
-    logging.done('processing.',time=_time)
-
+    if not simulate:
+        logging.done('processing.',time=_time)
+        
     ## uniform output
     return pd.Series(params_jobs).to_frame('params')['params']#.apply(pd.Series)
 
