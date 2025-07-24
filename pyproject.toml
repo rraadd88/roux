@@ -28,6 +28,61 @@ dependencies = [
     # "regex>=2018.7.11",
 ]
 
+[optional-dependencies]
+interactive = [
+    "ipywidgets",
+    "ipykernel",
+    # "watermark", # session info
+]
+data = [
+    "pyarrow", # fast
+    "openpyxl", # special io
+]
+stat = [
+    "scipy>=1.1.0",
+    "statsmodels",
+    "networkx",
+    "scikit-learn",
+        ]
+viz = [
+    "altair",
+      ]
+workflow = [
+    "omegaconf",
+    "papermill",
+    "argh",
+    "ruff",
+    "nbconvert",
+    "removestar",
+]
+# An 'all' group that includes all other groups
+all = [
+    {include-group = "interactive"},
+    {include-group = "data"},
+    {include-group = "stat"},
+    {include-group = "viz"},
+    {include-group = "workflow"},
+]
+
+## development and maintenance
+dev = [
+    "pytest",
+    "tox",
+    "tox-gh-actions",
+    "jupyter","ipywidgets","ipykernel",
+    # "sphinx","recommonmark",
+    "black",
+    "coveralls == 3.*",
+    "flake8",
+    "isort",
+    "pytest-cov >= 2,< 6",
+    "papermill",
+    "lazydocs",
+    "regex", ## docs
+    {include-group = "all"},    
+]
+
+## for uv
 [dependency-groups]
 interactive = [
     "ipywidgets",
@@ -83,7 +138,7 @@ dev = [
 ]
 
 [tool.uv]
-default-groups = "all"
+default-groups = ["all"]
 package = true
 
 [tool.black]
