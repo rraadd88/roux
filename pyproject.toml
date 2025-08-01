@@ -20,7 +20,7 @@ license = "GPL-3.0-or-later"
 readme = "README.md"
 dependencies = [
     "numpy>=1.17.3",
-    "pandas>=0.25.3,<=2.3.0",
+    "pandas>=0.25.3,<=2.3.1",
     "pyyaml>=5.1",
     "matplotlib>=2.2",
     "seaborn>=0.8",
