@@ -2079,7 +2079,7 @@ def check_diff(
 
     validate=None, 
     
-    plot=True, 
+    plot=False, 
     
     out=False,
     kws_plot={},
@@ -2405,7 +2405,40 @@ class log:
 
         return log_apply(self._obj, fun=melt_paired, **kws)
 
-    ## .rd functions for logging-only
+    ## .rd functions for logging-only, usage in pipes
+    def head(self, **kws):
+        logging.info(
+            r'head:\n'+(
+                self
+                    ._obj.head(
+                    **kws,
+                )
+                .to_string()
+            )
+            )
+        return self._obj
+    def tail(self, **kws):
+        logging.info(
+            r'tail:\n'+(
+                self
+                    ._obj.tail(
+                    **kws,
+                )
+                .to_string()
+            )
+            )
+        return self._obj
+    def describe(self, **kws):
+        logging.info(
+            r'describe:\n'+(
+                self
+                    ._obj.describe(
+                    **kws,
+                )
+                .to_string()
+            )
+            )
+        return self._obj     
     def check_na(self, **kws):
         # logging.info(f'na {kws}')
         logging.info(check_na(self._obj, **kws))

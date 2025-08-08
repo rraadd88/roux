@@ -23,7 +23,7 @@ from pathlib import Path #noqa
 from os.path import exists,dirname,basename,abspath,isdir,splitext #noqa # pathlib to be preferred in the future
 ## system functions from roux
 from roux.lib.sys import read_ps, basenamenoext, to_path, makedirs, get_datetime #noqa
-from roux.lib.io import read_dict, to_dict, read_table, to_table, to_version, backup #noqa
+from roux.lib.io import read_dict, to_dict, read_table, to_table, read_data, to_version, backup #noqa
 ## data functions from roux
 from roux.lib.str import get_bracket, replace_many, get_suffix, get_prefix #noqa
 from roux.lib.set import dropna, flatten, unique, assert_overlaps_with, validate_overlaps_with, check_non_overlaps_with #noqa
@@ -62,7 +62,7 @@ import logging
 root_logger = logging.getLogger()
 root_logger.setLevel(logging.INFO)
 ## for the notebook
-from roux.lib.log import Logger
+from roux.lib.log import Logger, log_dict
 logging = Logger() # level='INFO'
 # except:
     # import logging #noqa

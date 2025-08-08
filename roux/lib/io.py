@@ -550,6 +550,7 @@ def read_dict(
     apply_on_keys=None,
     # encoding=None,
     sort_ps=True,
+    verbose=False,
     **kws,
 ) -> dict:
     """Read dictionary file.
@@ -567,7 +568,7 @@ def read_dict(
     assert isinstance(p, (str, list)), p
     if "*" in p or isinstance(p, list):
         if sort_ps:
-            p=read_ps(p)
+            p=read_ps(p,verbose=verbose)
         else:
             assert isinstance(p,list)
         d1 = {p: read_dict(p) for p in p}
@@ -760,16 +761,17 @@ def read_table(
     """
     if isinstance(p, list) or (isinstance(p, str) and ("*" in p)):
         if isinstance(p, str) and ("*" in p):
-            ps = read_ps(p, test=False)
+            _ps = read_ps(p, verbose=False)
             if exists(p.replace("/*", "")):
                 logging.warning(f"exists: {p.replace('/*','')}")
         elif isinstance(p, list):
-            ps = p
+            _ps = p
+            
         return read_tables(
-            ps,
+            p,
             params=params,
             filterby_time=filterby_time,
-            tables=len(ps),
+            tables=len(_ps),
             verbose=verbose,
             **kws_read_tables,  # is kws_apply_on_paths,
         )
@@ -782,9 +784,10 @@ def read_table(
                 logging.warning("empty table found")
                 return df_
             if df_.columns.tolist()[-1] == "path":
-                logging.info(
-                    f" {len(df_['path'].tolist())} paths from the file."
-                )
+                if verbose:
+                    logging.info(
+                        f" {len(df_['path'].tolist())} paths from the file."
+                    )
                 ps = df_["path"].tolist()
                 return read_tables(
                     ps,
@@ -920,7 +923,10 @@ def apply_on_paths(
     filter_rows: dict = None,
     # progress_bar: bool = True,
     params: dict = {},
-    fast: bool = False,
+
+    cpus: int = 1,
+    fast: bool = False, # to be deprecated
+
     dbug: bool = False,
     test1: bool = False,
     verbose: bool = True,
@@ -967,6 +973,9 @@ def apply_on_paths(
     TODOs:
         Move out of io.
     """
+    if isinstance(fast,int):
+        cpus=fast
+        del fast
 
     def read_table_(
         p,
@@ -1020,10 +1029,21 @@ def apply_on_paths(
     if to_col is not None:
         colindex = list(to_col.keys())[0]
         replaces_index = list(to_col.values())[0]
+
     if replaces_index is not None:
         drop_index = False
+        
+        if replaces_index=='ids':
+            # print(ps)
+            to_ids=read_ps(
+                ps,
+                fmt=replaces_index,
+                verbose=verbose,
+            )
+            # print(to_ids)
+            replaces_index=lambda x: to_ids[x]
 
-    ps = read_ps(ps, test=verbose)
+    ps = read_ps(ps, verbose=verbose)
 
     if len(ps) == 0:
         logging.error("no paths found")
@@ -1032,6 +1052,7 @@ def apply_on_paths(
     if test1:
         ps = ps[:1]
         logging.warning(f"test1=True, {ps[0]}")
+        
         
     if (replaces_outp is not None) and ("force" in kws):
         if not kws["force"]:
@@ -1059,27 +1080,24 @@ def apply_on_paths(
         logging.info("no paths remained to be processed.")
         return df1
 
-    if fast!=False and drop_index:
-        logging.info(f"using {fast} cpus ..")
+    
+    if cpus>1 and drop_index:
+        logging.info(f"using {cpus} cpus ..")
         import roux.lib.df_apply as rd #noqa
         return df1.rd.apply_async(
             lambda x: read_table(
                 x['path'],
                 **kws_read_table,
             ),
-            cpus=fast if isinstance(fast,int) else 2,
+            cpus=cpus,
             unstack=False,
         )
-    
-    # if fast and not progress_bar:
-    #     progress_bar = True
-    
+        
     _groupby = df1.groupby("path", as_index=True)
     
     df2 = getattr(
         _groupby,
         # "progress_apply"
-        # if fast
         # else "progress_apply"
         # if hasattr(_groupby, "progress_apply")
         # else "apply",
@@ -1115,9 +1133,7 @@ def apply_on_paths(
             to_list(df2.tolist(), logp)
             logging.info(logp)
         return df2
-    # if not path is None:
-    #     drop_index=False
-    #     colindex,replaces_index=path
+        
     if drop_index:
         df2 = df2.rd.clean().reset_index(drop=drop_index).rd.clean()
     else:
@@ -1139,9 +1155,14 @@ def apply_on_paths(
             if replaces_index == "basenamenoext":
                 replaces_index = basenamenoext
         ## update: faster renaming
-        to_value={x: replace_many(
-                                x, replaces=replaces_index, replacewith="", ignore=False
-                            )  for x in df2[colindex].unique()}
+        to_value={
+            x: replace_many(
+                    x,
+                    replaces=replaces_index,
+                    replacewith="",
+                    ignore=False
+                    )  for x in df2[colindex].unique()
+        }
         df2 = (
             df2
             .assign(
@@ -1155,12 +1176,12 @@ def apply_on_paths(
 
 def read_tables(
     ps: list,
-    fast: bool = False,
     filterby_time=None,
     to_dict: bool = False,
     params: dict = {},
     tables: int = None,
-    **kws_apply_on_paths: dict,
+    verbose=False,
+    **kws_apply_on_paths: dict, # cpus
 ):
     """Read multiple tables.
 
@@ -1181,10 +1202,16 @@ def read_tables(
 
     TODOs:
         Parameter to report the creation dates of the newest and the oldest files.
-    """    
+    """        
     if filterby_time is not None:
+        if isinstance(ps, str) and ("*" in p):
+            ps = read_ps(ps, verbose=verbose)
+            if exists(ps.replace("/*", "")):
+                logging.warning(f"exists: {p.replace('/*','')}")
+        elif isinstance(p, list):
+            ps = ps
+            
         from roux.lib.sys import ps2time
-
         df_ = ps2time(ps)
         ps = df_.loc[df_["time"].str.contains(filterby_time), "p"].unique().tolist()
         kws_apply_on_paths["drop_index"] = False  # see which files are read
@@ -1192,7 +1219,7 @@ def read_tables(
         df2 = apply_on_paths(
             ps,
             func=lambda df: df,
-            fast=fast,
+            # cpus=cpus,
             # drop_index=drop_index,
             params=params,
             kws_read_table=dict(tables=tables),
@@ -1202,7 +1229,7 @@ def read_tables(
         return df2
     else:
         if not isinstance(ps,dict):
-            ps=read_ps(ps)
+            ps=read_ps(ps,verbose=verbose)
             ps=dict(zip(ps,ps))
         return {k: read_table(p, params=params) for k,p in ps.items()}
 

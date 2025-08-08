@@ -226,8 +226,7 @@ def annot_side(
             test = test, #: bool = False,
             kws_text = kws_text, #={},
             
-            # **kws_line,
-            **kws_text
+            **kws_line,
         )
     
     if ax is None:

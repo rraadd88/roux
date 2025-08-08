@@ -78,11 +78,22 @@ def get_ps_with_prefix(file_path):
 
 def read_ps(
     ps,
-    errors=None,
+    use_arxv=False,
+    
     ## tree-related
     tree_depth=1,
-    test: bool = False,
+    
+    ## filtering
     with_prefix: bool= False,
+    
+    ## post
+    func_post=None, # e.g. absolute     
+
+    ## out
+    fmt=None, ## dict
+    
+    errors=None,
+    test: bool = False,
     verbose: bool = True,
 ) -> list:
     """Read a list of paths.
@@ -98,20 +109,38 @@ def read_ps(
     
     if isinstance(ps, str):
         if "*" in ps:
-            ps = glob(ps)
+            if fmt is None:
+                ps = glob(ps)
+            elif fmt=='ids':
+                assert ps.count('*')==1, ps
+                id_parti=Path(ps).parts.index('*')
+                to_ids={Path(p).as_posix():Path(p).parts[id_parti] for p in glob(ps)}
+                logging.info(f"fmt: {len(to_ids)} {fmt}")
+                return to_ids         
+            else:
+                raise ValueError(fmt)
         else:
             if Path(ps).is_dir() and verbose:
                 tree(ps,tree_depth=tree_depth)
             ps = [ps]
 
     if isinstance(ps,list):
+        if use_arxv:
+            from roux.lib.io import read_arxv
+            ps = [read_arxv(p) if not Path(p).exists() else p for p in ps]
+            
         if len(ps)==0:
             return ps
         assert isinstance(ps[0],str), ps[0]
-        
+
+    ## filtering
     if with_prefix:
         assert len(ps)==1, ps
         ps=get_ps_with_prefix(ps[0])+ps
+
+    ## post
+    if func_post is not None:
+        ps=list(map(func_post,ps))
         
     ps = sorted(ps)
         
@@ -140,7 +169,6 @@ def read_ps(
                 return
             logging.warning("paths do not exist.")
     return ps
-
 
 def to_path(
     s,
