@@ -2,6 +2,7 @@
 
 import pandas as pd
 import logging
+from tqdm import tqdm
 
 # paths
 from roux.lib.sys import (
@@ -170,12 +171,17 @@ def to_arxv(
         verbose=True
 
     if len(read_ps(ind,verbose=verbose))>1:
-        ## recurse
+        logging.warning("running recursively ..")
+        
         outps={}
-        for p_ in read_ps(ind,verbose=False):
+        for p_ in tqdm(read_ps(ind,verbose=False)):
             outps[p_]=to_arxv(
                 p_,
+                
                 verbose=verbose,
+                force=force,
+                wait=wait,
+                simulate=simulate,                
                 )
         return outps
 
@@ -206,6 +212,8 @@ def to_arxv(
                 verbose=verbose,
                 wait=wait, # do not wait for the process to finish
                 )
+        else:
+            logging.warning(f"exists: {outp}")
         if wait:
             assert Path(outp).exists(), outp
     return outp

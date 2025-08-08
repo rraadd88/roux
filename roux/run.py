@@ -1,8 +1,10 @@
 """For access to a few functions from the terminal."""
 
 import logging
-
 logging.getLogger().setLevel(logging.INFO)
+
+# from roux.lib.log import Logger
+# logging=Logger()
 
 import argh
 
