@@ -833,8 +833,13 @@ def read_table(
         if any(
             [s == ext for s in ["pqt", "parquet"]]
         ):  # p.endswith('.pqt') or p.endswith('.parquet'):
+            df=pd.read_parquet(
+                    p,
+                    engine=engine,
+                    **params
+                )
             return post_read_table(
-                pd.read_parquet(p, engine=engine, **params),
+                df,
                 clean=clean,
                 tables=tables,
                 verbose=verbose,

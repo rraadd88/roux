@@ -573,6 +573,113 @@ def plot_dists(
     return ax
 
 
+def plot_many_dists(
+    data,
+    x,
+    y,
+    col_id,
+    
+    kind='box',
+    hue=None,
+    order='median', # because of the boxplot
+    ascending=True,
+    
+    ref_data=None,
+    ref_expr=None,
+    ref_agg='median', # because of the boxplot
+    ref_kws_plot={},
+    
+    ax=None,
+    **kws_plot_dists,
+):
+    """
+    Generates and saves a customized distribution plot.
+
+    Args:
+        data (pd.DataFrame): The data to plot.
+        x (str): The column for the x-axis.
+        y (str): The column for the y-axis.
+        plots_dir_path (str): The directory to save the plots in.
+        order (str, optional): How to order the y-axis. Can be 'mean' or 'median'. Defaults to 'mean'.
+        hue (str, optional): The column for the hue. Defaults to None.
+        ref_data (pd.DataFrame, optional): Data for drawing reference lines. Defaults to None.
+        xlim (tuple, optional): The x-axis limits. Defaults to (0, 100).
+        plot_prefix (str, optional): The prefix for the saved plot files. Defaults to "dists_".
+        showfliers (bool, optional): Whether to show outliers. Defaults to False.
+        data_for_plot_name (pd.DataFrame, optional): The data to use for the plot name. Defaults to None.
+        kind (str, optional): The kind of plot to generate. Defaults to 'box'.
+    """
+    if ax is None:
+        ax=plt.gca()
+    
+    if not ref_expr is None:
+        ref_data=(
+            data
+                .log.query(expr=ref_expr)
+                .groupby(y)[x].agg(ref_agg)
+                .reset_index()
+            )
+        data=(
+            data
+                .log.query(expr=ref_expr.replace('==','!='))
+            .rd.assert_dense(
+                subset=[y,col_id]
+            )
+        )
+
+    # Determine the order of the y-axis
+    if isinstance(order,str):
+        order = data.groupby(y)[x].agg(order).sort_values(ascending=ascending).index.tolist()
+    
+    ax=plot_dists(
+        data,
+        x=x,
+        y=y,
+        ax=ax,
+        **{
+            **dict(
+                hue=hue,
+                order=order,
+                colindex=[col_id],
+                kind=kind,
+                show_n=False,
+                show_p=False,
+                fmt_pval='*',
+                offs_pval={"x": 0, "y": 0.2},
+                width=0.7,
+                showfliers=False,
+            ),
+            **kws_plot_dists
+        }
+    )
+
+    # Add reference lines if specified
+    if ref_data is not None:
+        ylim = ax.get_ylim()
+        
+        _ = (
+            ref_data
+            .assign(y_pos=lambda df: df[y].map(get_ticklabel_position(ax, 'y')))
+            .apply(
+                lambda row: ax.plot(
+                    [row[x], row[x]],
+                    [row['y_pos'] - 0.5, row['y_pos'] + 0.5],
+                    **{
+                        **dict(
+                            linestyle=':',
+                            lw=1.5,
+                            color='k',
+                            zorder=5,
+                        ),
+                        **ref_kws_plot
+                    }
+                ),
+                axis=1
+            )
+        )
+        ax.set(ylim=ylim)
+    return ax    
+
 def pointplot_groupbyedgecolor(
     data: pd.DataFrame, ax: plt.Axes = None, **kws
 ) -> plt.Axes:
