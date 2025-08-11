@@ -612,7 +612,7 @@ def plot_many_dists(
     if ax is None:
         ax=plt.gca()
     
-    if not ref_expr is None:
+    if ref_expr is not None:
         ref_data=(
             data
                 .log.query(expr=ref_expr)
