@@ -62,7 +62,7 @@ import logging
 root_logger = logging.getLogger()
 root_logger.setLevel(logging.INFO)
 ## for the notebook
-from roux.lib.log import Logger, log_dict
+from roux.lib.log import Logger
 logging = Logger() # level='INFO'
 # except:
     # import logging #noqa
