@@ -405,7 +405,7 @@ def plot_dists(
             if verbose:
                 try:
                     logging.info('\n'+df2.to_string())
-                except Exception as e:
+                except Exception:
                     pass
         else:
             show_p = False
