@@ -792,8 +792,8 @@ def classify_mappings(
     assert len(subset) == 2, "Subset must contain exactly two column names."
     col1, col2 = subset
 
-    count1_col = f"{col1}_count"
-    count2_col = f"{col2}_count"
+    count1_col = f"{col1} count"
+    count2_col = f"{col2} count"
 
     # Use .assign() for a more functional, chainable style.
     # The lambda functions ensure that the operations are performed on the

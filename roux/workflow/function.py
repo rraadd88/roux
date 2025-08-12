@@ -391,7 +391,9 @@ def get_global_imports() -> pd.DataFrame:
     """
     from roux import global_imports
 
-    lines = open(global_imports.__file__, "r").read().split("\n")
+    lines = open(global_imports.__file__, "r").read()
+    ## start with '## '
+    lines = ('## '+lines.split('## ',1)[1]).split("\n")
 
     def clean_(s):
         if ("import " in s or s.startswith("## ")) and not s.startswith("# "):
@@ -411,7 +413,7 @@ def get_global_imports() -> pd.DataFrame:
             k = (i, f"{s[3:]}")
             lines_grouped[k] = []
             continue
-        else:
+        else:            
             lines_grouped[k].append(s)
 
     df1 = (
