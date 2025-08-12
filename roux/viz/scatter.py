@@ -349,6 +349,115 @@ def plot_ranks(
     return ax, df2
 
 
+def _prepare_volcano_data(
+    data: pd.DataFrame,
+    colx: str,
+    coly: str,
+    style: str,
+    line_pvalue: float,
+    line_x: float,
+    line_x_min: float,
+    p_min: float,
+    hue: str,
+    colindex: str,
+    errors: str,
+    kws_scatterplot: dict,
+):
+    """Prepares the DataFrame for plot_volcano."""
+    if errors == 'raise':
+        assert not data[colindex].duplicated().any(), 'set errors=None if this is un-necessary ..'
+    
+    from roux.stat.transform import log_pval
+    data = data.reset_index(drop=True)
+
+    if not coly.lower().startswith("significance"):
+        xlim_data = {
+            'max': data.loc[~np.isinf(data[colx]), colx].max(),
+            'min': data.loc[~np.isinf(data[colx]), colx].min(),
+        }
+        data = data.assign(
+            **{
+                style: lambda df: df.apply(
+                    lambda x:
+                    (
+                        "^" if x[coly] == 0 else
+                        ">" if x[colx] == np.inf else
+                        "<" if x[colx] == -np.inf else
+                        "o"
+                    ),
+                    axis=1,
+                ),
+                colx: lambda df: df[colx].apply(
+                    lambda x:
+                    (
+                        xlim_data['max'] if x == np.inf else
+                        xlim_data['min'] if x == -np.inf else
+                        x
+                    )
+                )
+            },
+        )
+        logging.warning(f'transforming the coly ("{coly}") values.')
+        coly_ = f"significance\n(-log10({coly}))"
+        data = data.assign(
+            **{coly_: lambda df: log_pval(df[coly], p_min=p_min, errors=None)}
+        )
+        coly = coly_
+    elif style not in data:
+        data[style] = "o"
+
+    data["significance bin"] = pd.cut(
+        data[coly],
+        bins=log_pval([0, 0.05, 0.1, 1])[::-1],
+        labels=["ns", "q<0.1", "q<0.05"],
+        include_lowest=True,
+    )
+    assert not data["significance bin"].isnull().any()
+
+    data = (
+        data.assign(
+            **{
+                "significance direction bin": lambda df: df.apply(
+                    lambda x: "increase"
+                    if x[coly] > log_pval(line_pvalue)
+                    and (
+                        x[colx] > line_x
+                        if line_x_min is not None
+                        else x[colx] >= line_x
+                    )
+                    else "decrease"
+                    if x[coly] > log_pval(line_pvalue)
+                    and (
+                        x[colx] < line_x_min
+                        if line_x_min is not None
+                        else x[colx] <= -1 * line_x
+                    )
+                    else "ns",
+                    axis=1,
+                ),
+            }
+        ).sort_values(
+            "significance direction bin", ascending=False
+        )
+    )
+    assert not data["significance direction bin"].isnull().any()
+
+    if hue == "x":
+        hue = "significance direction bin"
+        kws_scatterplot["hue_order"] = ["increase", "decrease", "ns"]
+        if "palette" not in kws_scatterplot:
+            from roux.viz.colors import get_colors_default
+            kws_scatterplot["palette"] = [
+                get_colors_default()[2],
+                get_colors_default()[0],
+                get_colors_default()[1],
+            ]
+    elif hue == "y":
+        hue = "significance bin"
+    
+    return data, coly, hue, kws_scatterplot
+
+
 def plot_volcano(
     data: pd.DataFrame,
     colx: str,
@@ -414,97 +523,11 @@ def plot_volcano(
         fig, ax = plt.subplots(figsize=[4, 3])
     if collabel is None:
         collabel = colindex
-    if errors=='raise':
-        assert not data[colindex].duplicated().any(), 'set errors=None if this is un-necessary ..'
-    from roux.stat.transform import log_pval
 
-    # to avoid insert index error of seaborn
-    data=data.reset_index(drop=True)
-    
-    if not coly.lower().startswith("significance"):
-        
-        xlim_data={
-            'max':data.loc[~np.isinf(data[colx]),colx].max(),
-            'min':data.loc[~np.isinf(data[colx]),colx].min(),
-        }
-        
-        data = data.assign(
-            **{
-                style: lambda df: df.apply(
-                    lambda x:                     
-                    (
-                        "^" if x[coly]==0 else   
-                        ">" if x[colx]==np.inf else 
-                        "<" if x[colx]==-np.inf else 
-                        "o"
-                    ),
-                    axis=1,
-                ),
-                colx: lambda df: df[colx].apply(
-                    lambda x: 
-                    (
-                        xlim_data['max'] if x==np.inf else 
-                        xlim_data['min'] if x==-np.inf else 
-                        x
-                    )
-                )
-            },
-        )
-        logging.warning(f'transforming the coly ("{coly}") values.')
-        coly_ = f"significance\n(-log10({coly}))"
-        data = data.assign(
-            **{coly_: lambda df: log_pval(df[coly], p_min=p_min, errors=None)}
-        )
-        coly = coly_
-    elif style not in data:
-        data[style] = "o"
-    data["significance bin"] = pd.cut(
-        data[coly],
-        bins=log_pval([0, 0.05, 0.1, 1])[::-1],
-        labels=["ns", "q<0.1", "q<0.05"],
-        include_lowest=True,
+    data, coly, hue, kws_scatterplot = _prepare_volcano_data(
+        data, colx, coly, style, line_pvalue, line_x, line_x_min, p_min, hue, colindex, errors, kws_scatterplot
     )
-    assert not data["significance bin"].isnull().any()
-    data = (
-        data.assign(
-            **{
-                "significance direction bin": lambda df: df.apply(
-                    lambda x: "increase"
-                    if x[coly] > log_pval(line_pvalue)
-                    and (
-                        x[colx] > line_x
-                        if line_x_min is not None
-                        else x[colx] >= line_x
-                    )
-                    else "decrease"
-                    if x[coly] > log_pval(line_pvalue)
-                    and (
-                        x[colx] < line_x_min
-                        if line_x_min is not None
-                        else x[colx] <= -1 * line_x
-                    )
-                    else "ns",
-                    axis=1,
-                ),
-            }
-        ).sort_values(
-            "significance direction bin", ascending=False
-        )  # put 'ns' at the background
-    )
-    assert not data["significance direction bin"].isnull().any()
-    if hue == "x":
-        hue = "significance direction bin"
-        kws_scatterplot["hue_order"] = ["increase", "decrease", "ns"]
-        if "palette" not in kws_scatterplot:
-            from roux.viz.colors import get_colors_default
 
-            kws_scatterplot["palette"] = [
-                get_colors_default()[2],
-                get_colors_default()[0],
-                get_colors_default()[1],
-            ]
-    elif hue == "y":
-        hue = "significance bin"
     ax = sns.scatterplot(
         data=data,
         x=colx,
@@ -582,6 +605,7 @@ def plot_volcano(
     
     ## set lines
     if show_lines:
+        from roux.stat.transform import log_pval
         for side in [-1, 1]:
             print(
                 [xlim[0 if side == -1 else 1], line_x * side, line_x * side],
@@ -730,3 +754,4 @@ def plot_volcano(
         return ax
     else:
         return ax, data
+
