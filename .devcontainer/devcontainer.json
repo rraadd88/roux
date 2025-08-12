@@ -2,7 +2,7 @@
     "image":"mcr.microsoft.com/devcontainers/universal:2",
 
     // This command now runs your exact requests without needing 'sudo'.
-    "postCreateCommand": "npx https://github.com/google-gemini/gemini-cli --version && npm install -g @google/gemini-cli",
+     "postCreateCommand": "sudo npm install -g @google/gemini-cli",
 
     // Runs EVERY TIME the Codespace starts to verify the installation.
     "postStartCommand": "gemini --version"
