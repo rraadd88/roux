@@ -1,11 +1,6 @@
 {
   "name": "Roux Dev (Python 3.12)",
   "image": "mcr.microsoft.com/devcontainers/python:3.12-bookworm",
-
-    // This command now runs your exact requests without needing 'sudo'.
-    //"postCreateCommand": "sudo npm install -g @google/gemini-cli",
-    // Runs EVERY TIME the Codespace starts to verify the installation.
-    //"postStartCommand": "gemini --version"  
     
   "postCreateCommand": "bash ./.devcontainer/post-create.sh",
 
