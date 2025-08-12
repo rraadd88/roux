@@ -1,9 +1,38 @@
 {
-    "image":"mcr.microsoft.com/devcontainers/universal:2",
+  "name": "Roux Dev (Python 3.12)",
+  "image": "mcr.microsoft.com/devcontainers/python:3.12-bookworm",
 
     // This command now runs your exact requests without needing 'sudo'.
-     "postCreateCommand": "sudo npm install -g @google/gemini-cli",
-
+    //"postCreateCommand": "sudo npm install -g @google/gemini-cli",
     // Runs EVERY TIME the Codespace starts to verify the installation.
-    "postStartCommand": "gemini --version"
+    //"postStartCommand": "gemini --version"  
+    
+  "postCreateCommand": "bash ./.devcontainer/post-create.sh",
+
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "ms-python.python",
+        "ms-python.vscode-pylance",
+        "charliermarsh.ruff",
+        "njpwerner.autodocstring",
+        "ms-toolsai.jupyter",
+        "ryanluker.vscode-coverage-gutters"
+      ],
+      "settings": {
+        "python.defaultInterpreterPath": "/workspaces/roux/.venv/bin/python",
+        "python.testing.pytestEnabled": true,
+        "python.testing.pytestArgs": [
+          "tests"
+        ],
+        "[python]": {
+          "editor.formatOnSave": true,
+          "editor.codeActionsOnSave": {
+            "source.fixAll.ruff": true
+          }
+        }
+      }
+    }
+  },
+  "remoteUser": "vscode"
 }
