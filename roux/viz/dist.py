@@ -240,6 +240,77 @@ def get_jitter_positions(
     )
 
 
+def _get_diff(df1, x, y, colindex, hue: str = None, order: list = None, hue_order: list = None, show_p: bool = True, test: bool = False, kws_stats: dict = {}):
+    """Helper to pre-process inputs and optionally calculate p-values for plot_dists."""
+    
+    # --- Start of pre-processing logic ---
+    if isinstance(colindex, str):
+        colindex = [colindex]
+        
+    if df1[y].dtype not in [int, float]:
+        x_stat, y_stat = x, y
+        axis_desc, axis_cont = "y", "x"
+    else:
+        x_stat, y_stat = y, x
+        axis_desc, axis_cont = "x", "y"
+
+    if test:
+        logging.info(x_stat, y_stat)
+
+    if order is None:
+        if df1[y_stat].dtype.name=='category':
+            if not df1[y_stat].dtype.ordered:
+                logging.warning('categories are not ordered ..')
+            order=df1[y_stat].dtype.categories.tolist()
+            
+    df1 = df1.log.dropna(subset=colindex + [x, y]).assign(
+        **{y_stat: lambda df: df[y_stat].astype(str)}
+    )
+
+    if order is None:
+        order = df1[y_stat].unique().tolist()
+        for l in [["True", "False"], ["yes", "no"]]:
+            if df1[y_stat].isin(l).all():
+                order = l
+                break
+    if test:
+        logging.info(order)
+        
+    if hue is not None and hue_order is None:
+        hue_order = df1[hue].unique().tolist()
+    # --- End of pre-processing logic ---
+
+    df2 = None
+    if show_p:
+        # --- Start of p-value calculation logic ---
+        if hue is None:
+            from roux.stat.diff import get_stats
+            df2 = get_stats(
+                df1, colindex=colindex, colsubset=y_stat, cols_value=[x_stat],
+                subsets=order, axis=0, **kws_stats,
+            )
+        else:
+            from roux.stat.diff import get_stats_groupby
+            df2 = get_stats_groupby(
+                df1.loc[df1[hue].isin(hue_order), :], cols_group=[y], colsubset=hue,
+                cols_value=[x], colindex=colindex, alpha=0.05, axis=0, **kws_stats,
+            ).reset_index()
+        # --- End of p-value calculation logic ---
+        
+    kws_plot = {
+        'df1': df1,
+        'x_stat': x_stat,
+        'y_stat': y_stat,
+        'axis_desc': axis_desc,
+        'axis_cont': axis_cont,
+        'order': order,
+        'hue_order': hue_order,
+        'colindex': colindex,
+    }
+        
+    return df2, kws_plot
+
+
 ## paired distributions.
 def plot_dists(
     df1: pd.DataFrame,
@@ -304,114 +375,36 @@ def plot_dists(
         2. Change alpha of the boxplot rather than changing saturation of the swarmplot.
 
     """
-    if isinstance(colindex, str):
-        colindex = [colindex]
-    ## y is expected to be categorical (str/bool) for horizontal orientation which is preferred and also for calculating stats
-    ## if it is not, switch between x and y
-    # print(df1[y].dtype)
-    if df1[y].dtype not in [int, float]:
-        x_stat, y_stat = x, y
-        axis_desc, axis_cont = "y", "x"
-    else:
-        x_stat, y_stat = y, x
-        axis_desc, axis_cont = "x", "y"
-
-    if test:
-        logging.info(x_stat, y_stat)
-
-    if order is None:
-        if df1[y_stat].dtype.name=='category':
-            if not df1[y_stat].dtype.ordered:
-                logging.warning('categories are not ordered ..')
-            order=df1[y_stat].dtype.categories.tolist()
-            
-    ## formatting the table
-    df1 = df1.log.dropna(subset=colindex + [x, y]).assign(
-        **{y_stat: lambda df: df[y_stat].astype(str)}
+    df2, kws_plot = _get_diff(
+        df1, x, y, colindex, hue, order, hue_order, show_p, test, kws_stats
     )
-
-    ## set order of the categories
-    if order is None:
-        order = df1[y_stat].unique().tolist()
-        for l in [["True", "False"], ["yes", "no"]]:
-            if df1[y_stat].isin(l).all():
-                order = l
-                break
-    if test:
-        logging.info(order)
-    ## set order of the colors
-    if hue is not None and hue_order is None:
-        hue_order = df1[hue].unique().tolist()
+    locals().update(kws_plot)
 
     ## get stats
     if show_p:
-        # if 'func' not in kws_stats or kws_stats['func'] is None:
-        #     col_pval='P (MWU test)'
-        # else:
         col_pval='P'
-                
-        if (hue is None) and (isinstance(show_p, bool)):
-            from roux.stat.diff import get_stats
-
-            df2 = get_stats(
-                df1,
-                colindex=colindex,
-                colsubset=y_stat,
-                cols_value=[x_stat],
-                subsets=order,
-                # alpha=0.05
-                axis=0,
-                **kws_stats,
-            )
-            if df2 is None:
-                logging.error("get_stats failed.")
-                d1 = {}
-            else:
+        if df2 is not None:
+            if hue is None:
                 df2 = df2.reset_index()
-                # df1=df1.rd.renameby_replace({f"{} ":''})
                 df2 = df2.loc[(df2["subset1"] == order[0]), :]
-                # print(df2)
                 try:
                     d1 = df2.rd.to_dict(["subset2", col_pval])
                 except:
                     raise ValueError(df2.columns.tolist())
-        elif (hue is not None) and (isinstance(show_p, bool)):
-            from roux.stat.diff import get_stats_groupby
-
-            df2 = get_stats_groupby(
-                df1.loc[df1[hue].isin(hue_order), :],
-                cols_group=[y],
-                colsubset=hue,
-                cols_value=[x],
-                colindex=colindex,
-                alpha=0.05,
-                axis=0,
-                **kws_stats,
-            ).reset_index()
-            # df1=df1.rd.renameby_replace({f"{} ":''})
-            # df2=df2.loc[(df2['subset1']==hue_order[1]),:]
-            # d1=df2.rd.to_dict([y,'P (MWU test)'])
-            d1 = df2.set_index(y)[col_pval].to_dict()
-            if test:
-                logging.info(d1)
-        if df2 is not None:
-            # print(df2.set_index(['subset1','subset2']).T)
-            # ## stats printing            
-            # stats = df2.set_index(["subset1", "subset2"]).rd.dropby_patterns(
-            #     ["median ", "mean ", "var ", "variable"], verbose=False
-            # )
-            # logging.info(stats)
-            # del stats
+            else:
+                d1 = df2.set_index(y)[col_pval].to_dict()
+                if test:
+                    logging.info(d1)
+            
             if verbose:
                 try:
                     logging.info('\n'+df2.to_string())
                 except Exception:
                     pass
         else:
-            show_p = False
-            logging.error(
-                "p-value could not be estimated. likely lack of >1 categories."
-            )
+            show_p = False 
+            logging.error("p-value could not be estimated.")
+    
     ## axes
     if ax is None:
         ax = plt.gca()
@@ -571,6 +564,11 @@ def plot_dists(
             ax=ax,
         )
     return ax
+
+
+
+
+
 
 
 def plot_many_dists(
