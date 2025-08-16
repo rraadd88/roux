@@ -2063,7 +2063,16 @@ def check_diff(
     #     **kws_stats,
     # }
     if not plot:
-        raise NotImplementedError('## TODO: calc stat -> show on plot')
+        from roux.stat.diff import get_diff_inferred
+        res=get_diff_inferred(
+            data,
+            x=x,
+            y=y,
+            colindex=cols_id,
+            kws_stats=dict(
+                func=method,
+            ),
+        )        
     else:
         from roux.viz.dist import plot_dists
         ax=plot_dists(
