@@ -595,6 +595,73 @@ def get_diff(
         logging.warning("not filtered by P-value cutoff")
     return df3.sort_values("P")
 
+def get_diff_inferred(df1, x, y, colindex, hue: str = None, order: list = None, hue_order: list = None, show_p: bool = True, test: bool = False, kws_stats: dict = {}):
+    """Helper to pre-process inputs and optionally calculate p-values for plot_dists."""
+    
+    # --- Start of pre-processing logic ---
+    if isinstance(colindex, str):
+        colindex = [colindex]
+        
+    if df1[y].dtype not in [int, float]:
+        x_stat, y_stat = x, y
+        axis_desc, axis_cont = "y", "x"
+    else:
+        x_stat, y_stat = y, x
+        axis_desc, axis_cont = "x", "y"
+
+    if test:
+        logging.info(x_stat, y_stat)
+
+    if order is None:
+        if df1[y_stat].dtype.name=='category':
+            if not df1[y_stat].dtype.ordered:
+                logging.warning('categories are not ordered ..')
+            order=df1[y_stat].dtype.categories.tolist()
+            
+    df1 = df1.log.dropna(subset=colindex + [x, y]).assign(
+        **{y_stat: lambda df: df[y_stat].astype(str)}
+    )
+
+    if order is None:
+        order = df1[y_stat].unique().tolist()
+        for l in [["True", "False"], ["yes", "no"]]:
+            if df1[y_stat].isin(l).all():
+                order = l
+                break
+    if test:
+        logging.info(order)
+        
+    if hue is not None and hue_order is None:
+        hue_order = df1[hue].unique().tolist()
+    # --- End of pre-processing logic ---
+
+    df2 = None
+    if show_p:
+        # --- Start of p-value calculation logic ---
+        if hue is None:
+            df2 = get_stats(
+                df1, colindex=colindex, colsubset=y_stat, cols_value=[x_stat],
+                subsets=order, axis=0, **kws_stats,
+            )
+        else:
+            df2 = get_stats_groupby(
+                df1.loc[df1[hue].isin(hue_order), :], cols_group=[y], colsubset=hue,
+                cols_value=[x], colindex=colindex, alpha=0.05, axis=0, **kws_stats,
+            ).reset_index()
+        # --- End of p-value calculation logic ---
+        
+    kws_plot = {
+        'df1': df1,
+        'x_stat': x_stat,
+        'y_stat': y_stat,
+        'axis_desc': axis_desc,
+        'axis_cont': axis_cont,
+        'order': order,
+        'hue_order': hue_order,
+        'colindex': colindex,
+    }
+        
+    return df2, kws_plot
 
 def binby_pvalue_coffs(
     df1: pd.DataFrame,
