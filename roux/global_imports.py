@@ -11,6 +11,13 @@ Note: Post-development, to remove *s from the code, use removestar (pip install 
 
     removestar file
 """
+import warnings
+warnings.warn(
+    "'roux.global_imports' is intended for interactive use and rapid prototyping in environments like Jupyter notebooks. For production code, explicit imports are recommended.",
+    UserWarning,
+    stacklevel=2,
+)
+
 ## begin replacestar    
 ## data functions
 # import itertools

@@ -19,7 +19,7 @@ jobs:
         continue-on-error: true
         run: |
           pip install --user ruff
-          ruff check roux --fix --ignore E402,E722,F841,E741
+          ruff check roux --fix --ignore E402,E722,E741
           ruff format roux
       - name: ruff commit
         continue-on-error: true

@@ -778,84 +778,55 @@ def assert_nunique(
 
 
 ## mappings
-def _post_classify_mappings(
-    df1: pd.DataFrame,
-    subset: list,
-) -> pd.DataFrame:
-    """
-    Post-process `classify_mappings`.
-    """
-
-    def call_m_m(df1):
-        if df1["mapping"].nunique() != 1:
-            # multiple classes
-            from roux.lib.set import validate_overlaps_with
-
-            if validate_overlaps_with(
-                df1["mapping"].unique(), ["m:m", "1:m", "m:1"], log=False
-            ):
-                df1["mapping"] = "m:m"
-            else:
-                print(set(df1["mapping"].unique()) & set(["m:m", "m:1"]))
-                raise ValueError(df1["mapping"].unique())
-        return df1
-
-    for k in subset:
-        df1 = df1.groupby(k, as_index=False).apply(call_m_m)
-    return df1
-
-
 @to_rd
 def classify_mappings(
-    df1: pd.DataFrame,
-    subset,
+    df: pd.DataFrame,
+    subset: list,
     clean: bool = False,
 ) -> pd.DataFrame:
-    """Classify mappings between items in two columns.
+    """Classify mappings between items in two columns using a vectorized approach.
 
     Parameters:
-        df1 (DataFrame): input dataframe.
-        col1 (str): column #1.
-        col2 (str): column #2.
-        clean (str): drop columns with the counts.
+        df (DataFrame): input dataframe.
+        subset (list): A list containing two column names to map.
+        clean (bool): If True, drop the intermediate count columns.
 
     Returns:
-        (pd.DataFrame): output.
+        pd.DataFrame: The DataFrame with a new 'mapping' column.
     """
-    assert len(subset) == 2
+    assert len(subset) == 2, "Subset must contain exactly two column names."
     col1, col2 = subset
-    df1 = (
-        df1.copy()
-        .assign(
-            **{
-                col1 + " count": lambda df: df.groupby(col2)[col1]
-                .transform("nunique")
-                .values,
-                col2 + " count": lambda df: df.groupby(col1)[col2]
-                .transform("nunique")
-                .values,
-                "mapping": lambda df: df.apply(
-                    lambda x: "1:1"
-                    if (x[col1 + " count"] == 1 and x[col2 + " count"] == 1)
-                    else "1:m"
-                    if (x[col1 + " count"] == 1 and x[col2 + " count"] != 1)
-                    else "m:1"
-                    if (x[col1 + " count"] != 1 and x[col2 + " count"] == 1)
-                    else "m:m",
-                    axis=1,
-                ),
-            }
-        )
-        .reset_index(drop=True)
+
+    count1_col = f"{col1} count"
+    count2_col = f"{col2} count"
+
+    # Use .assign() for a more functional, chainable style.
+    # The lambda functions ensure that the operations are performed on the
+    # DataFrame being passed through the chain.
+    df_with_counts = df.assign(
+        **{
+            count1_col: lambda d: d.groupby(col2)[col1].transform("nunique"),
+            count2_col: lambda d: d.groupby(col1)[col2].transform("nunique"),
+        }
     )
-    ## post-process
-    df1 = _post_classify_mappings(
-        df1,
-        subset,
+
+    # Define the conditions for each mapping type based on the new columns.
+    conditions = [
+        (df_with_counts[count1_col] == 1) & (df_with_counts[count2_col] == 1),
+        (df_with_counts[count1_col] == 1) & (df_with_counts[count2_col] > 1),
+        (df_with_counts[count1_col] > 1) & (df_with_counts[count2_col] == 1),
+    ]
+    choices = ["1:1", "1:m", "m:1"]
+
+    # Use np.select for vectorized conditional assignment and assign the new column.
+    df_final = df_with_counts.assign(
+        mapping=np.select(conditions, choices, default="m:m")
     )
+
     if clean:
-        df1 = df1.drop([col1 + " count", col2 + " count"], axis=1)
-    return df1
+        df_final = df_final.drop(columns=[count1_col, count2_col])
+
+    return df_final
 
 
 @to_rd

@@ -273,7 +273,7 @@ def apply_run_task_nb(
             force=force,
             **kws_papermill,
         )
-    except RuntimeError as e:
+    except RuntimeError:
         logging.error(f"during output_path: {x['output_path']}")
         import traceback
         traceback_string = traceback.format_exc()

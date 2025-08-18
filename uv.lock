@@ -1,5 +1,5 @@
 version = 1
-revision = 2
+revision = 3
 requires-python = ">=3.7, <4"
 resolution-markers = [
     "python_full_version >= '3.12'",
@@ -8046,7 +8046,7 @@ dev = [
     { name = "papermill" },
     { name = "pyarrow" },
     { name = "pytest" },
-    { name = "pytest-cov", specifier = ">=2,<6" },
+    { name = "pytest-cov", specifier = ">=2,<7" },
     { name = "regex" },
     { name = "removestar" },
     { name = "ruff" },
