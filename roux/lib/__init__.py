@@ -24,6 +24,49 @@ def to_class(cls):
 
     return decorator
 
+from pandas.plotting._core import PlotAccessor
+
+# 1. The helper class that dynamically creates plotting methods
+class _PiperPlotter:
+    def __init__(self, pandas_obj):
+        """Initializes with the DataFrame and dynamically wraps all plot methods."""
+        self._obj = pandas_obj
+        
+        # Dynamically find and wrap all plotting methods
+        for plot_method_name in dir(PlotAccessor):
+            if not plot_method_name.startswith('_'):
+                plot_method = getattr(PlotAccessor, plot_method_name)
+                if callable(plot_method):
+                    # Use a function factory to correctly capture the method and its name
+                    wrapped_method = self._make_piper_plot_method(plot_method_name)
+                    setattr(self, plot_method_name, wrapped_method)
+
+        
+    def _make_piper_plot_method(self, name):
+        """A factory to create a wrapped plotting method."""
+        
+        # Get the real plotting method from the DataFrame's .plot accessor
+        real_plot_method = getattr(
+            (
+                self._obj.plot #if name!='hist' else self._obj
+            ), 
+            name
+        )
+
+        def piper_plot_method(
+            func_ax=None, #lambda
+            **kwargs,
+            ):
+            """This is the wrapped method that will be called.
+            It calls the real plot function and then returns the DataFrame.
+            """
+            # print(kwargs)
+            ax=real_plot_method(**kwargs)
+            if func_ax is not None:
+                func_ax(ax)
+            return self._obj # Return the DataFrame for chaining
+            
+        return piper_plot_method
 
 @pd.api.extensions.register_dataframe_accessor("rd")
 class rd:
@@ -31,6 +74,18 @@ class rd:
 
     def __init__(self, pandas_obj):
         self._obj = pandas_obj
+        self.plot = _PiperPlotter(self._obj)
+
+    ## exceptions
+    def hist(
+        self,
+        func_ax=None,
+        **kws,
+    ):
+        ax=self._obj.hist(**kws)
+        if func_ax is not None:
+            func_ax(ax)
+        return self._obj
 
 
 # create the `roux-dataframe` (`.rd`) decorator

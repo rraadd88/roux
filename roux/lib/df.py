@@ -481,6 +481,7 @@ def check_nunique(
     auto=False,
     out=True,
     log=True,
+    plot=False,
 ) -> pd.Series:
     """Number/percentage of unique values in columns.
 
@@ -517,6 +518,10 @@ def check_nunique(
             )
         
     ds_=ds_.sort_values(ascending=False)
+    if plot!=False:
+        ds_.sort_values(ascending=True).plot.barh(
+            ax=plot,
+        )
     if out:
         ## no logging
         return ds_
@@ -2028,9 +2033,12 @@ def check_corr(
     plot=False,
     
     out=False,
+    ax=None,
     kws_plot={},
     **kws_get_corr,
     ):
+    if validate in [False,'']:
+        validate=None
     kws_stat={
         **dict(
             method=method,
@@ -2053,7 +2061,12 @@ def check_corr(
             x=x,
             y=y,
             stat_kws=kws_stat,
-            **kws_plot,
+            **{
+                **dict(
+                    ax=ax
+                ),
+                **kws_plot
+            },
         )
         res=ax.stats
     df1=pd.Series(res).to_frame().T
@@ -2080,6 +2093,7 @@ def check_diff(
     validate=None, 
     
     plot=False, 
+    ax=None,
     
     out=False,
     kws_plot={},
@@ -2091,6 +2105,8 @@ def check_diff(
     #     ),
     #     **kws_stats,
     # }
+    if validate in [False,'']:
+        validate=None
     if not plot:
         raise NotImplementedError('## TODO: calc stat -> show on plot')
     else:
@@ -2104,7 +2120,12 @@ def check_diff(
                 func=method,
             ),
             verbose=False,
-            **kws_plot,
+            **{
+                **dict(
+                    ax=ax
+                ),
+                **kws_plot
+            },
         )
         res=ax.stats
     # df1=pd.Series(res).to_frame().T
@@ -2406,26 +2427,44 @@ class log:
         return log_apply(self._obj, fun=melt_paired, **kws)
 
     ## .rd functions for logging-only, usage in pipes
-    def head(self, **kws):
+    def head(
+        self,
+        n=1, 
+        # T=False,
+        cols_max=10, ## transpose if >cols_max
+        ):  
         logging.info(
-            r'head:\n'+(
-                self
-                    ._obj.head(
-                    **kws,
+            'head:\n'+(
+                (
+                    self._obj
+                        .head(
+                            n=n,
+                        )
+                        .pipe(
+                            lambda df: df.T if (df.shape[1]>cols_max) else df
+                        )
+                        .to_string()
+                    )  
                 )
-                .to_string()
-            )
             )
         return self._obj
-    def tail(self, **kws):
+    def tail(self, n=1,
+             # T=False,
+             cols_max=None, ## transpose if >cols_max
+            ):
         logging.info(
-            r'tail:\n'+(
-                self
-                    ._obj.tail(
-                    **kws,
+            'head:\n'+(
+                (
+                    self._obj
+                        .tail(
+                            n=n,
+                        )
+                        .pipe(
+                            lambda df: df.T if (df.shape[1]>cols_max) else df
+                        )
+                        .to_string()
+                    )  
                 )
-                .to_string()
-            )
             )
         return self._obj
     def describe(self, **kws):

@@ -415,8 +415,9 @@ def plot_dists(
     ## axes
     if ax is None:
         ax = plt.gca()
-        if show_p:
-            ax.stats=df2
+        
+    if show_p:
+        ax.stats=df2
     
     ## distributions
     if isinstance(kind, str):

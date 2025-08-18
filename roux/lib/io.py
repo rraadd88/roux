@@ -703,7 +703,7 @@ def post_read_table(
     if clean:
         df1 = df1.rd.clean(**kws_clean)
     if tables == 1 and verbose:
-        df1 = df1.log()
+        df1 = df1.log().log.head()
     return df1
 
 

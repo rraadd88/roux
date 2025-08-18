@@ -1,10 +1,49 @@
 """For setting up figures."""
 
+import logging
+
 import numpy as np
 
 import matplotlib.pyplot as plt
-import logging
 
+from matplotlib.gridspec import GridSpec
+
+def gca(cols_max=2):
+    """
+    Dynamically adds a subplot, creating new rows after cols_max is reached.
+
+    Args:
+        cols_max (int): The maximum number of subplots per row. Defaults to 2.
+
+    Returns:
+        matplotlib.axes.Axes: The newly created subplot axes.
+    """
+    # 1. Get the current figure and axes
+    fig = plt.gcf()
+    existing_axes = fig.axes
+    n_existing = len(existing_axes)
+    n_new_total = n_existing + 1
+
+    # 2. Calculate the new grid dimensions
+    # Use cols_max unless there are fewer total plots than cols_max
+    num_cols = min(n_new_total, cols_max)
+    # Calculate rows needed for the new total number of plots
+    num_rows = (n_new_total + num_cols - 1) // num_cols
+
+    # 3. Create a new GridSpec for the entire figure
+    gs = GridSpec(num_rows, num_cols, figure=fig)
+
+    # 4. Reposition all existing subplots within the new GridSpec
+    for i, ax in enumerate(existing_axes):
+        # Calculate the 2D position for the existing subplot
+        row_idx, col_idx = divmod(i, num_cols)
+        ax.set_subplotspec(gs[row_idx, col_idx])
+
+    # 5. Add the new subplot at the next available position
+    row_idx, col_idx = divmod(n_existing, num_cols)
+    new_ax = fig.add_subplot(gs[row_idx, col_idx])
+
+    return new_ax
 
 def get_children(fig):
     """
