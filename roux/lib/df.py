@@ -126,7 +126,10 @@ def drop_levelcol(df):
 
 
 @to_rd
-def drop_constants(df):
+def drop_constants(
+    df,
+    verbose=True,
+    ):
     """Deletes columns with a single unique value.
 
     Parameters:
@@ -140,7 +143,8 @@ def drop_constants(df):
         return df
     cols_del = get_constants(df)
     if len(cols_del) > 0:
-        logging.warning(f"dropped columns: {', '.join(cols_del)}")
+        if verbose:
+            logging.warning(f"dropped columns: {', '.join(cols_del)}")
         return df.drop(cols_del, axis=1)
     else:
         return df

@@ -47,8 +47,8 @@ def _pre(
             logging.info(
                 f"drop_same_value={drop_same_value}; {len(df)-_before} samples dropped"
             )
-    assert df["x"].dtype in [int, float], df["x"].dtype
-    assert df["y"].dtype in [int, float], df["y"].dtype
+    assert pd.api.types.is_numeric_dtype(df["x"]), df["x"].dtype
+    assert pd.api.types.is_numeric_dtype(df["y"]), df["y"].dtype
     # clean
     df = df.replace([np.inf, -np.inf], np.nan).dropna()
     if len(df) < n_min:

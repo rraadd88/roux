@@ -615,13 +615,16 @@ def plot_pie(
     """
     if ax is None:
         ax = plt.gca()
-    wedges, texts = ax.pie(
+    t = ax.pie(
         counts,
         startangle=90,
         counterclock=False,
         **kws_pie,
     )
     if annot:
+        wedges=t[0]
+        texts=t[1:]
+        
         # assert isinstance(t,tuple), t
         kws_annotate = dict(
             arrowprops=dict(arrowstyle="-", color=line_color, shrinkB=0),

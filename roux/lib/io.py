@@ -682,7 +682,6 @@ def to_dict(d, p, **kws):
 def post_read_table(
     df1: pd.DataFrame,
     clean: bool,
-    tables: list,
     verbose: bool = True,
     **kws_clean: dict,
 ):
@@ -701,14 +700,14 @@ def post_read_table(
         df (DataFrame): output dataframe.
     """
     if clean:
+        # print(type(df1))
         df1 = df1.rd.clean(**kws_clean)
-    if tables == 1 and verbose:
+    if verbose:
         df1 = df1.log().log.head()
     return df1
 
 
 from roux.lib.text import get_header
-
 
 def read_table(
     p: str,
@@ -718,9 +717,10 @@ def read_table(
     params: dict = {},
     kws_clean: dict = {},
     kws_cloud: dict = {},
-    use_dir_paths: bool = True,  # read files in the path column, from sub-dir by default
     use_paths: bool = False,  # read files in the path column even if not available in the sub-dir
+    use_dir_paths: bool = False,  # =use_paths, will be deprec.d
     tables: int = 1,
+    post=True,
     test: bool = False,
     verbose: bool = True,
     engine: str = "pyarrow",
@@ -734,7 +734,6 @@ def read_table(
         ext (str): extension of the file (default: None meaning infered from the path).
         clean=(default:True).
         filterby_time=None).
-        use_dir_paths (bool): read files in the path column (default:True).
         use_paths (bool): forced read files in the path column (default:False).
         test (bool): testing (default:False).
         params: parameters provided to the 'pd.read_csv' (default:{}). For example
@@ -767,84 +766,91 @@ def read_table(
                            names=replace_many(get_header(path,comment='#',lineno=-1),['#','\n'],'').split('\t'))
                            )
     """
-    if isinstance(p, list) or (isinstance(p, str) and ("*" in p)):
-        if isinstance(p, str) and ("*" in p):
-            _ps = read_ps(p, verbose=False)
-            if exists(p.replace("/*", "")):
-                logging.warning(f"exists: {p.replace('/*','')}")
-        elif isinstance(p, list):
-            _ps = p
-            
-        return read_tables(
-            p,
-            params=params,
-            filterby_time=filterby_time,
-            tables=len(_ps),
-            verbose=verbose,
-            **kws_read_tables,  # is kws_apply_on_paths,
-        )
-    elif isinstance(p, str):
-        ## read paths
-        if use_dir_paths and (isdir(splitext(p)[0]) or use_paths):
-            # if len(read_ps(f"{splitext(p)[0]}/*{splitext(p)[1]}",test=False))>0:
-            df_ = read_table(p, use_dir_paths=False)
-            if df_.empty:
-                logging.warning("empty table found")
-                return df_
-            if df_.columns.tolist()[-1] == "path":
-                if verbose:
-                    logging.info(
-                        f" {len(df_['path'].tolist())} paths from the file."
-                    )
-                ps = df_["path"].tolist()
-                return read_tables(
-                    ps,
-                    params=params,
-                    filterby_time=filterby_time,
-                    tables=len(ps),
-                    verbose=verbose,
-                    **kws_read_tables,  # is kws_apply_on_paths,
-                )
-            else:
-                return df_
-        elif p.startswith("https://docs.google.com/file/"):
-            if "outd" not in kws_cloud:
-                logging.warning("outd not found in kws_cloud")
-            from roux.lib.google import download_file
-
-            return read_table(download_file(p, **kws_cloud))
-    else:
-        raise ValueError(p)
-    
-    assert exists(p), f"not found: {p}"
-    if len(params.keys()) != 0 and "columns" not in params:
-        return post_read_table(
-            pd.read_csv(p, **params),
-            clean=clean,
-            tables=tables,
-            verbose=verbose,
-            **kws_clean,
-        )
-    else:
-        if len(params.keys()) == 0:
-            params = {}
-        if ext is None:
-            ext = basename(p).rsplit(".", 1)[1]
-        if any(
-            [s == ext for s in ["pqt", "parquet"]]
-        ):  # p.endswith('.pqt') or p.endswith('.parquet'):
-            df=pd.read_parquet(
-                    p,
-                    engine=engine,
-                    **params
-                )
-            return post_read_table(
-                df,
+    # params={}
+    if tables==1:
+        ## check for read_tables
+        if isinstance(p, list) or (isinstance(p, str) and ("*" in p)):
+            if isinstance(p, str) and ("*" in p):
+                _ps = read_ps(p, verbose=False)
+                if exists(p.replace("/*", "")):
+                    logging.warning(f"exists: {p.replace('/*','')}")
+            elif isinstance(p, list):
+                _ps = p
+            return read_tables(
+                p,
+                params=params,
+                filterby_time=filterby_time,
+                tables=len(_ps),
                 clean=clean,
-                tables=tables,
                 verbose=verbose,
-                **kws_clean,
+                # **{
+                **kws_read_tables,
+                #     # **dict(
+                #     #     verbose=False,
+                #     # ),
+                # },  # is kws_apply_on_paths,
             )
+        elif isinstance(p, str):
+            ## read paths
+            if use_paths or use_dir_paths:
+                ## if tables in the subdir (common)
+                ## 
+                # if len(read_ps(f"{splitext(p)[0]}/*{splitext(p)[1]}",test=False))>0:
+                df_ = read_table(
+                    p,
+                    post=False,
+                    verbose=False,
+                )
+                if df_.empty:
+                    logging.warning("empty table found")
+                    return df_
+                elif df_.columns.tolist()[-1] == "path":
+                    if verbose:
+                        logging.info(
+                            f" {len(df_['path'].tolist())} paths from the file."
+                        )
+                    ps = df_["path"].tolist()
+                    # print(ps)
+                    return read_tables(
+                        ps,
+                        params=params,
+                        filterby_time=filterby_time,
+                        tables=len(ps),
+                        clean=clean,
+                        verbose=verbose,
+                        **kws_read_tables,  # is kws_apply_on_paths,
+                    )
+                else:
+                    return df_
+        else:
+            raise ValueError(p)
+    # else:
+        # running through read_tables
+
+    ## 1 table
+    # if p.startswith("https://docs.google.com/file/"):
+    #     if "outd" not in kws_cloud:
+    #         logging.warning("outd not found in kws_cloud")
+    #     from roux.lib.google import download_file
+
+    #     return read_table(download_file(p, **kws_cloud))
+
+    assert exists(p), f"not found: {p}"
+    if ext is None:
+        # ext = basename(p).rsplit(".", 1)[1]
+        ext=Path(p).suffix[1:]
+        
+    if ext in ["pqt", "parquet"]:  # p.endswith('.pqt') or p.endswith('.parquet'):
+        # print(params,ext)
+        df0=pd.read_parquet(
+                p,
+                engine=engine,
+                **params
+            )
+    elif len(params.keys()) != 0 and "columns" not in params:        
+        df0=pd.read_csv(p, **params)
+
+    else:
         params["compression"] = (
             "gzip" if ext.endswith(".gz") else "zip" if ext.endswith(".zip") else None
         )
@@ -894,18 +900,23 @@ def read_table(
             raise ValueError(f"unknown extension {ext} in {p}")
         if test:
             print(params)
-        return post_read_table(
-            pd.read_table(
+        df0=pd.read_table(
                 p,
                 **params,
-            ),
+            )
+    if verbose and 'path' in df0:        
+        logging.info("use_paths=True to read the paths in the col 'path'.")
+        
+    if not post:
+        return df0
+    else:
+        return post_read_table(
+            df0,
             clean=clean,
-            tables=tables,
             verbose=verbose,
             **kws_clean,
-        )
-
-
+        )      
+        
 def get_logp(
     ps: list,
 ) -> str:
@@ -1010,11 +1021,6 @@ def apply_on_paths(
                 )
                 if dbug:
                     logging.debug(outp)
-                    #                 if exists(outp):
-                    #                     if 'force' in kws:
-                    #                         if kws['force']:
-                    #                             return None,None
-                    #                 else:
                 return p, outp
             else:
                 return (p,)
@@ -1039,6 +1045,7 @@ def apply_on_paths(
     save_table = (replaces_outp is not None) and (
         "outp" in inspect.getfullargspec(func).args
     )
+
     if to_col is not None:
         colindex = list(to_col.keys())[0]
         replaces_index = list(to_col.values())[0]
@@ -1100,14 +1107,19 @@ def apply_on_paths(
         return df1.rd.apply_async(
             lambda x: read_table(
                 x['path'],
-                **kws_read_table,
+                **{
+                    **kws_read_table,
+                    **dict(
+                        verbose=False,
+                    ),
+                },
             ),
             cpus=cpus,
             unstack=False,
         )
         
-    _groupby = df1.groupby("path", as_index=True)
-    
+    _groupby = df1.groupby("path", as_index=True,sort=False)
+
     df2 = getattr(
         _groupby,
         # "progress_apply"
@@ -1127,7 +1139,13 @@ def apply_on_paths(
                     params=params,
                     dbug=dbug,
                     verbose=verbose,
-                    **kws_read_table,
+                    **{
+                        **kws_read_table,
+                        ## only last
+                        **dict(
+                            post=False,#(df.name==next(iter(_groupby.groups), None)),
+                        ),
+                    },
                 )
             ),
             **kws,
@@ -1159,13 +1177,12 @@ def apply_on_paths(
                     axis=1
                 )
             df2 = df2.rename(columns={"path": colindex}, errors="raise")
-            
     if replaces_index is not None:
         logging.debug(f"setting {colindex} column from the paths ..")
         # print(replaces_index)
         # print(df2[colindex].head())
         if isinstance(replaces_index, str):
-            if replaces_index == "basenamenoext":
+            if replaces_index in ['stem',"basenamenoext"]:
                 replaces_index = basenamenoext
         ## update: faster renaming
         to_value={
@@ -1193,7 +1210,11 @@ def read_tables(
     to_dict: bool = False,
     params: dict = {},
     tables: int = None,
-    verbose=False,
+
+    post=True,
+    clean=True,
+    
+    verbose=True,
     **kws_apply_on_paths: dict, # cpus
 ):
     """Read multiple tables.
@@ -1218,7 +1239,7 @@ def read_tables(
     """        
     if filterby_time is not None:
         if isinstance(ps, str) and ("*" in p):
-            ps = read_ps(ps, verbose=verbose)
+            ps = read_ps(ps, verbose=False)
             if exists(ps.replace("/*", "")):
                 logging.warning(f"exists: {p.replace('/*','')}")
         elif isinstance(p, list):
@@ -1228,8 +1249,9 @@ def read_tables(
         df_ = ps2time(ps)
         ps = df_.loc[df_["time"].str.contains(filterby_time), "p"].unique().tolist()
         kws_apply_on_paths["drop_index"] = False  # see which files are read
+
     if not to_dict and not isinstance(ps,dict):
-        df2 = apply_on_paths(
+        df0 = apply_on_paths(
             ps,
             func=lambda df: df,
             # cpus=cpus,
@@ -1239,13 +1261,23 @@ def read_tables(
             #                            kws_read_table=dict(verb=False if len(ps)>5 else True),
             **kws_apply_on_paths,
         )
-        return df2
+        if not post:
+            return df0
+        else:
+            ## only at the end
+            return post_read_table(
+                df0,
+                clean=clean,
+                verbose=verbose,
+                # **kws_clean,
+            )        
     else:
         if not isinstance(ps,dict):
-            ps=read_ps(ps,verbose=verbose)
+            ps=read_ps(ps,verbose=False)
             ps=dict(zip(ps,ps))
-        return {k: read_table(p, params=params) for k,p in ps.items()}
-
+        else:
+            raise ValueError(ps)
+        return {k: read_table(p, params=params,verbose=False) for k,p in ps.items()}
 
 ## save table
 def to_table(
