@@ -225,13 +225,21 @@ def read_arxv(
     ap=None,
 
     outd=None, ## base of output dir. path
-
+    
+    read_func=None, ## without savng the extracted file
+    
     verbose=True,
     force=False,
     **kws_extract,
     ):
     """
     Read (from) archive. 
+
+    Examples:
+        read_func=lambda f: pd.read_csv(
+            BytesIO(f.read()),
+            sep='\t',
+        )
     """
     if p.startswith('../'):
         assert p.count('../')==1, p
@@ -253,16 +261,22 @@ def read_arxv(
         if verbose:
             logging.info(ps if len(ps)<10 else len(ps))
 
-        assert p.split('../')[-1] in ps, ps
-    # with tarfile.open(ap,'r') as tar:    
-        outp=tar.extractall(
-            path=outd if outd is not None else '../' if p.startswith('../') else '.',
-            members=[p.split('../')[-1]],
-            **kws_extract
-            )
-    assert Path(p).exists(), p
-    return p
-
+        assert p.split('../')[-1] in ps, (p,ps)
+        if not read_func:
+            outp=tar.extractall(
+                path=outd if outd is not None else '../' if p.startswith('../') else '.',
+                members=[p.split('../')[-1]],
+                **kws_extract
+                )
+            assert Path(p).exists(), p
+            return p
+        else: 
+            return read_func(tar.extractfile(p))
+            # Read the file-like object into a pandas DataFrame
+            # Use io.BytesIO to wrap the file object for pandas if needed
+            # if f:
+            #     df = pd.read_csv(io.BytesIO(f.read()))     
+            
 def to_copy(
     paths: dict,
     flatten=False,
@@ -1281,7 +1295,9 @@ def read_tables(
 
 ## save table
 def to_table(
-    df: pd.DataFrame, p: str, colgroupby: str = None, test: bool = False, **kws
+    df: pd.DataFrame, p: str, colgroupby: str = None, test: bool = False,
+    # cpus = 1, #TODO
+    **kws
 ):
     """Save table.
 
@@ -1332,6 +1348,7 @@ def to_manytables(
     fmt: str = "",
     ignore: bool = False,
     kws_get_chunks={},
+    # cpus = 1, #TODO
     **kws_to_table,
 ):
     """
@@ -1389,7 +1406,7 @@ def to_manytables(
     df2 = (
         getattr(
             _groupby,
-            "progress_apply" if hasattr(_groupby, "progress_apply") else "apply",
+            "progress_apply" if hasattr(_groupby, "progress_apply") else "apply", #TODO rd.apply(cpus=cpus)
         )(
             lambda x: to_table(
                 x,

@@ -595,7 +595,7 @@ def get_diff(
         logging.warning("not filtered by P-value cutoff")
     return df3.sort_values("P")
 
-def get_diff_inferred(df1, x, y, colindex, hue: str = None, order: list = None, hue_order: list = None, show_p: bool = True, test: bool = False, kws_stats: dict = {}):
+def get_diff_inferred(df1, x, y, colindex, hue: str = None, order: list = None, hue_order: list = None, show_p: bool = True, verbose: bool = False, kws_stats: dict = {}):
     """Helper to pre-process inputs and optionally calculate p-values for plot_dists."""
     
     # --- Start of pre-processing logic ---
@@ -609,7 +609,7 @@ def get_diff_inferred(df1, x, y, colindex, hue: str = None, order: list = None, 
         x_stat, y_stat = y, x
         axis_desc, axis_cont = "x", "y"
 
-    if test:
+    if verbose:
         logging.info(x_stat, y_stat)
 
     if order is None:
@@ -628,7 +628,7 @@ def get_diff_inferred(df1, x, y, colindex, hue: str = None, order: list = None, 
             if df1[y_stat].isin(l).all():
                 order = l
                 break
-    if test:
+    if verbose:
         logging.info(order)
         
     if hue is not None and hue_order is None:

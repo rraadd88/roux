@@ -265,8 +265,8 @@ def plot_dists(
     alpha: float = 0.5,
     # saturate_color_alpha: float=1.5,
     ax: plt.Axes = None,
-    test: bool = False,
     verbose=True,
+    test: bool = False, ## more verbose
     kws_stats: dict = {},
     **kws,
 ) -> plt.Axes:
@@ -305,10 +305,31 @@ def plot_dists(
     """
     from roux.stat.diff import get_diff_inferred
     df2, kws_plot = get_diff_inferred(
-        df1, x, y, colindex, hue, order, hue_order, show_p, test, kws_stats
+        df1, 
+        x=x, 
+        y=y, 
+        colindex=colindex, 
+        hue=hue, 
+        order=order, 
+        hue_order=hue_order, 
+        show_p=show_p, 
+        kws_stats=kws_stats,
+        verbose=test, 
     )
-    locals().update(kws_plot)
-
+    
+    verbose=True
+    if verbose:
+        logging.info(kws_plot)
+    # locals().update(kws_plot)
+    df1=kws_plot.get('df1',None)
+    x_stat=kws_plot.get('x_stat',None)
+    y_stat=kws_plot.get('y_stat',None)
+    axis_desc=kws_plot.get('axis_desc',None)
+    axis_cont=kws_plot.get('axis_cont',None)
+    order=kws_plot.get('order',None)
+    hue_order=kws_plot.get('hue_order',None)
+    colindex=kws_plot.get('colindex',None)
+        
     ## get stats
     if show_p:
         col_pval='P'
@@ -494,12 +515,6 @@ def plot_dists(
             ax=ax,
         )
     return ax
-
-
-
-
-
-
 
 def plot_many_dists(
     data,
