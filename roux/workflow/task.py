@@ -125,7 +125,7 @@ def pre_params(
         param_list = [
             d
             for d in param_list
-            if (force if force else not Path(d["output_path"]).exists())
+            if (force if force else not Path(d["output_path"]).expanduser().exists())
         ]
 
     if flt_input_exists:
@@ -652,7 +652,7 @@ class SLURMJob:
         self.time = time
         self.cpus = cpus
         self.mem = mem
-        self.append_header = append_header.replace(' #SBATCH','\n#SBATCH')
+        self.append_header = (open(append_header).read() if '/' in append_header and ' ' not in append_header else append_header.replace(' #SBATCH','\n#SBATCH').replace('module','\nmodule'))
         
         self.ntasks = ntasks
         self.partition = partition
@@ -1496,6 +1496,7 @@ def post_tasks(
         params=pre_params(
             params,
             flt_output_exists=True, # completed, output exists
+            force=True, ## do not filter
         )
         from roux.lib.io import to_arxv
         for pms in params:
@@ -1506,6 +1507,7 @@ def post_tasks(
                 verbose=verbose,
                 force=False,
                 wait=True,
+                exclude="'*.bam'",
             )
             if simulate:
                 break

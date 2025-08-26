@@ -157,6 +157,7 @@ def to_arxv(
     force=False,
     wait=True,
     simulate=False,
+    exclude=None,
     ):
     """
     Notes:
@@ -181,9 +182,10 @@ def to_arxv(
                 verbose=verbose,
                 force=force,
                 wait=wait,
-                simulate=simulate,                
+                simulate=simulate,   
+                exclude=exclude,             
                 )
-        return outps
+        return pd.Series(outps) # to truncate the print
 
     if Path(ind).is_file() and Path(ind).exists():
         ind=Path(ind).with_suffix('').as_posix()
@@ -199,7 +201,7 @@ def to_arxv(
     com=''
     if not wait:
         com+="nice -n 10 ionice -c2 -n7 "
-    com+=f" tar --remove-files -czf {outp} {ind} &"
+    com+=f" tar --remove-files -czf {outp} {'' if not exclude else '--exclude '+exclude} {ind} &"
 
     if verbose:
         logging.info(com)
