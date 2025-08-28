@@ -40,18 +40,25 @@ class _PiperPlotter:
                     # Use a function factory to correctly capture the method and its name
                     wrapped_method = self._make_piper_plot_method(plot_method_name)
                     setattr(self, plot_method_name, wrapped_method)
-
+                    
+        # import seaborn as sns
+        # setattr(self, 'joint', self._make_piper_plot_method(real_plot_method=sns.jointplot))
         
-    def _make_piper_plot_method(self, name):
+    def _make_piper_plot_method(
+        self,
+        name=None,
+        real_plot_method=None,
+        ):
         """A factory to create a wrapped plotting method."""
         
-        # Get the real plotting method from the DataFrame's .plot accessor
-        real_plot_method = getattr(
-            (
-                self._obj.plot #if name!='hist' else self._obj
-            ), 
-            name
-        )
+        if real_plot_method is None:
+            # Get the real plotting method from the DataFrame's .plot accessor
+            real_plot_method = getattr(
+                (
+                    self._obj.plot #if name!='hist' else self._obj
+                ), 
+                name
+            )
 
         def piper_plot_method(
             func_ax=None, #lambda

@@ -13,7 +13,7 @@ Note: Post-development, to remove *s from the code, use removestar (pip install 
 """
 import warnings
 warnings.warn(
-    "'roux.global_imports' is intended for interactive use and rapid prototyping in environments like Jupyter notebooks. For production code, explicit imports are recommended.",
+    "'from roux.global_imports import * #noqa' is intended for interactive use and rapid prototyping in environments like Jupyter notebooks. For production code, explicit imports are recommended.",
     UserWarning,
     stacklevel=2,
 )

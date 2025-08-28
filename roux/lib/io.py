@@ -730,7 +730,7 @@ def read_table(
     ext: str = None,
     clean: bool = True,
     filterby_time=None,
-    params: dict = {},
+    params: dict = None,
     kws_clean: dict = {},
     kws_cloud: dict = {},
     use_paths: bool = False,  # read files in the path column even if not available in the sub-dir
@@ -782,6 +782,10 @@ def read_table(
                            names=replace_many(get_header(path,comment='#',lineno=-1),['#','\n'],'').split('\t'))
                            )
     """
+    if params is None:
+        params={}
+    # print(params,ext)
+    
     # params={}
     if tables==1:
         ## check for read_tables
@@ -920,6 +924,7 @@ def read_table(
                 p,
                 **params,
             )
+        del params
     if verbose and 'path' in df0:        
         logging.info("use_paths=True to read the paths in the col 'path'.")
         

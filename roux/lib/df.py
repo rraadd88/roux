@@ -642,8 +642,12 @@ def validate_no_duplicates(
 @to_rd
 def assert_no_dups(df, subset=None):
     """Assert that no duplicates"""
-    assert validate_no_dups(df, subset=subset), check_dups(
-        df, subset=subset, perc=False
+    assert validate_no_dups(df, subset=subset), (
+        check_dups(
+            df, subset=subset, perc=False
+        )
+        .dropna(how='all',axis=1)
+        .pipe(drop_constants)
     )
     return df
 
@@ -2418,7 +2422,7 @@ class log:
         cols_max=10, ## transpose if >cols_max
         ):  
         logging.info(
-            'head:\n'+(
+            f'head {n}/{len(self._obj)}:\n'+(
                 (
                     self._obj
                         .head(
@@ -2437,7 +2441,7 @@ class log:
              cols_max=None, ## transpose if >cols_max
             ):
         logging.info(
-            'head:\n'+(
+            f'tail {n}/{len(self._obj)}:\n'+(
                 (
                     self._obj
                         .tail(
