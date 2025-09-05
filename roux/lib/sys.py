@@ -901,3 +901,44 @@ def resolve_paths(
         extracted_segments[path]=value
         
     return extracted_segments
+
+
+def mv_ln_s(
+    p,
+    outp,
+    ):
+    """
+    ~ Copy link.
+    """
+    ps=read_ps(p)
+    if isinstance(p,list):
+        ## recurse
+        assert outp.is_dir(), outp
+        d={}
+        for p_ in ps:
+            d[p_]=mv_ln_s(
+                p,
+                f"{Path(outp).parent}/{Path(p).name}",
+                )
+        return d
+        
+    p = Path(p).absolute()
+    outp = Path(outp).absolute()
+
+    if outp.suffix=='':
+        outp=Path(f"{Path(outp)}/{Path(p).name}")
+    
+    assert p.suffix!='', p
+    # assert outp.is_file(), outp
+    if not Path(outp).exists():
+        outp.parent.mkdir(parents=True, exist_ok=True)
+        # try:
+        #     ## if same device
+        #     p.rename(outp)
+        # except:
+        import shutil
+        shutil.move(p.as_posix(), outp.as_posix())
+    
+    if not Path(p).exists():
+        p.symlink_to(outp)
+    return outp.as_posix()

@@ -318,9 +318,8 @@ def plot_dists(
     )
     
     verbose=True
-    if verbose:
-        logging.info(kws_plot)
-    # locals().update(kws_plot)
+    # if verbose:
+    #     logging.info(kws_plot)
     df1=kws_plot.get('df1',None)
     x_stat=kws_plot.get('x_stat',None)
     y_stat=kws_plot.get('y_stat',None)

@@ -1,4 +1,6 @@
 """For access to a few functions from the terminal."""
+import warnings
+warnings.simplefilter("ignore", SyntaxWarning)
 
 import logging
 logging.getLogger().setLevel(logging.INFO)
@@ -8,7 +10,7 @@ logging.getLogger().setLevel(logging.INFO)
 
 import argh
 
-from roux.lib.sys import read_ps
+from roux.lib.sys import read_ps, mv_ln_s
 from roux.lib.log import to_diff
 
 from roux.lib.io import (
@@ -64,12 +66,32 @@ def query_table(
     **kws,
     ):
     """
-    Notes:
+    Examples: 
+        "\`col\` == value"
     """
     # if not_use_dir_paths: 
     #     use_dir_paths=False
     # if not_use_paths: 
     #     use_paths=False
+    ps=read_ps(p)
+    # print(ps)
+    # return
+    
+    if len(ps)>1:
+        ## recurse
+        for p_ in ps:
+            logging.info("\n")
+            logging.info(p_)
+            try:
+                _=query_table(
+                    p_,
+                    expr=expr,
+                    **kws,
+                    )
+                print(_)
+            except Exception as e:
+                logging.error(e)
+        return 
         
     from roux.lib.io import read_table
     return (
@@ -90,6 +112,7 @@ parser.add_commands(
     [
         ## io
             read_ps,
+            mv_ln_s,
         ## checks
             head_table,
             query_table,

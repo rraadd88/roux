@@ -382,6 +382,52 @@ def clean_compress(
     """
     return df.rd.clean(**kws_clean).rd.compress(**kws_compress)
 
+@to_rd
+def to_sparse(
+    df1,
+    cols=None,
+    dtypes=None,
+    ):
+    """
+    
+    if dtype=='object':
+        df=(
+            df
+            .replace(
+                [None,b'None'],
+                np.nan,
+            )
+        )
+    
+    """
+    to_fill_value={
+        'float': np.nan,
+        'int': 0,
+        'bool':False,
+    }
+    if cols:
+        if not dtypes:
+            dtypes={c:v.name for c,v in df1[cols].dtypes.to_dict().items()}
+            logging.info(dtypes)
+        sdtypes={c: pd.SparseDtype(v, fill_value=to_fill_value.get(dtype,np.nan)) for c,v in dtypes.items()}
+    else:
+        if not dtypes:
+            dtypes=df1.dtypes.unique()
+            assert len(dtypes)==1,dtypes
+            dtypes=dtypes[0].name
+            logging.info(dtypes)
+        sdtypes=pd.SparseDtype(dtypes, fill_value=to_fill_value.get(dtypes,np.nan))
+        
+    df1=(
+        df1
+        .astype(
+              sdtypes
+        )
+    )
+    sparse_density=df1.sparse.density
+    getattr(logging,'info' if sparse_density<1 else 'warning')(f"sparse_density: {sparse_density}")
+    # assert sparse_density<1, (sparse_density,sdtypes)
+    return df1
 
 ## nans:
 @to_rd
@@ -2422,7 +2468,7 @@ class log:
         cols_max=10, ## transpose if >cols_max
         ):  
         logging.info(
-            f'head {n}/{len(self._obj)}:\n'+(
+            f'head {n}/{len(self._obj)}:'+(
                 (
                     self._obj
                         .head(
@@ -2433,7 +2479,7 @@ class log:
                         )
                         .to_string()
                     )  
-                )
+                ).lstrip()
             )
         return self._obj
     def tail(self, n=1,
@@ -2452,7 +2498,7 @@ class log:
                         )
                         .to_string()
                     )  
-                )
+                ).lstrip()
             )
         return self._obj
     def describe(self, **kws):
