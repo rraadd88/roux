@@ -1088,42 +1088,123 @@ def get_totals(ds1):
 # filter df
 @to_rd
 def query(
-    df,
-    expr,
-    kws_query={},
-    **kws_log,
-):
-    df.log(label='(init)')
-    for e in expr.split('&'):
-        df=(
-            df
-            .log.query(
-                expr=e,
-                **kws_query
-           )
-           .log(
-               # label=f"(queried by: {get_bracket(e,'`','`')})",
-               label=f"({e.strip()})",
-               **kws_log,
-           ) 
-           )
-    return df
+    df : pd.DataFrame,
+    expr : str,
+    ## safety
+    errors='raise',    
+    ## log
+    subset=None,
+    groupby=None,
+    kws_log={},
+    
+    **kws,
+    ) -> pd.DataFrame:
+    """
+    Can query safely and log clause-wise
+    """
+    assert ' and ' not in expr, expr 
+    assert ' or ' not in expr, expr 
+    assert not (expr.count('&')  > 0 and expr.count('|')  > 0), expr
+
+    if subset is not None:
+        kws_log['subset']=subset
+    if groupby is not None:
+        kws_log['groupby']=groupby
+    
+    from roux.lib.str import get_fills
+    import re
+
+    # Pre-calculate once outside the loop
+    df_columns_set = set(df.columns)
+    
+    # Get all column names from the full expression
+    expr_columns = set(get_fills(expr, "`"))
+    
+    # Check if any columns are missing
+    missing_columns = expr_columns - df_columns_set
+    
+    if len(missing_columns) > 0:
+        if errors=='raise':
+            raise ValueError(f"expr '{expr}' contains missing columns: {list(missing_columns)}")
+        # If there are missing columns, split and filter the expression
+        clauses_and_ops = re.split(r'\s*(&|\|)\s*', expr)
+        clauses = clauses_and_ops[0::2]
+        operators = [''] + clauses_and_ops[1::2]
+        
+        valid_clauses = []
+        
+        for op, clause in zip(operators, clauses):
+            # Optimization: only check if a clause is valid if it contains a column
+            # that is NOT in the missing_columns set.
+            # This is a key simplification, as we don't need to get all columns for a clause again.
+            
+            # The logic here is tricky. The simplest way to check for a missing column
+            # within a clause is to get the columns for that clause again.
+            # So, the original call `get_fills(clause, '`')` is necessary.
+            
+            clause_columns = set(get_fills(clause, '`'))
+            if clause_columns.isdisjoint(missing_columns):
+                valid_clauses.append(op + ' ' + clause.strip())
+            else:
+                missing_in_clause = clause_columns & missing_columns
+                logging.warning(f"Query clause '{clause.strip()}' was omitted due to missing columns: {list(missing_in_clause)}")
+    
+        if not valid_clauses:
+            logging.warning("nothing to query, returning the input!")
+            return df
+    
+        final_query_expr = ' '.join(valid_clauses).strip()
+        
+        if final_query_expr.startswith(('&', '|')):
+            final_query_expr = final_query_expr.split(' ', 1)[1]
+        logging.warning(f"expr = '{final_query_expr}'")
+    else:
+        final_query_expr = expr
+    
+    if len(kws_log)==0:
+        return df.log.query(
+            expr=final_query_expr,
+            **kws
+        )
+    else:
+        df.log(label='(init)')
+        for e in final_query_expr.split('&'):
+            df=(
+                df
+                .query(
+                    expr=e,
+                    **kws
+               )
+               .log(
+                   # label=f"(queried by: {get_bracket(e,'`','`')})",
+                   label=f"({e.strip()})",
+                   **kws_log,
+               ) 
+               )
+        return df
 
 @to_rd
 def filter_rows(
     df,
-    d,
-    sign="==",
-    logic="and",
+    
+    expr,
+    mode='keep',
+    
+    ## by df
+    
+    ## by dict
+    logic="&",
+    
     drop_constants=False,
+    
     test=False,
     verbose=True,
 ):
-    """Filter rows using a dictionary.
+    """Filter rows using a dataframe or dictionary.
 
     Parameters:
         df (DataFrame): input dataframe.
-        d (dict): dictionary.
+        expr (dict|pd.DataFrame): filter by dataframe or dictionary.
         sign (str): condition within mappings ('==').
         logic (str): condition between mappings ('and').
         drop_constants (bool): to drop the columns with single unique value (False).
@@ -1133,26 +1214,106 @@ def filter_rows(
     Returns:
         df (DataFrame): output dataframe.
     """
-    if verbose:
-        logging.info(df.shape)
-    assert all([isinstance(d[k], (str, list)) for k in d])
-    qry = f" {logic} ".join(
-        [
-            f"`{k}` {sign} " + (f'"{v}"' if isinstance(v, str) else f"{v}")
-            for k, v in d.items()
-        ]
-    )
-    df1 = df.query(qry)
-    if test:
-        logging.info(df1.loc[:, list(d.keys())].drop_duplicates())
-        logging.warning("may be some column names are wrong..")
-        logging.warning([k for k in d if k not in df])
-    if verbose:
-        logging.info(df1.shape)
-    if drop_constants:
-        df1 = df1.rd.drop_constants()
-    return df1
+    # Quality check for the mode parameter
+    if mode not in ['drop', 'keep']:
+        raise ValueError(f"mode must be either 'drop' or 'keep', but got '{mode}'")
+    
+    if isinstance(expr,pd.DataFrame):
+        df=df.log().reset_index(drop=True)
+        # This mask will identify all rows that match at least one rule
+        combined_mask_of_matches = pd.Series(False, index=df.index)
+        
+        # Identify the columns that define the hierarchy
+        expr=(
+            expr
+                .drop_duplicates()
+        )
+        cols_id = expr.columns        
+        if len(set(expr.columns.tolist()) - set(df.columns.tolist()))>0:
+            expr=(
+                expr
+                    ## only the common columns
+                    .loc[
+                        :,
+                        list(set(expr.columns.tolist()) & set(df.columns.tolist()))
+                    ]
+            )
+            cols_id = expr.columns        
+            logging.warning(f"using cols_id: {cols_id}")
 
+        ## slow
+        # # Iterate over each rule in the rules DataFrame
+        # for _, rule in expr.iterrows():
+        #     # Start with a mask of all True for the current rule
+        #     current_rule_mask = pd.Series(True, index=df.index)
+            
+        #     # Sequentially apply filters for each non-NaN value in the rule
+        #     for col in cols_id:
+        #         if pd.notna(rule[col]):
+        #             current_rule_mask &= (df[col] == rule[col])
+            
+        #     # Add the rows matching this rule to the combined mask of matches
+        #     combined_mask_of_matches |= current_rule_mask
+
+        # 1. Build a list of query strings, one for each rule
+        rule_queries = []
+        for _, rule in expr.iterrows():
+            conditions = []
+            for col, val in rule.items():
+                if pd.notna(val):
+                    # repr(val) correctly handles strings vs. numbers
+                    conditions.append(f"`{col}` == {repr(val)}")
+            
+            if conditions:
+                # Join conditions for a single rule with ' & '
+                rule_queries.append(f"({' & '.join(conditions)})")
+                
+        if not rule_queries:
+            return df.copy() if mode == 'drop' else df.iloc[0:0]
+    
+        # 2. Combine all rule queries with ' | ' to find any match
+        full_query = ' | '.join(rule_queries)
+    
+        # 3. Use the high-performance `eval` engine to get a boolean mask in one pass
+        combined_mask_of_matches = df.eval(full_query, engine='numexpr')
+
+        
+    
+        # Apply the final filter based on the selected mode
+        if mode == 'keep':
+            # Return only the rows that match at least one rule
+            return df[combined_mask_of_matches].log()
+        else: # mode == 'keep'
+            # Return rows that do NOT match any rule
+            return df[~combined_mask_of_matches].log()
+        
+    elif isinstance(expr,dict):
+        if verbose:
+            logging.info(df.shape)
+        if mode=='keep':
+            sign=" == "
+        else:
+            sign=" != "            
+        assert all([isinstance(expr[k], (str, list)) for k in expr])
+        qry = f" {logic} ".join(
+            [
+                f"`{k}` {sign} " + (f'"{v}"' if isinstance(v, str) else f"{v}")
+                for k, v in expr.items()
+            ]
+        )
+        df1 = df.query(qry)
+        if test:
+            logging.info(df1.loc[:, list(expr.keys())].drop_duplicates())
+            logging.warning("may be some column names are wrong..")
+            logging.warning([k for k in d if k not in df])
+        if verbose:
+            logging.info(df1.shape)
+        if drop_constants:
+            df1 = df1.rd.drop_constants()
+        return df1
+    else:
+        raise ValueError(expr)
+        
 @to_rd
 def tri(df,k=-1,**kws_np_tri):
     """

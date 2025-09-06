@@ -230,12 +230,16 @@ def findall(s, ss, outends=False, outstrs=False, suffixlen=0):
         return [a.start() for a in finds]
 
 
-def get_marked_substrings(
+def get_fills(
     s,
-    leftmarker="{",
-    rightmarker="}",
+    marks=None,
+    
     leftoff=0,
     rightoff=0,
+    
+    leftmarker=None, # 2bd
+    rightmarker=None, # 2bd
+    
 ) -> list:
     """Get the substrings flanked with markers from a string.
 
@@ -249,16 +253,28 @@ def get_marked_substrings(
     Returns:
         l (list): list of substrings.
     """
-    filers = []
-    for ini, end in zip(
-        findall(s, leftmarker, outends=False), findall(s, rightmarker, outends=False)
-    ):
-        filers.append(s[ini + 1 + leftoff : end + rightoff])
-    return filers
-
-
-getall_fillers = get_marked_substrings
-
+    if leftmarker and rightmarker:
+        marks=[leftmarker,rightmarker]
+    
+    if isinstance(marks,str):
+        marks=[marks,marks]
+        
+    if leftoff==0 and rightoff==0:
+        # This regex pattern finds all substrings that start with ` and end with `.
+        # The parentheses `()` create a capturing group for the content inside.
+        # The `+?` makes the match non-greedy, ensuring it stops at the first closing backtick.    
+        # re.findall returns a list of all non-overlapping matches
+        return re.findall(
+            re.escape(marks[0]) + r'(.+?)' + re.escape(marks[1]),
+            s,
+            )
+    else:    
+        filers = []
+        for ini, end in zip(
+            findall(s, marks[0], outends=False), findall(s, marks[1], outends=False)
+        ):
+            filers.append(s[ini + 1 + leftoff : end + rightoff])
+        return filers
 
 ###
 def mark_substrings(
@@ -298,7 +314,7 @@ def get_bracket(
         s (str): string.
 
     TODOs:
-        1. Use `get_marked_substrings`.
+        1. Use `get_fills`.
     """
     #     import re
     #     re.search(r'{l}(.*?){r}', s).group(1)

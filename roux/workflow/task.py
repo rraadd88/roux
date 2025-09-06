@@ -1,6 +1,7 @@
 """For task management."""
 
 import os
+import sys
 import time
 from tqdm import tqdm
 from datetime import datetime, timedelta
@@ -46,6 +47,7 @@ except ImportError:
     )
 
 import papermill as pm
+from papermill.exceptions import PapermillExecutionError
 
 ## validators
 def validate_params(
@@ -242,7 +244,7 @@ def run_task_nb(
         logging.info(parameters)
     if kernel is None:
         logging.warning("`kernel` name not provided.")
-
+    # try:
     pm.execute_notebook(
         input_path=script_path,
         output_path=output_notebook_path,
@@ -255,6 +257,11 @@ def run_task_nb(
         # prepare_only (bool, optional) – Flag to determine if execution should occur or not
         **kws_papermill,
     )
+    # except PapermillExecutionError as e:
+    #     e_last=str(e).split('Traceback (most recent call last)')[-1]
+    #     logging.error(f"{script_path}\n{e_last}")
+    #     test_params(parameters)
+    
     # return parameters['output_path']
     return output_notebook_path
 
@@ -273,11 +280,15 @@ def apply_run_task_nb(
             force=force,
             **kws_papermill,
         )
-    except RuntimeError:
-        logging.error(f"during output_path: {x['output_path']}")
-        import traceback
-        traceback_string = traceback.format_exc()
-        print(traceback_string)
+    # except RuntimeError:
+    #     logging.error(f"during output_path: {x['output_path']}")
+    #     import traceback
+    #     e_last = traceback.format_exc().split('Traceback (most recent call last)')[-1]
+    except PapermillExecutionError as e:
+        e_last=str(e).split('Traceback (most recent call last)')[-1]
+        logging.error(f"{x['output_path']}\n{e_last}")
+        test_params(x)
+        sys.exit(1)
 
 def run_tasks_nb(
     script_path: str=None,
@@ -331,7 +342,7 @@ def run_tasks_nb(
         verbose (bool): verbose.
 
     Keyword parameters:
-        kws_papermill: parameters provided to the `pm.execute_notebook` function e.g. working directory (cwd=)
+        kws_papermill: parameters provided to the `execute_notebook` function e.g. working directory (cwd=)
         to_filter_nbby_patterns_kws (list): dictionary containing parameters to be provided to `to_filter_nbby_patterns` function (Defaults to None).
 
     Returns:

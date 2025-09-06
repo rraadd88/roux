@@ -33,13 +33,15 @@ from roux.workflow.task import check_tasks, post_tasks
 from roux.workflow.nb import to_clear_unused_cells, to_clear_outputs
 from roux.workflow.cfgs import read_config, read_metadata, to_cfg_run_arc
 
-def head_table(
+def peek_table(
     p : str,
     n : int = 5,
     use_dir_paths : bool = True,
     not_use_dir_paths : bool = False,
     use_paths : bool = True,
     not_use_paths : bool = False,
+    
+    cols_desc=None,
     **kws,
     ):
     if not_use_dir_paths: 
@@ -48,12 +50,16 @@ def head_table(
         use_paths=False
         
     from roux.lib.io import read_table
-    return read_table(
+    df_=read_table(
         p,
         use_dir_paths=use_dir_paths,
         use_paths=use_paths,
         **kws,
-    ).head(n)
+    )
+    if cols_desc:
+        return df_[cols_desc].describe()
+    else:        
+        return df_.head(n)
 
 def query_table(
     p : str,
@@ -114,7 +120,7 @@ parser.add_commands(
             read_ps,
             mv_ln_s,
         ## checks
-            head_table,
+            peek_table,
             query_table,
         ### logs
             to_diff,
