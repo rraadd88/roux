@@ -37,6 +37,7 @@ interactive = [
 data = [
     "pyarrow", # fast
     "openpyxl", # special io
+    "numexpr", # faster querying
 ]
 stat = [
     "scipy>=1.1.0",
@@ -92,6 +93,7 @@ interactive = [
 data = [
     "pyarrow", # fast
     "openpyxl", # special io
+    "numexpr", # faster querying
 ]
 stat = [
     "scipy>=1.1.0",

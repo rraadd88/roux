@@ -1197,6 +1197,8 @@ def filter_rows(
     
     drop_constants=False,
     
+    fast=False,
+    
     test=False,
     verbose=True,
 ):
@@ -1228,56 +1230,76 @@ def filter_rows(
             expr
                 .drop_duplicates()
         )
-        cols_id = expr.columns        
-        if len(set(expr.columns.tolist()) - set(df.columns.tolist()))>0:
+        cols_id = expr.columns.tolist()        
+        if len(set(cols_id) - set(df.columns.tolist()))>0:
             expr=(
                 expr
                     ## only the common columns
                     .loc[
                         :,
-                        list(set(expr.columns.tolist()) & set(df.columns.tolist()))
+                        list(set(cols_id) & set(df.columns.tolist()))
                     ]
             )
-            cols_id = expr.columns        
+            cols_id = expr.columns.tolist()
             logging.warning(f"using cols_id: {cols_id}")
 
-        ## slow
-        # # Iterate over each rule in the rules DataFrame
-        # for _, rule in expr.iterrows():
-        #     # Start with a mask of all True for the current rule
-        #     current_rule_mask = pd.Series(True, index=df.index)
-            
-        #     # Sequentially apply filters for each non-NaN value in the rule
-        #     for col in cols_id:
-        #         if pd.notna(rule[col]):
-        #             current_rule_mask &= (df[col] == rule[col])
-            
-        #     # Add the rows matching this rule to the combined mask of matches
-        #     combined_mask_of_matches |= current_rule_mask
-
-        # 1. Build a list of query strings, one for each rule
-        rule_queries = []
-        for _, rule in expr.iterrows():
-            conditions = []
-            for col, val in rule.items():
-                if pd.notna(val):
-                    # repr(val) correctly handles strings vs. numbers
-                    conditions.append(f"`{col}` == {repr(val)}")
-            
-            if conditions:
-                # Join conditions for a single rule with ' & '
-                rule_queries.append(f"({' & '.join(conditions)})")
-                
-        if not rule_queries:
-            return df.copy() if mode == 'drop' else df.iloc[0:0]
+        # --- Modification: Pre-filter expr to keep only relevant rules ---
+        # 1. Get unique values from the data
+        relevant_values_ = {col: set(df[col].unique()) for col in cols_id}
     
-        # 2. Combine all rule queries with ' | ' to find any match
-        full_query = ' | '.join(rule_queries)
-    
-        # 3. Use the high-performance `eval` engine to get a boolean mask in one pass
-        combined_mask_of_matches = df.eval(full_query, engine='numexpr')
+        # 2. Build a boolean mask to identify relevant rules without iteration
+        mask_relevant_rules_ = pd.Series(True, index=expr.index)
+        for col, data_vals in relevant_values_.items():
+            # Find rules for this column that have values not present in the data
+            is_irrelevant_ = ~expr[col].isin(data_vals) & expr[col].notna()
+            # Update the mask to exclude these irrelevant rules
+            mask_relevant_rules_[is_irrelevant_] = False
 
+        _len=len(expr)
+        expr = expr[mask_relevant_rules_]
+        if _len > len(expr):
+            logging.warning(f"expr reduced to remove irrelevant rules: {_len} -> {len(expr)}")
         
+        if expr.empty:
+            return df.copy() if mode == 'drop' else df.iloc[0:0]
+        # --- End Modification ---
+
+        if not fast:
+            # slow
+            # Iterate over each rule in the rules DataFrame
+            for _, rule in expr.iterrows():
+                # Start with a mask of all True for the current rule
+                current_rule_mask = pd.Series(True, index=df.index)
+                
+                # Sequentially apply filters for each non-NaN value in the rule
+                for col in cols_id:
+                    if pd.notna(rule[col]):
+                        current_rule_mask &= (df[col] == rule[col])
+                
+                # Add the rows matching this rule to the combined mask of matches
+                combined_mask_of_matches |= current_rule_mask
+        else:
+            # 1. Build a list of query strings, one for each rule
+            rule_queries = []
+            for _, rule in expr.iterrows():
+                conditions = []
+                for col, val in rule.items():
+                    if pd.notna(val):
+                        # repr(val) correctly handles strings vs. numbers
+                        conditions.append(f"`{col}` == {repr(val)}")
+                
+                if conditions:
+                    # Join conditions for a single rule with ' & '
+                    rule_queries.append(f"({' & '.join(conditions)})")
+                    
+            if not rule_queries:
+                return df.copy() if mode == 'drop' else df.iloc[0:0]
+        
+            # 2. Combine all rule queries with ' | ' to find any match
+            full_query = ' | '.join(rule_queries)
+        
+            # 3. Use the high-performance `eval` engine to get a boolean mask in one pass
+            combined_mask_of_matches = df.eval(full_query, engine='numexpr')
     
         # Apply the final filter based on the selected mode
         if mode == 'keep':

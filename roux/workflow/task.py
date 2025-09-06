@@ -288,7 +288,7 @@ def apply_run_task_nb(
         e_last=str(e).split('Traceback (most recent call last)')[-1]
         logging.error(f"{x['output_path']}\n{e_last}")
         test_params(x)
-        sys.exit(1)
+        sys.exit(0)
 
 def run_tasks_nb(
     script_path: str=None,
