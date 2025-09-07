@@ -112,10 +112,14 @@ def read_ps(
             if fmt is None:
                 ps = glob(ps)
             elif fmt=='ids':
-                assert ps.count('*')==1, ps
-                id_parti=Path(ps).parts.index('*')
-                to_ids={Path(p).as_posix():Path(p).parts[id_parti] for p in glob(ps)}
-                logging.info(f"fmt: {len(to_ids)} {fmt}")
+                assert ps.count('*')==1, ps                
+                if '/*/' in ps:
+                    id_parti=list(Path(ps).parts).index('*')                    
+                    to_ids={Path(p).as_posix():Path(p).parts[id_parti] for p in glob(ps)}
+                else:
+                    prefix, suffix = ps.split('*')
+                    to_ids={Path(p_).name.removeprefix(prefix).removesuffix(suffix):p_ for p_ in glob(ps)}
+                logging.info(f"fmt: {len(to_ids)} {fmt}")                        
                 return to_ids         
             else:
                 raise ValueError(fmt)

@@ -272,23 +272,19 @@ def apply_run_task_nb(
     force=False,
     **kws_papermill,
     ):
-    try:
-        return run_task_nb(
-            x,
-            script_path=script_path,
-            kernel=kernel,
-            force=force,
-            **kws_papermill,
-        )
-    # except RuntimeError:
-    #     logging.error(f"during output_path: {x['output_path']}")
-    #     import traceback
-    #     e_last = traceback.format_exc().split('Traceback (most recent call last)')[-1]
-    except PapermillExecutionError as e:
-        e_last=str(e).split('Traceback (most recent call last)')[-1]
-        logging.error(f"{x['output_path']}\n{e_last}")
-        test_params(x)
-        sys.exit(0)
+    # try:
+    return run_task_nb(
+        x,
+        script_path=script_path,
+        kernel=kernel,
+        force=force,
+        **kws_papermill,
+    )
+    # except PapermillExecutionError as e:
+    #     e_last=str(e).split('Traceback (most recent call last)')[-1]
+    #     logging.error(f"{x['output_path']}\n{e_last}")
+    #     test_params(x)
+    #     sys.exit(0)
 
 def run_tasks_nb(
     script_path: str=None,
@@ -845,6 +841,8 @@ def infer_runner(
     runner=None,
     script_type=None,
 ):
+    assert runner in ['py', 'bash', 'slurm', None], runner
+    
     runner_in=runner
     del runner
     
@@ -1195,6 +1193,7 @@ def run_tasks(
             feed_interval = '1s',
             feed_if_jobs_max = 0.5,    
     """    
+    
     if simulate:
         test=True
         verbose=True

@@ -56,3 +56,46 @@ def git_commit(
     commit(repo)
     push(repo)
     return
+
+import subprocess
+
+def get_tag():
+    """Get the current version tag.
+    """
+    try:
+        # Execute the git describe command to get the current tag
+        result = subprocess.run(
+            # ['git', 'tag', '-l'],
+            "git describe --abbrev=0 --tags".split(" "),
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            text=True,
+            check=False,
+        )
+
+        # Check if the command was successful
+        if result.returncode == 0:
+            # Get the output and strip any extra whitespace
+            current_tag = result.stdout.strip()
+            # return current_tag#.split('\n')[-1]
+        else:
+            print("Error getting current Git tag:", result.stderr.strip())  # noqa
+            current_tag = None
+    except Exception as e:
+        print("An error occurred:", str(e))  # noqa
+        current_tag = None
+
+    if current_tag is None:
+        current_tag = "test"
+        logging.warning(f"Current Git tag: {current_tag}")
+    else:
+        logging.info(f"Current Git tag: {current_tag}")
+    return current_tag
+
+# get_current_git_tag=get_tag
+
+def get_commit_message():
+    return subprocess.check_output(
+        ['git', 'log', '-1', '--pretty=%B'],
+        text=True
+    ).strip()
