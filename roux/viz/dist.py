@@ -235,7 +235,7 @@ def get_jitter_positions(
     ## mapping
     return (
         df1.groupby(column_category, as_index=False)
-        .apply(lambda df: df.assign(**{column_position: (d1[df.name])}))
+        .apply(lambda df: df.assign(**{column_position: (d1[df.name])}))**kws
         .reset_index(drop=True)
     )
 
@@ -400,7 +400,7 @@ def plot_dists(
         },
     )
     ticklabel2position = get_ticklabel_position(ax, axis_desc)
-    d3 = get_axlims(ax)
+    axlims = get_axlims(ax)
     ## show p-value
     if isinstance(show_p, (bool, dict)):
         if isinstance(show_p, bool) and show_p:
@@ -425,14 +425,14 @@ def plot_dists(
             logging.info(offs_pval)
         if isinstance(d1, dict):
             if test:
-                logging.info(d1, ticklabel2position, d3)
+                logging.info(d1, ticklabel2position, axlims)
             for k, s in d1.items():
                 ax.text(
                     **{
-                        axis_cont: d3[axis_cont]["max"]
+                        axis_cont: axlims[axis_cont]["max"]
                         + offs_pval[
                             axis_cont
-                        ],  # +((d3[axis_cont]['len']*offx_pval) if axis_desc=='y' else 0),
+                        ],  # +((axlims[axis_cont]['len']*offx_pval) if axis_desc=='y' else 0),
                         axis_desc: ticklabel2position[k] + offs_pval[axis_desc],
                     },
                     s=s,

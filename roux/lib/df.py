@@ -2037,13 +2037,18 @@ def to_ranges(
 @to_rd
 def assignby_expr(
     df,
-    col,
     expr, # .query-style
+    col=None,
+    verbose=False,
 ):
+    if col is None:
+        col=expr
     df=df.reset_index(drop=True)
     df_=df.query(expr=expr)
     df[col]=False
     df.loc[df_.index.tolist(),col]=True
+    if verbose:
+        df.log(groupby=col)
     return df
 
 
@@ -2334,6 +2339,7 @@ def check_diff(
     
     out=False,
     kws_plot={},
+    kws_set={},
     **kws_stats,
     ):
     # kws_stat={
@@ -2372,6 +2378,9 @@ def check_diff(
                 ),
                 **kws_plot
             },
+        )
+        ax.set(
+            **kws_set
         )
         res=ax.stats
     # df1=pd.Series(res).to_frame().T
