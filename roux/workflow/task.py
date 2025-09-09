@@ -1,7 +1,6 @@
 """For task management."""
 
 import os
-import sys
 import time
 from tqdm import tqdm
 from datetime import datetime, timedelta
@@ -47,7 +46,6 @@ except ImportError:
     )
 
 import papermill as pm
-from papermill.exceptions import PapermillExecutionError
 
 ## validators
 def validate_params(
