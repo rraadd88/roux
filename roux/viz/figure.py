@@ -221,13 +221,25 @@ def annot_axs(
     ax1,
     ax2,
     cols,
+    verbose=False,
     **kws_line,
     ):
     ## inferred
     fig=ax1.get_figure()
     
+    cols_inferred={}
     for k,col in cols.items():
         if col not in data:
+            if isinstance(col,float):
+                logging.info(f"{k}:{col}")
+                off=col
+                if col>0.5:
+                    col=f'{k[-1]}max'
+                # elif col<0.5:
+                else:
+                    col=f'{k[-1]}min'
+            else:
+                off=None
             if col in ['xmin','xmax','ymin','ymax']:
                 if k.startswith('ax1'):
                     ax=ax1
@@ -235,20 +247,34 @@ def annot_axs(
                     ax=ax2
                 from roux.viz.ax_ import get_axlims
                 lims=get_axlims(ax)
+                pos=lims[col[0]][col[1:]]
+                if off is not None:
+                    if col[1:]=='max':
+                        pos+=(off-1)*lims[col[0]]['len']
+                    else:
+                        pos+=(off)*lims[col[0]]['len']                        
                 data=data.assign(
                     **{
-                        col:lims[col[0]][col[1:]]
+                        col:pos,
                     }
                 )
                 logging.info(f"col={col}")
             else:
                 raise ValueError(col)
-    
+            cols_inferred[k]=col
+            
+    if verbose:
+        print(data)
+        print(cols_inferred)
+    cols_inferred={
+        **cols,
+        **cols_inferred,
+    }
     from matplotlib.patches import ConnectionPatch
     _=data.apply(lambda x:  fig.add_artist(
         ConnectionPatch(
-            xyA=[x[cols['ax1x']],x[cols['ax1y']]], 
-            xyB=[x[cols['ax2x']],x[cols['ax2y']]],
+            xyA=[x[cols_inferred['ax1x']],x[cols_inferred['ax1y']]], 
+            xyB=[x[cols_inferred['ax2x']],x[cols_inferred['ax2y']]],
             coordsA=ax1.transData, 
             coordsB=ax2.transData,
             **{

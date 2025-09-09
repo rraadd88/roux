@@ -1523,7 +1523,31 @@ def melt_paired(
         assert len(df2) == len(df) * len(cols_value)
         return df2
 
-
+def replace_inf(
+    df,
+    subset,
+    value=None, #np.nan
+    ):    
+    """
+    Replaces with the closest np.inf:max, -np.inf:min
+    
+    if not pandas.options.mode.use_inf_as_na = True
+    """
+    for c in subset:    
+        if df[c].max()==np.inf:
+            logging.info(f"{c} == inf count = {sum(df[c]==np.inf)}")            
+            df[c]=df[c].replace(
+                np.inf,
+                value if value is not None else df[c].replace([np.inf], np.nan).max()
+            )
+        if df[c].min()== -np.inf:
+            logging.info(f"{c} == -inf count = {sum(df[c]== -np.inf)}")
+            df[c]=df[c].replace(
+                -np.inf,
+                value if value is not None else df[c].replace([-np.inf], np.nan).min()
+            )
+    return df
+    
 ## helper to get_bins
 def get_bin_labels(
     bins: list,
@@ -1581,6 +1605,11 @@ def get_bins(
     """
     kind: quantile
     """
+    df=replace_inf(
+        df,
+        subset=[col],
+    )
+    
     if kind.startswith('q'):
         return get_qbins(
             df,#: pd.DataFrame,
