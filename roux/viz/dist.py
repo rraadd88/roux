@@ -235,7 +235,7 @@ def get_jitter_positions(
     ## mapping
     return (
         df1.groupby(column_category, as_index=False)
-        .apply(lambda df: df.assign(**{column_position: (d1[df.name])}))**kws
+        .apply(lambda df: df.assign(**{column_position: (d1[df.name])}))
         .reset_index(drop=True)
     )
 

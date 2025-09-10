@@ -208,8 +208,8 @@ def get_enrichment(
     df1: pd.DataFrame,
     df2: pd.DataFrame,
     colid: str,
-    colset: str,
     background: int,
+    colset: str=None,
     coltest: str = None,
     test_type: list = None,
     verbose: bool = False,
@@ -230,12 +230,18 @@ def get_enrichment(
         pd.DataFrame: output table
     """
     assert isinstance(background, int)
+    
+    if colset is None:
+        colset=df2.set_index(colid).columns.tolist()
+    elif isinstance(colset,str):
+        colset=[colset]
+        
     if test_type is None:
         test_type = []
     ## calculate the background for the Fisher's test that is compatible with the contigency tables
     background_fisher_test = len(set(df1[colid].tolist() + df2[colid].tolist()))
     if coltest is None:
-        coltest = "Unnamed"
+        coltest = "tmp"
         df1 = df1.assign(**{coltest: 1})
     ## statistics
     df3 = (
@@ -319,7 +325,7 @@ def get_enrichment(
         df3 = df3.merge(
             right=df_,
             how="outer",
-            on=[coltest, colset],
+            on=[coltest]+colset,
             validate="1:1",
         )
     if "Fisher" in test_type:
@@ -353,7 +359,7 @@ def get_enrichment(
         df3 = df3.merge(
             right=df_,
             how="outer",
-            on=[coltest, colset],
+            on=[coltest]+colset,
             validate="1:1",
         )
 
@@ -373,4 +379,6 @@ def get_enrichment(
         .apply(get_qs)
         .rd.clean()
     )
+    if 'tmp' in df4:
+        df4=df4.drop(['tmp'],axis=1)
     return df4.sort_values(df4.filter(regex="^Q.*").columns.tolist())

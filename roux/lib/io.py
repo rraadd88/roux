@@ -281,13 +281,21 @@ def read_arxv(
             
 def to_copy(
     paths: dict,
+    
+    replaces=None,
+    
     flatten=False,
     flatten_rename_basename=None,
     flatten_outd: str=None,
-    force=False,
-    test=False,
-    ):
     
+    force=False,
+    simulate=False,
+    **kws_replace_many,
+    ):
+    if isinstance(paths,str):
+        assert replaces is not None, replaces
+        paths={p: replace_many(p,replaces, **kws_replace_many) for p in read_ps(paths)}
+        
     paths = {k: v for k, v in paths.items()}
 
     import shutil
@@ -308,7 +316,7 @@ def to_copy(
         list(set(copy_paths.values()))
     ), copy_paths
     
-    if test:
+    if simulate:
         return copy_paths
         
     logging.info("copying ..")

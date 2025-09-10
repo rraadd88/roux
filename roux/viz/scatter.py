@@ -599,10 +599,10 @@ def plot_volcano(
             if "palette" not in kws_scatterplot
             else kws_scatterplot["palette"][1],
         )
-        
+
     xlim = ax.get_xlim()
     ylim = ax.get_ylim()
-    
+
     ## set lines
     if show_lines:
         from roux.stat.transform import log_pval
@@ -705,8 +705,8 @@ def plot_volcano(
             
     ## setting ylim before setting the labels
     ax.set(
-        xlabel=r"Log$_\mathrm{2}$ Fold Change (LFC)",
-        ylabel=r"Significance\n(-Log$_\mathrm{10}$($q$))",
+        xlabel="Log$_\mathrm{2}$ Fold Change (LFC)",
+        ylabel="Significance\n(-Log$_\mathrm{10}$($q$))",
         xlim=xlim,
         ylim=ylim,
     )
