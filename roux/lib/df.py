@@ -2352,7 +2352,7 @@ def check_diff(
         validate=None
     if not plot:
         from roux.stat.diff import get_diff_inferred
-        res=get_diff_inferred(
+        res,_=get_diff_inferred(
             data,
             x=x,
             y=y,
@@ -2360,7 +2360,7 @@ def check_diff(
             kws_stats=dict(
                 func=method,
             ),
-        )        
+        )
     else:
         from roux.viz.dist import plot_dists
         ax=plot_dists(

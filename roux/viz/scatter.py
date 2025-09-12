@@ -92,6 +92,7 @@ def plot_scatter(
     ## set
     ax: plt.Axes = None,
     verbose: bool = True,
+    annot_kws={},
     **kws,
 ) -> plt.Axes:
     """Plot scatter with multiple layers and stats.
@@ -216,11 +217,14 @@ def plot_scatter(
         z=z,
         zorder=5,
         **{
-            **dict(
-                method=stat_method[0],
-                resample=stat_resample,
-            ),
-            **stat_kws,
+            **{
+                **dict(
+                    method=stat_method[0],
+                    resample=stat_resample,
+                ),
+                **stat_kws,
+            },
+            **annot_kws,
         },
     )
     return ax

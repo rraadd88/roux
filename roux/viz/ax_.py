@@ -1179,9 +1179,14 @@ def format_ax(
     kws_legend={},
     rotate_ylabel=False,
     textwrap_width=None,
+    **kws_set, ## pre
 ):
     if ax is None:
         ax = plt.gca()
+
+    ax.set(
+        **kws_set
+    )
 
     format_ticklabels(
         ax,

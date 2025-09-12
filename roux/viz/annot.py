@@ -730,9 +730,13 @@ def show_scatter_stats(
     _ = set_label(
         ax=ax,
         s=label,
-        zorder=zorder,
-        loc=loc,
-        **kws_set_label,
+        **{
+            **dict(
+                zorder=zorder,
+                loc=loc,
+            ),
+            **kws_set_label
+        },
     )
     ax.stats=res   
     return ax    

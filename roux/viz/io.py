@@ -76,7 +76,7 @@ def to_plotp(
     # print('_' if not prefix.endswith('_') else '')
     # print(to_path('_'.join([s for s in labels if not (s.replace(' ','')=='')])))
     plotp = (
-        f"{prefix}{to_path('_'.join([s for s in labels if not (s.replace(' ','')=='')])).lower()}{suffix}"
+        f"{prefix}{to_path('_'.join([s for s in labels if not (s.replace(' ','')=='')])).lower().replace('.','')}{suffix}"
         + (f".{fmts[0]}" if len(fmts) == 1 else "")
     )
     # logging.warning(f"Inferred path of the plot (plotp): '{plotp}'")
