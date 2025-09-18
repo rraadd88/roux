@@ -208,7 +208,21 @@ def plot_scatter(
         )
     ## stats
     from roux.viz.annot import show_scatter_stats
-
+    
+    ## par.corr.
+    kws_parcorr={}
+    if kws.get('x_partial',None) or kws.get('y_partial',None):
+        ax.set(
+            xlabel="$\\tilde{"+x+"}$",
+            ylabel="$\\tilde{"+y+"}$",
+        )
+        if kws.get('x_partial',None) and kws.get('y_partial',None):
+            kws_parcorr['covar']=[kws['x_partial'],kws['y_partial']]
+        elif kws.get('x_partial',None):
+            kws_parcorr['x_covar']=kws['x_partial']
+        elif kws.get('y_partial',None):
+            kws_parcorr['y_covar']=kws['y_partial']
+                    
     ax=show_scatter_stats(
         ax,
         data=data,
@@ -223,6 +237,7 @@ def plot_scatter(
                     resample=stat_resample,
                 ),
                 **stat_kws,
+                **kws_parcorr,
             },
             **annot_kws,
         },

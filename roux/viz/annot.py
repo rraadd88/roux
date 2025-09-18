@@ -663,6 +663,10 @@ def show_scatter_stats(
     y,
     z,
     method: str,
+    x_covar=None,
+    y_covar=None,
+    covar=None,
+    
     resample: bool = False,
     show_n: bool = True,
     show_n_prefix: str = "",
@@ -693,17 +697,22 @@ def show_scatter_stats(
         from roux.stat.corr import get_corr, _to_string
 
         res = get_corr(
-            data[x],
-            data[y],
+            x=x,
+            y=y,
+            df=data,
             method=method,
             resample=resample,
             verbose=verbose,
+            x_covar=x_covar,
+            y_covar=y_covar,
+            covar=covar,
         )
         if res is not None and len(res) != 0:
             label += _to_string(
                 res,
                 show_n=show_n,
                 show_n_prefix=show_n_prefix,
+                method_suffix=False, ## change x|y label instead
             )
             if loc is None:
                 ## infer

@@ -14,6 +14,11 @@ def _pre(
     x: str,
     y: str,
     df: pd.DataFrame = None,
+    
+    covar=None,
+    x_covar=None,
+    y_covar=None,
+    
     n_min: int = 10,
     drop_same_value=None,  # e.g. 0
     verbose: bool = False,
@@ -36,10 +41,10 @@ def _pre(
         print(x.name, y.name)
     if not (isinstance(x, str) and isinstance(y, str) and df is not None):
         ## get columns
-        df = pd.DataFrame({"x": x, "y": y})
-        x, y = "x", "y"
+        df = pd.DataFrame({'x': x, 'y': y})
+        x, y = 'x', 'y'
     else:
-        df = df.rename(columns={x: "x", y: "y"}, errors="raise")
+        df = df.rename(columns={x: 'x', y: 'y'}, errors="raise")
     if drop_same_value is not None:
         _before = len(df)
         df = df.query(f"~(`x` == {drop_same_value} & `y` == {drop_same_value})")
@@ -47,10 +52,24 @@ def _pre(
             logging.info(
                 f"drop_same_value={drop_same_value}; {len(df)-_before} samples dropped"
             )
-    assert pd.api.types.is_numeric_dtype(df["x"]), df["x"].dtype
-    assert pd.api.types.is_numeric_dtype(df["y"]), df["y"].dtype
+    assert pd.api.types.is_numeric_dtype(df['x']), df['x'].dtype
+    assert pd.api.types.is_numeric_dtype(df['y']), df['y'].dtype
     # clean
-    df = df.replace([np.inf, -np.inf], np.nan).dropna()
+    cols_covar=[]
+    if covar or x_covar or y_covar:
+        if isinstance(covar,str):
+            covar=[covar]
+        cols_covar=[c for c in covar+[x_covar,y_covar] if c is not None]
+        cols_covar=list(set(cols_covar))
+    
+    df = (
+        df
+            .replace([np.inf, -np.inf], np.nan)
+            .dropna(
+                subset=['x','y']+cols_covar
+            )
+        )
+    
     if len(df) < n_min:
         if verbose:
             logging.error("low sample size")
@@ -135,14 +154,23 @@ def get_corr(
     y: str,
     method: str,
     df: pd.DataFrame = None,
+    
     method_kws: dict = {},
-    pval: bool = True,
+    covar=None,
+    x_covar=None,
+    y_covar=None,
+        
     preprocess: bool = True,
     n_min=10,
     preprocess_kws: dict = {},
+
     resample: bool = False,
     cv=5,
     resample_kws: dict = {},
+
+    ## out
+    pval: bool = True,
+    
     verbose: bool = False,
     test: bool = False,
 ) -> dict:
@@ -189,10 +217,23 @@ def get_corr(
         preprocess_kws["verbose"] = True
         resample_kws["verbose"] = True
     if preprocess:
-        df = _pre(x, y, df, n_min=n_min, test=test, **preprocess_kws)
+        df = _pre(
+            x,
+            y,
+            df,
+            n_min=n_min,
+            
+            covar=covar,
+            x_covar=x_covar,
+            y_covar=y_covar,
+            
+            test=test,
+            **preprocess_kws,
+         )
         if df is None:
             return {}
-        x, y, n = df["x"], df["y"], len(df)
+        x, y, n = df['x'], df['y'], len(df)
+        
     if not callable(method):
         if hasattr(stats, method + "r"):
             method_fun = getattr(stats, method + "r")
@@ -206,7 +247,39 @@ def get_corr(
         method = method.__name__
 
     if pval:
-        res = _post(method_fun(x, y, **method_kws), method, n)
+        if covar or x_covar or y_covar:
+            method_kws={
+                **method_kws,
+                **dict(
+                    covar=covar,
+                    x_covar=x_covar,
+                    y_covar=y_covar,
+                    method=method,    
+                )
+            }
+            
+            from pingouin import partial_corr
+            res = (
+                partial_corr(
+                    data=df,
+                    x='x',
+                    y='y',
+                    **method_kws,
+                )
+                .rename(
+                    columns={
+                        'p-val':'P',
+                    }
+                )
+                .astype({'n':int})
+                .iloc[0,:].to_dict()
+            )
+            res={
+                **res,
+                **method_kws,
+            }
+        else:
+            res = _post(method_fun(x, y, **method_kws), method, n)
     else:
         res = {}
     if resample:
@@ -232,6 +305,7 @@ def _to_string(
     show_n: bool = True,
     show_n_prefix="$n$=",
     fmt: dict = "<",
+    method_suffix=True,
     **kws_pval2annot,
 ) -> str:
     """Correlation results to string.
@@ -251,9 +325,21 @@ def _to_string(
     from roux.lib.str import num2str
 
     method = res["method"]
+    if method_suffix:
+        if res.get('covar',None):
+            method_suffix="($\\tilde{x},\\tilde{y}$)"
+        elif res.get('x_covar',None):
+            method_suffix="($\\tilde{x},y$)"
+        elif res.get('y_covar',None):
+            method_suffix="($x,\\tilde{y}$)"
+        else:
+            method_suffix=''
+        
     s0 = (
-        f"$r_{method[0]}$" if "tau" not in method else "$\\tau$"
-    ) + f"={res['rr' if 'rr' in res else 'r']:.2f}"  ##prefer the resampled r value
+        (f"$r_{method[0]}$" if "tau" not in method else "$\\tau$")
+        + (method_suffix if method_suffix else '')
+        + (f"={res['rr' if 'rr' in res else 'r']:.2f}")  ##prefer the resampled r value
+    )
     if "ci" in res:
         s0 += f"$\pm${res['ci']:.2f}{res['ci_type'] if res['ci_type']!='max' else ''}"
     s0 += f"\n{pval2annot(res['P'],fmt='<',linebreak=False, alpha=0.05)}"
@@ -474,3 +560,53 @@ def pairwise_chi2(df1: pd.DataFrame, cols_values: list) -> pd.DataFrame:
     df2.index.names = ["value1", "value2"]
     df2 = df2.reset_index()
     return df2
+
+
+# def par_pcorr(df, x, y, covars, method='spearman'):
+#     """
+#     Calculates the Spearman partial correlation using a robust regression method on ranks.
+
+#     Parameters
+#     ----------
+#     df : pd.DataFrame
+#         The input DataFrame.
+#     x : str
+#         The name of the x variable.
+#     y : str
+#         The name of the y variable.
+#     covars : list of str
+#         The name of the covariate(s).
+
+#     Returns
+#     -------
+#     float
+#         The Spearman partial correlation coefficient.
+#     Notes:
+#     ------
+#     not as robust as pg.partial_corr
+#     """
+#     assert method=='spearman', method
+#     # Spearman is a Pearson correlation on the ranks of the data.
+#     df_ranked = df.rank(method='average')
+
+#     # All variables to be included in the regression models
+#     all_vars = [x, y] + covars
+
+#     # Regress x on all other variables
+#     x_covariates_df = df_ranked[[v for v in all_vars if v != x]]
+#     x_residuals = regress_out_pinv(
+#         df_ranked[x].values,
+#         x_covariates_df.values
+#     )
+
+#     # Regress y on all other variables
+#     y_covariates_df = df_ranked[[v for v in all_vars if v != y]]
+#     y_residuals = regress_out_pinv(
+#         df_ranked[y].values,
+#         y_covariates_df.values
+#     )
+
+#     # The partial correlation is the Pearson correlation between the residuals
+#     correlation, _ = pearsonr(x_residuals, y_residuals)
+
+#     return correlation

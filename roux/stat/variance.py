@@ -1,7 +1,8 @@
 """For variance related stats."""
 
 import numpy as np
-
+import pandas as pd
+import scipy.stats as sc
 
 def confidence_interval_95(x: np.array) -> float:
     """95% confidence interval.
@@ -50,7 +51,6 @@ def get_variance_inflation(
     Returns:
         pd.Series
     """
-    import pandas as pd
     from patsy import dmatrices
     from statsmodels.stats.outliers_influence import variance_inflation_factor
 
@@ -84,3 +84,54 @@ def get_variance_inflation(
             },
         )
     )
+
+def get_complexity(
+    df: pd.DataFrame,
+    method=[
+        # 'entropy', ## not comparable across different ns
+        'norm-entropy', 
+        'gini',
+        # 'perplexity', ## not comparable across different ns
+    ]
+) -> pd.DataFrame: 
+    """
+    Calculates complexity scores for a DataFrame of probability vectors.
+
+    Args:
+        df (pd.DataFrame): An m x n DataFrame where each row is a
+                              probability vector (sums to 1).
+
+    Returns:
+        pd.DataFrame: A DataFrame with m rows and columns for each
+                      complexity score.
+
+    Notes:
+        Specificity (Tau) ≈ 1 - Uncertainty (Entropy/Gini)
+    """
+    if isinstance(method,str): 
+        method=[method]
+        
+    # 1. Extract the underlying NumPy array for calculation
+    P = df.values
+    m, n = P.shape
+
+    scores={}
+    if 'entropy' in method or 'norm-entropy' in method or 'perplexity' in method:
+        scores['entropy'] = sc.entropy(P, axis=1, base=2)
+
+    if 'norm-entropy' in method:
+        # The calculation logic is the same
+        # 2. Normalize the entropy to a [0, 1] scale
+        # Handle the edge case where n=1 to avoid division by zero (log2(1)=0)
+        max_entropy = np.log2(n) if n > 1 else 1
+        scores['norm-entropy'] = scores['entropy'] / max_entropy
+    
+    if 'perplexity' in method:        
+        scores['perplexity'] = np.power(2, scores['entropy'])
+
+    
+    if 'gini' in method:        
+        scores['gini'] = 1 - np.sum(np.power(P, 2), axis=1)
+    
+    # 2. Create an output DataFrame from the results
+    return pd.DataFrame(scores)
