@@ -2318,7 +2318,7 @@ def check_corr(
         res=ax.stats
     df1=pd.Series(res).to_frame().T
     if verbose:
-        logging.info(f'{data.name if hasattr(data,'name') else ''} {x} - {y}\n'+df1.to_string())
+        logging.info(f'{data.name if hasattr(data,"name") else ""}{x} - {y}\n'+df1.to_string())
     if validate is not None: 
         assert df1.query(validate).shape[0]==df1.shape[0], df1
     if out:
@@ -2393,7 +2393,7 @@ def check_diff(
     if df1 is None:
         return None
     if verbose:
-        logging.info(f'{data.name if hasattr(data,'name') else ''} {x} - {y}\n'+df1.to_string())
+        logging.info(f'{data.name if hasattr(data,"name") else ""}{x} - {y}\n'+df1.to_string())
     if validate is not None: 
         assert df1.query(validate).shape[0]==df1.shape[0], df1
         logging.info(df1)

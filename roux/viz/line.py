@@ -87,21 +87,45 @@ def plot_bezier(
     direction="h",
     off_guide=0.25,
     ax=None,
+    ax2=None,
+    clip_on=True, # New argument
     test=False,
     **kws_line,
 ):
     from matplotlib.path import Path
     import matplotlib.patches as patches
+    
+    if ax is None:
+        ax = plt.gca()
 
+    if ax2 is not None:
+        # Convert points from their respective data spaces to a common figure space (pixels)
+        # pt1_pixels = ax.transData.transform(pt1)
+        pt2_pixels = ax2.transData.transform(pt2)
+
+        # Convert the pixel points back to the data space of the target axis (ax)
+        # pt1 = ax.transData.inverted().transform(pt1_pixels)
+        pt2 = ax.transData.inverted().transform(pt2_pixels)
+
+    if direction is None:
+        if pt1[1]==pt2[1]: #y
+            direction='h'
+        elif pt1[0]==pt2[0]: #x
+            direction='v'
+        else:
+            raise ValueError(direction)
+            
     if direction == "h":
-        assert pt1[0] < pt2[0], (pt1[0], pt2[0])
+        if pt1[0] > pt2[0]:
+            pt1, pt2 = pt2, pt1
         off = abs(pt1[0] - pt2[0]) * off_guide
         if pt1_guide is None:
             pt1_guide = [pt1[0] + off, pt1[1]]
         if pt2_guide is None:
             pt2_guide = [pt2[0] - off, pt2[1]]
     elif direction == "v":
-        assert pt1[1] < pt2[1], (pt1[1], pt2[1])
+        if pt1[1] > pt2[1]:
+            pt1, pt2 = pt2, pt1
         off = abs(pt1[1] - pt2[1]) * off_guide
         if pt1_guide is None:
             pt1_guide = [pt1[0], pt1[1] + off]
@@ -109,35 +133,17 @@ def plot_bezier(
             pt2_guide = [pt2[0], pt2[1] - off]
     else:
         raise ValueError(direction)
-    # Create the Path object using the control points
+    
     vertices = [pt1, pt1_guide, pt2_guide, pt2]
     codes = [Path.MOVETO, Path.CURVE4, Path.CURVE4, Path.CURVE4]
-
     path = Path(vertices, codes)
 
-    # Create a patch from the path
-    patch = patches.PathPatch(
-        path,
-        # facecolor='none',
-        # edgecolor='blue',
-        # lw=2,
-        fc="none",
-        **kws_line,
-    )
-
-    # Plot the path
-    if ax is None:
-        ax = plt.gca()
+    # Pass the clip_on parameter to the patch
+    patch = patches.PathPatch(path, fc="none", clip_on=clip_on, **kws_line)
     ax.add_patch(patch)
     if test:
-        # Plot control points
         control_points = np.array([pt1, pt1_guide, pt2_guide, pt2])
-        ax.plot(
-            control_points[:, 0],
-            control_points[:, 1],
-            "--",
-            label=f'direction={direction}; off_guide={off_guide}'
-        )
+        ax.plot(control_points[:, 0], control_points[:, 1], "--", label=f'direction={direction}; off_guide={off_guide}')
     return ax
 
 

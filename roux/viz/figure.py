@@ -221,6 +221,7 @@ def annot_axs(
     ax1,
     ax2,
     cols,
+    kind='straight',
     verbose=False,
     **kws_line,
     ):
@@ -252,7 +253,7 @@ def annot_axs(
                     if col[1:]=='max':
                         pos+=(off-1)*lims[col[0]]['len']
                     else:
-                        pos+=(off)*lims[col[0]]['len']                        
+                        pos+=(off)*lims[col[0]]['len']                
                 data=data.assign(
                     **{
                         col:pos,
@@ -270,21 +271,46 @@ def annot_axs(
         **cols,
         **cols_inferred,
     }
-    from matplotlib.patches import ConnectionPatch
-    _=data.apply(lambda x:  fig.add_artist(
-        ConnectionPatch(
-            xyA=[x[cols_inferred['ax1x']],x[cols_inferred['ax1y']]], 
-            xyB=[x[cols_inferred['ax2x']],x[cols_inferred['ax2y']]],
-            coordsA=ax1.transData, 
-            coordsB=ax2.transData,
-            **{
-                **dict(
-                    clip_on=False,
-                    color='gray',
-                ),
-                **kws_line
-            }
-        ),
-        ),
-        axis=1)
+    if kind=='straight':
+        from matplotlib.patches import ConnectionPatch
+        _=data.apply(lambda x:  fig.add_artist(
+            ConnectionPatch(
+                xyA=[x[cols_inferred['ax1x']],x[cols_inferred['ax1y']]], 
+                xyB=[x[cols_inferred['ax2x']],x[cols_inferred['ax2y']]],
+                coordsA=ax1.transData, 
+                coordsB=ax2.transData,
+                **{
+                    **dict(
+                        clip_on=False,
+                        color='gray',
+                    ),
+                    **kws_line
+                }
+            ),
+            ),
+            axis=1)
+    else:
+        from roux.viz.line import plot_bezier
+        [ax.set_facecolor('none') for ax in fig.axes]
+        # This is the block that needs to be updated for compatibility with the new plot_bezier function
+        # The new plot_bezier function takes two separate axes objects for coordinate transformation
+        _=data.apply(lambda x:  plot_bezier(
+                pt1=[x[cols_inferred['ax1x']],x[cols_inferred['ax1y']]],
+                pt2=[x[cols_inferred['ax2x']],x[cols_inferred['ax2y']]],
+                ax=ax1, # The axes where the line is plotted
+                ax2=ax2, # The axes for the second point's coordinates
+                # direction='v', # inferred
+                off_guide=0.5,
+                zorder=1,
+                **{
+                    **dict(
+                        clip_on=False, # clip_on is added for consistency and to fix the clipping issue
+                        color='gray',
+                    ),
+                    **kws_line
+                }
+            ),
+            axis=1
+        )
+
     return data

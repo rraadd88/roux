@@ -223,7 +223,11 @@ def format_labels(
     fmt="cap1",
     title_fontsize=15,
     rename_labels=None,
+    
     rotate_ylabel=True,
+    show_axes_arrows=True,
+    rotate_ylabel_offs=None,
+    
     y=1.05,
     test=False,
     textwrap_width=None,
@@ -265,11 +269,15 @@ def format_labels(
             rotation=0,
             labelpad=0,
         )
-        ax.yaxis.set_label_coords(-0.05, 1.02)
-        set_axes_arrows(
-            ax=ax,
-            axes=['y'],
+        ax.yaxis.set_label_coords(
+            -0.05 + (0 if rotate_ylabel_offs is None else rotate_ylabel_offs[0]),
+            1.02 + (0 if rotate_ylabel_offs is None else rotate_ylabel_offs[1])
         )
+        if show_axes_arrows:
+            set_axes_arrows(
+                ax=ax,
+                axes=['y'],
+            )
         
     if isinstance(textwrap_width,int):
         from roux.lib.str import linebreaker
