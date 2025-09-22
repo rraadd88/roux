@@ -1523,6 +1523,7 @@ def melt_paired(
         assert len(df2) == len(df) * len(cols_value)
         return df2
 
+@to_rd
 def replace_inf(
     df,
     subset,
@@ -1533,6 +1534,9 @@ def replace_inf(
     
     if not pandas.options.mode.use_inf_as_na = True
     """
+    if isinstance(subset,str):
+        subset=[subset]    
+        
     for c in subset:    
         if df[c].max()==np.inf:
             logging.info(f"{c} == inf count = {sum(df[c]==np.inf)}")            
@@ -1607,7 +1611,7 @@ def get_bins(
     """
     df=replace_inf(
         df,
-        subset=[col],
+        subset=col,
     )
     
     if kind.startswith('q'):
@@ -2293,6 +2297,7 @@ def check_corr(
         res = get_corr(
             data[x],
             data[y],
+            
             verbose=verbose,
             **kws_stat,
         )    
@@ -2313,7 +2318,7 @@ def check_corr(
         res=ax.stats
     df1=pd.Series(res).to_frame().T
     if verbose:
-        logging.info('\n'+df1.to_string())
+        logging.info(f'{data.name if hasattr(data,'name') else ''} {x} - {y}\n'+df1.to_string())
     if validate is not None: 
         assert df1.query(validate).shape[0]==df1.shape[0], df1
     if out:
@@ -2385,8 +2390,10 @@ def check_diff(
         res=ax.stats
     # df1=pd.Series(res).to_frame().T
     df1=res
+    if df1 is None:
+        return None
     if verbose:
-        logging.info('\n'+df1.to_string())
+        logging.info(f'{data.name if hasattr(data,'name') else ''} {x} - {y}\n'+df1.to_string())
     if validate is not None: 
         assert df1.query(validate).shape[0]==df1.shape[0], df1
         logging.info(df1)
@@ -2722,13 +2729,21 @@ class log:
                 ).lstrip()
             )
         return self._obj
-    def describe(self, **kws):
+    def describe(
+        self,
+        subset,
+        **kws,
+        ):
+        if isinstance(subset,str):
+            subset=[subset]
         logging.info(
             r'describe:\n'+(
                 self
-                    ._obj.describe(
-                    **kws,
-                )
+                    ._obj
+                    .loc[:,subset]
+                    .describe(
+                        **kws,
+                    )
                 .to_string()
             )
             )

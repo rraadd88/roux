@@ -92,7 +92,8 @@ def get_complexity(
         'norm-entropy', 
         'gini',
         # 'perplexity', ## not comparable across different ns
-    ]
+    ],
+    pre=True, # to sum=1
 ) -> pd.DataFrame: 
     """
     Calculates complexity scores for a DataFrame of probability vectors.
@@ -111,6 +112,24 @@ def get_complexity(
     if isinstance(method,str): 
         method=[method]
         
+    if len(df.shape)==1 or df.shape[1] == 0 or df.shape[0] == 0:
+        return 
+        
+    assert df.min().min() >= 0, df.min().min()
+    
+    if pre:
+        df=(
+            df
+            .dropna(how='all')
+            .pipe(
+                lambda df: df.loc[df.sum(axis=1)!=0,:]
+            )
+            .fillna(0)
+            .apply(lambda x: x/x.sum(),axis=1)
+        )
+        
+    assert all(df.sum(axis=1).round(1) == 1.0), df.sum(axis=1).value_counts()
+    
     # 1. Extract the underlying NumPy array for calculation
     P = df.values
     m, n = P.shape

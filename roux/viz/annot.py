@@ -662,6 +662,7 @@ def show_scatter_stats(
     x,
     y,
     z,
+    
     method: str,
     x_covar=None,
     y_covar=None,
@@ -676,7 +677,8 @@ def show_scatter_stats(
     # kws_stat={},
     verbose: bool = True,
     kws_stat={},
-    **kws_set_label,
+    kws_set_label={},
+    **kws,
 ):
     """
     resample (bool, optional): resample data. Defaults to False.
@@ -720,6 +722,7 @@ def show_scatter_stats(
                     loc = 2
                 elif res["r"] < 0:
                     loc = 3
+
     if "mlr" in method:
         from roux.stat.fit import get_mlr_2_str
 
@@ -744,7 +747,8 @@ def show_scatter_stats(
                 zorder=zorder,
                 loc=loc,
             ),
-            **kws_set_label
+            **kws,
+            **kws_set_label,
         },
     )
     ax.stats=res   
@@ -753,12 +757,19 @@ def show_scatter_stats(
 def show_crosstab_stats(
     data: pd.DataFrame,
     cols: list=None,
+    
     method: str = None,
+
     alpha: float = 0.05,
+
+    show_stat=True,
+    show_pval=True,
+    linebreak: bool = False,
+    
     loc: str = None,
     xoff: float = 0,
     yoff: float = 0,
-    linebreak: bool = False,
+        
     ax: plt.Axes = None,
     **kws_set_label,
 ) -> plt.Axes:
@@ -821,12 +832,13 @@ def show_crosstab_stats(
         )
 
     from roux.viz.ax_ import set_label
-
     set_label(
-        s=f"{stat_label}={stat:.1f}"
-        + (", " if not linebreak else "\n")
-        + pval2annot(
-            pval, alternative="two-sided", alpha=alpha, fmt="<", linebreak=False
+        s=(f"{stat_label}={stat:.1f}" if show_stat else '')
+        + (", " if show_stat and not linebreak else "\n")
+        + (
+            pval2annot(
+                pval, alternative="two-sided", alpha=alpha, fmt="<", linebreak=False
+            ) if show_pval else ''
         ),
         ax=ax,
         **kws_set_label,

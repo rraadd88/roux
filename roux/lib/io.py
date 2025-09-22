@@ -1084,10 +1084,13 @@ def apply_on_paths(
         
         if replaces_index=='ids':
             # print(ps)
-            to_ids=read_ps(
-                ps,
-                fmt=replaces_index,
-                verbose=verbose,
+            from roux.lib.dict import flip_dict
+            to_ids=flip_dict(
+                    read_ps(
+                    ps,
+                    fmt=replaces_index,
+                    verbose=verbose,
+                )
             )
             # print(to_ids)
             replaces_index=lambda x: to_ids[x]

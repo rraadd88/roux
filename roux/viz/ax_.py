@@ -138,7 +138,7 @@ def set_label(
     """
     if title:
         ax.set_title(s, **kws)
-    elif loc is not None:
+    elif loc is not None and (x is None and y is None):
         if loc == 1 or loc == "upper right":
             x = 1 - off_loc
             y = 1 - off_loc
@@ -161,7 +161,15 @@ def set_label(
             va = "bottom"
         else:
             raise ValueError(loc)
-    ax.text(s=s, x=x, y=y, ha=ha, va=va, transform=ax.transAxes, **kws)
+    # kws={
+    #     **dict(),
+    # }
+    ax.text(s=s, 
+            x=x, 
+            y=y, 
+            ha=ha, 
+            va=va,
+            transform=ax.transAxes, **kws)
     return ax
 
 
