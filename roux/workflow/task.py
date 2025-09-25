@@ -166,6 +166,7 @@ def pre_params(
 
 def pre_task(
     pms,
+    cache_dir_path,
     test=False,
 ):
     if isinstance(pms,list):
@@ -176,7 +177,8 @@ def pre_task(
         log_dir_path=f"{log_dir_path_}/{get_datetime()}"
     else:
         from roux.lib.str import encode
-        log_dir_path_=f"{Path('~/scratch/.roux/').expanduser().as_posix()}"
+        # log_dir_path_=f"{Path(cache_dir_path).expanduser().as_posix()}"
+        log_dir_path_=cache_dir_path
         log_dir_path=f"{log_dir_path_}/{get_datetime()}_{encode(pms['output_path'])}"
 
     # else:
@@ -1154,7 +1156,7 @@ def run_tasks(
     
     ## common
     force_setup : bool =True,
-    cache_dir_path='.roux/',
+    cache_dir_path='/tmp/.roux', # ='~/scratch/.roux'
     wd_path=None,    
 
 
@@ -1204,6 +1206,8 @@ def run_tasks(
     if simulate:
         test=True
         verbose=True
+
+    cache_dir_path=f"{Path(cache_dir_path).expanduser().as_posix()}"
 
     ## script_path
     logging.setLevel(level=log_level)
@@ -1325,7 +1329,8 @@ def run_tasks(
     
     if wd_path is None:
         wd_path=os.getcwd()
-    cache_dir_path=f"{wd_path}/{cache_dir_path}"
+    # if test:
+    #     cache_dir_path=f"{wd_path}/{cache_dir_path}"
     Path(cache_dir_path).mkdir(parents=True, exist_ok=True)
 
     if runner=='slurm':
@@ -1394,6 +1399,7 @@ def run_tasks(
     for pms in tqdm(params):  
         log_dir_path=pre_task(
             pms,
+            cache_dir_path=cache_dir_path,
             test=test,
         )
         
