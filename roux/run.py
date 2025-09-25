@@ -56,6 +56,7 @@ def peek_table(
         use_paths=use_paths,
         **kws,
     )
+    logging.info(df_.shape)
     if cols_desc:
         return df_[cols_desc].describe()
     else:        

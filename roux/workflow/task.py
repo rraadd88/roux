@@ -648,7 +648,10 @@ class SLURMJob:
         
         ## not used often
         ntasks=1, 
-        partition="default"
+        partition="default",
+        
+        post_arxv: bool = True,
+        post_clean: bool = False,
         ):
         
         self.job_name = job_name
@@ -662,6 +665,9 @@ class SLURMJob:
         self.ntasks = ntasks
         self.partition = partition
         self.commands = []
+
+        self.post_arxv = post_arxv
+        self.post_clean = post_clean
 
     def add_command(self, command):
         """Add a command to be executed in the SLURM script"""
@@ -735,7 +741,7 @@ f"""#!/bin/bash
             f.write(
 f"""
 ## archive the subdir (if job completed)
-roux post-tasks -p {self.log_path}/pms.yaml --arxv
+roux post-tasks -p {self.log_path}/pms.yaml {'--arxv' if self.post_arxv else ''} {'--clean' if self.post_clean else ''} 
 """
             )
             # f.write("exit(0)\n")
@@ -886,7 +892,7 @@ def to_sbatch_script(
     append_header="",
 
     expand_pms=True, # argh
-
+    
     force=False,
     test=False,
     verbose=False,
@@ -1122,7 +1128,10 @@ def run_tasks(
     ## ipynb
     ## kws_run
     pre: bool = True,
-    post: bool = False,
+    
+    post_arxv: bool = True,
+    post_clean: bool = False,
+    post_nb: bool = False,
         
     ## slurm
     script_pre : str ='', ## e.g. micromamba run -n env
@@ -1296,7 +1305,7 @@ def run_tasks(
             kernel = kernel,
             cpus = cpus,
             pre = pre,
-            post = post,
+            post = post_nb,
 
             simulate=simulate,
             test1 = test1,
@@ -1335,6 +1344,9 @@ def run_tasks(
             script_pre= script_pre, #='', ## e.g. micromamba run -n env
 
             append_header=slurm_header,                       
+            
+            post_arxv = post_arxv,
+            post_clean = post_clean,            
         ),
         **kws_runner,
         **slurm_kws,

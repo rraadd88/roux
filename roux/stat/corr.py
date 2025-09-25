@@ -57,6 +57,8 @@ def _pre(
     # clean
     cols_covar=[]
     if covar or x_covar or y_covar:
+        if covar is None:
+            covar=[]
         if isinstance(covar,str):
             covar=[covar]
         cols_covar=[c for c in covar+[x_covar,y_covar] if c is not None]

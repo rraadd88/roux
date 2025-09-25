@@ -121,6 +121,7 @@ def plot_gmm(
     hist: bool = True,
     test: bool = False,
     ax: plt.Axes = None,
+    kws_lines={},
     kws_axvline=dict(color="k"),
     **kws,
 ) -> plt.Axes:
@@ -172,9 +173,19 @@ def plot_gmm(
     if hist:
         pd.Series(x).hist(density=True, histtype="step", bins=bins, ax=ax, **kws)
     # plot fitted distributions
-    ax.plot(x, mix_pdf.ravel(), c=colors[-1])
+    ax.plot(
+            x, 
+            mix_pdf.ravel(),
+            c=colors[-1],
+            **kws_lines
+           )
     for i in range(n_clusters):
-        ax.plot(x, two_pdfs[i] * weights[i], c=colors[i])
+        ax.plot(
+            x, 
+            two_pdfs[i] * weights[i], 
+            c=colors[i],
+            **kws_lines
+            )
     #     ax.plot(x,two_pdfs[1]*weights[1], c='gray')
     if n_clusters == 2:
         if show_cutoff_line:

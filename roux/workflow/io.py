@@ -189,6 +189,7 @@ if __name__ == "__main__": # and sys.stdin.isatty():
     
     t_src=t_splits[0]+t_def+t_splits[1]+t_end
     # print(t_src)
+    Path(outp).parent.mkdir(exist_ok=True)
     open(outp,'w').write(t_src)
 
     com=f"ruff check {outp} --ignore E402"

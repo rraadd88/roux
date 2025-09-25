@@ -548,9 +548,7 @@ def check_nunique(
         logging.warning(f"Auto-detected columns (subset): {subset}")
     if isinstance(subset, str):
         subset = [subset]
-    assert len(set(subset) - set(df.columns.tolist())) == 0, set(subset) ^ set(
-        df.columns.tolist()
-    )
+    assert len(set(subset) - set(df.columns.tolist())) == 0, ( set(subset), (set(subset) ^ set(df.columns.tolist())) )
     if groupby is None:
         if not perc:
             ds_ = df.loc[:, subset].nunique()
@@ -1167,6 +1165,7 @@ def query(
             **kws
         )
     else:
+        # print(kws_log)
         df.log(label='(init)')
         for e in final_query_expr.split('&'):
             df=(
@@ -2264,6 +2263,15 @@ def sort_columns_by_values(
         )
     return df1
 
+@to_rd
+def assert_expr(
+    df1,
+    expr,
+    **kws
+    ):
+    assert df1.query(expr=expr,**kws).shape[0]==df1.shape[0], df1
+    return df1
+    
 ## paired stats
 @to_rd
 def check_corr(
@@ -2319,14 +2327,14 @@ def check_corr(
     df1=pd.Series(res).to_frame().T
     if verbose:
         logging.info(f'{data.name if hasattr(data,"name") else ""}{x} - {y}\n'+df1.to_string())
-    if validate is not None: 
-        assert df1.query(validate).shape[0]==df1.shape[0], df1
+    if validate is not None:
+        assert_expr(df1,validate)
+        logging.info(df1)
     if out:
         return df1
     else:
         #pipe
         return data
-
 
 @to_rd
 def check_diff(
@@ -2394,8 +2402,8 @@ def check_diff(
         return None
     if verbose:
         logging.info(f'{data.name if hasattr(data,"name") else ""}{x} - {y}\n'+df1.to_string())
-    if validate is not None: 
-        assert df1.query(validate).shape[0]==df1.shape[0], df1
+    if validate is not None:
+        assert_expr(df1,validate)
         logging.info(df1)
     if out:
         return df1
@@ -2485,15 +2493,17 @@ def dict2df(
     return df_
     
 ## log
-def log_shape_change(d1, fun=""):
+def log_shape_change(d1, fun="", label=None):
     """Report the changes in the shapes of a DataFrame.
 
     Parameters:
         d1 (dic): dictionary containing the shapes.
         fun (str): name of the function.
     """
+    if label is None:
+        label=''
     if d1["from"] != d1["to"]:
-        prefix = f"{fun}: " if fun != "" else ""
+        prefix = f"{fun} {label}: " if fun != "" else ""
         if d1["from"][0] == d1["to"][0]:
             logging.info(
                 f"{prefix}shape changed: {d1['from']}->{d1['to']}, length constant"
@@ -2516,6 +2526,7 @@ def log_apply(
     validate_no_decrease_width=False,
     validate_no_increase_length=False,
     validate_no_increase_width=False,
+    label=None,
     *args,
     **kwargs,
 ):
@@ -2542,7 +2553,7 @@ def log_apply(
     else:
         df = fun(df, *args, **kwargs)
     d1["to"] = df.shape
-    log_shape_change(d1, fun=fun)
+    log_shape_change(d1, fun=fun,label=label)
     if validate_equal_length:
         assert d1["from"][0] == d1["to"][0], (d1["from"][0], d1["to"][0])
     if validate_equal_width:
@@ -2620,7 +2631,7 @@ class log:
     def query(self, **kws):
         from roux.lib.df import log_apply
 
-        return log_apply(self._obj, fun="query", **kws)
+        return log_apply(self._obj, fun="query", label=kws.get('expr'), **kws)
 
     def filter_(self, **kws):
         from roux.lib.df import log_apply
