@@ -292,6 +292,15 @@ def to_copy(
     simulate=False,
     **kws_replace_many,
     ):
+    """
+    Copy with the dir. structure
+
+    Notes:
+        Similar to:
+        
+            rsync -a --remove-source-files --prune-empty-dirs --info=progress2  --include=$ind --include='*/'   --include=$pattern  --exclude='*'   $ind $outd
+    """
+    
     if isinstance(paths,str):
         assert replaces is not None, replaces
         paths={p: replace_many(p,replaces, **kws_replace_many) for p in read_ps(paths)}

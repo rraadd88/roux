@@ -793,7 +793,6 @@ def show_crosstab_stats(
     """
     if cols is not None:
         from roux.stat.diff import compare_classes
-    
         stat, pval = compare_classes(data[cols[0]], data[cols[1]], method=method)
         ## get the label for the stat method
         data_ = pd.crosstab(data[cols[0]], data[cols[1]])

@@ -2502,6 +2502,9 @@ def log_shape_change(d1, fun="", label=None):
     """
     if label is None:
         label=''
+    if len(label)>100:
+        logging.debug('set label=None because len(label)>100 ..')
+        label=''        
     if d1["from"] != d1["to"]:
         prefix = f"{fun} {label}: " if fun != "" else ""
         if d1["from"][0] == d1["to"][0]:
@@ -2628,11 +2631,6 @@ class log:
 
         return log_apply(self._obj, fun="drop", **kws)
 
-    def query(self, **kws):
-        from roux.lib.df import log_apply
-
-        return log_apply(self._obj, fun="query", label=kws.get('expr'), **kws)
-
     def filter_(self, **kws):
         from roux.lib.df import log_apply
 
@@ -2683,6 +2681,11 @@ class log:
 
         return log_apply(self._obj, fun="groupby", **kws)
 
+    def query(self, **kws):
+        from roux.lib.df import log_apply
+
+        return log_apply(self._obj, fun="query", label=kws.get('expr'), **kws)
+
     ## rd
     def clean(self, **kws):
         from roux.lib.df import log_apply
@@ -2699,7 +2702,6 @@ class log:
 
         return log_apply(self._obj, fun=melt_paired, **kws)
 
-    ## .rd functions for logging-only, usage in pipes
     def head(
         self,
         n=1, 
@@ -2748,17 +2750,19 @@ class log:
         if isinstance(subset,str):
             subset=[subset]
         logging.info(
-            r'describe:\n'+(
+            'describe:\n'+(
                 self
                     ._obj
                     .loc[:,subset]
                     .describe(
                         **kws,
-                    )
+                    ).T
                 .to_string()
             )
             )
         return self._obj     
+        
+    ## .rd functions for logging-only, usage within pipes
     def check_na(self, **kws):
         # logging.info(f'na {kws}')
         logging.info(check_na(self._obj, **kws))
