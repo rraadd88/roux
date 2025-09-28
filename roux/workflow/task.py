@@ -71,6 +71,7 @@ def pre_params(
     """
     # --- Handle input formats and output path inference ---
     param_list = params
+    # print(len(param_list))
     if param_list is None and inputs is not None and output_path_base is not None:
         from roux.lib.sys import to_output_paths
         param_list = to_output_paths(
@@ -89,13 +90,16 @@ def pre_params(
                 f"{output_dir_path}/{k.split(output_dir_path)[1].split('/')[0]}/.parameters.yaml",
             )
 
+    # print(len(param_list))
     if isinstance(param_list, str):
         param_list = read_dict(param_list)
 
+    # print(len(param_list))
     if not param_list or (isinstance(param_list, (list, dict)) and len(param_list) == 0):
         logging.info("nothing to process. use `force`=True to rerun.")
         return []
 
+    # print(len(param_list))
     # --- Convert dict to list if needed ---
     if isinstance(param_list, dict):
         if 'input_path' in param_list and 'output_path' in param_list:
@@ -113,6 +117,7 @@ def pre_params(
     # --- Filtering by output existence, as in flt_params ---
     before = len(param_list)
 
+    # print(len(param_list))
     if flt_output_exists:
         print(len(param_list),end='->')
         param_list = [
@@ -120,7 +125,7 @@ def pre_params(
             for d in param_list
             if Path(d["output_path"]).exists()
         ]
-        print(len(param_list))
+        # print(len(param_list))
     else:
         param_list = [
             d
@@ -128,16 +133,16 @@ def pre_params(
             if (force if force else not Path(d["output_path"]).expanduser().exists())
         ]
 
+    # print(len(param_list))
     if flt_input_exists:
-        print(len(param_list),end='->')
+        print(len(param_list),end=' -> ')
         param_list = [
             d
             for d in param_list
-            if (force if force else Path(d["input_path"]).exists())
+            if (force if force else Path(d["input_path"]).expanduser().exists())
         ]
-        print(len(param_list))
-
     
+        
     if not force:
         if before - len(param_list) != 0:
             logging.info(
@@ -166,6 +171,7 @@ def pre_params(
 
 def pre_task(
     pms,
+    cache_dir_path,
     test=False,
 ):
     if isinstance(pms,list):
@@ -176,7 +182,8 @@ def pre_task(
         log_dir_path=f"{log_dir_path_}/{get_datetime()}"
     else:
         from roux.lib.str import encode
-        log_dir_path_=f"{Path('~/scratch/.roux/').expanduser().as_posix()}"
+        # log_dir_path_=f"{Path(cache_dir_path).expanduser().as_posix()}"
+        log_dir_path_=cache_dir_path
         log_dir_path=f"{log_dir_path_}/{get_datetime()}_{encode(pms['output_path'])}"
 
     # else:
@@ -196,11 +203,15 @@ def run_task_nb(
     parameters: dict,
     script_path: str,
     kernel: str = None,
+    
+    cache_dir_path: str = None,
     output_notebook_path: str = None,
+
     start_timeout: int = 600,
+
     verbose=False,
     force=False,
-    test=True,
+    # test=True,
     **kws_papermill,
 ) -> str:
     """
@@ -225,13 +236,15 @@ def run_task_nb(
     # ## save parameters
     # to_dict(parameters, f"{dirname(output_notebook_path)}/pms_latest.yaml")
 
-    log_dir_path=pre_task(
-        parameters,
-        test=test,
-    )
+    # if cache_dir_path is None:
+    # cache_dir_path=pre_task(
+    #     parameters,
+    #     cache_dir_path=,
+    #     test=test,
+    # )
     if not output_notebook_path:
         ## save report i.e. output notebook
-        output_notebook_path = f"{log_dir_path}_{Path(script_path).name}"
+        output_notebook_path = f"{cache_dir_path}_{Path(script_path).name}"
     ## to open 
     output_notebook_path=Path(output_notebook_path).absolute()
     
@@ -755,9 +768,9 @@ def has_slurm(
     return run_com('sbatch --help',returncodes=[0,1,127],verbose=False)!=''
 
 def check_tasks(
-    state='COMPLETED',
+    state='',
     job_name_expr="",
-    query_expr='| tail -n 3',
+    query_expr='| tail -n 10',
     eff=False,
     ):
     cols=['JobID','State','Elapsed','End','JobName']
@@ -1145,16 +1158,16 @@ def run_tasks(
     ),
 
     ## slurm feeding
-    feed_duration : str ='1h', #hr 
-    feed_interval : str ='10m',
-    feed_if_jobs_max : float =0.5,
+    # feed_duration : str ='1h', #hr 
+    # feed_interval : str ='10m',
+    # feed_if_jobs_max : float =0.5,
 
     ## cfg_run
     script_type: str=None, ## preffix
     
     ## common
     force_setup : bool =True,
-    cache_dir_path='.roux/',
+    cache_dir_path='~/scratch/.roux', #'/tmp/.roux'
     wd_path=None,    
 
 
@@ -1204,6 +1217,8 @@ def run_tasks(
     if simulate:
         test=True
         verbose=True
+
+    cache_dir_path=f"{Path(cache_dir_path).expanduser().as_posix()}"
 
     ## script_path
     logging.setLevel(level=log_level)
@@ -1302,6 +1317,9 @@ def run_tasks(
             script_path,
             params=params,
     
+            ## logs
+            cache_dir_path=cache_dir_path,
+
             kernel = kernel,
             cpus = cpus,
             pre = pre,
@@ -1311,8 +1329,8 @@ def run_tasks(
             test1 = test1,
             force = force,
             test = test,
-            verbose=verbose,
-            
+            verbose=verbose,            
+
             **kws_runner,
         )
         
@@ -1325,7 +1343,8 @@ def run_tasks(
     
     if wd_path is None:
         wd_path=os.getcwd()
-    cache_dir_path=f"{wd_path}/{cache_dir_path}"
+    # if test:
+    #     cache_dir_path=f"{wd_path}/{cache_dir_path}"
     Path(cache_dir_path).mkdir(parents=True, exist_ok=True)
 
     if runner=='slurm':
@@ -1394,6 +1413,7 @@ def run_tasks(
     for pms in tqdm(params):  
         log_dir_path=pre_task(
             pms,
+            cache_dir_path=cache_dir_path,
             test=test,
         )
         
