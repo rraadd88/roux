@@ -168,15 +168,19 @@ def pre_params(
 
     return param_list
 
-
 def pre_task(
     pms,
-    cache_dir_path,
+    cache_dir_path=None,
     test=False,
-):
+    ) -> str:
+    
     if isinstance(pms,list):
         assert len(pms)==1, pms
 
+    if cache_dir_path is None:
+        test=True
+        logging.warning("log_dir_path={output_path}_logs")
+    
     if test:
         log_dir_path_=f"{Path(pms['output_path']).with_suffix('').as_posix()}_logs"
         log_dir_path=f"{log_dir_path_}/{get_datetime()}"
@@ -185,13 +189,13 @@ def pre_task(
         # log_dir_path_=f"{Path(cache_dir_path).expanduser().as_posix()}"
         log_dir_path_=cache_dir_path
         log_dir_path=f"{log_dir_path_}/{get_datetime()}_{encode(pms['output_path'])}"
-
+    
     # else:
         # [tmp dir not found by slurm]
         # log_dir_path=tempfile.mkdtemp(prefix=get_datetime())
 
         # log_dir_path=tempfile.mkdtemp(prefix=get_datetime())
-
+    
     to_dict(
         pms,
         f"{log_dir_path}/pms.yaml"
@@ -236,23 +240,29 @@ def run_task_nb(
     # ## save parameters
     # to_dict(parameters, f"{dirname(output_notebook_path)}/pms_latest.yaml")
 
-    # if cache_dir_path is None:
-    # cache_dir_path=pre_task(
-    #     parameters,
-    #     cache_dir_path=,
-    #     test=test,
-    # )
+    if cache_dir_path is None:
+        cache_dir_path=pre_task(
+            parameters,
+            cache_dir_path=cache_dir_path,
+            # test=test,
+        )
+        
     if not output_notebook_path:
         ## save report i.e. output notebook
+        assert cache_dir_path is not None, cache_dir_path
         output_notebook_path = f"{cache_dir_path}_{Path(script_path).name}"
     ## to open 
     output_notebook_path=Path(output_notebook_path).absolute()
     
     if verbose:
-        logging.info(parameters["output_path"], output_notebook_path)
-
-    if verbose:
-        logging.info(parameters)
+        # logging.warning(cache_dir_path)
+        # logging.info(parameters)
+        # logging.warning
+        print(
+            parameters["output_path"],
+            output_notebook_path
+             )
+        
     if kernel is None:
         logging.warning("`kernel` name not provided.")
     # try:
@@ -463,7 +473,7 @@ def run_tasks_nb(
         df1 = df1.head(1)
         logging.warning("testing only the first input.")
     
-    ## backcompatibility
+    ## back-compatibility
     if fast_workers is not None:
         cpus=fast_workers
     fast= cpus > 1
@@ -1128,6 +1138,71 @@ def pre_cfg_run(
 
     return cfg_run
 
+def post_tasks(
+    params=None,
+
+    arxv=False,
+    clean=False, ## remove logs
+
+    ind=None,
+    outp=None,
+
+    simulate=False,
+    validate= False,
+    verbose=True,
+    ):
+    """
+    Notes:
+        Count files:
+        
+            for d in */; do if [ -d "$d" ]; then echo $d": "$(find $d | wc -l) ;fi;done
+    """
+
+    if clean:
+        assert ind is not None
+        if outp is None:
+            # from roux.lib.sys import get_datetime
+            outp=f'.roux/post_tasks_{get_datetime()}.zip'
+
+        outd=Path(outp).parent.mkdir(parents=True,exist_ok=True)
+
+        if validate:
+            read_ps(ind,tree_depth=3)
+        
+        # com=f"find {ind}"+r" -type f \( -name '*.ipynb' -o -name '*.out'  -o -name '*.err' -o -name '*.log' -o -name 'run.sh' -o -name 'pms.yaml' \) "
+        com=f"find {ind}"+r" -type d -name '*_logs' "
+        if simulate:
+            print(run_com(com))
+        else:
+            com+=f" -print0 | xargs -0 zip -r -m -q {outp}"
+            print(run_com(com))
+
+        if validate:
+            read_ps(ind,tree_depth=3)
+
+    if arxv:
+        assert params is not None
+        params=pre_params(
+            params,
+            flt_output_exists=True, # completed, output exists
+            force=True, ## do not filter
+        )
+        from roux.lib.io import to_arxv
+        for pms in params:
+            to_arxv(
+                pms['output_path'],
+                outp=None,
+                simulate=simulate,
+                verbose=verbose,
+                force=False,
+                wait=True,
+                exclude="'*.bam'",
+            )
+            if simulate:
+                break
+
+        # return outp
+        
 ## wrapper
 def run_tasks(
     script_path: str, ## prefix
@@ -1217,9 +1292,13 @@ def run_tasks(
     if simulate:
         test=True
         verbose=True
-
-    cache_dir_path=f"{Path(cache_dir_path).expanduser().as_posix()}"
-
+        
+    if not test1:
+        cache_dir_path=f"{Path(cache_dir_path).expanduser().as_posix()}"
+    else:
+        cache_dir_path=None
+        logging.warning("cache_dir_path=None")
+        
     ## script_path
     logging.setLevel(level=log_level)
     script_path=Path(script_path).resolve().as_posix()
@@ -1308,6 +1387,8 @@ def run_tasks(
 
     if len(params)==0:
         return 
+
+    kws_runner['verbose']=verbose
     
     if runner.startswith('py'):
         from roux.lib.sys import is_interactive_notebook
@@ -1316,22 +1397,25 @@ def run_tasks(
         return run_tasks_nb(
             script_path,
             params=params,
-    
-            ## logs
-            cache_dir_path=cache_dir_path,
 
-            kernel = kernel,
-            cpus = cpus,
-            pre = pre,
-            post = post_nb,
-
-            simulate=simulate,
-            test1 = test1,
-            force = force,
-            test = test,
-            verbose=verbose,            
-
-            **kws_runner,
+            **{
+                **dict(
+                    ## logs
+                    cache_dir_path=cache_dir_path,
+        
+                    kernel = kernel,
+                    cpus = cpus,
+                    pre = pre,
+                    post = post_nb,
+        
+                    simulate=simulate,
+                    test1 = test1,
+                    force = force,
+                    test = test,
+                    verbose=verbose,            
+                ),
+                **kws_runner,
+            },
         )
         
     logging.loading('params from the input_path ..')
@@ -1343,8 +1427,10 @@ def run_tasks(
     
     if wd_path is None:
         wd_path=os.getcwd()
+        
     # if test:
     #     cache_dir_path=f"{wd_path}/{cache_dir_path}"
+    
     Path(cache_dir_path).mkdir(parents=True, exist_ok=True)
 
     if runner=='slurm':
@@ -1421,7 +1507,6 @@ def run_tasks(
         #     pms,#['output_path']
         #     short=True,
         # )
-        # sbatch_path=f"{cache_dir_path}/{key}.sh"
         sbatch_path=f"{log_dir_path}/run.sh"
         
         if not Path(sbatch_path).exists() or force_setup:
@@ -1489,67 +1574,3 @@ def run_tasks(
     ## uniform output
     return pd.Series(params_jobs).to_frame('params')['params']#.apply(pd.Series)
 
-def post_tasks(
-    params=None,
-
-    arxv=False,
-    clean=False, ## remove logs
-
-    ind=None,
-    outp=None,
-
-    simulate=False,
-    validate= False,
-    verbose=True,
-    ):
-    """
-    Notes:
-        Count files:
-        
-            for d in */; do if [ -d "$d" ]; then echo $d": "$(find $d | wc -l) ;fi;done
-    """
-
-    if clean:
-        assert ind is not None
-        if outp is None:
-            # from roux.lib.sys import get_datetime
-            outp=f'.roux/post_tasks_{get_datetime()}.zip'
-
-        outd=Path(outp).parent.mkdir(parents=True,exist_ok=True)
-
-        if validate:
-            read_ps(ind,tree_depth=3)
-        
-        # com=f"find {ind}"+r" -type f \( -name '*.ipynb' -o -name '*.out'  -o -name '*.err' -o -name '*.log' -o -name 'run.sh' -o -name 'pms.yaml' \) "
-        com=f"find {ind}"+r" -type d -name '*_logs' "
-        if simulate:
-            print(run_com(com))
-        else:
-            com+=f" -print0 | xargs -0 zip -r -m -q {outp}"
-            print(run_com(com))
-
-        if validate:
-            read_ps(ind,tree_depth=3)
-
-    if arxv:
-        assert params is not None
-        params=pre_params(
-            params,
-            flt_output_exists=True, # completed, output exists
-            force=True, ## do not filter
-        )
-        from roux.lib.io import to_arxv
-        for pms in params:
-            to_arxv(
-                pms['output_path'],
-                outp=None,
-                simulate=simulate,
-                verbose=verbose,
-                force=False,
-                wait=True,
-                exclude="'*.bam'",
-            )
-            if simulate:
-                break
-
-        # return outp
