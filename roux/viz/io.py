@@ -46,7 +46,7 @@ def to_plotp(
     ax: plt.Axes = None,
     prefix: str = "plot/plot_",
     suffix: str = "",
-    fmts: list = ["png"],
+    fmts: list = ['pdf','png'],
 ) -> str:
     """Infer output path for a plot.
 
@@ -79,8 +79,7 @@ def to_plotp(
         f"{prefix}{to_path('_'.join([s for s in labels if not (s.replace(' ','')=='')])).lower().replace('.','')}{suffix}"
         + (f".{fmts[0]}" if len(fmts) == 1 else "")
     )
-    # logging.warning(f"Inferred path of the plot (plotp): '{plotp}'")
-    print(f"Inferred path of the plot (plotp): '{plotp}'")
+    logging.info(f"Inferred path of the plot (plotp): '{plotp}'")
     return plotp
 
 

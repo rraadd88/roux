@@ -739,17 +739,21 @@ def show_scatter_stats(
             [x, y],
             **kws_stat,
         )
-    _ = set_label(
-        ax=ax,
-        s=label,
-        **{
+    
+    kws_set_label={
             **dict(
                 zorder=zorder,
                 loc=loc,
             ),
             **kws,
             **kws_set_label,
-        },
+        }
+    print(kws_set_label)
+    
+    _ = set_label(
+        ax=ax,
+        s=label,
+        **kws_set_label,
     )
     ax.stats=res   
     return ax    
@@ -829,7 +833,9 @@ def show_crosstab_stats(
             ha="center",
             va="center",
         )
-
+    else:
+        raise ValueError(loc)
+        
     from roux.viz.ax_ import set_label
     set_label(
         s=(f"{stat_label}={stat:.1f}" if show_stat else '')

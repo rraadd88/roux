@@ -230,7 +230,7 @@ def read_arxv(
     
     read_func=None, ## without savng the extracted file
     
-    verbose=True,
+    verbose=False,
     force=False,
     **kws_extract,
     ):
@@ -245,6 +245,7 @@ def read_arxv(
     """
     if p.startswith('../'):
         assert p.count('../')==1, p
+        
     p=Path(p).as_posix()
     if Path(p).exists() and not force:
         return p
@@ -263,11 +264,41 @@ def read_arxv(
         if verbose:
             logging.info(ps if len(ps)<10 else len(ps))
 
-        assert p.split('../')[-1] in ps, (p,ps)
+        p_inside=Path(p.split('../')[-1]).as_posix()
+        # logging.warning(p_inside)
+
+        aps_inside=sorted([p_ for p_ in ps if p_.endswith('.tar.gz')])
+        if p_inside not in ps:
+            
+            logging.warning(f"searching among the {len(aps_inside)} arxives found inside ..")
+            if verbose:
+                logging.info(aps_inside)
+                
+            for ap_inside in aps_inside:
+                ap_inside_=ap_inside.rstrip('.tar.gz')
+                # print(ap_inside_)
+                if p_inside.startswith(ap_inside_):
+                    logging.warning(
+                        f"found in {ap_inside}",
+                    )
+                    # return
+                    ## extract ap_inside from ap
+                    read_arxv(
+                        p=f"{'../' if p.startswith('../') else ''}{ap_inside}",
+                        ap=ap,
+                    )
+                    ## extract p_inside from ap_inside, by recursing
+                    return read_arxv(
+                        p=p,
+                        ap=f"{'../' if p.startswith('../') else ''}{ap_inside}",
+                    )
+                    
+        assert p_inside in ps, (p,ps)
+        
         if not read_func:
             outp=tar.extractall(
                 path=outd if outd is not None else '../' if p.startswith('../') else '.',
-                members=[p.split('../')[-1]],
+                members=[p_inside],
                 **kws_extract
                 )
             assert Path(p).exists(), p

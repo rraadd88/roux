@@ -45,6 +45,30 @@ def gca(cols_max=2):
 
     return new_ax
 
+def get_ax(
+    ax=None,
+    **kws
+):    
+    if ax is None:
+        return plt.gca()
+    elif isinstance(ax,dict):
+        ## recurse
+        ## e.g. ax=dict(ax='gca',cols_max=1)
+        return get_ax(
+            **ax
+        )
+    elif ax=='new':
+        return plt.subplots(
+            1,1,
+            **kws                
+        )[1]
+    elif ax=='gca':
+        return gca(
+            **kws    
+        )
+    else:
+        raise ValueError(ax)
+        
 def get_children(fig):
     """
     Get all the individual objects included in the figure.
