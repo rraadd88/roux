@@ -1196,7 +1196,7 @@ def post_tasks(
                 verbose=verbose,
                 force=False,
                 wait=True,
-                exclude="'*.bam'",
+                exclude=["'*.bam'","'*.fastq'","'*.fq'","'*.h5'","'*.h5mu'","'*.adata'"],
             )
             if simulate:
                 break
@@ -1216,8 +1216,11 @@ def run_tasks(
     ## ipynb
     ## kws_run
     pre: bool = True,
-    
+    no_pre: bool = False,
+
     post_arxv: bool = True,
+    no_post_arxv: bool = False,
+
     post_clean: bool = False,
     post_nb: bool = False,
         
@@ -1242,6 +1245,8 @@ def run_tasks(
     
     ## common
     force_setup : bool =True,
+    no_force_setup : bool =False,
+
     cache_dir_path='~/scratch/.roux', #'/tmp/.roux'
     wd_path=None,    
 
@@ -1292,7 +1297,15 @@ def run_tasks(
     if simulate:
         test=True
         verbose=True
-        
+
+    ## CLI: negatives override
+    if no_post_arxv:
+        post_arxv=False
+    if no_pre:
+        pre=False
+    if no_force_setup:
+        force_setup=False
+
     if not test1:
         cache_dir_path=f"{Path(cache_dir_path).expanduser().as_posix()}"
     else:
