@@ -10,7 +10,6 @@ import matplotlib.pyplot as plt
 
 from roux.lib.str import replace_many
 
-
 def set_axes_minimal(
     ax,
     xlabel=None,
@@ -111,8 +110,8 @@ def set_axes_arrows(
 def set_label(
     s: str,
     ax: plt.Axes,
-    x: float = 0,
-    y: float = 0,
+    x: float = None,
+    y: float = None,
     ha: str = "left",
     va: str = "top",
     loc=None,
@@ -135,10 +134,14 @@ def set_label(
 
     Returns:
         plt.Axes: `plt.Axes` object.
-    """
+    """    
     if title:
         ax.set_title(s, **kws)
-    elif loc is not None and (x is None and y is None):
+        return ax
+    # else:
+    assert not all([t is None for t in [x,y,loc]])
+        
+    if loc is not None and (x is None and y is None):
         if loc == 1 or loc == "upper right":
             x = 1 - off_loc
             y = 1 - off_loc
@@ -160,7 +163,10 @@ def set_label(
             ha = "right"
             va = "bottom"
         else:
-            raise ValueError(loc)
+            # raise ValueError(loc)
+            logging.warning(f"loc={loc}. hence defaulting to x=0,y=0")
+            x,y=0,0
+
     # kws={
     #     **dict(),
     # }

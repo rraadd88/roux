@@ -367,7 +367,8 @@ def plot_dists(
     
     ## axes
     if ax is None:
-        ax = plt.gca()
+        from roux.viz.figure import get_ax
+        ax = get_ax(ax)
         
     if show_p:
         ax.stats=df2

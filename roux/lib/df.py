@@ -2288,6 +2288,8 @@ def check_corr(
     
     out=False,
     ax=None,
+    
+    kws_plot_set={},
     kws_plot={},
     **kws_get_corr,
     ):
@@ -2323,6 +2325,9 @@ def check_corr(
                 **kws_plot
             },
         )
+        ax.set(
+            **kws_plot_set
+        )
         res=ax.stats
     df1=pd.Series(res).to_frame().T
     if verbose:
@@ -2351,8 +2356,9 @@ def check_diff(
     ax=None,
     
     out=False,
+    
     kws_plot={},
-    kws_set={},
+    kws_plot_set={},
     **kws_stats,
     ):
     # kws_stat={
@@ -2393,7 +2399,7 @@ def check_diff(
             },
         )
         ax.set(
-            **kws_set
+            **kws_plot_set
         )
         res=ax.stats
     # df1=pd.Series(res).to_frame().T

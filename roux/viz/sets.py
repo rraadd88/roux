@@ -176,6 +176,8 @@ def plot_intersection_counts(
             ax=ax,
             **kws_plot,
         )
+        if "loc" not in kws_show_stats:
+            kws_show_stats["loc"] = "bottom"
     elif kind == "bar":
         # print(dplot)
         if perc_counts:
