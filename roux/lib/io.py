@@ -201,7 +201,14 @@ def to_arxv(
     com=''
     if not wait:
         com+="nice -n 10 ionice -c2 -n7 "
-    com+=f" tar --remove-files -czf {outp} {'' if not exclude else '--exclude '+exclude} {ind} &"
+
+    arg_exclude=''
+    if isinstance(exclude,str):
+        exclude=[exclude]
+    if isinstance(exclude,list):
+        arg_exclude=' --exclude '.join(exclude)
+    
+    com+=f" tar --remove-files -czf {outp} {arg_exclude} {ind} &"
 
     if verbose:
         logging.info(com)
