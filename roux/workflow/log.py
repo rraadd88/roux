@@ -1,7 +1,10 @@
 import logging
 from pathlib import Path
 
-def print_parameters(d: dict):
+def print_parameters(
+    d: dict,
+    logger=None
+):
     """
     Print a directory with parameters as lines of code
 
@@ -9,11 +12,13 @@ def print_parameters(d: dict):
         d (dict): directory with parameters
     """
     assert isinstance(d, dict)
-    
-    if logging.root.level <= logging.INFO:
-        logger=logging.info
-    else:
-        logger=print
+    if logger is None:
+        if logging.root.level <= logging.INFO:
+            logger=logging.info
+        else:
+            logger=print
+    elif isinstance(logger,str):
+        logger=getattr(logging,logger)
     logger(
         f"## for testing\nimport os\nos.chdir('{Path.cwd().as_posix()}')\n\n## parameters\n"+(
             "\n".join(
@@ -28,6 +33,7 @@ def print_parameters(d: dict):
 def test_params(
     params,
     i=0, #index
+    logger=None,
     ):
     if isinstance(params, str):
         from roux.lib.io import read_dict
@@ -45,7 +51,10 @@ def test_params(
             params=[params]
         
     logging.info(f"total params: {len(params)}")
-    print_parameters(params[i])
+    print_parameters(
+        params[i],
+        logger=logger
+        )
 
     ## tests
     if 'input_path' in params[i] and isinstance(params[i]['input_path'],str) and Path(params[i]['input_path']).is_file():

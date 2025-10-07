@@ -1,7 +1,7 @@
 """For input/output of stats."""
 
+import numpy as np
 import pandas as pd
-
 
 # stats
 def perc_label(a, b=None, bracket=True):
@@ -10,7 +10,7 @@ def perc_label(a, b=None, bracket=True):
     if b is None:
         b = len(a)
         a = sum(a)
-    ratio = a / b if b != 0 else None
+    ratio = a / b if b != 0 else np.nan
     return f"{(ratio)*100:.1f}%" + (f" ({num2str(a)}/{num2str(b)})" if bracket else "")
 
 

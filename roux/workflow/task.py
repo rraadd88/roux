@@ -1,5 +1,8 @@
 """For task management."""
 
+import sys
+sys.tracebacklimit = 0 # needs to be at the very top
+
 import os
 import time
 from tqdm import tqdm
@@ -246,7 +249,7 @@ def run_task_nb(
             cache_dir_path=cache_dir_path,
             # test=test,
         )
-        
+    # print(cache_dir_path) 
     if not output_notebook_path:
         ## save report i.e. output notebook
         assert cache_dir_path is not None, cache_dir_path
@@ -293,19 +296,21 @@ def apply_run_task_nb(
     force=False,
     **kws_papermill,
     ):
-    # try:
-    return run_task_nb(
-        x,
-        script_path=script_path,
-        kernel=kernel,
-        force=force,
-        **kws_papermill,
-    )
-    # except PapermillExecutionError as e:
-    #     e_last=str(e).split('Traceback (most recent call last)')[-1]
-    #     logging.error(f"{x['output_path']}\n{e_last}")
-    #     test_params(x)
-    #     sys.exit(0)
+    from papermill.exceptions import PapermillExecutionError
+    try:
+        return run_task_nb(
+            x,
+            script_path=script_path,
+            kernel=kernel,
+            force=force,
+            **kws_papermill,
+        )
+    except PapermillExecutionError as e:
+        e_last=str(e).split('Traceback (most recent call last)')[-1]
+        test_params(x,logger=logging.error)
+        raise RuntimeError(x['output_path']) from None
+        # raise RuntimeError(f"{x['output_path']}\n{e_last}")
+        # sys.exit(0)
 
 def run_tasks_nb(
     script_path: str=None,
@@ -331,7 +336,6 @@ def run_tasks_nb(
     input_notebook_temp_path=None,
     out_paths: bool = True,
         
-    
     ## back.c.
     input_notebook_path: str=None, 
     parameters_list=None, # same as params
@@ -1196,7 +1200,7 @@ def post_tasks(
                 verbose=verbose,
                 force=False,
                 wait=True,
-                exclude=["'*.bam'","'*.fastq'","'*.fq'","'*.h5'","'*.h5mu'","'*.adata'"],
+                exclude=["'*.bam'","'*.fastq'","'*.fq'","'*.h5'","'*.h5mu'","'*.h5ad'","'*.adata'"],
             )
             if simulate:
                 break
@@ -1414,7 +1418,7 @@ def run_tasks(
             **{
                 **dict(
                     ## logs
-                    cache_dir_path=cache_dir_path,
+                    # cache_dir_path=cache_dir_path,
         
                     kernel = kernel,
                     cpus = cpus,
