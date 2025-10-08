@@ -26,6 +26,7 @@ dependencies = [
     "seaborn>=0.8",
     "tqdm>=4.38.0", # logging
     # "regex>=2018.7.11",
+    "statsmodels>=0.13.5",
 ]
 
 [optional-dependencies]

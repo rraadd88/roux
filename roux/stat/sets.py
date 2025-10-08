@@ -2,6 +2,7 @@
 
 import logging
 import pandas as pd
+import numpy as np
 
 # attributes
 import roux.lib.dfs as rd  # noqa
@@ -209,10 +210,11 @@ def get_enrichment(
     df2: pd.DataFrame,
     colid: str,
     background: int,
-    colset: str=None,
+    colset: str = None,
     coltest: str = None,
     test_type: list = None,
     verbose: bool = False,
+    df_covars: pd.DataFrame = None,
 ) -> pd.DataFrame:
     """Calculate the enrichments.
 
@@ -222,22 +224,61 @@ def get_enrichment(
         colid (str): column with IDs of items
         colset (str): column sets
         coltest (str): column tests
-        background (int): background size.
-        test_type (list): hypergeom or Fisher. Defaults to both.
+        background (int): background size for hypergeom. test. Ignored for logistic.
+        test_type (list): 'hypergeom', 'Fisher', or 'logistic'. Defaults to ['hypergeom', 'Fisher'].
         verbose (bool): verbose
+        df_covars (pd.DataFrame, optional): A DataFrame with items as index and
+            covariate values in columns. Required if 'logistic' is in test_type.
 
     Returns:
         pd.DataFrame: output table
+
+    Notes:
+        The 'logistic' test type uses logistic regression to model the probability
+        that an item belongs to a reference set, while accounting for covariates.
+        The model is specified as:
+
+        P(item ∈ Reference Set) ~ β₀ + β₁*(item ∈ Test Set) + β₂*Covariate₁ + ...
+
+        A positive and significant β₁ coefficient indicates enrichment after
+        adjusting for the provided covariates.
+
+    Examples:
+        >>> import pandas as pd
+        >>> import numpy as np
+        >>> # Test items (e.g., differentially expressed genes)
+        >>> df1 = pd.DataFrame({'gene': ['A', 'B', 'C']})
+        >>> # Reference sets (e.g., pathways)
+        >>> df2 = pd.DataFrame({
+        ...     'pathway': ['P1', 'P1', 'P2', 'P2'],
+        ...     'gene': ['A', 'B', 'D', 'E']
+        ... })
+        >>> # Covariates for all genes in the background
+        >>> df_covars = pd.DataFrame({
+        ...     'gene': ['A', 'B', 'C', 'D', 'E', 'F'],
+        ...     'length': [100, 150, 80, 200, 120, 90],
+        ...     'gc_content': [0.4, 0.5, 0.6, 0.4, 0.5, 0.5]
+        ... }).set_index('gene')
+        >>> # Run enrichment with logistic regression
+        >>> get_enrichment(
+        ...     df1=df1,
+        ...     df2=df2,
+        ...     colid='gene',
+        ...     colset='pathway',
+        ...     background=6,
+        ...     test_type=['logistic'],
+        ...     df_covars=df_covars
+        ... )
     """
     assert isinstance(background, int)
-    
+
     if colset is None:
-        colset=df2.set_index(colid).columns.tolist()
-    elif isinstance(colset,str):
-        colset=[colset]
-        
+        colset = df2.set_index(colid).columns.tolist()
+    elif isinstance(colset, str):
+        colset = [colset]
+
     if test_type is None:
-        test_type = []
+        test_type = ["hypergeom", "Fisher"]
     ## calculate the background for the Fisher's test that is compatible with the contigency tables
     background_fisher_test = len(set(df1[colid].tolist() + df2[colid].tolist()))
     if coltest is None:
@@ -245,7 +286,8 @@ def get_enrichment(
         df1 = df1.assign(**{coltest: 1})
     ## statistics
     df3 = (
-        df1.groupby(by=coltest).apply(  # iterate over the groups of items to test
+        df1.groupby(by=coltest)
+        .apply(  # iterate over the groups of items to test
             lambda df1_: (
                 df2.groupby(colset).apply(  # iterate over the groups of item sets
                     lambda df2_: pd.Series(
@@ -293,17 +335,15 @@ def get_enrichment(
                 )
             )
         )
-    ).reset_index()
+        .reset_index()
+    )
     if "hypergeom" in test_type:
         df_ = (
             (
-                df1.groupby(
-                    by=coltest
-                ).apply(  # iterate over the groups of items to test
+                df1.groupby(by=coltest)
+                .apply(  # iterate over the groups of items to test
                     lambda df1_: (
-                        df2.groupby(
-                            colset
-                        ).apply(  # iterate over the groups of item sets
+                        df2.groupby(colset).apply(  # iterate over the groups of item sets
                             lambda df2_: pd.Series(
                                 {
                                     "P (hypergeom. test)": get_hypergeom_pval(
@@ -325,19 +365,16 @@ def get_enrichment(
         df3 = df3.merge(
             right=df_,
             how="outer",
-            on=[coltest]+colset,
+            on=[coltest] + colset,
             validate="1:1",
         )
     if "Fisher" in test_type:
         df_ = (
             (
-                df1.groupby(
-                    by=coltest
-                ).apply(  # iterate over the groups of items to test
+                df1.groupby(by=coltest)
+                .apply(  # iterate over the groups of items to test
                     lambda df1_: (
-                        df2.groupby(
-                            colset
-                        ).apply(  # iterate over the groups of item sets
+                        df2.groupby(colset).apply(  # iterate over the groups of item sets
                             lambda df2_: pd.Series(
                                 {
                                     "P (Fisher's exact)": get_odds_ratio(
@@ -359,7 +396,82 @@ def get_enrichment(
         df3 = df3.merge(
             right=df_,
             how="outer",
-            on=[coltest]+colset,
+            on=[coltest] + colset,
+            validate="1:1",
+        )
+    if "logistic" in test_type:
+        if df_covars is None:
+            raise ValueError(
+                "df_covars must be provided for logistic regression test."
+            )
+        try:
+            import statsmodels.api as sm
+        except ImportError:
+            raise ImportError(
+                "statsmodels is required for logistic regression. "
+                "Please install it with 'pip install statsmodels'"
+            )
+
+        def _run_logistic(df1_, df2_, df_covars):
+            items_in_test = df1_[colid].tolist()
+            items_in_set = df2_[colid].tolist()
+
+            # 1. Construct the model DataFrame from covariates
+            model_df = df_covars.copy()
+            if colid in model_df:
+                model_df=model_df.set_index(colid)
+            if model_df.index.name != colid:
+                model_df.index.name = colid
+
+            # 2. Create the dependent and predictor variables
+            model_df["is_in_set"] = model_df.index.isin(items_in_set).astype(int)
+            model_df["is_in_test"] = model_df.index.isin(items_in_test).astype(int)
+
+            if model_df["is_in_test"].sum() == 0 or model_df["is_in_set"].sum() == 0:
+                return pd.Series(
+                    {
+                        "P (logistic)": np.nan,
+                        "Odds ratio (logistic)": np.nan,
+                    }
+                )
+
+            # 3. Fit the model
+            covariate_cols = [c for c in df_covars.columns if c != colid]
+            X = model_df[["is_in_test"] + covariate_cols]
+            X = sm.add_constant(X)
+            y = model_df["is_in_set"]
+
+            try:
+                model = sm.Logit(y, X).fit(disp=0)
+                # 4. Extract results
+                return pd.Series(
+                    {
+                        "P (logistic)": model.pvalues["is_in_test"],
+                        "Odds ratio (logistic)": np.exp(model.params["is_in_test"]),
+                    }
+                )
+            except Exception:  # Catches perfect separation and other errors
+                return pd.Series(
+                    {
+                        "P (logistic)": np.nan,
+                        "Odds ratio (logistic)": np.nan,
+                    }
+                )
+
+        df_ = (
+            df1.groupby(by=coltest)
+            .apply(
+                lambda df1_: df2.groupby(colset).apply(
+                    lambda df2_: _run_logistic(df1_, df2_, df_covars)
+                )
+            )
+            .reset_index()
+            .rd.clean()
+        )
+        df3 = df3.merge(
+            right=df_,
+            how="outer",
+            on=[coltest] + colset,
             validate="1:1",
         )
 
@@ -379,6 +491,7 @@ def get_enrichment(
         .apply(get_qs)
         .rd.clean()
     )
-    if 'tmp' in df4:
-        df4=df4.drop(['tmp'],axis=1)
+    if "tmp" in df4:
+        df4 = df4.drop(["tmp"], axis=1)
     return df4.sort_values(df4.filter(regex="^Q.*").columns.tolist())
+

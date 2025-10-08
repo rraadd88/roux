@@ -306,11 +306,12 @@ def apply_run_task_nb(
             **kws_papermill,
         )
     except PapermillExecutionError as e:
-        e_last=str(e).split('Traceback (most recent call last)')[-1]
         test_params(x,logger=logging.error)
-        raise RuntimeError(x['output_path']) from None
-        # raise RuntimeError(f"{x['output_path']}\n{e_last}")
-        # sys.exit(0)
+        
+        e_last=str(e).split('Traceback (most recent call last)')[-1]
+        raise RuntimeError(f"{e_last}\n{x['output_path']}") from None
+        
+        sys.exit(0)
 
 def run_tasks_nb(
     script_path: str=None,

@@ -905,4 +905,5 @@ def check_for_exit(
     if is_table_empty(p):
         logging.warning("exiting early because table is empty..")
         to_data(data,output_path)
+        import sys
         sys.exit(0)

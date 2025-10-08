@@ -22,30 +22,51 @@ def compare_bools_jaccard(x, y):
 
 
 def compare_bools_jaccard_df(df: pd.DataFrame) -> pd.DataFrame:
-    """Pairwise compare bools in terms of the jaccard index.
+    """
+    Pairwise compare boolean columns using the Jaccard index in a vectorized manner.
+
+    This implementation avoids explicit Python loops and uses matrix operations for
+    significant performance gains on DataFrames with many columns.
 
     Args:
-        df (DataFrame): dataframe with boolean columns.
+        df (DataFrame): DataFrame with boolean columns. Any non-boolean columns
+                        will be evaluated in a boolean context.
 
     Returns:
-        DataFrame: matrix with comparisons between the columns.
+        DataFrame: A symmetric matrix with Jaccard index scores between column pairs.
     """
-    from roux.stat.binary import compare_bools_jaccard
+    # Convert the boolean DataFrame to an integer matrix (True=1, False=0).
+    # NaNs are treated as False. This is a fast and robust way to get a numerical matrix.
+    df_int = df.fillna(False).astype(np.int8)
 
-    dmetrics = pd.DataFrame(index=df.columns.tolist(), columns=df.columns.tolist())
-    for c1i, c1 in enumerate(df.columns):
-        for c2i, c2 in enumerate(df.columns):
-            if c1i > c2i:
-                dmetrics.loc[c1, c2] = compare_bools_jaccard(
-                    df.dropna(subset=[c1, c2])[c1], df.dropna(subset=[c1, c2])[c2]
-                )
-            elif c1i == c2i:
-                dmetrics.loc[c1, c2] = 1
-    for c1i, c1 in enumerate(df.columns):
-        for c2i, c2 in enumerate(df.columns):
-            if c1i < c2i:
-                dmetrics.loc[c1, c2] = dmetrics.loc[c2, c1]
-    return dmetrics
+    # --- Vectorized Calculation ---
+
+    # 1. Calculate the intersection matrix.
+    # The dot product of the transposed matrix with itself gives the count of
+    # common True values (intersection) for every pair of columns.
+    intersection = df_int.T.dot(df_int)
+
+    # 2. Calculate the sum of True values for each column.
+    col_sums = df_int.sum(axis=0)
+
+    # 3. Calculate the union matrix.
+    # The union of two sets A and B is |A| + |B| - |A ∩ B|.
+    # We can compute the |A| + |B| part for all pairs using an outer sum,
+    # then subtract the intersection matrix we already calculated.
+    union = np.add.outer(col_sums, col_sums) - intersection
+
+    # 4. Compute the Jaccard index.
+    # We suppress division by zero warnings, as they are expected if two columns
+    # are all False (resulting in a 0/0 division).
+    with np.errstate(divide='ignore', invalid='ignore'):
+        jaccard_matrix = intersection / union
+
+    # The 0/0 divisions result in NaN. We replace these with 0, as the Jaccard index
+    # for two empty sets is 0. The diagonal (self-comparison) will be 1.
+    jaccard_matrix[np.isnan(jaccard_matrix)] = 0
+
+    # The result is a NumPy array. Convert it back to a labeled DataFrame.
+    return pd.DataFrame(jaccard_matrix, index=df.columns, columns=df.columns)
 
 
 def classify_bools(l: list) -> str:

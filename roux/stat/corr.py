@@ -242,6 +242,8 @@ def get_corr(
         elif hasattr(spatial.distance, method):
             ## no-pvalue
             method_fun = getattr(spatial.distance, method)
+        elif hasattr(stats, method):
+            method_fun = getattr(stats, method)
         else:
             raise ValueError(method)
     else:
