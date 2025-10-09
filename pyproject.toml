@@ -26,7 +26,6 @@ dependencies = [
     "seaborn>=0.8",
     "tqdm>=4.38.0", # logging
     # "regex>=2018.7.11",
-    "statsmodels>=0.13.5",
 ]
 
 [optional-dependencies]
@@ -42,10 +41,11 @@ data = [
 ]
 stat = [
     "scipy>=1.1.0",
-    "statsmodels",
+    "statsmodels>=0.13.5",
+    "pingouin>=0.5.5",
     "networkx",
     "scikit-learn",
-        ]
+    ]
 viz = [
     "altair",
       ]

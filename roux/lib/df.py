@@ -568,7 +568,7 @@ def check_nunique(
     ds_=ds_.sort_values(ascending=False)
     if plot!=False:
         ds_.sort_values(ascending=True).plot.barh(
-            ax=plot,
+            **({} if plot==True else plot)
         )
     if out:
         ## no logging
@@ -2499,6 +2499,14 @@ def dict2df(
     return df_
     
 ## log
+def _get_log_label(label):
+    if label is None:
+        label=''
+    if len(label)>100:
+        # logging.debug('set label=None because len(label)>100 ..')
+        label=label[:100]+'.. (trimmed)'          
+    return label
+    
 def log_shape_change(d1, fun="", label=None):
     """Report the changes in the shapes of a DataFrame.
 
@@ -2506,11 +2514,7 @@ def log_shape_change(d1, fun="", label=None):
         d1 (dic): dictionary containing the shapes.
         fun (str): name of the function.
     """
-    if label is None:
-        label=''
-    if len(label)>100:
-        logging.debug('set label=None because len(label)>100 ..')
-        label=''        
+    label=_get_log_label(label)
     if d1["from"] != d1["to"]:
         prefix = f"{fun} {label}: " if fun != "" else ""
         if d1["from"][0] == d1["to"][0]:
@@ -2618,7 +2622,7 @@ class log:
             ds_ = self._obj.groupby(groupby,observed=True).size().sort_values(ascending=False)
             suffix_ = f"by '{groupby}': {to_str(ds_)}"
             label = f"{suffix_} {label}"
-            
+        label=_get_log_label(label)    
         logging.info(f"shape = {self._obj.shape} {label}")
         return self._obj
 
