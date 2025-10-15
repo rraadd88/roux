@@ -72,6 +72,7 @@ def get_pval(
     subsets=None,
     test=False,
     func=None,
+    **kws_func,
 ) -> tuple:
     """Get p-value.
 
@@ -126,7 +127,12 @@ def get_pval(
                 return sc.stats.mannwhitneyu(
                     x,
                     y,
-                    alternative="two-sided",
+                    **{
+                        **dict(
+                            alternative="two-sided", ## is default anyways
+                              ),
+                        **kws_func,
+                    }
                 )
             else:
                 return func(
@@ -134,6 +140,7 @@ def get_pval(
                     # df.loc[(df[colsubset] == subsets[1]), colvalue],
                     x,
                     y,
+                    **kws_func,
                 )
         else:
             # if empty list: RuntimeWarning: divide by zero encountered in double_scalars  z = (bigu - meanrank) / sd

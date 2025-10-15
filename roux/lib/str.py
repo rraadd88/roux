@@ -87,6 +87,18 @@ def replace_many(
 # alias
 replacemany = replace_many
 
+def to_norm_str(
+    s,
+    replacewith='_'
+    ):
+    import re
+    s = (
+            re.sub(r"[^\w]", replacewith, s)
+            .replace("+", replacewith)
+            .strip(replacewith)
+        )
+    s = re.sub(r"(_)\1+", r"\1", s)  # remove multiple _'s
+    return s 
 
 def filter_list(
     l: list,

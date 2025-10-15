@@ -184,7 +184,7 @@ def to_diff(
     ):
     from pathlib import Path
     import difflib
-    if isinstance(file1,str) and Path(file1).isfile():# and Path(file2).isfile():  
+    if isinstance(file1,str) and Path(file1).is_file():# and Path(file2).is_file():  
         with open(file1) as f1, open(file2) as f2:
             lines1 = f1.readlines()
             lines2 = f2.readlines()

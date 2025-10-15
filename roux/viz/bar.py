@@ -188,7 +188,173 @@ def plot_barh_stacked_percentage(
     )
     return ax
 
+def plot_bar_stacked_bins(
+    data,
+    colx,
+    col_group,
+    col_label=None, # Now used for bottom label, fallback to col_group
+    order=None,
+    colors=None,
+    cmap='Blues',
+    text_y_off=0,
+    normalize=True,
+    show_bin_labels=True,
+    show_nums=True,
+    kws_text={},
+    ax=None,
+):
+    """
+    Generates a stacked horizontal bar plot, with options for percentages or raw counts.
 
+    This function combines functionalities for plotting percentages and raw counts into
+    a single integrated function. It can normalize data to show percentages or display
+    raw counts directly.
+
+    Args:
+        data (pd.DataFrame): The input data.
+        colx (str): The column name for the values to be plotted (counts or percentages).
+        col_group (str): The column name for grouping the bars.
+        col_label (str, optional): The column for the bottom labels. If None, 
+            `col_group` is used. Defaults to None.
+        order (list, optional): The order for the bars. If None, it's inferred from 
+            `col_group`. Defaults to None.
+        colors (list, optional): A list of colors for the bars. If None, colors are 
+            generated from `cmap`. Defaults to None.
+        cmap (str, optional): The colormap to use if `colors` is not provided. 
+            Defaults to 'Blues'.
+        text_y_off (float, optional): Vertical offset for text labels. Defaults to 0.
+        normalize (bool, optional): If True, normalizes `colx` to percentages (sum=100).
+            If False, plots raw counts. Defaults to True.
+        show_bin_labels (bool, optional): If True, shows the bin labels at the bottom. 
+            Defaults to True.
+        show_nums (bool, optional): If True, shows the counts/percentages. 
+            Defaults to True.
+        ax (matplotlib.axes.Axes, optional): The axes to plot on. If None, a new one is 
+            created. Defaults to None.
+
+    Returns:
+        matplotlib.axes.Axes: The axes with the plot.
+    """
+    from roux.viz.colors import get_ncolors
+    from roux.viz.ax_ import set_axlims
+    
+    if ax is None:
+        ax = plt.gca()
+
+    df = data.copy()
+
+    if normalize:
+        total = df[colx].sum()
+        if total > 0:
+            df[colx] = (df[colx] / total) * 100
+
+    bottom_label_col = col_label if col_label else col_group
+    
+    required_cols = {colx, col_group, bottom_label_col}
+    if not required_cols.issubset(df.columns):
+        missing_cols = required_cols - set(df.columns)
+        raise ValueError(f"Missing required columns: {missing_cols}")
+
+    if order is None:
+        order = df[col_group].tolist()
+
+    if colors is None:
+        colors = get_ncolors(
+            len(order),
+            cmap,
+            vmin=0.1,
+            vmax=0.9,
+        )
+
+    cols_to_keep = list(set([colx, bottom_label_col]))
+    df_ = (
+        df
+        .set_index(col_group)
+        .loc[order, cols_to_keep]
+    )
+    df_['x'] = df_[colx].cumsum()
+    df_['x+1'] = df_['x'].shift(1)
+    df_['colors'] = colors
+
+    offset = df_.loc[order[0], colx] if order else 0
+
+    # print(df_)
+    left = 0
+    for item_id, row in df_.iterrows():
+        ax.barh(y=0, width=row[colx], left=left - offset, height=1.0, color=row['colors'])
+        left += row[colx]
+        
+    # Top labels
+    if show_nums and show_bin_labels:
+        df_.apply(
+            lambda row: ax.text(
+                (row['x'] if row.name == order[0] else row['x+1']) - offset,
+                0.7 + text_y_off,
+                (f"{row[colx]:.1f}% " if normalize else f"{int(row[colx])} ") if row.name == order[0] else (f" {row[colx]:.1f}%" if normalize else f" {int(row[colx])}"),
+                ha='right' if row.name == order[0] else 'left',
+                va='top',
+                **{
+                    **dict(zorder=10),
+                    **kws_text,
+                },
+            ),
+            axis=1,
+        )
+
+    # Bottom labels
+    if show_bin_labels:
+        df_.reset_index().apply(
+            lambda row: ax.text(
+                (row['x'] if row[col_group] == order[0] else row['x+1']) - offset,
+                -0.7 + text_y_off,
+                f"{row[bottom_label_col]} " if row[col_group] == order[0] else f" {row[bottom_label_col]}",
+                ha='right' if row[col_group] == order[0] else 'left',
+                va='bottom',
+                **{
+                    **dict(zorder=10),
+                    **kws_text,
+                },
+            ),
+            axis=1,
+        )
+    elif show_nums: # and not show_bin_labels
+        df_.reset_index().apply(
+            lambda row: ax.text(
+                (row['x'] if row[col_group] == order[0] else row['x+1']) - offset,
+                -0.7 + text_y_off,
+                (f"{row[colx]:.1f}% " if normalize else f"{int(row[colx])} ") if row[col_group] == order[0] else (f" {row[colx]:.1f}%" if normalize else f" {int(row[colx])}"),
+                ha='right' if row[col_group] == order[0] else 'left',
+                va='bottom',
+                **{
+                    **dict(zorder=10),
+                    **kws_text,
+                },
+            ),
+            axis=1,
+        )
+
+    ax.axvline(0, linestyle=':', color='k')
+
+    if normalize:
+        xlim_max = 100
+    else:
+        xlim_max = df_[colx].sum()
+
+    ax.set(
+        xlim=[-offset, xlim_max - offset],
+        ylim=[-0.5, 0.5],
+        yticks=[],
+        xticks=[],
+    )
+    ax.set_axis_off()
+
+    set_axlims(
+        ax=ax,
+        off=0.4,
+        axes=['y'],
+    )
+    return ax
+    
 def plot_bar_serial(
     d1: dict,
     polygon: bool = False,
