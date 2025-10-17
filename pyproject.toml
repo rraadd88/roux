@@ -77,7 +77,7 @@ dependencies = [
 #     "coveralls == 3.*",
 #     "flake8",
 #     "isort",
-#     "pytest-cov >= 2,< 7",
+#     "pytest-cov >= 2,< 8",
 #     "papermill",
 #     "lazydocs",
 #     "regex", ## docs
@@ -134,7 +134,7 @@ dev = [
     "coveralls == 3.*",
     "flake8",
     "isort",
-    "pytest-cov >= 2,< 7",
+    "pytest-cov >= 2,< 8",
     "papermill",
     "lazydocs",
     "regex", ## docs
