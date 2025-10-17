@@ -605,6 +605,14 @@ def is_table(p):
 def is_data(p):
     return is_dict(p) or is_table(p)     
 def read_data(p,**kws):
+    if isinstance(p,dict):
+        ## recurse
+        ## placed here for uniformity
+        datas={}
+        for k,p_ in p.items():
+            datas[k]=read_data(p_,**kws)
+        return datas 
+        
     if is_dict(p):
         return read_dict(p,**kws)
     elif is_table(p):

@@ -28,61 +28,61 @@ dependencies = [
     # "regex>=2018.7.11",
 ]
 
-[optional-dependencies]
-interactive = [
-    "ipywidgets",
-    "ipykernel",
-    # "watermark", # session info
-]
-data = [
-    "pyarrow", # fast
-    "openpyxl", # special io
-    "numexpr", # faster querying
-]
-stat = [
-    "scipy>=1.1.0",
-    "statsmodels>=0.13.5",
-    "pingouin>=0.5.5",
-    "networkx",
-    "scikit-learn",
-    ]
-viz = [
-    "altair",
-      ]
-workflow = [
-    "omegaconf",
-    "papermill",
-    "argh",
-    "ruff",
-    "nbconvert",
-    "removestar",
-]
-# An 'all' group that includes all other groups
-all = [
-    {include-group = "interactive"},
-    {include-group = "data"},
-    {include-group = "stat"},
-    {include-group = "viz"},
-    {include-group = "workflow"},
-]
+# [project.optional-dependencies]
+# interactive = [
+#     "ipywidgets",
+#     "ipykernel",
+#     # "watermark", # session info
+# ]
+# data = [
+#     "pyarrow", # fast
+#     "openpyxl", # special io
+#     "numexpr", # faster querying
+# ]
+# stat = [
+#     "scipy>=1.1.0",
+#     "statsmodels>=0.13.5",
+#     "networkx",
+#     "scikit-learn",
+#     "pingouin>=0.5.5",
+#     ]
+# viz = [
+#     "altair",
+#       ]
+# workflow = [
+#     "omegaconf",
+#     "papermill",
+#     "argh",
+#     "ruff",
+#     "nbconvert",
+#     "removestar",
+# ]
+# # An 'all' group that includes all other groups
+# all = [
+#     {include-group = "interactive"},
+#     {include-group = "data"},
+#     {include-group = "stat"},
+#     {include-group = "viz"},
+#     {include-group = "workflow"},
+# ]
 
-## development and maintenance
-dev = [
-    "pytest",
-    "tox",
-    "tox-gh-actions",
-    "jupyter","ipywidgets","ipykernel",
-    # "sphinx","recommonmark",
-    "black",
-    "coveralls == 3.*",
-    "flake8",
-    "isort",
-    "pytest-cov >= 2,< 7",
-    "papermill",
-    "lazydocs",
-    "regex", ## docs
-    {include-group = "all"},    
-]
+# ## development and maintenance
+# dev = [
+#     "pytest",
+#     "tox",
+#     "tox-gh-actions",
+#     "jupyter","ipywidgets","ipykernel",
+#     # "sphinx","recommonmark",
+#     "black",
+#     "coveralls == 3.*",
+#     "flake8",
+#     "isort",
+#     "pytest-cov >= 2,< 7",
+#     "papermill",
+#     "lazydocs",
+#     "regex", ## docs
+#     {include-group = "all"},    
+# ]
 
 ## for uv
 [dependency-groups]
@@ -101,6 +101,7 @@ stat = [
     "statsmodels",
     "networkx",
     "scikit-learn",
+    "pingouin>=0.5.5",
         ]
 viz = [
     "altair",

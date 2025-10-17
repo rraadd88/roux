@@ -66,7 +66,109 @@ def plot_barh(
     )
     return ax
 
+def plot_barh_btob(
+    df_input: pd.DataFrame,
+    colors=None,
+    ax=None,
+    ):
+    """
+    Generates and displays the logic for a back-to-back horizontal bar plot 
+    from a DataFrame with two columns, using the DataFrame's index for categories.
+    
+    The function assumes the input DataFrame (df_input) has the two columns 
+    to be plotted (the first column will be plotted to the left).
 
+    Args:
+        df_input (pd.DataFrame): DataFrame with index as categories and two 
+                                  numeric columns (e.g., 'A_Left', 'B_Right').
+    """
+    from roux.viz.colors import get_ncolors
+    if colors is None:    
+        colors=get_ncolors(
+                    2,'Blues',
+                    vmin=0.5,    
+                    vmax=0.9,    
+                )[::-1]
+        
+    if ax is None:
+        ax=get_ax()
+    # Ensure the DataFrame has exactly two columns for the plot
+    if df_input.shape[1] != 2:
+        raise ValueError("Input DataFrame must have exactly two numeric columns.")
+        
+    col_left, col_right = df_input.columns
+
+    # 1. Prepare DataFrame for plotting (df1_)
+    # Create a copy and negate the first column's values for the left side plot
+    df1_ = df_input.copy()
+    df1_[col_left] = df1_[col_left] * -1
+
+    
+    # Get the indices/categories for the y-axis positions
+    y_pos = np.arange(len(df_input.index))
+    bar_height = 0.8 # Define a consistent bar height
+
+    # --- START MODIFICATION: Using ax.barh() directly for alignment ---
+
+    # Plot 1: Left column (Negative values)
+    ax.barh(
+        y_pos, 
+        df1_[col_left], # Already negated values
+        height=bar_height,
+        label=col_left, 
+        color=colors[1],#'#1f77b4' # Blue
+    )
+    
+    # Plot 2: Right column (Positive values) - Shares the same y_pos
+    ax.barh(
+        y_pos, 
+        df1_[col_right], # Positive values
+        height=bar_height,
+        label=col_right, 
+        color=colors[0],#'#ff7f0e' # Orange
+    )
+    
+    # Set the y-axis ticks and labels explicitly to match the DataFrame index
+    ax.set_yticks(y_pos)
+    ax.set_yticklabels(df_input.index)
+
+    # --- END MODIFICATION ---
+
+    # 3. Correct X-axis labels to display absolute values
+    x_ticks_loc_list = ax.get_xticks()
+    
+    # Use numpy.abs to convert negative values to positive for display
+    x_ticks_label_list = [f'{int(np.abs(tick))}' for tick in x_ticks_loc_list]
+    ax.set_xticklabels(x_ticks_label_list)
+
+    # 4. Add titles, labels, and final touches   
+    # from roux.viz.annot import set_label
+    import matplotlib.transforms as transforms
+    ax.text(
+        x=0,
+        y=1.15,
+        s=f"{col_left.replace('\n',' ')} ",
+        ha='right',
+        # va='bottom',
+        transform=transforms.blended_transform_factory(
+            ax.transData,
+            ax.transAxes,
+            )
+    )
+    ax.text(
+        x=0,
+        y=1.15,
+        s=f" {col_right.replace('\n',' ')}",
+        ha='left',
+        # va='bottom',
+        transform=transforms.blended_transform_factory(
+            ax.transData,
+            ax.transAxes,
+            )
+    )
+    
+    return ax
+    
 def plot_value_counts(
     df: pd.DataFrame,
     col: str,

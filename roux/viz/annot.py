@@ -775,6 +775,7 @@ def show_crosstab_stats(
     yoff: float = 0,
         
     ax: plt.Axes = None,
+    kws_stats={},
     **kws_set_label,
 ) -> plt.Axes:
     """Annotate a confusion matrix.
@@ -795,16 +796,18 @@ def show_crosstab_stats(
     Returns:
         plt.Axes: `plt.Axes` object.
     """
-    if cols is not None:
-        from roux.stat.diff import compare_classes
-        stat, pval = compare_classes(data[cols[0]], data[cols[1]], method=method)
-        ## get the label for the stat method
-        data_ = pd.crosstab(data[cols[0]], data[cols[1]])
-    else:
-        from scipy.stats import fisher_exact
-        stat, pval = fisher_exact(data.values)
-        data_=data.copy()
+    from roux.stat.diff import compare_classes
+    stat, pval, data_ = compare_classes(
+        x=data[cols[0]] if cols is not None else None,
+        y=data[cols[1]] if cols is not None else None,
         
+        method=method,
+        data=data,
+        
+        out_table=True,
+        
+        **kws_stats
+    )        
     logging.info(f"stat={stat},pval={pval}")
 
     if data_.shape != (2, 2) or method == "chi2":

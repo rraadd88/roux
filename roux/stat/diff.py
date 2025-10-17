@@ -18,19 +18,45 @@ from roux.lib.set import nunique
 
 
 def compare_classes(
-    x,
-    y,
+    x=None,
+    y=None,
     method=None,
+
+    data=None,
+    col_id=None,
+
+    out_table=False,
 ):
     """
     Compare classes
     """
-    if len(x) != 0 and len(y) != 0:  # and (nunique(x+y)!=1):
-        df1 = pd.crosstab(x, y)
+    if isinstance(x,pd.Series) and isinstance(y,pd.Series):
+        if len(x) == 0 or len(y) == 0:  # and (nunique(x+y)!=1):
+            return np.nan, np.nan
+        else:
+            df1 = pd.crosstab(x, y)
+    elif isinstance(x,str) and isinstance(y,str):
+        df1=data.groupby([x,y])[col_id].nunique().unstack()
+    elif x is None and y is None:
+        df1=data.copy()
+        del data
     else:
+        raise ValueError("check arguments ..")
+        
+    if df1.shape[0] == 0 or df1.shape[1] == 0:
         return np.nan, np.nan
-    if len(df1) == 0:
-        return np.nan, np.nan
+
+    ## qcs
+    from pandas.api.types import is_numeric_dtype
+    assert df1.apply(lambda x: is_numeric_dtype(x)).all(), df1.apply(lambda x: is_numeric_dtype(x))
+
+    assert df1.shape[0] <= 20 and df1.shape[1] <= 20, df1.shape    
+
+    if df1.isnull().any().any():
+        logging.warning("fillna=0")
+        df1=df1.fillna(0)
+    
+    ## stats
     if df1.shape != (2, 2) or method == "chi2":
         stat, pval, _, _ = sc.stats.chi2_contingency(df1)
         if method is None:
@@ -41,8 +67,11 @@ def compare_classes(
             logging.info("method=fisher_exact")
     else:
         raise ValueError(df1)
-    return stat, pval
-
+        
+    if not out_table:
+        return stat, pval
+    else:
+        return stat, pval, df1
 
 def compare_classes_many(
     df1: pd.DataFrame,

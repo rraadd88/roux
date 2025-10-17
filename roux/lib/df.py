@@ -2583,6 +2583,17 @@ def log_apply(
         assert d1["from"] == d1["to"], (d1["from"], d1["to"])
     return df
 
+def _get_preview_log_str(
+    df,
+    lin_if_cols_gt=10,
+    cols_max=100,
+    ):
+    warn=''
+    if df.shape[1]>cols_max:
+        df=df.iloc[:,:cols_max] 
+        warn=' (trimmed)'  
+    df=df.T if (df.shape[1]>lin_if_cols_gt) else df
+    return df.to_string().lstrip()+warn
 
 @pd.api.extensions.register_dataframe_accessor("log")
 class log:
@@ -2711,46 +2722,37 @@ class log:
         from roux.lib.df import log_apply
 
         return log_apply(self._obj, fun=melt_paired, **kws)
-
+    
     def head(
         self,
         n=1, 
-        # T=False,
-        cols_max=10, ## transpose if >cols_max
+        lin_if_cols_gt=10, ## transpose if >lin_if_cols_gt
+        cols_max=100, ## trim if > cols
         ):  
         logging.info(
             f'head {n}/{len(self._obj)}:'+(
-                (
-                    self._obj
-                        .head(
-                            n=n,
-                        )
-                        .pipe(
-                            lambda df: df.T if (df.shape[1]>cols_max) else df
-                        )
-                        .to_string()
-                    )  
-                ).lstrip()
+                _get_preview_log_str(
+                    self._obj.head(n=n,),
+                    lin_if_cols_gt=lin_if_cols_gt,
+                    cols_max=cols_max,
+                )
             )
+        )
         return self._obj
-    def tail(self, n=1,
-             # T=False,
-             cols_max=None, ## transpose if >cols_max
+    def tail(self,
+             n=1,
+             lin_if_cols_gt=10, ## transpose if >lin_if_cols_gt
+             cols_max=100, ## trim if > cols
             ):
         logging.info(
             f'tail {n}/{len(self._obj)}:\n'+(
-                (
-                    self._obj
-                        .tail(
-                            n=n,
-                        )
-                        .pipe(
-                            lambda df: df.T if (df.shape[1]>cols_max) else df
-                        )
-                        .to_string()
-                    )  
-                ).lstrip()
+                _get_preview_log_str(
+                    self._obj.tail(n=n,),
+                    lin_if_cols_gt=lin_if_cols_gt,
+                    cols_max=cols_max,
+                )
             )
+        )
         return self._obj
     def describe(
         self,
