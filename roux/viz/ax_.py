@@ -7,6 +7,7 @@ import logging
 
 ## viz basic
 import matplotlib.pyplot as plt
+import matplotlib.transforms as transforms
 
 from roux.lib.str import replace_many
 
@@ -107,6 +108,7 @@ def set_axes_arrows(
 
 
 # labels
+## TODO: move to text.py
 def set_label(
     s: str,
     ax: plt.Axes,
@@ -335,7 +337,10 @@ def rename_ticklabels(
         )
     elif rename is not None:
         _ = getattr(ax, f"set_{k}")(
-            [rename[t.get_text()] for t in getattr(ax, f"get_{k}")()]
+            [
+                 rename[t.get_text()]
+                 for t in getattr(ax, f"get_{k}")()
+            ]
         )
     else:
         raise ValueError("either `rename` or `replace` should be provided.")
@@ -364,7 +369,10 @@ def get_ticklabel_position(
 
 
 def set_ticklabels_color(
-    ax: plt.Axes, ticklabel2color: dict, axis: str = "y"
+    ax: plt.Axes,
+    axis: str,
+    ticklabel2color: dict = None,
+    **kwargs,
 ) -> plt.Axes:
     """Set colors to ticklabels.
 
@@ -376,9 +384,59 @@ def set_ticklabels_color(
     Returns:
         plt.Axes: `plt.Axes` object.
     """
-    for tick in getattr(ax, f"get_{axis}ticklabels")():
-        if tick.get_text() in ticklabel2color.keys():
-            tick.set_color(ticklabel2color[tick.get_text()])
+    if ticklabel2color is not None:
+        for tick in getattr(ax, f"get_{axis}ticklabels")():
+            if tick.get_text() in ticklabel2color.keys():
+                tick.set_color(ticklabel2color[tick.get_text()])
+    else:
+        from roux.viz.text import set_text_multicolored
+        
+        if axis == 'y':
+            # Use a blended transform: y in data coords, x in axes coords
+            transform = transforms.blended_transform_factory(ax.transAxes, ax.transData)
+            
+            # Get original ticks and labels
+            ticks = ax.get_yticks()
+            labels = [label.get_text() for label in ax.get_yticklabels()]
+            
+            # Clear original labels
+            ax.set_yticklabels([])
+            
+            # Draw new labels for each tick
+            for tick_val, label_str in zip(ticks, labels):
+                if label_str:
+                     # x=-0.02 positions text slightly left of the y-axis spine
+                     set_text_multicolored(
+                         x=-0.02, y=tick_val, s=label_str,
+                         # sep=sep,
+                         ax=ax,
+                         transform=transform, ha='right', 
+                         # va='center',
+                         **kwargs
+                     )
+    
+        elif axis == 'x':
+            # Use a blended transform: x in data coords, y in axes coords
+            transform = transforms.blended_transform_factory(ax.transData, ax.transAxes)
+            
+            ticks = ax.get_xticks()
+            labels = [label.get_text() for label in ax.get_xticklabels()]
+            
+            ax.set_xticklabels([])
+            
+            for tick_val, label_str in zip(ticks, labels):
+                if label_str:
+                    # y=-0.02 positions text slightly below the x-axis spine
+                    set_text_multicolored(
+                        x=tick_val, y=-0.02, s=label_str,
+                        # sep=sep,
+                        ax=ax,
+                        transform=transform, ha='center', 
+                        # va='top',
+                        **kwargs
+                    )
+        else:
+            raise ValueError("axis must be either 'x' or 'y'")
     return ax
 
 
@@ -389,6 +447,7 @@ def format_ticklabels(
     n: int = None,
     fmt: str = None,
     font: str = None,  #'DejaVu Sans Mono',#"Monospace"
+    kws_set_ticklabels_color={},    
 ) -> plt.Axes:
     """format_ticklabels
 
@@ -449,6 +508,17 @@ def format_ticklabels(
         if font is not None:
             for tick in getattr(ax, f"get_{axis}ticklabels")():
                 tick.set_fontname(font)
+                
+        if axis=='y':
+            ## where the text is usually ..
+            ## if any new line brackets e.g. (n=10)
+            _=set_ticklabels_color(
+                ax=ax,
+                axis=axis,
+                ticklabel2color = None,
+                sep='\n',
+                **kws_set_ticklabels_color,
+            )                
     return ax
 
 
@@ -539,7 +609,6 @@ def split_ticklabels(
         #     group_x=axlims[axis]['max']+(axlims[axis]['len']*group_pad)
         #     group_xlabel=axlims[axis]['max']+(axlims[axis]['len']*group_pad+0.1)
         # print(axlims[axis]['min']-(group_pad*5.5))
-        import matplotlib.transforms as transforms
 
         if show_group_line:
             df_.apply(

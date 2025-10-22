@@ -912,10 +912,10 @@ def check_mappings(
         logging.info(f"mappings: {df1.to_string()}")
         return df
 
-
 @to_rd
-def assert_1_1_mappings(
+def assert_mappings(
     df: pd.DataFrame,
+    validate='1:1',
     subset: list = None,
 ) -> pd.DataFrame:
     """Validate that the papping between items in two columns is 1:1.
@@ -930,9 +930,30 @@ def assert_1_1_mappings(
         df,
         subset=subset,
     )
-    assert all(df1["mapping"] == "1:1"), df1.columns
+    assert all(df1["mapping"] == validate), df1
     return df
 
+
+@to_rd
+def assert_1_1_mappings(
+    df: pd.DataFrame,
+    subset: list = None,
+    **kws,
+) -> pd.DataFrame:
+    """Validate that the papping between items in two columns is 1:1.
+
+    Parameters:
+        df (DataFrame): input dataframe.
+        subset (list): list of columns.
+        out (str): format of the output.
+
+    """
+    return assert_mappings(
+        df,
+        subset=subset,
+        validate="1:1",
+        **kws,
+    )
 
 @to_rd
 def get_mappings(
@@ -2586,7 +2607,7 @@ def log_apply(
 def _get_preview_log_str(
     df,
     lin_if_cols_gt=10,
-    cols_max=100,
+    cols_max=50,
     ):
     warn=''
     if df.shape[1]>cols_max:
@@ -2727,14 +2748,14 @@ class log:
         self,
         n=1, 
         lin_if_cols_gt=10, ## transpose if >lin_if_cols_gt
-        cols_max=100, ## trim if > cols
+        # cols_max=100, ## trim if > cols
         ):  
         logging.info(
             f'head {n}/{len(self._obj)}:'+(
                 _get_preview_log_str(
                     self._obj.head(n=n,),
                     lin_if_cols_gt=lin_if_cols_gt,
-                    cols_max=cols_max,
+                    # cols_max=cols_max,
                 )
             )
         )
@@ -2742,14 +2763,14 @@ class log:
     def tail(self,
              n=1,
              lin_if_cols_gt=10, ## transpose if >lin_if_cols_gt
-             cols_max=100, ## trim if > cols
+             # cols_max=100, ## trim if > cols
             ):
         logging.info(
             f'tail {n}/{len(self._obj)}:\n'+(
                 _get_preview_log_str(
                     self._obj.tail(n=n,),
                     lin_if_cols_gt=lin_if_cols_gt,
-                    cols_max=cols_max,
+                    # cols_max=cols_max,
                 )
             )
         )

@@ -307,6 +307,7 @@ def get_corr(
 def _to_string(
     res: dict,
     show_n: bool = True,
+    show_p: bool = True,
     show_n_prefix="$n$=",
     fmt: dict = "<",
     method_suffix=True,
@@ -346,7 +347,8 @@ def _to_string(
     )
     if "ci" in res:
         s0 += f"$\pm${res['ci']:.2f}{res['ci_type'] if res['ci_type']!='max' else ''}"
-    s0 += f"\n{pval2annot(res['P'],fmt='<',linebreak=False, alpha=0.05)}"
+    if show_p:
+        s0 += f"\n{pval2annot(res['P'],fmt='<',linebreak=False, alpha=0.05)}"
     if show_n:
         s0 += f"\n({show_n_prefix}{num2str(num=res['n'],magnitude=False)})"
     return s0

@@ -19,6 +19,9 @@ def plot_comparisons(
         plot_data: output of `.stat.compare.get_comparison`
     Notes:
         `sample type`: different sample of the same data.
+
+    TODO: 
+        Sequencially iterative tests.
     """
     ## get the sample type
     ## get the data

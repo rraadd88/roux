@@ -377,7 +377,18 @@ def plot_dists(
     if isinstance(kind, str):
         kind = {kind: {}}
     elif isinstance(kind, list):
-        kind = {k: {} for k in kind}
+        kind = {k: {} for k in kind}    
+    assert isinstance(kind, dict), kind
+    
+    kind_defaults={
+        'box':dict(
+                showfliers=False,  
+                boxprops=dict(
+                    ec='none',
+                )
+            )
+    }
+    
     for k in kind:
         kws_ = kws.copy()
         # print(kws['palette'],kind)
@@ -387,13 +398,30 @@ def plot_dists(
         # if 'palette' in kws and k in ['swarm','strip']:
         # from roux.viz.colors import saturate_color
         # kws['palette']=[saturate_color(color=c, alpha=saturate_color_alpha+0.5) for c in kws['palette']]
-        if k == "box" and (("swarm" in kind) or ("strip" in kind)):
-            kws_["showfliers"] = False
-            kws_["boxprops"] = dict(alpha=alpha)
-        if k in ["swarm", "strip"] and ("box" in kind):
-            kws_["alpha"] = alpha
+
+        ## override defaults
+        if k=='box':
+            kws_={
+                **kind_defaults['box'],
+                **kws_,
+            }
+        ## common            
         if hue is None:
             kws_["color"] = get_colors_default()[0]
+
+        ## blends
+        if k == "box":
+            # if (("swarm" in kind) or ("strip" in kind)):
+            kws_["showfliers"] = False
+            kws_["boxprops"] = {
+                **kws_["boxprops"],
+                **dict(
+                    alpha=alpha,
+                ),
+            }
+        if k in ["swarm", "strip"] and ("box" in kind):
+            kws_["alpha"] = alpha
+            
         getattr(sns, k + "plot")(
             data=df1,
             x=x,

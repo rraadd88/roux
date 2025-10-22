@@ -669,6 +669,7 @@ def show_scatter_stats(
     covar=None,
     
     resample: bool = False,
+    show_p: bool = True,
     show_n: bool = True,
     show_n_prefix: str = "",
     prefix: str = "",
@@ -712,6 +713,7 @@ def show_scatter_stats(
         if res is not None and len(res) != 0:
             label += _to_string(
                 res,
+                show_p=show_p,
                 show_n=show_n,
                 show_n_prefix=show_n_prefix,
                 method_suffix=False, ## change x|y label instead
@@ -748,7 +750,7 @@ def show_scatter_stats(
             **kws,
             **kws_set_label,
         }
-    print(kws_set_label)
+    logging.debug(kws_set_label)
     
     _ = set_label(
         ax=ax,

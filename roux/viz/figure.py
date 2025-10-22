@@ -49,7 +49,9 @@ def get_ax(
     ax=None,
     **kws
 ):    
-    if ax is None:
+    if isinstance(ax,plt.Axes): 
+        return ax
+    elif ax is None:
         return plt.gca()
     elif isinstance(ax,dict):
         ## recurse
