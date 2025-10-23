@@ -382,12 +382,48 @@ def plot_dists(
     
     kind_defaults={
         'box':dict(
-                showfliers=False,  
-                boxprops=dict(
-                    ec='none',
-                )
+            showfliers=False,  
+            boxprops=dict(
+                ec='none',
             )
+        ),
+        'violin':dict(
+            density_norm='width',
+            cut=0,
+            fill=False,
+        ),
+        'point':dict(
+            estimator='mean',  
+            linestyle='none',
+        )
     }
+    if kind.get('box'):
+        if kind['box'].get('showmeans')==True:
+            kind['box']={
+                **dict(
+                    meanprops=dict(
+                        marker= "$\mu$", 
+                        markerfacecolor= "black", 
+                        markeredgecolor= "none", 
+                        markersize= "10"
+                    )                    
+                ),
+                **kind['box'],
+            }
+            if not 'point' in kind:
+                kind['point']={}
+            kind['point']={
+                **kind_defaults['point'],
+                **dict(
+                    markers="D",
+                    errorbar=None,
+                    markersize=15,
+                    markeredgewidth=0,
+                    alpha=0.5,
+                    clip_on=False,                    
+                ),
+                **kind['point'],
+            }
     
     for k in kind:
         kws_ = kws.copy()
@@ -419,6 +455,7 @@ def plot_dists(
                     alpha=alpha,
                 ),
             }
+            
         if k in ["swarm", "strip"] and ("box" in kind):
             kws_["alpha"] = alpha
             

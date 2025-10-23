@@ -74,6 +74,7 @@ def plot_dists_by_bins(
     show_corr=False, ## also taked kws
     corr_offs=[0,0],
     ax=None,
+    out_more=False,
     **kws_plot_dists,
     ):
     ## binning
@@ -97,7 +98,7 @@ def plot_dists_by_bins(
         data,
         x=x,
         y=f"{y} bin",
-        showfliers=False,
+        # showfliers=False,
         
         ax=get_ax(ax),
         **kws_plot_dists,
@@ -135,4 +136,11 @@ def plot_dists_by_bins(
     ax.set(
         ylabel=y,
     )
-    return ax
+    if not out_more:    
+        return ax
+    else:
+        return dict(
+            ax=ax,
+            data=data,
+        )
+    

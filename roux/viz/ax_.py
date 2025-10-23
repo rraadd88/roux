@@ -447,6 +447,7 @@ def format_ticklabels(
     n: int = None,
     fmt: str = None,
     font: str = None,  #'DejaVu Sans Mono',#"Monospace"
+    change_color=False,
     kws_set_ticklabels_color={},    
 ) -> plt.Axes:
     """format_ticklabels
@@ -509,7 +510,7 @@ def format_ticklabels(
             for tick in getattr(ax, f"get_{axis}ticklabels")():
                 tick.set_fontname(font)
                 
-        if axis=='y' and ax.axison and ('\n' in ax.get_yticklabels()[0].get_text() if len(ax.get_yticklabels())>0 else True):
+        if change_color and axis=='y' and ax.axison and ('\n' in ax.get_yticklabels()[0].get_text() if len(ax.get_yticklabels())>0 else True):
             ## where the text is usually ..
             ## if any new line brackets e.g. (n=10)
             _=set_ticklabels_color(

@@ -1590,14 +1590,27 @@ def get_bins(
     col: str,
     bins: list,
     kind: str= '',
-    dtype: str = "int",  # dtype of bins
-    infer_labels=True,
+    
     labels: list = None,
+    labels_fmt: str = None,  # e.g. min
+
+    dtype=None, # =labels_fmt
+    
     **kws_cut,
 ):
     """
     kind: quantile
     """
+    if dtype is not None:
+        if labels_fmt is not None:
+            raise ValueError(
+                'remove deprec.d arg: dtype'
+            )
+        else:
+            ## bc
+            labels_fmt=dtype
+            del dtype
+    
     df=replace_inf(
         df,
         subset=col,
@@ -1623,17 +1636,18 @@ def get_bins(
                     )
                 )
             logging.info(f"bins={bins}" )
-        if infer_labels and labels is None:
-            if df[col].dtype == "int" or dtype in ["int",'max']:
-                from roux.lib.str import get_bin_labels
-                labels = get_bin_labels(
-                    bins=bins,
-                    dtype=dtype,
-                )
+        if labels is None:
+            from roux.lib.str import get_bin_labels
+            labels = get_bin_labels(
+                bins=bins,
+                fmt=labels_fmt,
+            )
         return df.assign(
             **{
                 f"{col} bin": lambda df: pd.cut(
-                    df[col], bins=bins, labels=labels, **kws_cut
+                    df[col], bins=bins,
+                    labels=labels,
+                    **kws_cut
                 ),
             },
         )
@@ -2747,7 +2761,7 @@ class log:
         return self._obj
     def describe(
         self,
-        subset,
+        subset=None,
         **kws,
         ):
         if isinstance(subset,str):
@@ -2756,9 +2770,13 @@ class log:
             'describe:\n'+(
                 self
                     ._obj
-                    .loc[:,subset]
                     .describe(
-                        **kws,
+                        **{
+                            **dict(
+                                include=subset,
+                            ),
+                            **kws,
+                        },
                     ).T
                 .to_string()
             )

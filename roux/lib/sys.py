@@ -123,12 +123,14 @@ def read_ps(
                     to_ids={Path(p).parts[id_parti]:p for p in glob(ps)}
                     if id_parti==len(Path(ps).parts)-1:
                         to_ids={Path(k).with_suffix('').as_posix():p for k,p in to_ids.items()}
-                        
+                # TODO:
+                # path/to/*_file.suf -> ids without _file
                 # else:
                 #     # key=substr between *s or []s 
                 #     prefix, suffix = ps.split('*')
                 #     to_ids={Path(p_).name.removeprefix(prefix).removesuffix(suffix):p_ for p_ in glob(ps)}
-
+                # if '/*' in ps and 
+                
                 ## qc
                 assert len(set(to_ids.keys()))==len(set(to_ids.values())), f"{len(set(to_ids.keys()))}!={len(set(to_ids.values()))}" 
                 logging.info(f"fmt: {len(to_ids)} {fmt}")                        

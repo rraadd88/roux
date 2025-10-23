@@ -805,96 +805,112 @@ def to_formula(
     return replaces
 
 ## labels
-def get_bin_labels_max(bins: list[float]) -> list[str]:
+def get_bin_labels_min(bins: list[float]) -> list[str]:
     """
-    Converts a list of bin thresholds into two mutually exclusive
-    string labels for data categorization, based on the non-maximum
-    thresholds in the list.
-
-    The function assumes the input list contains at least one relevant cutoff
-    point (e.g., if max is 2, the cutoff is 1).
-
-    Example:
-    bins=[0.0, 1.0, 2.0] -> ['<=1.0', '>1.0']
-    bins=[0.5, 1.0] -> ['>=0.5', '<0.5']
-
-    Args:
-        bins: A list of float thresholds defining the bin boundaries (must be ascending).
-
-    Returns:
-        A list of exactly two string labels corresponding to the primary cutoff.
+    Example:
+    bins=[0.0, 1.0, 2.0] -> ['<=1.0', '>1.0']
+    bins=[0.5, 1.0, 2.0, 3.0] -> ['<=1.0', '>1.0', '>2.0']
+    bins=[0.5, 1.0, 2.0, 3.0, 5] -> ['<=1.0', '>1.0', '>2.0', '>3.0']
     """
     
-    # 1. Quality Check: Ensure input bins are strictly ascending
-    if bins != sorted(bins):
-        raise ValueError("Input 'bins' list must be in ascending order.")
+    # 1. Quality Check: Ensure input bins are unique and ascending
+    if bins != sorted(list(set(bins))):
+        raise ValueError("Input 'bins' list must be unique and in ascending order.")
 
-    # 2. Get unique, sorted bins in descending order
-    # Note: We sort descending here for internal logic (finding the cutoff), 
-    # but the ascending check above ensures canonical input.
-    unique_bins_desc = sorted(list(set(bins)), reverse=True)
-    
-    if len(unique_bins_desc) < 2:
-        # Handle cases with 0 or 1 unique bin (e.g., [1.0] or [])
-        if len(unique_bins_desc) == 1:
-            return [f'={unique_bins_desc[0]:.3g}'] # Return a single equality label
+    if len(bins) < 2:
         return []
 
-    # 3. Determine the primary cutoff point (the second highest unique value)
-    # The highest value (e.g., 2.0 or 1.0) is the conceptual maximum.
-    # The next value is the meaningful cutoff (e.g., 1.0 in [2.0, 1.0, 0.0])
-    cutoff_point = unique_bins_desc[1]
-    
-    # Format precision
-    if isinstance(cutoff_point, int):
-        cutoff_label = f"{cutoff_point}"
-    else:
-        # Default to one decimal place for floats
-        cutoff_label = f"{cutoff_point:.3g}"
+    # g: Helper function for formatting
+    def _format_bin(val):
+        if isinstance(val, int) or float(val).is_integer():
+            return f"{int(val)}"
+        # g: Use .3g for concise float representation
+        return f"{val:.3g}"
 
-    # 4. Generate the two required labels: '<=cutoff' and '>cutoff'
+    # 2. Get the first cutoff (bins[1])
+    cutoff = bins[1]
+    bin_labels = [f'$\leqslant${_format_bin(cutoff)}']
     
-    # Label 1: Less than or equal to the cutoff point (the inclusive bin)
-    # Using $\leqslant$ as requested (or \leq)
-    label_le = f'$\leqslant${cutoff_label}'
-    
-    # Label 2: Greater than the cutoff point (the exclusive bin)
-    label_gt = f'$>${cutoff_label}'
-    
-    return [label_le, label_gt]
+    # 3. Iterate for subsequent labels (from bins[1] to bins[-2])
+    # g: This loop generates the correct number of remaining labels.
+    for i in range(1, len(bins) - 1):
+        label = f'$>${_format_bin(bins[i])}'
+        bin_labels.append(label)
+        
+    return bin_labels
 
 def get_bin_labels(
     bins: list,
-    dtype: str = "int",  # todo: detect
+    fmt: str=None,
+    errors: str = 'raise', # g: Added 'errors' argument    
 ):
     # If the specialized max-logic is requested, use the custom function immediately.
-    if dtype == 'max':    
-        return get_bin_labels_max(bins)
+    if fmt == 'min':    
+        bin_labels=get_bin_labels_min(bins)
+    else:
+        
+        # g: Check if all bin values are effectively integers
+        all_bins_are_int = all(float(b).is_integer() for b in bins)
+
+        if fmt is None:
+            fmt = 'int' if all_bins_are_int else 'float'
+        elif fmt == 'int' and not all_bins_are_int:
+            if errors == 'raise':
+                raise TypeError("fmt='int' specified, but 'bins' contains non-integer values.")
+            else: # g: errors='correct'
+                logging.warning("fmt='int' specified, but 'bins' contains non-integer values. Correcting fmt to 'float'.")
+                fmt = 'float' # g: Correct the format internally        
+                
+        import pandas as pd
+        # g: Create the DataFrame with intervals
+        df_ = (
+            pd.DataFrame(
+                dict(
+                    start=bins[:-1], # g: Use all but the last
+                    end=bins[1:],   # g: Use all but the first
+                )
+            )
+        )
+
+        # g: Define formatting functions
+        def _format_int(val):
+            return f"{int(round(val))}"
+        
+        def _format_float(val):
+            if float(val).is_integer():
+                return f"{int(val)}"
+            return f"{val:.3g}"
+
+        # g: Apply formatting based on 'fmt'
+        if fmt == 'int':
+            df_['start_label'] = df_['start'].apply(_format_int)
+            df_['end_label'] = df_['end'].apply(_format_int)
+            # g: Check for single-integer steps
+            df_['is_step_1'] = (df_['end'].round().astype(int) - df_['start'].round().astype(int)) == 1
+        else: # g: 'float' or other
+            df_['start_label'] = df_['start'].apply(_format_float)
+            df_['end_label'] = df_['end'].apply(_format_float)
+            df_['is_step_1'] = False # g: Don't simplify float ranges by default
+
+        # g: Create labels
+        df_['label'] = df_.apply(
+            lambda x: x["end_label"]
+            if x["is_step_1"]
+            else f"({x['start_label']},{x['end_label']}]",
+            axis=1,
+        )
+
+        # g: Handle first and last bin labels as in the original logic
+        if not df_.iloc[0]["is_step_1"]:
+            df_.loc[df_.index[0], "label"] = r"$\leqslant$" + df_.iloc[0]["end_label"]
+        
+        if len(df_) > 1 and not df_.iloc[-1]["is_step_1"]:
+            df_.loc[df_.index[-1], "label"] = f"$>${df_.iloc[-1]['start_label']}"
     
-    df_ = (
-        pd.DataFrame(
-            dict(
-                start=bins,
-                end=pd.Series(bins).shift(-1),
-            )
-        )
-        .dropna()
-        .astype(dtype)
-        .assign(
-            label=lambda df: df.apply(
-                lambda x: x["end"]
-                if x["end"] - x["start"] == 1
-                else f"({x['start']},{x['end']}]",
-                axis=1,
-            )
-        )
-    )
-    ## first bin
-    x = df_.iloc[0, :]
-    if (x["end"] - x["start"]) > 1:
-        df_.loc[x.name, "label"] = r"$\leqslant$"+f"{x['end']}"  ## right-inclusive (])
-    ## last bin
-    x = df_.iloc[-1, :]
-    if (x["end"] - x["start"]) > 1:
-        df_.loc[x.name, "label"] = f"$>${x['start']}"  ## left-inclusive (()
-    return df_["label"].tolist()
+        bin_labels=df_["label"].tolist()
+        
+    ## qc
+    assert len(set(bins))-1==len(set(bin_labels)), (bins,bin_labels)
+    
+    logging.info(dict(zip(bins[1:],bin_labels)))
+    return bin_labels
