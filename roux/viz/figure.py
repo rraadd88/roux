@@ -8,6 +8,56 @@ import matplotlib.pyplot as plt
 
 from matplotlib.gridspec import GridSpec
 
+def fig_grid(
+    data,
+    func,    
+    kws_plot={},
+    **kws_fig,    
+    ):
+    """
+    Examples:
+        func=lambda data,ax,**kws_plot: plot_image(
+                data['path'].tolist()[0],
+                ax=ax,
+                **kws_plot,
+            )
+    """
+    import seaborn as sns
+    g = sns.FacetGrid(
+        data,
+        **kws_fig,
+    )
+    g.set_titles(
+        row_template="{row_name}",
+        col_template="{col_name}",
+        )
+    def _map_plot(*args, **kwargs):
+        ## extract the inputs
+        ax=plt.gca()
+        kwargs['plot_func'](
+            kwargs['data'],
+            ax=ax,
+            **kwargs['kws_plot'],
+        )
+        return ax
+    g.map_dataframe(
+        func=_map_plot,
+        plot_func=lambda data,ax,**kws_plot: func(
+                data['path'].tolist()[0],
+                ax=ax,
+                **kws_plot,
+            ),
+        kws_plot=kws_plot,
+        )
+    # for (row, col), ax in g.axes_dict.items():
+    #     ax.set(
+    #         xlim=[xlims.loc[col,'min'],xlims.loc[col,'max']]
+    #     )
+
+    # --- 4. Rotate the Right Margin Titles (by finding Text objects) ---
+    return g
+
+## subplots in relaation to figs
 def gca(cols_max=2):
     """
     Dynamically adds a subplot, creating new rows after cols_max is reached.

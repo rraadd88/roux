@@ -2766,17 +2766,15 @@ class log:
         ):
         if isinstance(subset,str):
             subset=[subset]
+        if subset is None:
+            subset=self._obj.columns.tolist()
+            
         logging.info(
             'describe:\n'+(
-                self
-                    ._obj
+                self._obj
+                    .loc[:,subset]
                     .describe(
-                        **{
-                            **dict(
-                                include=subset,
-                            ),
-                            **kws,
-                        },
+                        **kws,
                     ).T
                 .to_string()
             )
