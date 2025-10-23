@@ -25,6 +25,9 @@ def compare_classes(
     data=None,
     col_id=None,
 
+    order_x=None,
+    order_y=None,
+    
     out_table=False,
 ):
     """
@@ -55,6 +58,18 @@ def compare_classes(
     if df1.isnull().any().any():
         logging.warning("fillna=0")
         df1=df1.fillna(0)
+    
+    from pandas.api.types import is_string_dtype
+    if order_x is None:
+        order_x=sorted(df1.index.tolist())
+        if is_string_dtype(df1.index.dtype):
+            logging.warning(f"order_x inferred: {order_x}")
+    if order_y is None:
+        order_y=sorted(df1.columns.tolist())
+        if is_string_dtype(df1.columns.dtype):
+            logging.warning(f"order_y inferred: {order_y}")
+
+    df1=df1.loc[order_x,order_y]
     
     ## stats
     if df1.shape != (2, 2) or method == "chi2":

@@ -1573,37 +1573,6 @@ def replace_inf(
     return df
     
 ## helper to get_bins
-def get_bin_labels(
-    bins: list,
-    dtype: str = "int",  # todo: detect
-):
-    df_ = (
-        pd.DataFrame(
-            dict(
-                start=bins,
-                end=pd.Series(bins).shift(-1),
-            )
-        )
-        .dropna()
-        .astype(dtype)
-        .assign(
-            label=lambda df: df.apply(
-                lambda x: x["end"]
-                if x["end"] - x["start"] == 1
-                else f"({x['start']},{x['end']}]",
-                axis=1,
-            )
-        )
-    )
-    ## first bin
-    x = df_.iloc[0, :]
-    if (x["end"] - x["start"]) > 1:
-        df_.loc[x.name, "label"] = r"$\leq$"+f"{x['end']}"  ## right-inclusive (])
-    ## last bin
-    x = df_.iloc[-1, :]
-    if (x["end"] - x["start"]) > 1:
-        df_.loc[x.name, "label"] = f"$>${x['start']}"  ## left-inclusive (()
-    return df_["label"].tolist()
 
 @to_rd
 def get_qbins(df: pd.DataFrame, col: str, bins: list, labels: list = None, **kws_qcut):
@@ -1655,10 +1624,11 @@ def get_bins(
                 )
             logging.info(f"bins={bins}" )
         if infer_labels and labels is None:
-            if df[col].dtype == "int" or dtype == "int":
+            if df[col].dtype == "int" or dtype in ["int",'max']:
+                from roux.lib.str import get_bin_labels
                 labels = get_bin_labels(
                     bins=bins,
-                    # dtype='int',
+                    dtype=dtype,
                 )
         return df.assign(
             **{

@@ -764,6 +764,9 @@ def show_crosstab_stats(
     data: pd.DataFrame,
     cols: list=None,
     
+    order_x=None,
+    order_y=None,
+    
     method: str = None,
 
     alpha: float = 0.05,
@@ -771,7 +774,7 @@ def show_crosstab_stats(
     show_stat=True,
     show_pval=True,
     linebreak: bool = False,
-    
+
     loc: str = None,
     xoff: float = 0,
     yoff: float = 0,
@@ -803,6 +806,9 @@ def show_crosstab_stats(
         x=data[cols[0]] if cols is not None else None,
         y=data[cols[1]] if cols is not None else None,
         
+        order_x=order_x,
+        order_y=order_y,
+        
         method=method,
         data=data,
         
@@ -816,31 +822,41 @@ def show_crosstab_stats(
         stat_label = r"${\chi}^2$"
     else:
         stat_label = "OR"
-
-    if loc == "bottom":
-        kws_set_label = dict(
-            x=0.5 + xoff,
-            y=-0.2 + yoff,
-            ha="center",
-            va="center",
-        )
-    elif loc == "right":
-        kws_set_label = dict(
-            x=1 + xoff,
-            y=0 + yoff,
-            ha="left",
-            va="bottom",
-        )
-    elif loc == "center":
-        kws_set_label = dict(
-            x=0.5 + xoff,
-            y=0.5 + yoff,
-            ha="center",
-            va="center",
-        )
-    else:
-        raise ValueError(loc)
         
+    if 'x' not in kws_set_label and 'y' not in kws_set_label:
+        if loc == "bottom":
+            kws_set_label = {
+                **dict(
+                    x=0.5 + xoff,
+                    y=-0.2 + yoff,
+                    ha="center",
+                    va="center",
+                ),
+                **kws_set_label,
+            }
+        elif loc == "right":
+            kws_set_label = {
+                **dict(
+                    x=1 + xoff,
+                    y=0 + yoff,
+                    ha="left",
+                    va="bottom",
+                ),
+                **kws_set_label,
+            }
+        elif loc == "center":
+            kws_set_label = {
+                **dict(
+                    x=0.5 + xoff,
+                    y=0.5 + yoff,
+                    ha="center",
+                    va="center",
+                ),
+                **kws_set_label,
+            }
+        else:
+            raise ValueError(loc)
+            
     from roux.viz.ax_ import set_label
     set_label(
         s=(f"{stat_label}={stat:.1f}" if show_stat else '')

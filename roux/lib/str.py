@@ -803,3 +803,98 @@ def to_formula(
     if reverse:
         replaces = {v: k for k, v in replaces.items()}
     return replaces
+
+## labels
+def get_bin_labels_max(bins: list[float]) -> list[str]:
+    """
+    Converts a list of bin thresholds into two mutually exclusive
+    string labels for data categorization, based on the non-maximum
+    thresholds in the list.
+
+    The function assumes the input list contains at least one relevant cutoff
+    point (e.g., if max is 2, the cutoff is 1).
+
+    Example:
+    bins=[0.0, 1.0, 2.0] -> ['<=1.0', '>1.0']
+    bins=[0.5, 1.0] -> ['>=0.5', '<0.5']
+
+    Args:
+        bins: A list of float thresholds defining the bin boundaries (must be ascending).
+
+    Returns:
+        A list of exactly two string labels corresponding to the primary cutoff.
+    """
+    
+    # 1. Quality Check: Ensure input bins are strictly ascending
+    if bins != sorted(bins):
+        raise ValueError("Input 'bins' list must be in ascending order.")
+
+    # 2. Get unique, sorted bins in descending order
+    # Note: We sort descending here for internal logic (finding the cutoff), 
+    # but the ascending check above ensures canonical input.
+    unique_bins_desc = sorted(list(set(bins)), reverse=True)
+    
+    if len(unique_bins_desc) < 2:
+        # Handle cases with 0 or 1 unique bin (e.g., [1.0] or [])
+        if len(unique_bins_desc) == 1:
+            return [f'={unique_bins_desc[0]:.3g}'] # Return a single equality label
+        return []
+
+    # 3. Determine the primary cutoff point (the second highest unique value)
+    # The highest value (e.g., 2.0 or 1.0) is the conceptual maximum.
+    # The next value is the meaningful cutoff (e.g., 1.0 in [2.0, 1.0, 0.0])
+    cutoff_point = unique_bins_desc[1]
+    
+    # Format precision
+    if isinstance(cutoff_point, int):
+        cutoff_label = f"{cutoff_point}"
+    else:
+        # Default to one decimal place for floats
+        cutoff_label = f"{cutoff_point:.3g}"
+
+    # 4. Generate the two required labels: '<=cutoff' and '>cutoff'
+    
+    # Label 1: Less than or equal to the cutoff point (the inclusive bin)
+    # Using $\leqslant$ as requested (or \leq)
+    label_le = f'$\leqslant${cutoff_label}'
+    
+    # Label 2: Greater than the cutoff point (the exclusive bin)
+    label_gt = f'$>${cutoff_label}'
+    
+    return [label_le, label_gt]
+
+def get_bin_labels(
+    bins: list,
+    dtype: str = "int",  # todo: detect
+):
+    # If the specialized max-logic is requested, use the custom function immediately.
+    if dtype == 'max':    
+        return get_bin_labels_max(bins)
+    
+    df_ = (
+        pd.DataFrame(
+            dict(
+                start=bins,
+                end=pd.Series(bins).shift(-1),
+            )
+        )
+        .dropna()
+        .astype(dtype)
+        .assign(
+            label=lambda df: df.apply(
+                lambda x: x["end"]
+                if x["end"] - x["start"] == 1
+                else f"({x['start']},{x['end']}]",
+                axis=1,
+            )
+        )
+    )
+    ## first bin
+    x = df_.iloc[0, :]
+    if (x["end"] - x["start"]) > 1:
+        df_.loc[x.name, "label"] = r"$\leqslant$"+f"{x['end']}"  ## right-inclusive (])
+    ## last bin
+    x = df_.iloc[-1, :]
+    if (x["end"] - x["start"]) > 1:
+        df_.loc[x.name, "label"] = f"$>${x['start']}"  ## left-inclusive (()
+    return df_["label"].tolist()

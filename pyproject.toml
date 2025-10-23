@@ -27,6 +27,8 @@ dependencies = [
     "tqdm>=4.38.0", # logging
     # "regex>=2018.7.11",
 ]
+[options]
+python_requires = >=3.8
 
 # [project.optional-dependencies]
 # interactive = [

@@ -509,7 +509,7 @@ def format_ticklabels(
             for tick in getattr(ax, f"get_{axis}ticklabels")():
                 tick.set_fontname(font)
                 
-        if axis=='y':
+        if axis=='y' and ax.axison and ('\n' in ax.get_yticklabels()[0].get_text() if len(ax.get_yticklabels())>0 else True):
             ## where the text is usually ..
             ## if any new line brackets e.g. (n=10)
             _=set_ticklabels_color(
