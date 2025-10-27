@@ -147,7 +147,7 @@ def plot_barh_btob(
     ax.text(
         x=0,
         y=1.15,
-        s=f"{col_left.replace('\n',' ')} ",
+        s=col_left.replace('\n',' ')+" ",
         ha='right',
         # va='bottom',
         transform=transforms.blended_transform_factory(
@@ -158,7 +158,7 @@ def plot_barh_btob(
     ax.text(
         x=0,
         y=1.15,
-        s=f" {col_right.replace('\n',' ')}",
+        s=" "+col_right.replace('\n',' '),
         ha='left',
         # va='bottom',
         transform=transforms.blended_transform_factory(

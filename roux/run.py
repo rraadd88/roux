@@ -48,7 +48,7 @@ def peek_table(
         use_dir_paths=False
     if not_use_paths: 
         use_paths=False
-        
+    
     from roux.lib.io import read_table
     df_=read_table(
         p,
@@ -56,7 +56,11 @@ def peek_table(
         use_paths=use_paths,
         **kws,
     )
-    logging.info(df_.shape)
+    from roux.lib.df import _get_preview_log_str
+    # logging.info(df_.shape)
+    logging.info(
+        _get_preview_log_str(df_.head(1))
+    )
     if cols_desc:
         return df_[cols_desc].describe()
     else:        

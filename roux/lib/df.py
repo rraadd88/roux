@@ -2283,21 +2283,21 @@ def check_corr(
     data,
     x,
     y,
-    method='pearson',
+    method='spearman',
     resample=False,
     verbose=True,
 
     validate=None, 
     
     plot=False,
-    
-    out=False,
+    kws_plot={},
+    kws_plot_set={},
     ax=None,
     
-    kws_plot_set={},
-    kws_plot={},
+    out=False,
+    
     **kws_get_corr,
-    ):
+    ):    
     if validate in [False,'']:
         validate=None
     kws_stat={
@@ -2307,7 +2307,7 @@ def check_corr(
         ),
         **kws_get_corr,
     }
-    if not plot:
+    if plot in [False, None]:
         from roux.stat.corr import get_corr
         res = get_corr(
             data[x],
@@ -2316,7 +2316,26 @@ def check_corr(
             verbose=verbose,
             **kws_stat,
         )    
-    else:
+    else:    
+        if plot==True:
+            plot={}
+                
+        if len(kws_plot)!=0 or len(kws_plot_set)!=0:
+            ## old: plot=kws_plot['plot']
+            ## new: plot = kws_plot (with plot and set)
+            ## deprecate kws_plot, kws_plot_set         
+            kws_plot={
+                'plot':{
+                    **kws_plot,
+                    **plot,
+                },
+                'set':kws_plot_set,
+            }
+            del kws_plot_set
+        else:
+            kws_plot=plot
+        del plot            
+                    
         from roux.viz.scatter import plot_scatter
         ax=plot_scatter(
             data,
@@ -2327,11 +2346,11 @@ def check_corr(
                 **dict(
                     ax=ax
                 ),
-                **kws_plot
+                **kws_plot.get('plot',{})
             },
         )
         ax.set(
-            **kws_plot_set
+            **kws_plot.get('set',{})
         )
         res=ax.stats
     df1=pd.Series(res).to_frame().T
@@ -2339,7 +2358,7 @@ def check_corr(
         logging.info(f'{data.name if hasattr(data,"name") else ""}{x} - {y}\n'+df1.to_string())
     if validate is not None:
         assert_expr(df1,validate)
-        logging.info(df1)
+        # logging.info(df1)
     if out:
         return df1
     else:
@@ -2365,16 +2384,11 @@ def check_diff(
     kws_plot={},
     kws_plot_set={},
     **kws_stats,
-    ):
-    # kws_stat={
-    #     **dict(
-    #         method=method,
-    #     ),
-    #     **kws_stats,
-    # }
+    ):        
+    
     if validate in [False,'']:
         validate=None
-    if not plot:
+    if plot in [False, None]:
         from roux.stat.diff import get_diff_inferred
         res,_=get_diff_inferred(
             data,
@@ -2386,6 +2400,26 @@ def check_diff(
             ),
         )
     else:
+        ## plot --> kws_plot, kws_plot_set, deprecate kws_plot, kws_plot_set         
+        if plot==True:
+            plot={}
+        kws_plot={
+            'plot':{
+                **{
+                    'kind':dict(
+                        box=dict(
+                            showmeans=True,
+                        )
+                    )
+                }
+                **kws_plot,
+                **plot,
+            },
+            'set':kws_plot_set,
+        }
+        del plot
+        del kws_plot_set
+        
         from roux.viz.dist import plot_dists
         ax=plot_dists(
             data,
@@ -2400,11 +2434,11 @@ def check_diff(
                 **dict(
                     ax=ax
                 ),
-                **kws_plot
+                **kws_plot.get('plot',{})
             },
         )
         ax.set(
-            **kws_plot_set
+            **kws_plot.get('set',{})
         )
         res=ax.stats
     # df1=pd.Series(res).to_frame().T
@@ -2415,13 +2449,221 @@ def check_diff(
         logging.info(f'{data.name if hasattr(data,"name") else ""}{x} - {y}\n'+df1.to_string())
     if validate is not None:
         assert_expr(df1,validate)
-        logging.info(df1)
+        # logging.info(df1)
     if out:
         return df1
     else:
         #pipe
         return data
 
+@to_rd
+def check_sass(
+    data,
+    x,
+    y,
+
+    order_x=None,
+    order_y=None,
+
+    method=None, 
+    verbose=True,
+
+    validate=None, 
+    
+    plot=False, 
+    ax=None,
+    
+    out=False,
+    **kws_stats,
+    ):
+
+    if validate in [False,'']:
+        validate=None
+        
+    kws_stats={
+        **kws_stats,
+        **dict(
+            method=method,
+            order_x=order_x,
+            order_y=order_y,
+        ),
+    }
+    
+    if plot in [False, None]:
+        from roux.stat.diff import compare_classes
+        res = compare_classes(
+            # data=data,
+            x=data[x],
+            y=data[y],
+            
+            **kws_stats
+        )
+    else:
+        if plot==True:
+            plot={}
+        kws_plot=plot
+        del plot
+        
+        from roux.viz.sets import plot_sets
+        ax=plot_sets(
+            data,
+            x=x,
+            y=y,
+            kws_stats=kws_stats,
+            **{
+                **dict(ax=ax),
+                **kws_plot.get('plot',{}),
+            }
+        )
+        ax.set(
+            **kws_plot.get('set',{})
+        )
+        res=ax.stats
+    df1=pd.Series(res).to_frame().T.drop(['ax','table'],axis=1,errors='ignore')
+    if df1 is None:
+        return None
+    if verbose:
+        logging.info(f'{data.name if hasattr(data,"name") else ""}{x} - {y}\n'+df1.to_string())
+    if validate is not None:
+        assert_expr(df1,validate)
+        # logging.info(df1)
+    if out:
+        return df1
+    else:
+        #pipe
+        return data
+
+@to_rd
+def check_links(
+    data,
+    x,
+    y,
+    cols_id,
+    
+    xbins=2,
+    ybins=2,    
+
+    ## specific
+    kws_stats={},
+    # method={}, # mannwhitneyu
+    # validate={}, 
+    plot=False, 
+    ## common
+    verbose=True,
+    out=False,    
+    ):
+    kws_common=dict(
+        out=False,
+        verbose=verbose,
+    )
+    
+    df0=(
+        data
+            ## pre
+            .rd.assert_dense(
+                subset=cols_id
+            )
+            .log.dropna(
+                subset=[x,y],
+            )    
+    )
+    if isinstance(xbins,int):
+        df0=df0.rd.get_qbins(
+            x,
+            xbins,
+        )
+        col_xbin=f'{x} bin'
+        xbins=df0[col_xbin].sort_values().astype(str).unique().tolist()
+    if isinstance(ybins,int):
+        df0=df0.rd.get_qbins(
+            y,
+            ybins,
+        )
+        col_ybin=f'{y} bin'
+        ybins=df0[col_ybin].sort_values().astype(str).unique().tolist()
+    df0=(
+        df0
+        .astype(
+            {
+                col_xbin: str,
+                col_ybin: str,
+            }
+        )
+    )    
+
+    # if plot==True:
+    #     plot={k: dict(plot={}) for k in }
+        
+    ## get_ax
+    from roux.viz.figure import get_ax
+    kws_checks={}
+    for k in ['corr','diffx','diffy','sass']:
+        kws_checks[k]={
+            **kws_common,
+            **kws_stats.get(k[:4],{}),
+            **dict(
+                plot=plot,
+            ),
+        }        
+        if kws_checks[k]['plot'] in [False,None]:
+            continue
+        if plot==True:
+            kws_checks[k]['plot']={}
+        # if plot.get(k):
+        #     if isinstance(plot.get(k).get('plot'),dict):
+        # if kws_checks[k]['plot'].get('ax') is None:
+        #     
+        #     kws_checks[k]['plot']['ax']=get_ax('gca',cols_max=2)
+
+    # print(kws_checks)
+    
+    df1=(
+        df0
+            # stats
+            .pipe(
+                check_corr,
+                x=x,
+                y=y,
+                
+                ax=get_ax('gca',cols_max=2) if plot not in [False,None] else None,
+                **kws_checks['corr'],
+            )
+            .pipe(
+                check_diff,
+                x=x,
+                y=col_ybin,
+                cols_id=cols_id,
+
+                ax=get_ax('gca',cols_max=2) if plot not in [False,None] else None,
+                **kws_checks['diffx'],
+            )
+            .pipe(
+                check_diff,
+                x=col_xbin,
+                y=y,
+                cols_id=cols_id,
+                
+                ax=get_ax('gca',cols_max=2) if plot not in [False,None] else None,
+                **kws_checks['diffy'],
+            )
+            .pipe(
+                check_sass,
+                x=col_xbin,
+                y=col_ybin,
+
+                order_x=xbins,
+                order_y=ybins,
+
+                ax=get_ax('gca',cols_max=2) if plot not in [False,None] else None,
+                **kws_checks['sass'],
+            )
+    )
+
+    if out:
+        return df1
+    else:
+        #pipe
+        return data
 
 ## tables io
 def dict2df(

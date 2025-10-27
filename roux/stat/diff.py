@@ -18,26 +18,35 @@ from roux.lib.set import nunique
 
 
 def compare_classes(
-    x=None,
-    y=None,
+    x=None, # cols
+    y=None, # rows
     method=None,
 
     data=None,
     col_id=None,
 
-    order_x=None,
-    order_y=None,
+    order_x=None, # cols
+    order_y=None, # rows
     
     out_table=False,
+    # out_fmt=None,
 ):
     """
     Compare classes
     """
+    # data=(
+    #     data
+    #     .astype(
+    #         {c: str for c in [x,y]}
+    #     )
+    # )
+    
     if isinstance(x,pd.Series) and isinstance(y,pd.Series):
+        assert len(x)==len(y), (len(x),len(y)) 
         if len(x) == 0 or len(y) == 0:  # and (nunique(x+y)!=1):
             return np.nan, np.nan
         else:
-            df1 = pd.crosstab(x, y)
+            df1 = pd.crosstab(y,x)
     elif isinstance(x,str) and isinstance(y,str):
         df1=data.groupby([x,y])[col_id].nunique().unstack()
     elif x is None and y is None:
@@ -46,9 +55,9 @@ def compare_classes(
     else:
         raise ValueError("check arguments ..")
         
-    if df1.shape[0] == 0 or df1.shape[1] == 0:
+    if df1.shape[0] < 2 or df1.shape[1] < 2:
         return np.nan, np.nan
-
+            
     ## qcs
     from pandas.api.types import is_numeric_dtype
     assert df1.apply(lambda x: is_numeric_dtype(x)).all(), df1.apply(lambda x: is_numeric_dtype(x))
@@ -69,8 +78,20 @@ def compare_classes(
         if is_string_dtype(df1.columns.dtype):
             logging.warning(f"order_y inferred: {order_y}")
 
-    df1=df1.loc[order_x,order_y]
+    ## to strings
+    x_name=df1.columns.name
+    df1.columns=[str(s) for s in df1.columns] 
+    df1.columns.name=x_name
     
+    y_name=df1.index.name
+    df1.index=[str(s) for s in df1.index] 
+    df1.index.name=y_name
+    
+    order_x=[str(s) for s in order_x]
+    order_y=[str(s) for s in order_y]
+        
+    df1=df1.loc[order_y,order_x]
+        
     ## stats
     if df1.shape != (2, 2) or method == "chi2":
         stat, pval, _, _ = sc.stats.chi2_contingency(df1)
@@ -83,10 +104,16 @@ def compare_classes(
     else:
         raise ValueError(df1)
         
-    if not out_table:
-        return stat, pval
-    else:
-        return stat, pval, df1
+    # if not out_table:
+    #     return stat, pval
+    # else:
+    #     return stat, pval, df1
+    # out_fmt
+    return dict(
+        stat=stat,
+        P=pval,
+        table=df1
+    )
 
 def compare_classes_many(
     df1: pd.DataFrame,

@@ -81,7 +81,11 @@ def plot_intersection_counts(
     df1: pd.DataFrame,
     cols: list = None,
     kind: str = "table",
+    
     method: str = None,  #'chi2'|fe
+
+    pre_data=True,
+    
     show_counts: bool = True,
     show_pval: bool = True,
     confusion: bool = False,
@@ -120,53 +124,62 @@ def plot_intersection_counts(
     TODOs:
         1. Use `compare_classes` to get the stats.
     """
-    if cols is not None:
-        for i, c in enumerate(cols):
-            df1 = df1.log.dropna(subset=cols).assign(
-                **{c: lambda df: df[c].astype(str)}
+    if pre_data:
+        if cols is not None:
+            for i, c in enumerate(cols):
+                df1 = df1.log.dropna(subset=cols).assign(
+                    **{c: lambda df: df[c].astype(str)}
+                )
+                for l in [["True", "False"], ["yes", "no"]]:
+                    if df1[c].isin(l).all():
+                        sort_cols[i] = False
+                        break
+            dplot = pd.crosstab(df1[cols[0]], df1[cols[1]])
+        else:
+            dplot = df1.copy()
+        ##  dplot is crosstab
+        assert dplot.shape == (2, 2)
+        if rename_cols:
+            dplot = dplot.rename(
+                columns={True: dplot.columns.name, False: "not"},
+                index={True: dplot.index.name, False: "not"},
             )
-            for l in [["True", "False"], ["yes", "no"]]:
-                if df1[c].isin(l).all():
-                    sort_cols[i] = False
-                    break
-        dplot = pd.crosstab(df1[cols[0]], df1[cols[1]])
+            dplot.columns.name = None
+            dplot.index.name = None
+            if "not" in dplot.columns:
+                dplot = dplot.loc[:, [s for s in dplot.columns if s != "not"] + ["not"]]
+            if "not" in dplot.index:
+                dplot = dplot.loc[[s for s in dplot.index if s != "not"] + ["not"], :]
+                
+        if dplot.index.dtype == 'bool':
+            dplot.index=[str(s) for s in dplot.index]
+        if dplot.columns.dtype == 'bool':
+            dplot.columns=[str(s) for s in dplot.columns]
+        
+        dplot = (
+            dplot
+            .sort_index(
+                axis=0, ascending=sort_cols[0]
+            )
+            .sort_index(
+                axis=1, ascending=sort_cols[1]
+            )
+            )
+    
+        # dplot=dplot.sort_index(ascending=False,axis=1).sort_index(ascending=False,axis=0)
+        if order_y is None:
+            order_y = dplot.index.tolist()
+        if order_x is None:
+            order_x = dplot.columns.tolist()
+        dplot = dplot.loc[order_y, order_x]
     else:
         dplot = df1.copy()
-    ##  dplot is crosstab
-    assert dplot.shape == (2, 2)
-    if rename_cols:
-        dplot = dplot.rename(
-            columns={True: dplot.columns.name, False: "not"},
-            index={True: dplot.index.name, False: "not"},
-        )
-        dplot.columns.name = None
-        dplot.index.name = None
-        if "not" in dplot.columns:
-            dplot = dplot.loc[:, [s for s in dplot.columns if s != "not"] + ["not"]]
-        if "not" in dplot.index:
-            dplot = dplot.loc[[s for s in dplot.index if s != "not"] + ["not"], :]
-            
+
     if dplot.index.dtype == 'bool':
         dplot.index=[str(s) for s in dplot.index]
     if dplot.columns.dtype == 'bool':
         dplot.columns=[str(s) for s in dplot.columns]
     
-    dplot = (
-        dplot
-        .sort_index(
-            axis=0, ascending=sort_cols[0]
-        )
-        .sort_index(
-            axis=1, ascending=sort_cols[1]
-        )
-        )
-
-    # dplot=dplot.sort_index(ascending=False,axis=1).sort_index(ascending=False,axis=0)
-    if order_y is None:
-        order_y = dplot.index.tolist()
-    if order_x is None:
-        order_x = dplot.columns.tolist()
-    dplot = dplot.loc[order_y, order_x]
     if kind == "table":
         from roux.viz.heatmap import plot_table
 
@@ -191,11 +204,14 @@ def plot_intersection_counts(
             # ylabel=None if not dplot_.index.name is None else dplot_.index.name,
         )
         if show_counts:
-            ## show counts
-            for pa, n in zip(ax.get_children()[:4], dplot.melt()["value"].tolist()):
-                bbox = pa.get_bbox()  # left, bottom, width, height
-                x, y = np.mean([bbox.x0, bbox.x1]), np.mean([bbox.y0, bbox.y1])
-                ax.text(s=n, x=x, y=y, va="center", ha="center")
+            if not pre_data:
+                logging.warning("can't show_counts because pre_data=False ..")
+            else:
+                ## show counts
+                for pa, n in zip(ax.get_children()[:4], dplot.melt()["value"].tolist()):
+                    bbox = pa.get_bbox()  # left, bottom, width, height
+                    x, y = np.mean([bbox.x0, bbox.x1]), np.mean([bbox.y0, bbox.y1])
+                    ax.text(s=n, x=x, y=y, va="center", ha="center")
         if "loc" not in kws_show_stats:
             kws_show_stats["loc"] = "center"
     else:
@@ -203,15 +219,77 @@ def plot_intersection_counts(
     if show_pval:
         from roux.viz.annot import show_crosstab_stats
         show_crosstab_stats(
-            df1,
+            data=df1,
             cols=cols,
             ax=ax,
             **kws_show_stats,
         )
-    ax.legend(ncols=2)
+    # ax.legend(ncols=2)
     return ax
 
-
+def plot_sets(
+    data,
+    x,
+    y,
+    order_x=None,
+    order_y=None,    
+    kws_stats={},
+    
+    ax=None,
+    **kws_plot_intersection_counts,
+    ):
+    if ax is None:
+        ax=plt.gca()
+        
+    # if order_x is None and kws_stats.get(order_x) is not None:
+    #     order_x=kws_stats['order_x']
+    #     del kws_stats['order_x']
+    # if order_y is None and kws_stats.get(order_y) is not None:
+    #     order_y=kws_stats['order_y']
+    #     del kws_stats['order_y']
+        
+    from roux.viz.annot import show_crosstab_stats
+    # %run ../../roux/roux/viz/annot.py
+    
+    res=show_crosstab_stats(
+        **{
+            **dict(
+                data=data,
+                cols=[x,y],
+                order_x=order_x,
+                order_y=order_y,        
+                loc='bottom',
+            ),
+            **kws_stats
+        },
+    )
+    data1=res['table']
+    # sns.heatmap(
+    #     data1,
+    #     ax=ax
+    # )
+    # from roux.viz.sets import plot_intersection_counts
+    # %run ../../roux/roux/viz/sets.py
+    plot_intersection_counts(
+        data1,
+        **{
+            **dict(
+                kind='bar',
+                pre_data=False,
+                show_pval=False,
+                perc_counts=True,
+            ),
+            **kws_plot_intersection_counts,
+        },
+        kws_show_stats=dict(
+            pval=res['P'],
+            stat=res['stat'],
+        ),
+        ax=ax,
+    )
+    ax.stats=res
+    return ax
+    
 def plot_intersections(
     ds1: pd.Series,
     item_name: str = None,
@@ -346,8 +424,7 @@ def plot_intersections(
     #     if intersections_ylabel
     #     if not post_fun is None: post_fun(ax['intersections'])
     return d
-
-
+    
 def plot_enrichment(
     data: pd.DataFrame,
     x: str,

@@ -761,7 +761,10 @@ def show_scatter_stats(
     return ax    
 
 def show_crosstab_stats(
-    data: pd.DataFrame,
+    stat=None,
+    pval=None,
+    
+    data: pd.DataFrame=None,
     cols: list=None,
     
     order_x=None,
@@ -801,24 +804,29 @@ def show_crosstab_stats(
     Returns:
         plt.Axes: `plt.Axes` object.
     """
-    from roux.stat.diff import compare_classes
-    stat, pval, data_ = compare_classes(
-        x=data[cols[0]] if cols is not None else None,
-        y=data[cols[1]] if cols is not None else None,
+    if ax is None:
+        ax=plt.gca()
         
-        order_x=order_x,
-        order_y=order_y,
-        
-        method=method,
-        data=data,
-        
-        out_table=True,
-        
-        **kws_stats
-    )        
-    logging.info(f"stat={stat},pval={pval}")
+    if stat is None and pval is None:
+        from roux.stat.diff import compare_classes
+        res = compare_classes(
+            x=data[cols[0]] if cols is not None else None,
+            y=data[cols[1]] if cols is not None else None,
+            
+            order_x=order_x,
+            order_y=order_y,
+            
+            method=method,
+            data=data,
+                    
+            **kws_stats
+        )        
 
-    if data_.shape != (2, 2) or method == "chi2":
+        stat=res.get('stat')
+        pval=res.get('P')
+        logging.info(f"stat={stat},pval={pval}")
+
+    if res.get('table').shape != (2, 2) or method == "chi2":
         stat_label = r"${\chi}^2$"
     else:
         stat_label = "OR"
@@ -869,8 +877,12 @@ def show_crosstab_stats(
         ax=ax,
         **kws_set_label,
     )
-    return ax
-
+    return {
+        **res,
+        **dict(
+                ax=ax,
+            ),
+        }
 
 def show_confusion_matrix_stats(
     df_: pd.DataFrame, ax: plt.Axes = None, off: float = 0.5
