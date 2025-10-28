@@ -9,7 +9,7 @@ import logging
 import matplotlib.pyplot as plt
 import matplotlib.transforms as transforms
 
-from roux.lib.str import replace_many
+from roux.lib.str import replace_many, capitalize_first
 
 def set_axes_minimal(
     ax,
@@ -407,12 +407,16 @@ def set_ticklabels_color(
                 if label_str:
                      # x=-0.02 positions text slightly left of the y-axis spine
                      set_text_multicolored(
-                         x=-0.02, y=tick_val, s=label_str,
-                         # sep=sep,
                          ax=ax,
-                         transform=transform, ha='right', 
-                         # va='center',
-                         **kwargs
+                         **{
+                             **dict(
+                                 x=-0.02, y=tick_val, s=label_str,
+                                 # sep=sep,
+                                 transform=transform, ha='right', 
+                                 # va='center',
+                             ),
+                             **kwargs,
+                         }
                      )
     
         elif axis == 'x':
@@ -428,12 +432,17 @@ def set_ticklabels_color(
                 if label_str:
                     # y=-0.02 positions text slightly below the x-axis spine
                     set_text_multicolored(
-                        x=tick_val, y=-0.02, s=label_str,
-                        # sep=sep,
                         ax=ax,
-                        transform=transform, ha='center', 
-                        # va='top',
-                        **kwargs
+                        **{
+                            **dict(
+                                x=tick_val, y=-0.1, s=label_str,
+                                # sep=sep,
+                                transform=transform,
+                                ha='center', 
+                                # va='top',
+                            ),
+                            **kwargs
+                        }
                     )
         else:
             raise ValueError("axis must be either 'x' or 'y'")
@@ -886,7 +895,7 @@ def format_legends(
         plt.Axes: `plt.Axes` object.
     """
     handles, labels = ax.get_legend_handles_labels()
-    labels = [str(s).capitalize() for s in labels]
+    labels = [capitalize_first(str(s)) for s in labels]
     kws_legend = {
         **dict(
             borderpad=0,
@@ -903,7 +912,9 @@ def format_legends(
         **{
             ## inferred
             **dict(
-                title=ax.get_legend().get_title().get_text().capitalize()
+                title=capitalize_first(
+                    ax.get_legend().get_title().get_text()
+                )
                     if ax.get_legend() is not None
                     else None,
             ),

@@ -14,8 +14,10 @@ def set_text_multicolored(
     x: float = None,
     y: float = None,
     s: str = None,
-    sep: str = None,
-
+    
+    sep: str = None,    
+    rsplit=False,
+    
     color: any = None,
     color2_alpha=0.5,
     
@@ -90,7 +92,11 @@ def set_text_multicolored(
         if '\n' in s:
             sep='\n'
             
-    parts = s.split(sep, 1)
+    if not rsplit:
+        parts = s.split(sep, 1)
+    else:
+        parts = s.rsplit(sep, 1)
+        
     string_part1 = parts[0]
     string_part2 = parts[1] if len(parts) > 1 else ""
 
@@ -98,19 +104,33 @@ def set_text_multicolored(
     # kwargs.setdefault('ha', 'center')
 
     # 1. Plot the first part, aligned by its bottom edge
-    ax.text(x, y, string_part1,
-            va='bottom' if sep =='\n' else 'center',
-            ha=ha if sep =='\n' else 'right',
-            color=color1,
+    ax.text(
+        x,
+        y,
+        string_part1,
+        **{
+            **dict(
+                va='bottom' if sep =='\n' else 'center',
+                ha=ha if sep =='\n' else 'right',
+                color=color1,
+            ),
             **kwargs,
-           )
+        }
+       )
 
     # 2. Plot the second part, aligned by its top edge
-    ax.text(x, y, string_part2,
-            va='top' if sep =='\n' else 'center',
-            ha=ha if sep =='\n' else 'left',
-            color=color2,
+    ax.text(
+        x,
+        y,
+        string_part2,
+        **{
+            **dict(
+                va='top' if sep =='\n' else 'center',
+                ha=ha if sep =='\n' else 'left',
+                color=color2,
+            ),
             **kwargs,
-            )
+        }
+        )
 
     return ax

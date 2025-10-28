@@ -99,6 +99,8 @@ def set_theme(
     # scale
     plt.rc("figure", figsize=(3, 3))
     plt.rc("figure.subplot", wspace=0.3, hspace=0.3)
+    plt.rcParams['figure.titlesize'] = fontsize
+    # plt.rcParams['figure.title_fontfamily'] = font
     # sns.set_context('notebook') # paper < notebook < talk < poster
 
 

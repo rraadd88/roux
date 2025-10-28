@@ -3,7 +3,12 @@
 import re
 import logging
 
-
+def capitalize_first(s):
+    """ Capitalize the first letter and append the rest of the string"""
+    if not s:
+        return s
+    return s[0].upper() + s[1:]
+    
 # convert
 def substitution(s, i, replaceby):
     """Substitute character in a string.

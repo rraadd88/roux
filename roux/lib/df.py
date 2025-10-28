@@ -2411,7 +2411,7 @@ def check_diff(
                             showmeans=True,
                         )
                     )
-                }
+                },
                 **kws_plot,
                 **plot,
             },
