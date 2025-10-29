@@ -410,7 +410,7 @@ def plot_dists(
                 ),
                 **kind['box'],
             }
-            if not 'point' in kind:
+            if 'point' not in kind:
                 kind['point']={}
             kind['point']={
                 **kind_defaults['point'],

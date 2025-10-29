@@ -7,7 +7,6 @@ __all__ = ['set_text_multicolored']
 """text of plotting functions."""
 
 import matplotlib.pyplot as plt
-import numpy as np
 from matplotlib.colors import to_rgba
 from matplotlib.text import Text
 def set_text_multicolored(
