@@ -6,7 +6,6 @@ __all__ = ['get_patch_centroids']
 # %% ../../examples/roux_viz_shapes.ipynb 2
 """shapes of plotting functions."""
 
-import matplotlib.pyplot as plt
 import numpy as np
 def get_patch_centroids(
     patch_collection
