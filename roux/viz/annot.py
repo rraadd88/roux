@@ -15,7 +15,13 @@ def annot_side_curved(
     data,
     colx: str,
     coly: str,
+        
     col_label: str,
+    
+    ## fixed text pos
+    text_x=None,
+    text_y=None,
+    
     off: float=0.5,
     lim: tuple=None,
     limf: tuple=None, ## limits as fractions
@@ -25,6 +31,8 @@ def annot_side_curved(
     ax=None,
     test: bool = False,
     kws_text={},
+    
+    text_multicolored=False,
     **kws_line,
 ):
     """Annot elements of the plots on the of the side plot using bezier lines.
@@ -71,6 +79,7 @@ def annot_side_curved(
             rotation=90,
         )
     ## sorted labels
+    
     data1 = (
         data
         .sort_values(
@@ -91,8 +100,8 @@ def annot_side_curved(
                     lambda x: getattr(
                         (
                             ax.text(
-                                x["x"],
-                                x["y"],
+                                x=x["x"],
+                                y=x["y"],
                                 s=x[col_label],
                                 **{
                                     **kws_text_loc,
@@ -109,6 +118,33 @@ def annot_side_curved(
             }
         )
     )
+
+    if text_multicolored not in [False, None]:
+        if isinstance(text_multicolored,dict):
+            kws_text_multicolored=text_multicolored
+        else:
+            kws_text_multicolored={}
+        for s in data1[col_label].unique():
+            try:
+                from roux.viz.text import set_text_multicolored    
+                text_func=set_text_multicolored  
+        
+                from roux.viz.figure import get_text
+                ts=get_text(
+                    s,
+                    # fig=fig,
+                    ax=ax,
+                )
+                # assert len(t)==1, t
+                for t in ts:
+                    from roux.viz.text import set_text_multicolored        
+                    set_text_multicolored(
+                        s=t,
+                        **kws_text_multicolored,
+                    )
+            except Exception as e:
+                logging.error(str(e))
+    
     # print(data1)
     # return data1
     ## lines
@@ -123,7 +159,11 @@ def annot_side_curved(
     data2.apply(
         lambda x: plot_bezier(
             [x[colx], x[coly]],
-            [x["x_text"], x["y"]] if loc=='right' else [x["x"], x["y_text"]],
+            (
+                [(x["x_text"] if text_x is None else text_x), x["y"]]
+                    if loc=='right' else
+                [x["x"], (x["y_text"] if text_y is None else text_y)]
+        ),
             direction='h' if loc=='right' else 'v',
             ax=ax,
             **{
@@ -151,6 +191,11 @@ def annot_side(
     
     ## comp. with curved
     col_label: str = None,
+
+    ## fixed text pos
+    text_x=None,
+    text_y=None,
+    
     off: float=0.5,
     lim: tuple=None,
     limf: tuple=None, ## limits as fractions
@@ -166,14 +211,18 @@ def annot_side(
     offymin: float = 0.1,
     offymax: float = 0.9,
     length_axhline: float = 3,
+    
     text=True,
     text_offx: float = 0,
     text_offy: float = 0,
+    text_multicolored=False,
+    
     invert_xaxis: bool = False,
     break_pt: int = 25,
     va: str = "bottom",
     zorder: int = 2,
-    color: str = "gray",
+    
+    color: str = "gray",    
     kws_line: dict = {},
     kws_scatter: dict = {},  #'zorder':2,'alpha':0.75,'marker':'|','s':100},
     
@@ -216,6 +265,11 @@ def annot_side(
             colx = colx, #: str,
             coly = coly, #: str,
             col_label = col_label, #: str,
+
+            ## fixed text pos
+            text_x=text_x,
+            text_y=text_y,
+            
             off = off, #: float=0.5,
             lim = lim, #: tuple=None,
             limf = limf, #: tuple=None, ## limits as fractions
@@ -225,6 +279,8 @@ def annot_side(
             ax = ax, #=None,
             test = test, #: bool = False,
             kws_text = kws_text, #={},
+            
+            text_multicolored=text_multicolored,
             
             **kws_line,
         )

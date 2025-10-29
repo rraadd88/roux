@@ -63,6 +63,8 @@ def to_plotp(
         ax = plt.gca()
     if isinstance(ax, str):
         return ax
+
+    ## else infer path
     if isinstance(suffix, (list, tuple)):
         suffix = "_".join(suffix)
     suffix = suffix.replace("/", "_")
@@ -87,7 +89,7 @@ def savefig(
     plotp: str,
     tight_layout: bool = True,
     bbox_inches: list = None,  # overrides tight_layout
-    fmts: list = ["png"],
+    fmts: list = ['pdf',"png"],
     savepdf: bool = False,
     normalise_path: bool = True,
     replaces_plotp: dict = None,

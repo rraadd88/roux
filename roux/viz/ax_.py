@@ -6,6 +6,7 @@ import numpy as np
 import logging
 
 ## viz basic
+import matplotlib
 import matplotlib.pyplot as plt
 import matplotlib.transforms as transforms
 
@@ -1086,6 +1087,60 @@ def set_legends_merged(
     )  # .get_frame().set_edgecolor((0.95,0.95,0.95))
 
 
+def get_legend2param(ax: plt.Axes) -> dict[str, str]:
+    """
+    Extracts a dictionary mapping legend label strings to their colors 
+    from the legend attached to the given Axes object.
+
+    Args:
+        ax: The matplotlib.axes.Axes object containing the legend.
+
+    Returns:
+        A dictionary where keys are legend label strings and values are color strings (hex or name).
+    """
+    # g: Check if a legend exists on the Axes
+    legend = ax.get_legend()
+    if legend is None:
+        return {}
+    
+    color_map = {}
+    
+    # g: Get the text objects (labels)
+    labels_list = [text.get_text() for text in legend.get_texts()]
+    
+    # g: Get the handles associated with the labels
+    # g: FIX: Changed deprecated 'legendHandles' to the correct 'legend_handles' property.
+    handles_list = legend.legend_handles
+    
+    # g: Quality Check: Check if the handles and labels match
+    if len(labels_list) != len(handles_list):
+        raise ValueError("Mismatched count of legend labels and handles.")
+    
+    for label, handle in zip(labels_list, handles_list):
+        color = None
+        
+        # g: Lines (e.g., from ax.plot)
+        if isinstance(handle, matplotlib.lines.Line2D):
+            # g: Get the color from the Line2D object
+            color = handle.get_color()
+            
+        # g: Patches (e.g., from ax.bar, ax.hist)
+        elif isinstance(handle, matplotlib.patches.Rectangle):
+            # g: Get the facecolor from the Patch object
+            color = handle.get_facecolor()
+            
+            # g: Convert RGB/RGBA tuple to hex string for cleaner output
+            if isinstance(color, tuple):
+                # g: Use Matplotlib utility to format RGB/RGBA tuple to hex string
+                color = to_hex(color, keep_alpha=True)
+            
+        # g: For other handle types, additional checks would be added here.
+        
+        if color is not None:
+            color_map[label] = color
+            
+    return color_map
+    
 def set_legend_custom(
     ax: plt.Axes,
     legend2param: dict,

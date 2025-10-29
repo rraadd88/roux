@@ -52,22 +52,39 @@ def set_text_multicolored(
         
         # Extract original text properties to pass them along
         text_props = {
-            'color' : text_obj.get_color(),
-            'ha': text_obj.get_ha(),
-            'fontsize': text_obj.get_fontsize(),
-            'fontweight': text_obj.get_fontweight(),
+                'color' : text_obj.get_color(),
+                'ha': text_obj.get_ha(),
+                'fontsize': text_obj.get_fontsize(),
+                'fontweight': text_obj.get_fontweight(),
+            }
+        kwargs={
+            **text_props,
+            **{
+                **dict(
+                    sep=sep, #: str = None,    
+                    rsplit=rsplit, #=False,
+                    
+                    color=color, #: any = None,
+                    color2_alpha=color2_alpha, #=0.5,
+                    
+                    ha=ha, #='center',
+                    ),
+                **kwargs,
+            },
         }
-        # Update with any new kwargs the user provides
-        text_props.update(kwargs)
+        # # Update with any new kwargs the user provides
+        # text_props.update(kwargs)
     
         # 2. Remove the original text object from the axes
         text_obj.remove()
     
         # 3. Call the drawing function to replace it
         return set_text_multicolored(
-            x=x, y=y, s=s,
+            x=x,
+            y=y,
+            s=s,
             ax=ax,
-            **text_props
+            **kwargs
         )
         
     if ax is None:
