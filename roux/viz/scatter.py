@@ -512,8 +512,9 @@ def plot_volcano(
     line_x_min: float = None,
     
     show_text: bool = True,
-    text_increase: str = None,
-    text_decrease: str = None,
+    show_n=True,
+    text_increase: str = 'n',
+    text_decrease: str = 'n',
     text_diff: str = None,
     legend: bool = False,
     legend_kws=dict(
@@ -549,16 +550,20 @@ def plot_volcano(
 
     ax = sns.scatterplot(
         data=data,
-        x=colx,
-        y=coly,
-        hue=hue,
-        style=style,
-        style_order=style_order,
-        markers=markers,
-        ec=None,
+        **{
+            **dict(
+                x=colx,
+                y=coly,
+                hue=hue,
+                style=style,
+                style_order=style_order,
+                markers=markers,
+                ec=None,
+                legend=False,
+            ),
+            **kws_scatterplot,
+        },
         ax=ax,
-        legend=False,
-        **kws_scatterplot,
     )
     ## set text
     axlims = get_axlims(ax)
@@ -572,51 +577,52 @@ def plot_volcano(
                 va="center",
                 color="gray",
             )
+        
+    if show_n:
+        to_ns=data.groupby('significance direction bin')[colindex].nunique().to_dict()
+        kws_text_show_n=dict(
+            va="center" if (text_increase == "n" and text_decrease == "n") else 'bottom',
+            color="k" if ((text_increase == "n" and text_decrease == "n") or ("palette" not in kws_scatterplot)) else kws_scatterplot["palette"][0],            
+        )
         ax.text(
             x=ax.get_xlim()[1],
             y=ax.get_ylim()[1],
-            s="increase $\\rightarrow$"
-            + (
-                "\n(n="
-                + str(
-                    data.query(expr="`significance direction bin` == 'increase'")[
-                        colindex
-                    ].nunique()
+            s=(
+                to_ns.get('increase','')
+                    if text_increase == "n" else
+                (
+                    "increase $\\rightarrow$"
+                    + "\n(n="
+                    + str(to_ns.get('increase',0))
+                    + ")"
                 )
-                + ")"
-                if text_increase == "n"
-                else f"\n({text_increase})"
-                if text_increase is not None
-                else ""
+                    if text_increase == "dir(n)" else
+                f"\n({text_increase})"
+                    if text_increase is not None else
+                ""
             ),
             ha="right",
-            va="bottom",
-            color="k"
-            if "palette" not in kws_scatterplot
-            else kws_scatterplot["palette"][0],
+            **kws_text_show_n
         )
         ax.text(
             x=ax.get_xlim()[0],
             y=ax.get_ylim()[1],
-            s="$\\leftarrow$ decrease"
-            + (
-                "\n(n="
-                + str(
-                    data.query(expr="`significance direction bin` == 'decrease'")[
-                        colindex
-                    ].nunique()
+            s=(
+                to_ns.get('decrease','')
+                    if text_increase == "n" else
+                (
+                    "$\\leftarrow$ decrease"
+                    + "\n(n="
+                    + str(to_ns.get('decrease',0))
+                    + ")"
                 )
-                + ")"
-                if text_increase == "n"
-                else f"\n({text_decrease})"
-                if text_decrease is not None
-                else ""
+                    if text_increase == "dir(n)" else
+                f"\n({text_decrease})"
+                    if text_decrease is not None else
+                ""
             ),
             ha="left",
-            va="bottom",
-            color="k"
-            if "palette" not in kws_scatterplot
-            else kws_scatterplot["palette"][1],
+            **kws_text_show_n
         )
 
     xlim = ax.get_xlim()

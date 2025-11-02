@@ -10,7 +10,34 @@ import pandas as pd
 ## internal
 from roux.lib import to_rd
 
-
+@to_rd
+def loca(
+    df,
+    index,
+    columns,
+    # errors='raise', 
+    ):
+    """
+    loc_available
+    """
+    d1 = {}
+    d1["from"] = (len(index),len(columns))
+    
+    df=df.loc[
+        (df.index.intersection(index),
+        df.columns.intersection(columns)) 
+    ]
+    
+    d1["to"] = df.shape
+    log_shape_change(
+        d1,
+        fun='loca',
+        # label=label
+        )
+    if d1["to"]==(0,0):
+        logging.warning('loca: na')
+    return df
+    
 @to_rd
 def get_name(
     df1: pd.DataFrame,

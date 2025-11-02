@@ -5,12 +5,11 @@ import logging
 import numpy as np
 
 import matplotlib.pyplot as plt
-
 from matplotlib.gridspec import GridSpec
 
 def fig_grid(
     data,
-    func,    
+    plot_func=None,  ## takes data, ax and **kws
     kws_plot={},
     **kws_fig,    
     ):
@@ -22,10 +21,27 @@ def fig_grid(
                 **kws_plot,
             )
     """
+    def read_plot_(data,ax,**kws_plot):
+        from roux.viz.io import read_plot
+        return read_plot(
+            data['path'].tolist()[0],
+            ax=ax,
+            **kws_plot,
+            )
+    if plot_func is None and 'path' in data:
+        plot_func=read_plot_
+        
     import seaborn as sns
     g = sns.FacetGrid(
         data,
-        **kws_fig,
+        **{
+            **dict(
+                height=2.5,
+                aspect=1,
+                margin_titles=True,
+            ),        
+            **kws_fig,
+        },
     )
     g.set_titles(
         row_template="{row_name}",
@@ -40,13 +56,16 @@ def fig_grid(
             **kwargs['kws_plot'],
         )
         return ax
+        
+    if plot_func is None:
+        logging.warning("plot_func is None")
+        return g
+        
+    # print(data.shape)
+    
     g.map_dataframe(
         func=_map_plot,
-        plot_func=lambda data,ax,**kws_plot: func(
-                data['path'].tolist()[0],
-                ax=ax,
-                **kws_plot,
-            ),
+        plot_func=plot_func,
         kws_plot=kws_plot,
         )
     # for (row, col), ax in g.axes_dict.items():
