@@ -6,7 +6,34 @@ import numpy as np
 
 import matplotlib.pyplot as plt
 from matplotlib.gridspec import GridSpec
+## types
+from matplotlib.axes import Axes
+from typing import Tuple
 
+def to_pos_in_ax2(
+    ax: Axes,
+    ax2: Axes,
+    pt: Tuple[float, float],
+) -> Tuple[float, float]:
+    """
+    Converts a point from ax's data coordinates to ax2's data coordinates.
+
+    Args:
+        ax: The source Axes object.
+        ax2: The target Axes object.
+        pt: A tuple (x, y) in ax's data coordinates.
+
+    Returns:
+        A tuple (x_prime, y_prime) representing the point in 
+        ax2's data coordinates.
+    """
+    # Convert points from their respective data spaces to a common figure space (pixels)
+    # g: 1. Convert source point (ax data) to display (pixel) coordinates
+    pt_pixels = ax.transData.transform(pt)
+
+    # g: 2. Convert display (pixel) coordinates to target point (ax2 data)
+    return ax2.transData.inverted().transform(pt_pixels)
+    
 def fig_grid(
     data,
     plot_func=None,  ## takes data, ax and **kws

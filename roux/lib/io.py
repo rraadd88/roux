@@ -1254,7 +1254,7 @@ def apply_on_paths(
     if drop_index:
         df2 = df2.rd.clean().reset_index(drop=drop_index).rd.clean()
     else:
-        df2 = df2.reset_index(drop=drop_index).rd.clean()
+        df2 = df2.rd.clean().reset_index(drop=drop_index).rd.clean()
         if colindex != "path":
             if colindex in df2:
                 logging.warning(f"{colindex} found in the dataframe; hence dropped.")

@@ -63,13 +63,21 @@ def annot_side_curved(
     from roux.stat.paired import get_diff_sorted
     lim_=(lims['xlim'] if loc=='right' else lims['ylim'])
     size=get_diff_sorted(*lim_)
-    off=max(lim_)+(size*off)
+    if loc in ['right','top']:
+        off=max(lim_)+(size*off)
+    else:
+        off=min(lim_)-(size*off)        
     # print(off)
     
     if loc=='right':
         kws_text_loc=dict(
             va="center",
             ha="right",    
+        )
+    elif loc=='left':
+        kws_text_loc=dict(
+            va="center",
+            ha="left",    
         )
     else:
         ## top
@@ -83,20 +91,20 @@ def annot_side_curved(
     data1 = (
         data
         .sort_values(
-            coly if loc=='right' else colx,
-            ascending=lims['ylim'][0]<lims['ylim'][1] if loc=='right' else lims['xlim'][0]<lims['xlim'][1],
+            coly if loc in ['right','left'] else colx,
+            ascending=lims['ylim'][0]<lims['ylim'][1] if loc in ['right','left'] else lims['xlim'][0]<lims['xlim'][1],
             # ascending=True,
         )
         .loc[:, [col_label]]
         .drop_duplicates()
         .assign(
             **{
-                'x' if loc=='right' else 'y':lambda df: np.repeat(off, len(df)),
-                'y' if loc=='right' else 'x':lambda df: np.linspace(
+                'x' if loc in ['left','right'] else 'y':lambda df: np.repeat(off, len(df)),
+                'y' if loc in ['left','right'] else 'x':lambda df: np.linspace(
                     *lim,
                     len(df),
                 ),
-                ('x' if loc=='right' else 'y')+'_text':lambda df: df.apply(
+                ('x' if loc in ['left','right'] else 'y')+'_text':lambda df: df.apply(
                     lambda x: getattr(
                         (
                             ax.text(
@@ -111,7 +119,7 @@ def annot_side_curved(
                             .get_window_extent(renderer=plt.gcf().canvas.get_renderer())
                             .transformed(ax.transData.inverted())
                         ),
-                        'xmin' if  loc=='right' else 'ymin'
+                        'xmin' if  loc=='right' else 'xmax' if  loc=='left' else 'ymin'
                     ),
                     axis=1,
                 ),
@@ -153,18 +161,29 @@ def annot_side_curved(
         how="inner",
         on=col_label,
         # validate="1:1"
+        suffixes=["",' inferred'],
     )
-    from roux.viz.line import plot_bezier
 
+    # print(data2.columns)
+    
+    from roux.viz.line import plot_bezier
     data2.apply(
         lambda x: plot_bezier(
+            ## A point
             [x[colx], x[coly]],
+            ## B text            
             (
-                [(x["x_text"] if text_x is None else text_x), x["y"]]
-                    if loc=='right' else
-                [x["x"], (x["y_text"] if text_y is None else text_y)]
-        ),
-            direction='h' if loc=='right' else 'v',
+                [
+                    (x["x_text"] if text_x is None else text_x if not (isinstance(text_x,str) or text_x in x) else x[text_x]), 
+                    (x["y"] if not (isinstance(text_y,str) or text_y in x) else x[text_y])
+                ]
+                    if loc in ['left','right'] else
+                [
+                    (x["x"] if not (isinstance(text_x,str) or text_x in x) else x[text_x]), 
+                    (x["y_text"] if text_y is None else text_y if not (isinstance(text_y,str) or text_y in x) else x[text_y])
+                ]
+            ),
+            direction='h' if loc in ['left','right'] else 'v',
             ax=ax,
             **{
                 **dict(
@@ -730,6 +749,8 @@ def show_scatter_stats(
     show_n_prefix: str = "",
     prefix: str = "",
     loc=None,
+    wrap=False,
+    
     zorder: int = 5,
     # kws_stat={},
     verbose: bool = True,
@@ -774,6 +795,8 @@ def show_scatter_stats(
                 show_n_prefix=show_n_prefix,
                 method_suffix=False, ## change x|y label instead
             )
+            if wrap:
+                label=label.replace('$\pm$','\n$\pm$')
             if loc is None:
                 ## infer
                 if res["r"] >= 0:

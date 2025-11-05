@@ -99,14 +99,12 @@ def plot_bezier(
         ax = plt.gca()
 
     if ax2 is not None:
-        # Convert points from their respective data spaces to a common figure space (pixels)
-        # pt1_pixels = ax.transData.transform(pt1)
-        pt2_pixels = ax2.transData.transform(pt2)
-
-        # Convert the pixel points back to the data space of the target axis (ax)
-        # pt1 = ax.transData.inverted().transform(pt1_pixels)
-        pt2 = ax.transData.inverted().transform(pt2_pixels)
-
+        from roux.viz.figure import to_pos_in_ax2 
+        pt2=to_pos_in_ax2(
+            ax=ax2,
+            ax2=ax,
+            pt=pt2,
+            )
     if direction is None:
         if pt1[1]==pt2[1]: #y
             direction='h'

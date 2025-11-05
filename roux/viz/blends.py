@@ -106,6 +106,9 @@ def plot_dists_by_bins(
     if show_corr!=False:
         if show_corr==True:
             kws_show_corr={}
+        else:
+            kws_show_corr=show_corr
+            del show_corr
         assert isinstance(kws_show_corr,dict)
         from roux.viz.annot import show_scatter_stats
         show_scatter_stats(
@@ -122,12 +125,15 @@ def plot_dists_by_bins(
                     show_p=False,
                     resample=True,
                     
+                    wrap=True, ## \n +/-
+                    
                     kws_set_label=dict(
                         x=-0.25+corr_offs[0],
                         y=-0.125+corr_offs[1],
                         ha='center',
                         va='center',
                         linespacing=0.75,
+                        size=11,
                     ),
                 ),
                 **kws_show_corr,

@@ -1135,7 +1135,7 @@ def get_totals(ds1):
 @to_rd
 def query(
     df : pd.DataFrame,
-    expr : str,
+    expr : str = None,  
     ## safety
     errors='raise',    
     ## log
@@ -1148,6 +1148,11 @@ def query(
     """
     Can query safely and log clause-wise
     """
+    if expr is None:
+        # return safely (as opposed to base pandas)
+        logging.warning("expr=None")
+        return df
+        
     assert ' and ' not in expr, expr 
     assert ' or ' not in expr, expr 
     assert not (expr.count('&')  > 0 and expr.count('|')  > 0), expr

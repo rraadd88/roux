@@ -22,7 +22,7 @@ def to_cat(
     """
     ds1 = ds1.astype("category")
     ds1 = ds1.cat.set_categories(new_categories=cats, ordered=ordered)
-    assert not ds1.isnull().any()
+    assert not ds1.isnull().any(), ds1.isnull().sum()
     return ds1
     
 def get_near_quantile(
