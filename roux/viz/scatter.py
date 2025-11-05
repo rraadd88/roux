@@ -850,7 +850,6 @@ def plot_volcano_split(
         loc='right' if rowi==0 else 'left'
         data_=data.groupby(row,sort=False).get_group(title)
         
-        from roux.lib.str import linebreaker
         from roux.viz.scatter import plot_volcano
         ax,data_volcano=plot_volcano(
             data_,
