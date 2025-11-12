@@ -12,7 +12,8 @@ def plot_image(
     margin=0,
     axes=False,
     test=False,
-    **kwarg,
+    kws_to_raster={},
+    **kws_imshow,
 ) -> plt.Axes:
     """Plot image e.g. schematic.
 
@@ -41,7 +42,15 @@ def plot_image(
         pngp = to_raster(imp, force=force, **kwarg)
     ax = plt.subplot() if ax is None else ax
     im = plt.imread(pngp)
-    ax.imshow(im, interpolation="catrom")
+    ax.imshow(
+        im,
+        **{
+            **dict(
+                interpolation="catrom",
+            ),
+            **kws_imshow,
+        },
+    )
     ax.set(**{"xticks": [], "yticks": [], "xlabel": "", "ylabel": ""})
     ax.margins(margin)
     if not axes:

@@ -267,6 +267,7 @@ def get_plot_inputs(
     df1: pd.DataFrame = None,
     kws_plot: dict = {},
     outd: str = None,
+    out_fmt=None, #tuple
 ) -> tuple:
     """Get plot inputs.
 
@@ -298,8 +299,15 @@ def get_plot_inputs(
     if df1 is None:
         df1 = read_table(f"{outd}/data.tsv")
     kws_plot = update_kws_plot(kws_plot, kws_plotp=f"{outd}/config.yaml")
-    return plotp, df1, kws_plot
 
+    if out_fmt is None:
+        return plotp, df1, kws_plot
+    else:
+        return dict(
+            path=plotp,
+            data=df1,
+            kws_plot=kws_plot,
+        )
 
 def log_code():
     """Log the code."""

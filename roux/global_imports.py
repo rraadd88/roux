@@ -63,17 +63,37 @@ from roux.workflow.task import run_tasks #noqa
 ## logging functions
 ## setting states
 
-# try:
 import logging
 # root logger level for the imported functions
 root_logger = logging.getLogger()
 root_logger.setLevel(logging.INFO)
+
+# g: 1. Create the formatter object
+formatter = logging.Formatter(
+    '%(levelname)s:(roux %(funcName)s): %(message)s'
+)
+
+# g: 2. Check if the root logger already has handlers
+if not root_logger.handlers:
+    # g: If no handlers exist, create a new one (e.g., to stderr)
+    handler = logging.StreamHandler(sys.stderr)
+    handler.setFormatter(formatter)
+    root_logger.addHandler(handler)
+else:
+    # g: If handlers already exist (e.g., in a notebook),
+    # g: just set the formatter on the existing handler(s).
+    # g: We'll modify the first one.
+    root_logger.handlers[0].setFormatter(formatter)
+    # g: Also ensure the handler's level is permissive (if needed)
+    # root_logger.handlers[0].setLevel(logging.INFO)
+
 ## for the notebook
-from roux.lib.log import Logger
-logging = Logger() # level='INFO'
-# except:
-    # import logging #noqa
-    # logging.basicConfig(level='INFO', force=True)
+try:    
+    from roux.lib.log import Logger
+    logging = Logger() # level='INFO'
+except:
+    import logging #noqa
+    logging.basicConfig(level='INFO', force=True)
 
 from tqdm import tqdm #noqa
 ## end replacestar
