@@ -760,6 +760,7 @@ def validate_dense(
     duplicates: bool = True,
     na: bool = True,
     message=None,
+    out_fmt=bool,
 ) -> pd.DataFrame:
     """Validate no missing values and no duplicates in the dataframe.
 
@@ -773,17 +774,15 @@ def validate_dense(
     """
     if subset is None:
         subset = df01.columns.tolist()
-    validations = []
+    valids = {}
     if duplicates:
-        validations.append(
-            df01.rd.validate_no_dups(subset=subset)
-        )  # , 'duplicates found' if message is None else message
+        valids['no_dups']=df01.rd.validate_no_dups(subset=subset)
     if na:
-        validations.append(
-            df01.rd.validate_no_na(subset=subset)
-        )  # if message is None else message
-    return all(validations)
-
+        valids['no_na']=df01.rd.validate_no_na(subset=subset)
+    if out_fmt==bool:
+        return all(list(valids.values()))
+    else:
+        return valids
 
 @to_rd
 def assert_dense(
@@ -798,11 +797,31 @@ def assert_dense(
     Notes:
         to be deprecated in future releases.
     """
-    assert validate_dense(
-        df01, subset=subset, duplicates=duplicates, na=na, message=message
-    ), "Duplicates or missing values or both found in the table."
-    return df01
-
+    valids=validate_dense(
+        df01,
+        subset=subset,
+        duplicates=duplicates,
+        na=na,
+        message=message,
+        out_fmt=dict,
+        )
+    if all(list(valids.values())):
+        return df01
+    else:
+        ## diagnose
+        if valids.get('no_dups')==False:
+            check_dups(
+                df01,
+                subset=subset,
+                out=False,
+            )
+        if valids.get('no_na')==False:            
+            check_na(
+                df01,
+                subset=subset,
+                out=False,
+            )
+        assert False, "Duplicates and/or missing values found in the table."
 
 ## counts
 @to_rd

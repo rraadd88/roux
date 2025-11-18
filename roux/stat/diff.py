@@ -673,7 +673,18 @@ def get_diff(
         logging.warning("not filtered by P-value cutoff")
     return df3.sort_values("P")
 
-def get_diff_inferred(df1, x, y, colindex, hue: str = None, order: list = None, hue_order: list = None, show_p: bool = True, verbose: bool = False, kws_stats: dict = {}):
+def get_diff_inferred(
+    df1, 
+    x, 
+    y, 
+    colindex, 
+    hue: str = None, 
+    order: list = None, 
+    hue_order: list = None, 
+    show_p: bool = True, 
+    verbose: bool = False, 
+    kws_stats: dict = {}
+    ):
     """Helper to pre-process inputs and optionally calculate p-values for plot_dists."""
     
     # --- Start of pre-processing logic ---
@@ -717,14 +728,40 @@ def get_diff_inferred(df1, x, y, colindex, hue: str = None, order: list = None, 
     if show_p:
         # --- Start of p-value calculation logic ---
         if hue is None:
-            df2 = get_stats(
-                df1, colindex=colindex, colsubset=y_stat, cols_value=[x_stat],
-                subsets=order, axis=0, **kws_stats,
-            )
+            if show_p!='paired':
+                df2 = get_stats(
+                    df1, 
+                    colindex=colindex, 
+                    colsubset=y_stat, 
+                    cols_value=[x_stat],
+                    subsets=order, 
+                    axis=0, 
+                    **kws_stats,
+                )
+            else:
+                df2=pd.concat(
+                    [
+                        get_stats(
+                        df1, 
+                        colindex=colindex,
+                        colsubset=y_stat, 
+                        cols_value=[x_stat],
+                        subsets=o, 
+                        axis=0, 
+                        **kws_stats,
+                    ) for o in np.array(order).reshape(2,-1)],
+                    axis=0,
+                )
         else:
             df2 = get_stats_groupby(
-                df1.loc[df1[hue].isin(hue_order), :], cols_group=[y], colsubset=hue,
-                cols_value=[x], colindex=colindex, alpha=0.05, axis=0, **kws_stats,
+                df1.loc[df1[hue].isin(hue_order), :], 
+                cols_group=[y], 
+                colsubset=hue,
+                cols_value=[x], 
+                colindex=colindex,
+                alpha=0.05, 
+                axis=0, 
+                **kws_stats,
             ).reset_index()
         # --- End of p-value calculation logic ---
         

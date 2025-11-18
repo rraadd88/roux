@@ -272,6 +272,7 @@ def plot_dists(
     axis_cont_lim: tuple = None,
     axis_cont_scale: str = "linear",
     offs_pval: dict = None,
+    col_pval='P',
     fmt_pval: str = "<",
     alpha: float = 0.5,
     # saturate_color_alpha: float=1.5,
@@ -341,12 +342,12 @@ def plot_dists(
     colindex=kws_plot.get('colindex',None)
         
     ## get stats
-    if show_p:
-        col_pval='P'
+    if show_p:            
         if df2 is not None:
             if hue is None:
                 df2 = df2.reset_index()
-                df2 = df2.loc[(df2["subset1"] == order[0]), :]
+                if show_p!='paired':
+                    df2 = df2.loc[(df2["subset1"] == order[0]), :]
                 try:
                     d1 = df2.rd.to_dict(["subset2", col_pval])
                 except:
@@ -364,6 +365,8 @@ def plot_dists(
         else:
             show_p = False 
             logging.error("p-value could not be estimated.")
+                
+    # print(d1) # {ticklabel: pval}
     
     ## axes
     if ax is None:
@@ -479,8 +482,8 @@ def plot_dists(
     ticklabel2position = get_ticklabel_position(ax, axis_desc)
     axlims = get_axlims(ax)
     ## show p-value
-    if isinstance(show_p, (bool, dict)):
-        if isinstance(show_p, bool) and show_p:
+    if isinstance(show_p, (bool, dict,str)):
+        if show_p!=False:
             d1 = {
                 k: pval2annot(
                     d1[k],
@@ -496,10 +499,14 @@ def plot_dists(
             offs_pval = {}
         offs_pval = {**{"x": 0, "y": 0}, **offs_pval}
 
-        if hue is None and len(d1) == 1:
-            offs_pval[axis_desc] += -0.5
+        if hue is None and (len(d1) == 1 or show_p=='paired'):
+            offs_pval[axis_desc] += -0.5            
         if test:
             logging.info(offs_pval)
+
+        # if isinstance(show_p,str): # e.g. paired
+        #     show_p=True
+            
         if isinstance(d1, dict):
             if test:
                 logging.info(d1, ticklabel2position, axlims)
