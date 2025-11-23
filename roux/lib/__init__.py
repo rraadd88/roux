@@ -37,8 +37,11 @@ class _PiperPlotter:
             if not plot_method_name.startswith('_'):
                 plot_method = getattr(PlotAccessor, plot_method_name)
                 if callable(plot_method):
-                    # Use a function factory to correctly capture the method and its name
-                    wrapped_method = self._make_piper_plot_method(plot_method_name)
+                        # Use a function factory to correctly capture the method and its name
+                    wrapped_method = self._make_piper_plot_method(
+                        name=plot_method_name,
+                        real_plot_method=None if plot_method_name != 'hist' else self.hist,
+                    )
                     setattr(self, plot_method_name, wrapped_method)
                     
         # import seaborn as sns
@@ -68,13 +71,59 @@ class _PiperPlotter:
             It calls the real plot function and then returns the DataFrame.
             """
             # print(kwargs)
-            ax=real_plot_method(**kwargs)
+            ax=real_plot_method(
+                **kwargs
+                )
             if func_ax is not None:
                 func_ax(ax)
             return self._obj # Return the DataFrame for chaining
             
         return piper_plot_method
 
+    ## exceptions
+    def hist(
+        self,
+        subset,
+        func_ax=None,
+        **kws,
+    ):                        
+        # if isinstance(subset,(str)):
+        #     subset=[subset]
+            
+        axs=self._obj.loc[:,subset].hist(**kws)
+        ax=axs.ravel()[0]
+        ax.set(
+            ylabel='Count',
+        )
+        if len(subset)==1:
+            ax.set(
+                xlabel=subset[0],
+            )
+            # if ax.get_legend() is not None:
+            #     ax.get_legend().remove()
+            
+        from roux.viz.ax_ import set_label
+        set_label(
+            **{
+                **dict(
+                    ax=ax,
+                    x=1,
+                    y=0,
+                    s=f"n={len(self._obj)}",
+                    ha='right',
+                    va='bottom',
+                ),
+                # **kws_set_label_n
+            }
+        )      
+        return ax
+        # if func_ax is not None:
+        #     func_ax(ax)            
+        # return self._obj
+        
+    ## TODO?: scatter -> df.rd.check_scatter
+    ## TODO?: dists -> df.rd.check_diff
+    
 @pd.api.extensions.register_dataframe_accessor("rd")
 class rd:
     """`roux-dataframe` (`.rd`) extension."""
@@ -82,18 +131,6 @@ class rd:
     def __init__(self, pandas_obj):
         self._obj = pandas_obj
         self.plot = _PiperPlotter(self._obj)
-
-    ## exceptions
-    def hist(
-        self,
-        func_ax=None,
-        **kws,
-    ):
-        ax=self._obj.hist(**kws)
-        if func_ax is not None:
-            func_ax(ax)
-        return self._obj
-
 
 # create the `roux-dataframe` (`.rd`) decorator
 to_rd = to_class(rd)

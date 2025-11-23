@@ -10,6 +10,15 @@ Usage: in interactive sessions (e.g. in jupyter notebooks) to facilitate faster 
 Note: Post-development, to remove *s from the code, use removestar (pip install removestar).
 
     removestar file
+
+
+Examples:
+
+## imports
+from roux.global_imports import * #noqa
+## outputs
+output_dir_path,output_paths=set_outputs(output_path=locals().get('output_path'),output_paths=locals().get('output_paths'),)
+    
 """
 import warnings
 warnings.warn(
@@ -70,7 +79,7 @@ root_logger.setLevel(logging.INFO)
 
 # g: 1. Create the formatter object
 formatter = logging.Formatter(
-    '%(levelname)s:(roux %(funcName)s): %(message)s'
+    '%(levelname)s:(%(funcName)s): %(message)s'
 )
 
 # g: 2. Check if the root logger already has handlers
@@ -141,3 +150,6 @@ else:
 #     import scipy as sc
 # except ImportError:
 #     logging.warning('Optional dependency scipy missing, install by running: pip install roux[stat]')
+
+# ## if locals exist
+from roux.workflow.io import set_outputs

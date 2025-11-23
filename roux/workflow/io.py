@@ -1,4 +1,6 @@
-"""For input/output of workflow."""
+"""
+For input/output of workflow.
+"""
 
 ## logging
 import logging
@@ -890,7 +892,29 @@ def to_html(
     # )
     return outp
 
-
+## outputs setup
+def set_outputs(
+    output_path=None,
+    output_paths=None,
+):
+    # if output_path is None:
+    #     output_path=locals().get('output_path')
+    # if output_paths is None:
+    #     output_paths=locals().get('output_paths')
+        
+    if isinstance(output_path,str):
+        output_dir_path=Path(output_path).with_suffix('').as_posix()
+        if isinstance(output_paths,list):
+            output_paths={fn:f"{output_dir_path}/{fn}" for fn in output_paths}
+            from roux.lib.log import log_dict
+            logging.info("output_paths:\n"+log_dict(output_paths,out=True))
+        else:
+            logging.info(f"output_dir_path: {output_dir_path}")        
+            output_paths={}
+    else:
+        output_dir_path,output_paths=None,{}
+    return output_dir_path,output_paths
+    
 ## tasks
 
 def check_for_exit(

@@ -82,7 +82,7 @@ def check_non_overlaps_with(
 def validate_overlaps_with(
     l1,
     l2,
-    verbose=False,
+    verbose=True,
     **kws_check
     ):
     # if verbose:
@@ -95,12 +95,13 @@ def validate_overlaps_with(
 def assert_overlaps_with(
     l1,
     l2,
-    out_count=False
+    out_count=False,
+    verbose=True,
     ):
     assert validate_overlaps_with(
         l1,
         l2,
-        log=False,
+        verbose=False,
     ), f"Non-ovelapping item/s: {check_non_overlaps_with(l1,l2,out_count=out_count)}"
 
 

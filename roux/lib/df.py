@@ -260,7 +260,7 @@ def lower_columns(df):
 def renameby_replace(
     df: pd.DataFrame,
     replaces: dict,
-    ignore: bool = True,
+    errors: bool = 'raise',
     **kws,
 ) -> pd.DataFrame:
     """Rename columns by replacing sub-strings.
@@ -277,8 +277,7 @@ def renameby_replace(
         kws (dict): parameters provided to `replacemany` function.
     """
     from roux.lib.str import replacemany
-
-    df.columns = [replacemany(c, replaces, ignore=ignore, **kws) for c in df]
+    df.columns = [replacemany(c, replaces, errors=errors, **kws) for c in df]
     return df
 
 
@@ -810,18 +809,22 @@ def assert_dense(
     else:
         ## diagnose
         if valids.get('no_dups')==False:
-            check_dups(
-                df01,
-                subset=subset,
-                out=False,
+            logging.error(
+                check_dups(
+                    df01,
+                    subset=subset,
+                    out=False,
+                )
             )
         if valids.get('no_na')==False:            
-            check_na(
-                df01,
-                subset=subset,
-                out=False,
+            logging.error(
+                check_na(
+                    df01,
+                    subset=subset,
+                    out=False,
+                )
             )
-        assert False, "Duplicates and/or missing values found in the table."
+        assert False, valids
 
 ## counts
 @to_rd
@@ -3002,8 +3005,10 @@ class log:
 
     def query(self, **kws):
         from roux.lib.df import log_apply
-
-        return log_apply(self._obj, fun="query", label=kws.get('expr'), **kws)
+        if kws.get('expr') is None:
+            return self._obj.log(label=kws.get('expr'))
+        else:
+            return log_apply(self._obj, fun="query", label=kws.get('expr'), **kws)
 
     ## rd
     def clean(self, **kws):
@@ -3024,7 +3029,7 @@ class log:
     def head(
         self,
         n=1, 
-        lin_if_cols_gt=10, ## transpose if >lin_if_cols_gt
+        lin_if_cols_gt=3, ## transpose if >lin_if_cols_gt
         # cols_max=100, ## trim if > cols
         ):  
         logging.info(
@@ -3039,7 +3044,7 @@ class log:
         return self._obj
     def tail(self,
              n=1,
-             lin_if_cols_gt=10, ## transpose if >lin_if_cols_gt
+             lin_if_cols_gt=3, ## transpose if >lin_if_cols_gt
              # cols_max=100, ## trim if > cols
             ):
         logging.info(
