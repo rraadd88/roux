@@ -56,6 +56,8 @@ def make_ids_sorted(
     ids_have_equal_length: bool,
     sep: str = "--",
     sort: bool = False,
+
+    col=None, # output col, for root pipe, to skip assign
 ) -> pd.Series:
     """Make sorted ids by joining string ids in more than one columns.
 
@@ -68,7 +70,11 @@ def make_ids_sorted(
     Returns:
         ds (Series): output series.
     """
-    return make_ids(df, cols, ids_have_equal_length, sep=sep, sort=True)
+    ids=make_ids(df, cols, ids_have_equal_length, sep=sep, sort=True)
+    if col is None:
+        return ids
+    else:
+        return df.assign(**{col: ids})
 
 
 def get_alt_id(

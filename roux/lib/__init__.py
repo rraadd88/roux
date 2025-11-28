@@ -84,12 +84,24 @@ class _PiperPlotter:
     def hist(
         self,
         subset,
+        sample=None,
         func_ax=None,
         **kws,
     ):                        
         # if isinstance(subset,(str)):
         #     subset=[subset]
-            
+        if sample is not None:
+            if isinstance(sample,dict):
+                kws_sample=sample
+            else:
+                kws_sample={}
+                if isinstance(sample,int):
+                    kws_sample['n']=sample
+                elif isinstance(sample,float) and 0 <= sample <= 1:
+                    kws_sample['frac']=sample
+                else:
+                    raise ValueError(sample)
+                
         axs=self._obj.loc[:,subset].hist(**kws)
         ax=axs.ravel()[0]
         ax.set(

@@ -919,3 +919,20 @@ def get_bin_labels(
     
     logging.info(dict(zip(bins[1:],bin_labels)))
     return bin_labels
+
+def to_expr(
+    d1,
+    mode='keep',
+    logic='&', 
+    ):
+    if mode=='keep':
+        sign=" == "
+    else:
+        sign=" != "            
+    assert all([isinstance(d1[k], (str, list)) for k in d1])
+    return f" {logic} ".join(
+        [
+            f"`{k}` {sign} " + (f'"{v}"' if isinstance(v, str) else f"{v}")
+            for k, v in d1.items()
+        ]
+    )

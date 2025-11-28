@@ -234,7 +234,7 @@ def format_labels(
     rename_labels=None,
     
     rotate_ylabel=True,
-    show_axes_arrows=True,
+    show_axes_arrows=False,
     rotate_ylabel_offs=None,
     
     y=1.05,

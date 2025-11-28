@@ -958,7 +958,7 @@ def check_mappings(
     if out:
         return df1
     else:
-        logging.info(f"mappings: {df1.to_string()}")
+        logging.info(f"mappings: {df1.to_string(index=False)}")
         return df
 
 @to_rd
@@ -1386,18 +1386,27 @@ def filter_rows(
     elif isinstance(expr,dict):
         if verbose:
             logging.info(df.shape)
-        if mode=='keep':
-            sign=" == "
-        else:
-            sign=" != "            
-        assert all([isinstance(expr[k], (str, list)) for k in expr])
-        qry = f" {logic} ".join(
-            [
-                f"`{k}` {sign} " + (f'"{v}"' if isinstance(v, str) else f"{v}")
-                for k, v in expr.items()
-            ]
+
+        # if mode=='keep':
+        #     sign=" == "
+        # else:
+        #     sign=" != "            
+        # assert all([isinstance(expr[k], (str, list)) for k in expr])
+        # qry = f" {logic} ".join(
+        #     [
+        #         f"`{k}` {sign} " + (f'"{v}"' if isinstance(v, str) else f"{v}")
+        #         for k, v in expr.items()
+        #     ]
+        # )
+        
+        from roux.lib.str import to_expr
+        expr=to_expr(
+            expr,
+            mode=mode,
+            logic=logic, 
         )
-        df1 = df.query(qry)
+        
+        df1 = df.query(expr=qry)
         if test:
             logging.info(df1.loc[:, list(expr.keys())].drop_duplicates())
             logging.warning("may be some column names are wrong..")
@@ -2409,7 +2418,7 @@ def check_corr(
         res=ax.stats
     df1=pd.Series(res).to_frame().T
     if verbose:
-        logging.info(f'{data.name if hasattr(data,"name") else ""}{x} - {y}\n'+df1.to_string())
+        logging.info(f'{data.name if hasattr(data,"name") else ""}{x} - {y}\n'+df1.to_string(index=False))
     if validate is not None:
         assert_expr(df1,validate)
         # logging.info(df1)
@@ -2500,7 +2509,7 @@ def check_diff(
     if df1 is None:
         return None
     if verbose:
-        logging.info(f'{data.name if hasattr(data,"name") else ""}{x} - {y}\n'+df1.to_string())
+        logging.info(f'{data.name if hasattr(data,"name") else ""}{x} - {y}\n'+df1.to_string(index=False))
     if validate is not None:
         assert_expr(df1,validate)
         # logging.info(df1)
@@ -2577,7 +2586,7 @@ def check_sass(
     if df1 is None:
         return None
     if verbose:
-        logging.info(f'{data.name if hasattr(data,"name") else ""}{x} - {y}\n'+df1.to_string())
+        logging.info(f'{data.name if hasattr(data,"name") else ""}{x} - {y}\n'+df1.to_string(index=False))
     if validate is not None:
         assert_expr(df1,validate)
         # logging.info(df1)
