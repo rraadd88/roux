@@ -152,4 +152,3 @@ else:
 #     logging.warning('Optional dependency scipy missing, install by running: pip install roux[stat]')
 
 # ## if locals exist
-from roux.workflow.io import set_outputs
