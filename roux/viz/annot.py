@@ -839,6 +839,83 @@ def show_scatter_stats(
     ax.stats=res   
     return ax    
 
+def show_stats_by_sides(
+    df_stats, ## contains column with ticklabel
+    col_mid, ## [left,mid,rt],
+    col_left, ## [left,mid,rt],
+    col_right, ## [left,mid,rt],
+    ax=None,
+    ):
+    """
+    #TODO
+    """
+    if ax is None:
+        ax=plt.gca()
+    from roux.viz.ax_ import get_ticklabel_position
+    df_stats=(
+        pd.Series(get_ticklabel_position(ax,axis='y'))
+        .to_frame('y')
+        .reset_index()
+        .assign(
+            label=lambda df: df['index'].str.split('\\n',expand=True)[0],
+        )
+        .merge(
+            df_stats,
+            # pd.DataFrame(kws_plot['stats']).T,
+            left_on='label',
+            # right_index=True,
+            # validate='1:1',
+        )
+    )
+    if col_mid is not None:
+        if x_center is None:
+            x_center=np.mean(ax.get_xlim())
+        ## center e.g. pvals
+        (
+            df_stats
+            .apply(
+                lambda x: ax.text(
+                    x_center,
+                    x['y'],
+                    x[col_mid],
+                    va='top',
+                    ha='center'
+                ),
+                axis=1,
+            )
+        )
+    ## left counts
+    if col_left is not None:
+        (
+            df_stats
+            .apply(
+                lambda x: ax.text(
+                    ax.get_xlim()[0]+0.01,
+                    x['y']+0.2,
+                    x[col_left],
+                    va='top',
+                    ha='left'
+                ),
+                axis=1,
+            )
+        )
+    ## rght counts
+    if col_right is not None:
+        (
+            df_stats
+            .apply(
+                lambda x: ax.text(
+                    ax.get_xlim()[1]-0.01,
+                    x['y']+0.2,
+                    x[col_right],
+                    va='top',
+                    ha='right'
+                ),
+                axis=1,
+            )
+        )
+    return ax
+    
 def show_crosstab_stats(
     stat=None,
     pval=None,

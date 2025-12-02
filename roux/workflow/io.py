@@ -916,18 +916,34 @@ def set_outputs(
     return output_dir_path,output_paths
     
 ## tasks
-
 def check_for_exit(
-    p, # table
-    data, # e.g cfg
-    output_path, # in a script
+    ## check this if empty
+    p, # saved table
+    
+    ## save this before exiting
+    outp, # output path
+    data=None, # e.g output cfg
+
+    force=False,
     ):
     """
-    Check for early exit.
+    Check for early exit in a script.
     """
-    from roux.lib.io import is_table_empty, to_data
-    if is_table_empty(p):
+    exit=force
+
+    if not exist:
+        if isinstance(p,str):
+            from roux.lib.io import is_table_empty    
+            exit=is_table_empty(p)
+        elif isinstance(p,pd.DataFrame):
+            exit=(len(p)==0)
+        
+    if exit:
         logging.warning("exiting early because table is empty..")
-        to_data(data,output_path)
+        if data is not None:
+            from roux.lib.io import to_data
+            to_data(data,outp)
+        else:
+            Path(outp).touch()
         import sys
         sys.exit(0)

@@ -1406,7 +1406,7 @@ def filter_rows(
             logic=logic, 
         )
         
-        df1 = df.query(expr=qry)
+        df1 = df.query(expr=expr)
         if test:
             logging.info(df1.loc[:, list(expr.keys())].drop_duplicates())
             logging.warning("may be some column names are wrong..")
