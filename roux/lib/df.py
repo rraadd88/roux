@@ -2122,7 +2122,93 @@ def assignby_expr(
         df.log(groupby=col)
     return df
 
-
+@to_rd
+def assign_bool(
+    df1,
+    expr, # {True: expr, False: expr}
+    col, #output
+    fillna=None, ## unassignd -> np.nan
+    clean=True,
+    verbose=False,
+    # validate=False,
+    ):
+    """
+    """ 
+    if fillna is None:
+       fillna=np.nan 
+    
+    if isinstance(expr,str):
+        ## for True
+        expr={
+            True: expr,
+        }        
+    assert isinstance(expr,dict), expr
+    
+    for k in [True,False]:
+        if str(k) in expr and k not in expr:
+            expr[k]=expr[str(k)]
+            del expr[str(k)]
+            
+    ## pre. to expr
+    if True not in expr:
+        if len(expr)==1:
+            # col: [list -> True] 
+            expr_in=expr.copy() 
+            del expr
+            
+            col_in=list(expr_in.keys())[0]
+            
+            cats_in=list(expr_in.values())[0]
+            if isinstance(cats_in,str):
+                cats_in=[cats_in]
+            expr={
+                True: f"`{col_in}` == {cats_in}",
+                # False: f"`{col_in}` == {list(set(df1[col_in].unique()) - set(cats_in))}",      
+            }
+    assert len(expr)<=2, expr
+    if len(expr)==2:
+        assert len(set(expr.values()))==2, expr
+        
+    if verbose:
+        logging.info(f"expr(s):{expr}")
+        
+    for b,e in expr.items():
+        df1=(
+            df1
+            .rd.assignby_expr(
+                expr=e,
+                col=f"_{b}",
+                verbose=verbose,
+            )
+        )
+    if '_False' not in df1:
+        df1=df1.assign(
+            **{
+                '_False': lambda df: ~(df['_True']),
+            }
+        )
+    ## combine the True and False
+    df1=(
+        df1
+        .assign(
+            **{
+                col: lambda df: df.apply(
+                    lambda x: (
+                        True if x['_True'] and not x['_False'] else 
+                        False if x['_False'] and not x['_True'] else 
+                        fillna
+                    ),
+                    axis=1,
+                )
+            }   
+        )
+    )
+    if clean:
+        df1=df1.drop(['_True','_False'],axis=1,errors='ignore')
+    if verbose:
+        df1.log(groupby=col)        
+    return df1
+    
 @to_rd
 def to_boolean(df1):
     """Boolean from ranges.

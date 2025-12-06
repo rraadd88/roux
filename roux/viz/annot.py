@@ -829,6 +829,11 @@ def show_scatter_stats(
             **kws,
             **kws_set_label,
         }
+    
+    if kws_set_label.get('loc') is not None:
+        ## if no inputs provided, use the one inferred
+        kws_set_label['loc']=loc
+        
     logging.debug(kws_set_label)
     
     _ = set_label(

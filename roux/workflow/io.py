@@ -931,12 +931,14 @@ def check_for_exit(
     """
     exit=force
 
-    if not exist:
+    if not exit:
         if isinstance(p,str):
             from roux.lib.io import is_table_empty    
             exit=is_table_empty(p)
         elif isinstance(p,pd.DataFrame):
             exit=(len(p)==0)
+            if data is None:
+                data=p
         
     if exit:
         logging.warning("exiting early because table is empty..")

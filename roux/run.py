@@ -56,8 +56,9 @@ def peek_table(
         use_paths=use_paths,
         **kws,
     )
+    
+    logging.info(df_.shape)
     from roux.lib.df import _get_preview_log_str
-    # logging.info(df_.shape)
     logging.info(
         _get_preview_log_str(df_.head(1))
     )

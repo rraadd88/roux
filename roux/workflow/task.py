@@ -1321,7 +1321,12 @@ def run_tasks(
     logging.setLevel(level=log_level)
     script_path=Path(script_path).resolve().as_posix()
     script_type=Path(script_path.split(' ')[0]).suffix[1:]# if not '.py run' in script_path else 'py'
-    
+
+    if wd_path is None:
+        wd_path=os.getcwd()
+    else:
+        os.chdir(wd_path)
+        
     if kernel is None:
         ## inferring kernel
         kernel=Path(os.environ.get('VIRTUAL_ENV')).parent.stem
@@ -1367,7 +1372,7 @@ def run_tasks(
                         
                         force_setup = force_setup,# True,
                         cache_dir_path = cache_dir_path, # roux/',
-                        wd_path = wd_path,# None,
+                        # wd_path = wd_path,# None,
                         
                         force  = force,# False,
                         simulate = simulate,#  False,
@@ -1407,7 +1412,9 @@ def run_tasks(
         return 
 
     kws_runner['verbose']=verbose
-    
+
+    # if test:
+    #     cache_dir_path=f"{wd_path}/{cache_dir_path}"
     if runner.startswith('py'):
         from roux.lib.sys import is_interactive_notebook
         test=is_interactive_notebook()
@@ -1442,12 +1449,6 @@ def run_tasks(
         params=list(params.values())
                 
     _time=logging.configuring("paths ..",get_time=True)
-    
-    if wd_path is None:
-        wd_path=os.getcwd()
-        
-    # if test:
-    #     cache_dir_path=f"{wd_path}/{cache_dir_path}"
     
     Path(cache_dir_path).mkdir(parents=True, exist_ok=True)
 
