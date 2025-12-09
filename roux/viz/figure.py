@@ -160,7 +160,7 @@ def get_ax(
             1,1,
             **kws                
         )[1]
-    elif ax=='gca':
+    elif ax in ['append','gca']:
         return gca(
             **kws    
         )

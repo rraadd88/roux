@@ -554,7 +554,7 @@ def check_nunique(
     subset: list = None,
     groupby: str = None,
     perc: bool = False,
-    auto=False,
+    auto=True,
     out=True,
     log=True,
     plot=False,
