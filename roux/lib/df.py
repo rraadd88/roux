@@ -13,13 +13,19 @@ from roux.lib import to_rd
 @to_rd
 def loca(
     df,
-    index,
-    columns,
+    index=None,
+    columns=None,
     # errors='raise', 
     ):
     """
     loc_available
     """
+    assert not (index is None and columns is None)
+    if index is None:
+        index=df.index.tolist()
+    if columns is None:
+        columns=df.columns.tolist()
+        
     d1 = {}
     d1["from"] = (len(index),len(columns))
     
@@ -558,6 +564,7 @@ def check_nunique(
     out=True,
     log=True,
     plot=False,
+    errors='raise', # keyerror
 ) -> pd.Series:
     """Number/percentage of unique values in columns.
 
@@ -574,7 +581,12 @@ def check_nunique(
         logging.warning(f"Auto-detected columns (subset): {subset}")
     if isinstance(subset, str):
         subset = [subset]
-    assert len(set(subset) - set(df.columns.tolist())) == 0, ( set(subset), (set(subset) ^ set(df.columns.tolist())) )
+    if errors=='raise':
+        assert len(set(subset) - set(df.columns.tolist())) == 0, 'else use errors=None'
+    else:
+        subset=df.columns.intersection(subset).tolist()
+        assert len(subset)!=0
+        logging.warning(f'subset reduced to {subset}')
     if groupby is None:
         if not perc:
             ds_ = df.loc[:, subset].nunique()

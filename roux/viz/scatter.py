@@ -567,6 +567,9 @@ def plot_volcano(
         fig, ax = plt.subplots(figsize=[4, 3])
     if collabel is None:
         collabel = colindex
+        if isinstance(collabel,list):
+            assert len(collabel)==1, "if show_labels, collabel (colindex) should be one"
+            collabel=collabel[0]
 
     data, coly, hue, kws_scatterplot = _prepare_volcano_data(        
         data=data, 
@@ -850,7 +853,7 @@ def plot_volcano_split(
         loc='right' if rowi==0 else 'left'
         data_=data.groupby(row,sort=False).get_group(title)
         
-        from roux.viz.scatter import plot_volcano
+        # from roux.viz.scatter import plot_volcano
         ax,data_volcano=plot_volcano(
             data_,
             **{

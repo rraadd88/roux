@@ -1322,9 +1322,12 @@ def run_tasks(
     script_path=Path(script_path).resolve().as_posix()
     script_type=Path(script_path.split(' ')[0]).suffix[1:]# if not '.py run' in script_path else 'py'
 
+    cwd_path=Path().cwd().as_posix()
+    
     if wd_path is None:
-        wd_path=os.getcwd()
+        wd_path=cwd_path
     else:
+        wd_path=Path(wd_path).as_posix()
         os.chdir(wd_path)
         
     if kernel is None:
@@ -1419,7 +1422,7 @@ def run_tasks(
         from roux.lib.sys import is_interactive_notebook
         test=is_interactive_notebook()
 
-        return run_tasks_nb(
+        res=run_tasks_nb(
             script_path,
             params=params,
 
@@ -1442,6 +1445,10 @@ def run_tasks(
                 **kws_runner,
             },
         )
+        if wd_path!=cwd_path:
+            ## back to current work dir    
+            os.chdir(cwd_path)  
+        return res
         
     logging.loading('params from the input_path ..')
             
@@ -1589,7 +1596,11 @@ def run_tasks(
     # logging.saving('outputs.')
     if not simulate:
         logging.done('processing.',time=_time)
-        
+
+    # if wd_path!=cwd_path:
+    #     ## back to current work dir    
+    #     os.chdir(cwd_path)  
+    
     ## uniform output
     return pd.Series(params_jobs).to_frame('params')['params']#.apply(pd.Series)
 
