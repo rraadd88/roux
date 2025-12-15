@@ -202,7 +202,6 @@ def extract_pms(lines, fmt='dict'):
         return parameters
 
 ## I/O
-import json
 import nbformat
 
 def read_pms(notebook_path, tag='parameters'):
