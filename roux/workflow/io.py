@@ -124,9 +124,9 @@ def to_src(
     t_splits,params=split_by_pms(t_tab)
     # t_splits
 
-    from roux.workflow.pms import get_params
+    from roux.workflow.pms import extract_pms
     params_str=',\n    '.join(
-        get_params(
+        extract_pms(
             params.split('    ')[1:],
             fmt='str',
         )

@@ -198,11 +198,13 @@ def pre_task(
         # log_dir_path=tempfile.mkdtemp(prefix=get_datetime())
 
         # log_dir_path=tempfile.mkdtemp(prefix=get_datetime())
-    
-    to_dict(
-        pms,
-        f"{log_dir_path}/pms.yaml"
-    )    
+    try:    
+        to_dict(
+            pms,
+            f"{log_dir_path}/pms.yaml"
+        )    
+    except Exception as e:
+        logging.warning(str(e))
     return log_dir_path
     
 ## execution

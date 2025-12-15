@@ -55,8 +55,7 @@ def get_cfgs(
         
         # g: Merge the base config with the overrides
         cfg = OmegaConf.merge(base_conf, overrides_conf)
-        configs[name]=cfg
-
+        configs[name]=OmegaConf.to_container(cfg, resolve=True)
     return configs
     
 ## I/O
