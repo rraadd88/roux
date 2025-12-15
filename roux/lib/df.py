@@ -1181,10 +1181,10 @@ def query(
     ) -> pd.DataFrame:
     """
     Can query safely and log clause-wise
-    """
-    if expr is None:
+    """    
+    if expr in [None,'']:
         # return safely (as opposed to base pandas)
-        logging.warning("expr=None")
+        logging.warning(f"skipped because expr={expr}")
         return df
         
     assert ' and ' not in expr, expr 

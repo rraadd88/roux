@@ -278,6 +278,13 @@ def to_label(p):
     cleaned = re.sub(r'[^a-zA-Z0-9/]', '', Path(p).with_suffix('').as_posix()).replace('/', '_')
     return re.sub(r'^[^a-zA-Z0-9]+|[^a-zA-Z0-9]+$', '', cleaned)
 
+def with_stem_suffix(
+    p,
+    s,
+    sep='_',
+    ):
+    return f"{Path(p).parent}/{Path(p).stem}{sep}{to_path(s)}{Path(p).suffix}"
+    
 def makedirs(p: str, exist_ok=True, **kws):
     """Make directories recursively.
 

@@ -11,6 +11,55 @@ from roux.lib.sys import (
 from roux.lib.io import read_dict, to_dict, is_dict
 from roux.lib.log import log_dict
 
+from omegaconf import OmegaConf
+
+## mod.s
+def get_cfgs(
+    cfg,
+    alts
+):
+    """
+    Generates a list of DictConfigs by sweeping over alternative values.
+
+    Args:
+        cfg (dict): The base configuration dictionary.
+        alts (dict): Dictionary where keys are dot-notation config paths
+                             (e.g., 'loss.lr') and values are lists of alts.
+
+    Returns:
+        list: A list of resolved OmegaConf objects.
+    """
+    # g: Prepare lists for Cartesian product
+    alts=dict(sorted(alts.items()))
+    param_keys = list(alts.keys())
+    param_values = list(alts.values())
+    
+    configs = {}
+
+    # g: Convert base dictionary to OmegaConf object
+    base_conf = OmegaConf.create(cfg)
+
+    import itertools
+    # g: Iterate over Cartesian product of all alternative values
+    for combination in itertools.product(*param_values):
+        
+        # g: Construct the overrides list
+        current_overrides = []
+        for key, val in zip(param_keys, combination):
+            current_overrides.append(f"{key}={val}")
+            
+        name=';'.join(current_overrides)
+        
+        # g: Create a config object from the overrides
+        overrides_conf = OmegaConf.from_dotlist(current_overrides)
+        
+        # g: Merge the base config with the overrides
+        cfg = OmegaConf.merge(base_conf, overrides_conf)
+        configs[name]=cfg
+
+    return configs
+    
+## I/O
 def read_config(
     p: str,
     config_base=None,
@@ -42,8 +91,6 @@ def read_config(
             )
                 # }
         return cfg
-        
-    from omegaconf import OmegaConf
 
     if isinstance(config_base, str):
         if Path(config_base).exists():

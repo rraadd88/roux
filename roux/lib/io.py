@@ -851,13 +851,24 @@ def read_table(
     # params={}
     if tables==1:
         ## check for read_tables
-        if isinstance(p, list) or (isinstance(p, str) and ("*" in p)):
+        if isinstance(p, (dict,list)) or ((isinstance(p, str) and ("*" in p))):
             if isinstance(p, str) and ("*" in p):
                 _ps = read_ps(p, verbose=False)
                 if exists(p.replace("/*", "")):
                     logging.warning(f"exists: {p.replace('/*','')}")
-            elif isinstance(p, list):
+            elif isinstance(p, (list)):
                 _ps = p
+            elif isinstance(p, dict):
+                _ps = p
+                kws_read_tables={
+                    **kws_read_tables,
+                    **dict(
+                        to_dict=True
+                    ),
+                }
+            else:
+                raise ValueError(p)
+                
             return read_tables(
                 p,
                 params=params,
@@ -871,7 +882,7 @@ def read_table(
                 #     #     verbose=False,
                 #     # ),
                 # },  # is kws_apply_on_paths,
-            )
+            )            
         elif isinstance(p, str):
             ## read paths
             if use_paths or use_dir_paths:
@@ -1356,13 +1367,11 @@ def read_tables(
                 clean=clean,
                 verbose=verbose,
                 # **kws_clean,
-            )        
+            )
     else:
         if not isinstance(ps,dict):
             ps=read_ps(ps,verbose=False)
             ps=dict(zip(ps,ps))
-        else:
-            raise ValueError(ps)
         return {k: read_table(p, params=params,verbose=False) for k,p in ps.items()}
 
 ## save table
@@ -1530,19 +1539,29 @@ def to_tables(
     dfs,
     outp,
     ):
-    mdata_raw={k:dict(shape=df.shape,cols=df.columns.tolist()) for k,df in dfs.items()}
-    logging.info({k:d['shape'] for k,d in mdata_raw.items()})
-    
-    p=to_dict(
+    mdata_raw={}
+    ps={}
+    for k,df in dfs.items():
+        if isinstance(df,dict):
+            ## recurse
+            outp_=f"{Path(outp).with_suffix('').as_posix()}/{k}.yaml"
+            ps[k]=to_tables(
+                df,
+                outp_,
+            )
+            mdata_raw[k]=read_dict(outp_)
+        else:      
+            mdata_raw[k]=dict(shape=df.shape,cols=df.columns.tolist())
+            ps[k]=to_table(
+                df,
+                f"{Path(outp).with_suffix('').as_posix()}/{k}.pqt"
+            )
+        
+    logging.info({k:d if 'shape' in d else {k_:d_['shape'] for k_,d_ in d.items()} for k,d in mdata_raw.items()})
+    to_dict(
         mdata_raw,
         outp,
     )
-    ps={}
-    for k,df in dfs.items():
-        ps[k]=to_table(
-            df,
-            f"{Path(p).with_suffix('').as_posix()}/{k}.pqt"
-        )
     return ps
 
 # import pandas as pd

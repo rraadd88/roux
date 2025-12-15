@@ -84,35 +84,6 @@ def to_py(
     with open(pyp, "w+") as fh:
         fh.writelines(l1)
     return pyp
-
-def extract_kws(
-    lines,
-    fmt='dict',
-    ):
-    if fmt=='dict':
-        parameters = {}
-    else:
-        parameters=[]
-    for line in lines:
-        # Remove comments
-        line = re.sub(r'#.*', '', line).strip()
-        # Match valid assignments
-        match = re.match(r'(\w+)\s*=\s*(.+)', line)
-        if match:
-            key, value = match.groups()
-            # Evaluate value if it's a valid literal, otherwise keep it as a string
-            try:
-                eval(value)
-                string=False
-            except:
-                string=True
-            if fmt=='dict':
-                parameters[key] = value.strip() if string else eval(value)
-            else:
-                parameters.append(
-                    f"{key}="+("'"+value+"'" if string else value)
-                )
-    return parameters
     
 def to_src(
     p,
@@ -152,9 +123,10 @@ def to_src(
         
     t_splits,params=split_by_pms(t_tab)
     # t_splits
-    
+
+    from roux.workflow.pms import get_params
     params_str=',\n    '.join(
-        extract_kws(
+        get_params(
             params.split('    ')[1:],
             fmt='str',
         )
