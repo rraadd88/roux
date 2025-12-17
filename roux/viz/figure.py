@@ -104,7 +104,7 @@ def fig_grid(
     return g
 
 ## subplots in relaation to figs
-def gca(cols_max=2):
+def gca(cols_max=4):
     """
     Dynamically adds a subplot, creating new rows after cols_max is reached.
 

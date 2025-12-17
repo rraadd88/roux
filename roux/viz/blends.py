@@ -11,6 +11,8 @@ import pandas as pd
 
 import roux.lib.df as rd #noqa
 
+from roux.viz.figure import get_ax
+
 def plot_ranks(
     data: pd.DataFrame,
     kws_plot: dict,
@@ -20,6 +22,9 @@ def plot_ranks(
     xlim_min: float = -20,
     ax=None,
 ):
+    """
+    Plot ranks.
+    """
     if col_label is None:
         col_label = colid
     if ax is None:
@@ -66,7 +71,6 @@ def plot_ranks(
     format_ax()
     return ax
 
-from roux.viz.figure import get_ax
 def plot_dists_by_bins(
     data,
     x,

@@ -15,10 +15,26 @@ Note: Post-development, to remove *s from the code, use removestar (pip install 
 Examples:
 
 ## imports
+
 from roux.global_imports import * #noqa
 ## outputs
+# from roux.workflow.io import set_outputs
 output_dir_path,output_paths=set_outputs(output_path=locals().get('output_path'),output_paths=locals().get('output_paths'),)
-    
+
+## modules
+
+#if _export_mod:
+#    sys.exit(0)
+from roux.workflow.io import get_source_path,to_mod
+to_mod(get_source_path())
+
+## scripts
+
+## END
+#if _export_src:
+#    sys.exit(0)
+from roux.workflow.io import get_source_path,to_src
+to_src(get_source_path())
 """
 import warnings
 warnings.warn(

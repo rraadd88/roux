@@ -54,7 +54,6 @@ def clear_dataframes():
         variables=None,
     )
 
-
 ## io files
 def to_py(
     notebookp: str,
@@ -84,17 +83,90 @@ def to_py(
     with open(pyp, "w+") as fh:
         fh.writelines(l1)
     return pyp
-    
+
+## export helper
+def check_py(
+    p,
+    errors='raise',
+    # F401: unused imports
+    # E712: ==True
+    # F541: f" without placement
+    ruff_ignore='E402,E722,F841,E741,F401,E712,F541', # while prototyping
+):
+    import os
+    com=f"ruff check {p} --ignore {ruff_ignore}"
+    res=os.system(com)
+    if errors=='raise':
+        assert res==0, com
+    else:
+        logging.warning(f"validate by running: {com}")
+
+## used in ui
+from roux.lib.sys import get_source_path #noqa
+def to_mod(
+    p=None, #nb
+    outp=None, #py
+
+    kws_nb_export={},
+
+    ## ruff
+    errors='raise',
+    **kws_check_py,
+    ):
+    if p is None:
+        from roux.lib.sys import get_source_path
+        p=get_source_path()
+        logging.warning(f"p={p}")        
+
+    if outp is None:
+        outp=f"../{'modules/' if Path(p).stem.count('_')==1 else '' if Path(p).stem.count('_')==2 else ValueError(Path(p).stem)}{Path(p).stem.replace('_','/')}.py"
+
+    kws_nb_export={
+        **dict(
+            nbname=p,
+            lib_path=Path(outp).parent.as_posix(),
+            name=Path(outp).stem,
+        ),
+        ## override
+        **kws_nb_export
+        }
+    from nbdev.export import nb_export
+    nb_export(
+        **kws_nb_export,
+    )
+    # _py_path=f"{kws_nb_export['lib_path']}/{kws_nb_export['nbname'].split('.')[0].split('_')[-1]}.py"
+    _py_path=f"{kws_nb_export['lib_path']}/{kws_nb_export['name']}.py"
+    logging.info(_py_path)
+
+    check_py(
+        _py_path,
+        errors=errors,
+        **kws_check_py,
+        )
+
+    return outp
+
 def to_src(
     p,
-    outp, 
-    validate=True,
+    outp=None,
     verbose=False,
-    mark_end='## END'
+    mark_end='## END',
+
+    ## ruff
+    errors='raise',
+    **kws_check_py,    
     ):
     """
     Notebook to command line script.
+    
+    # roux to-src ipynb py
+    # ruff check py --ignore E402    
     """
+
+    if outp is None:
+        outp='/'.join(list(Path(p).parts[:-2])+[Path(p).parts[-2].replace('nbs','').replace('notebooks','').strip('_'),Path(p).stem+'.py'])
+        logging.warning(f"outp={outp}")
+
     pyp=to_py(
         p,
         pyp=f'.to_src/{Path(p).stem}.py',
@@ -166,15 +238,13 @@ if __name__ == "__main__": # and sys.stdin.isatty():
     Path(outp).parent.mkdir(exist_ok=True)
     open(outp,'w').write(t_src)
 
-    com=f"ruff check {outp} --ignore E402"
-    if validate:
-        import os
-        res=os.system(com)
-        assert res==0, res
-    else:
-        logging.warning(f"validate by running: {com}")        
+    check_py(
+        outp,
+        errors=errors,
+        **kws_check_py,
+        )    
     return outp
-    
+
 def to_nb_cells(
     notebook,
     outp,
@@ -214,7 +284,7 @@ def import_from_file(pyp: str):
     return SourceFileLoader(abspath(pyp), abspath(pyp)).load_module()
 
 
-## io parameters
+## [TODO: move to pms.py ] io parameters
 def infer_parameters(input_value, default_value):
     """
     Infer the input values and post warning messages.

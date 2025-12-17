@@ -744,6 +744,45 @@ def get_excecution_location(depth=1):
     return caller.filename, caller.lineno
 
 
+def get_source_path(
+    env_globals=None
+):
+    """
+    Robustly attempts to find the current file path (from where get_source_path() is exec.d).
+    Prioritizes explicit globals, then VS Code/Jupyter hooks, then inspection.
+    """
+    import inspect
+    if env_globals is None:
+        # g: Default to the caller's globals if not provided
+        # env_globals = inspect.stack()[1].frame.f_globals
+        env_globals = inspect.stack()[1].frame.f_locals
+
+    # g: 1. Check standard and environment-specific global keys
+    # g: '__vsc_ipynb_file__' is injected by VS Code's Jupyter extension
+    # g: '__file__' is standard for scripts        
+    target_keys = ['__file__', '__vsc_ipynb_file__',  '__session__']
+    for k in target_keys:
+        if env_globals.get(k):
+            return str(Path(env_globals[k]).resolve())
+
+    # g: 2. Check sys.argv[0] (Standard script entry point)
+    # g: Note: In Jupyter, this might return the kernel JSON, so valid extension check is needed
+    if sys.argv and sys.argv[0]:
+        _candidate = sys.argv[0]
+        if _candidate.endswith('.py') or _candidate.endswith('.ipynb'):
+             return str(Path(_candidate).resolve())
+
+    # g: 3. Inspect the caller's frame (Fallback for imported modules)
+    try:
+        _caller_file = inspect.stack()[1].filename
+        # g: Filter out irrelevant internal shells
+        if _caller_file and not _caller_file.startswith('<'): 
+            return str(Path(_caller_file).resolve())
+    except Exception:
+        pass
+        
+    raise NotImplementedError("Could not determine source path from current context.")
+
 ## time
 ## logging system
 def get_datetime(
