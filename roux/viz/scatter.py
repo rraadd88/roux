@@ -125,8 +125,8 @@ def plot_scatter(
         1. For a rasterized scatter plot set `scatter_kws={'rasterized': True}`
         2. This function does not apply multiple colors, similar to `sns.regplot`.
     """
-    ## axis
-    ax = plt.subplot() if ax is None else ax
+    from roux.viz.figure import get_ax
+    ax = get_ax(ax)
 
     ## string to list
     stat_method = (

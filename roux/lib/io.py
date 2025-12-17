@@ -843,6 +843,8 @@ def read_table(
                            sep='\t',comment='#',header=None,
                            names=replace_many(get_header(path,comment='#',lineno=-1),['#','\n'],'').split('\t'))
                            )
+    TODO:
+        params -> kws_read
     """
     if params is None:
         params={}

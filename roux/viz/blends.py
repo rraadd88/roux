@@ -3,11 +3,12 @@
 # %% auto 0
 __all__ = ['plot_ranks', 'plot_dists_by_bins']
 
-# %% ../../examples/roux_viz_blends.ipynb 2
+# %% ../../examples/roux_viz_blends.ipynb 1
 """Blends of plotting functions."""
 
 import matplotlib.pyplot as plt
 import pandas as pd
+
 import roux.lib.df as rd #noqa
 
 def plot_ranks(
@@ -74,7 +75,6 @@ def plot_dists_by_bins(
     show_corr=False, ## also taked kws
     corr_offs=[0,0],
     ax=None,
-    out_more=False,
     **kws_plot_dists,
     ):
     ## binning
@@ -98,7 +98,7 @@ def plot_dists_by_bins(
         data,
         x=x,
         y=f"{y} bin",
-        # showfliers=False,
+        showfliers=False,
         
         ax=get_ax(ax),
         **kws_plot_dists,
@@ -106,9 +106,6 @@ def plot_dists_by_bins(
     if show_corr!=False:
         if show_corr==True:
             kws_show_corr={}
-        else:
-            kws_show_corr=show_corr
-            del show_corr
         assert isinstance(kws_show_corr,dict)
         from roux.viz.annot import show_scatter_stats
         show_scatter_stats(
@@ -125,15 +122,12 @@ def plot_dists_by_bins(
                     show_p=False,
                     resample=True,
                     
-                    wrap=True, ## \n +/-
-                    
                     kws_set_label=dict(
                         x=-0.25+corr_offs[0],
                         y=-0.125+corr_offs[1],
                         ha='center',
                         va='center',
                         linespacing=0.75,
-                        size=11,
                     ),
                 ),
                 **kws_show_corr,
@@ -142,11 +136,4 @@ def plot_dists_by_bins(
     ax.set(
         ylabel=y,
     )
-    if not out_more:    
-        return ax
-    else:
-        return dict(
-            ax=ax,
-            data=data,
-        )
-    
+    return ax

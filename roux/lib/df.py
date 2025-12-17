@@ -2435,7 +2435,7 @@ def assert_expr(
     expr,
     **kws
     ):
-    assert df1.query(expr=expr,**kws).shape[0]==df1.shape[0], df1
+    assert df1.query(expr=expr,**kws).shape[0]==df1.shape[0], df1.query(f"~({expr})")
     return df1
     
 ## paired stats
