@@ -89,10 +89,13 @@ def plot_scatter(
     # stats_annot_kws={},
     ## aes
     hollow: bool = False,
+    ## axes
+    diagonal=False,
     ## set
     ax: plt.Axes = None,
     verbose: bool = True,
     annot_kws={},
+    # kws_set={},
     **kws,
 ) -> plt.Axes:
     """Plot scatter with multiple layers and stats.
@@ -206,6 +209,11 @@ def plot_scatter(
             line_kws=line_kws,
             **kws,
         )
+    
+    if diagonal:
+        from roux.viz.ax_ import set_equallim
+        set_equallim(ax=ax,diagonal=True,**(diagonal if isinstance(diagonal,dict) else {}))
+
     ## stats
     from roux.viz.annot import show_scatter_stats
     

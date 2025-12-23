@@ -21,7 +21,9 @@ from pathlib import Path
 ## internal
 from roux.lib.sys import run_com
 from roux.lib.io import read_dict, to_dict, read_ps
+
 from roux.workflow.log import test_params
+from roux.workflow.pms import pre_params
 
 from roux.lib.sys import (
     exists,
@@ -50,127 +52,6 @@ except ImportError:
 
 import papermill as pm
 
-## validators
-def validate_params(
-    d: dict,
-) -> bool:
-    return ("input_path" in d) and ("output_path" in d)
-
-def pre_params(
-    params=None,
-    inputs=None,
-    output_path_base=None,
-    flt_input_exists=False,
-    flt_output_exists=False,
-    verbose=False,
-    force=False,
-    test1: bool = False,
-    testn: int = None,
-):
-    """
-    Unified pre-processing for params, used by both run_tasks_nb and run_tasks.
-    Handles conversion, checks, output path inference, and filtering (including test1/testn).
-    Returns a list of parameter dicts ready for execution.
-    """
-    # --- Handle input formats and output path inference ---
-    param_list = params
-    # print(len(param_list))
-    if param_list is None and inputs is not None and output_path_base is not None:
-        from roux.lib.sys import to_output_paths
-        param_list = to_output_paths(
-            inputs=inputs,
-            output_path_base=output_path_base,
-            encode_short=True,
-            key_output_path="output_path",
-            verbose=verbose,
-            force=force,
-        )
-        # Optionally save all parameters (as in run_tasks_nb)
-        for k, parameters in param_list.items():
-            output_dir_path = output_path_base.split("{KEY}")[0]
-            to_dict(
-                parameters,
-                f"{output_dir_path}/{k.split(output_dir_path)[1].split('/')[0]}/.parameters.yaml",
-            )
-
-    # print(len(param_list))
-    if isinstance(param_list, str):
-        param_list = read_dict(param_list)
-
-    # print(len(param_list))
-    if not param_list or (isinstance(param_list, (list, dict)) and len(param_list) == 0):
-        logging.info("nothing to process. use `force`=True to rerun.")
-        return []
-
-    # print(len(param_list))
-    # --- Convert dict to list if needed ---
-    if isinstance(param_list, dict):
-        if 'input_path' in param_list and 'output_path' in param_list:
-            ## pms
-            param_list=[param_list]
-        else:
-            if not any(['input_path' in d for d in param_list.values()]):
-                logging.warning("setting keys of params as input_path s ..")
-                param_list = {k: {**d, **{'input_path': k}} for k, d in param_list.items()}
-            if validate_params(list(param_list.values())[0]):
-                param_list = list(param_list.values())
-            else:
-                raise ValueError(param_list)
-
-    # --- Filtering by output existence, as in flt_params ---
-    before = len(param_list)
-
-    # print(len(param_list))
-    if flt_output_exists:
-        print(len(param_list),end='->')
-        param_list = [
-            d
-            for d in param_list
-            if Path(d["output_path"]).exists()
-        ]
-        # print(len(param_list))
-    else:
-        param_list = [
-            d
-            for d in param_list
-            if (force if force else not Path(d["output_path"]).expanduser().exists())
-        ]
-
-    # print(len(param_list))
-    if flt_input_exists:
-        print(len(param_list),end=' -> ')
-        param_list = [
-            d
-            for d in param_list
-            if (force if force else Path(d["input_path"]).expanduser().exists())
-        ]
-    
-        
-    if not force:
-        if before - len(param_list) != 0:
-            logging.info(
-                f"parameters_list_flt reduced because force=False: {before} -> {len(param_list)}"
-            )
-
-    # --- Filtering by test1 and testn ---
-    if test1:
-        testn = 1
-    if testn is not None:
-        param_list = param_list[:testn]
-        logging.warning(f"filtered to {len(param_list)} jobs ..")
-
-    if len(param_list) == 0:
-        # logging.info("No tasks remaining after filtering.")
-        return []
-
-    # --- Final assertions ---
-    assert len(set([d["output_path"] for d in param_list])) == len(param_list), \
-        "Duplicate output_path found in params."
-    assert all([Path(d["input_path"]) != Path(d["output_path"]) if isinstance(d["input_path"],str) else True for d in param_list]), \
-        "Some input_path == output_path in params."
-
-    return param_list
-
 def pre_task(
     pms,
     cache_dir_path=None,
@@ -191,7 +72,7 @@ def pre_task(
         from roux.lib.str import encode
         # log_dir_path_=f"{Path(cache_dir_path).expanduser().as_posix()}"
         log_dir_path_=cache_dir_path
-        log_dir_path=f"{log_dir_path_}/{get_datetime()}_{encode(pms['output_path'])}"
+        log_dir_path=f"{log_dir_path_}/{get_datetime()}_{encode(pms['output_path'],short=True)}"
     
     # else:
         # [tmp dir not found by slurm]
@@ -690,7 +571,10 @@ class SLURMJob:
         self.time = time
         self.cpus = cpus
         self.mem = mem
-        self.append_header = (open(append_header).read() if '/' in append_header and ' ' not in append_header else append_header.replace(' #SBATCH','\n#SBATCH').replace('module','\nmodule'))
+
+        ## could be a file path
+        # self.append_header = (open(append_header).read() if ('/' in append_header and ' ' not in append_header) else append_header.replace(' #SBATCH','\n#SBATCH').replace('module','\nmodule'))
+        self.append_header = (open(append_header).read() if (Path(append_header).is_file() and Path(append_header).exists()) else append_header.replace(' #SBATCH','\n#SBATCH').replace('module','\nmodule'))
         
         self.ntasks = ntasks
         self.partition = partition
@@ -910,9 +794,9 @@ def to_sbatch_script(
     sbatch_path, # outp
     log_dir_path,
     
-    script_pre=None,
+    script_pre=None, ## e.g. bash
     
-    job_pre=None,
+    job_pre=None, ## bash setup.sh
     modules=None,
     packages=None,
 

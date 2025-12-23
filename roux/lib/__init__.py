@@ -25,7 +25,7 @@ def to_class(cls):
     return decorator
 
 from pandas.plotting._core import PlotAccessor
-
+from roux.viz.figure import get_ax
 # 1. The helper class that dynamically creates plotting methods
 class _PiperPlotter:
     def __init__(self, pandas_obj):
@@ -65,29 +65,38 @@ class _PiperPlotter:
 
         def piper_plot_method(
             func_ax=None, #lambda
+            out=False,
             **kwargs,
             ):
             """This is the wrapped method that will be called.
             It calls the real plot function and then returns the DataFrame.
             """
+            if 'ax' in kwargs:
+                kwargs['ax']=get_ax(kwargs['ax'])
             # print(kwargs)
             ax=real_plot_method(
                 **kwargs
                 )
             if func_ax is not None:
                 func_ax(ax)
-            return self._obj # Return the DataFrame for chaining
-            
+            if not out:
+                return self._obj # Return the DataFrame for chaining
+            else:
+                return ax        
         return piper_plot_method
 
     ## exceptions
     def hist(
         self,
-        subset,
+        subset=None,
         sample=None,
         func_ax=None,
         **kws,
-    ):                        
+    ):      
+        if subset is None:
+            assert self._obj.shape[1]==1, self._obj.head()
+            subset=self._obj.columns.tolist()
+            
         # if isinstance(subset,(str)):
         #     subset=[subset]
         if sample is not None:
@@ -102,7 +111,7 @@ class _PiperPlotter:
                 else:
                     raise ValueError(sample)
                 
-        axs=self._obj.loc[:,subset].hist(**kws)
+        axs=self._obj.loc[:,subset].hist(**{**dict(label=subset),**kws})
         ax=axs.ravel()[0]
         ax.set(
             ylabel='Count',

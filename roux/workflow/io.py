@@ -146,10 +146,12 @@ def to_mod(
 
     return outp
 
-def to_src(
+def to_scr(
     p,
     outp=None,
     verbose=False,
+
+    with_pms=True, # py with --pms (preferred)
     mark_end='## END',
 
     ## ruff
@@ -161,6 +163,9 @@ def to_src(
     
     # roux to-src ipynb py
     # ruff check py --ignore E402    
+
+    TODO:
+        Prefer py with --pms
     """
 
     if outp is None:
@@ -213,13 +218,29 @@ def run(
     params_str+
     """
     ):
+    ## for cli
+    assert input_path is not None
+    assert output_path is not None
     """
     )
     
     t_end="""
-    
-## for recursive operations
-run_rec=run
+
+## run using params
+def run_script(
+    pms,
+    testn=None,
+    ):
+    import logging
+    from roux.workflow.task import pre_params
+    params=pre_params(pms)
+    for i,kws in enumerate(params):
+        return run(
+            **kws
+        )
+        if i==testn:
+            logging.warning(f"stopping because testn={testn}")
+            break
 
 ## CLI-setup
 import argh
@@ -227,6 +248,7 @@ parser = argh.ArghParser()
 parser.add_commands(
     [
         run,
+        run_script,
     ]
 )
 if __name__ == "__main__": # and sys.stdin.isatty():
@@ -244,6 +266,8 @@ if __name__ == "__main__": # and sys.stdin.isatty():
         **kws_check_py,
         )    
     return outp
+## alias
+to_src=to_scr
 
 def to_nb_cells(
     notebook,

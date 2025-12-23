@@ -23,7 +23,7 @@ output_dir_path,output_paths=set_outputs(output_path=locals().get('output_path')
 
 ## modules
 
-#if _export_mod:
+#if export_mod:
 #    sys.exit(0)
 from roux.workflow.io import get_source_path,to_mod
 to_mod(get_source_path())
@@ -31,7 +31,7 @@ to_mod(get_source_path())
 ## scripts
 
 ## END
-#if _export_src:
+#if export_src:
 #    sys.exit(0)
 from roux.workflow.io import get_source_path,to_src
 to_src(get_source_path())

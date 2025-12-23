@@ -790,22 +790,28 @@ from roux.lib.text import get_header
 def read_table(
     p: str,
     ext: str = None,
-    clean: bool = True,
-    filterby_time=None,
-    params: dict = None,
-    kws_clean: dict = {},
-    kws_cloud: dict = {},
+
     use_paths: bool = False,  # read files in the path column even if not available in the sub-dir
     use_dir_paths: bool = False,  # =use_paths, will be deprec.d
-    tables: int = 1,
+    filterby_time=None,
+
+    params: dict = None,
+
     post=True,
+    clean: bool = True,
+    kws_clean: dict = {},
+
+    kws_cloud: dict = {},
+
+    ## internal
+    engine: str = "pyarrow",
+    tables: int = 1,     
     test: bool = False,
     verbose: bool = True,
-    engine: str = "pyarrow",
     **kws_read_tables: dict,
 ):
     """
-    Table/s reader.
+    Unified table/s reader.
 
     Parameters:
         p (str): path of the file. It could be an input for `read_ps`, which would include strings with wildcards, list etc.
@@ -843,8 +849,21 @@ def read_table(
                            sep='\t',comment='#',header=None,
                            names=replace_many(get_header(path,comment='#',lineno=-1),['#','\n'],'').split('\t'))
                            )
-    TODO:
-        params -> kws_read
+    TODOs:
+        params -> kws_reader
+            with back-compatibility
+            kws_reader=params
+
+        Standardised arg.s to be preferred
+            kws_read_table=dict(
+                path=
+                cols= # query cols
+                expr= # query rows
+                )
+            with back-compatibility
+                path=p
+                cols=kws_reader['columns] 
+                expr=
     """
     if params is None:
         params={}

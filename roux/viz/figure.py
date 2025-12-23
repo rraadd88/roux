@@ -104,7 +104,10 @@ def fig_grid(
     return g
 
 ## subplots in relaation to figs
-def gca(cols_max=4):
+def gca(
+    cols_max=4,
+    figsize=[8,2],
+    ):
     """
     Dynamically adds a subplot, creating new rows after cols_max is reached.
 
@@ -116,6 +119,10 @@ def gca(cols_max=4):
     """
     # 1. Get the current figure and axes
     fig = plt.gcf()
+    
+    if list(fig.get_size_inches())!=figsize:
+        fig.set_size_inches(figsize[0], figsize[1], forward=True)
+
     existing_axes = fig.axes
     n_existing = len(existing_axes)
     n_new_total = n_existing + 1
@@ -147,7 +154,7 @@ def get_ax(
 ):    
     if isinstance(ax,plt.Axes): 
         return ax
-    elif ax is None:
+    elif ax in ['.',None]:
         return plt.gca()
     elif isinstance(ax,dict):
         ## recurse
@@ -160,7 +167,7 @@ def get_ax(
             1,1,
             **kws                
         )[1]
-    elif ax in ['append','gca']:
+    elif ax in ['+','append','gca']:
         return gca(
             **kws    
         )
