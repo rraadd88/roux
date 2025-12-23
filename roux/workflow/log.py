@@ -40,8 +40,8 @@ def test_params(
         params=read_dict(params)
         
     if isinstance(params, dict):
-        from roux.workflow.task import validate_params
-        if validate_params(
+        from roux.workflow.pms import validate_pms
+        if validate_pms(
             params[
                 list(params.keys())[0]
             ]

@@ -825,7 +825,7 @@ def to_sbatch_script(
         #     modules.append('python')
 
         if script_path.endswith('.py') or '.py ' in script_path:
-            com=f"{script_pre}{'python run' if not script_path.startswith('python ') else ''} {script_path} "
+            com=f"{script_pre}{'python' if not script_path.startswith('python ') else ''} {script_path} run "
             if not expand_pms:
                 ## safer than expand_pms 
                 com+=f" --input-path {pms_path}"
