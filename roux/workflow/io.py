@@ -88,11 +88,17 @@ def to_py(
 def check_py(
     p,
     errors='raise',
-    # F401: unused imports
-    # E712: ==True
-    # F541: f" without placement
     ruff_ignore='E402,E722,F841,E741,F401,E712,F541', # while prototyping
 ):
+    """
+    E402	pycodestyle	Module level import not at top of file.
+    E722	pycodestyle	Do not use bare except: (use except Exception:).
+    F841	Pyflakes	Local variable is assigned to but never used.
+    E741	pycodestyle	Do not use variables named 'l', 'O', or 'I' (ambiguous characters).
+    F401	Pyflakes	Module imported but unused.
+    E712	pycodestyle	Comparison to True should be if cond is True: or if cond:.
+    F541	Pyflakes	f-string without any placeholders.
+    """
     import os
     com=f"ruff check {p} --ignore {ruff_ignore}"
     res=os.system(com)
@@ -146,6 +152,9 @@ def to_mod(
 
     return outp
 
+def to_py_path(p):
+    return '/'.join(list(Path(p).parts[:-2])+[Path(p).parts[-2].replace('nbs','').replace('notebooks','').strip('_'),Path(p).stem+'.py'])    
+
 def to_scr(
     p,
     outp=None,
@@ -169,7 +178,7 @@ def to_scr(
     """
 
     if outp is None:
-        outp='/'.join(list(Path(p).parts[:-2])+[Path(p).parts[-2].replace('nbs','').replace('notebooks','').strip('_'),Path(p).stem+'.py'])
+        outp=to_py_path(p)
         logging.warning(f"outp={outp}")
 
     pyp=to_py(
@@ -213,11 +222,24 @@ def to_scr(
     
     t_def=(
     """
+import argh
 def run(
     """+
     params_str+
     """
     ):
+    if input_path is not None and output_path is None:
+        ## should be params
+        from roux.workflow.task import pre_params
+        params=pre_params(input_path)
+        if len(params)!=1:
+            print(f"warning: {len(params)} pms found")
+        for i,kws in enumerate(params):
+            run(
+                **kws
+            )
+        return 
+
     ## for cli
     assert input_path is not None
     assert output_path is not None
@@ -226,29 +248,11 @@ def run(
     
     t_end="""
 
-## run using params
-def run_script(
-    pms,
-    testn=None,
-    ):
-    import logging
-    from roux.workflow.task import pre_params
-    params=pre_params(pms)
-    for i,kws in enumerate(params):
-        return run(
-            **kws
-        )
-        if i==testn:
-            logging.warning(f"stopping because testn={testn}")
-            break
-
 ## CLI-setup
-import argh
 parser = argh.ArghParser()
 parser.add_commands(
     [
         run,
-        run_script,
     ]
 )
 if __name__ == "__main__": # and sys.stdin.isatty():

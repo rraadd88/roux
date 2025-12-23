@@ -779,15 +779,10 @@ def infer_runner(
     if runner_in is not None and runner!=runner_in:
         logging.warning(f'runner={runner}')    
     else:
-        logging.debug(f'runner={runner}')
+        logging.info(f'runner={runner}')
         
     return runner
 
-def _expand_pms(
-    pms
-    ):
-    return ' '.join([f"--{k.replace('_','-')} {v}" for k,v in pms.items()])
-    
 def to_sbatch_script(
     script_path,
     pms,
@@ -805,7 +800,7 @@ def to_sbatch_script(
     # time,# "01:00:00",
     append_header="",
 
-    expand_pms=True, # argh
+    expand_pms=False,
     
     force=False,
     test=False,
@@ -828,12 +823,15 @@ def to_sbatch_script(
     else:
         # if not any([s.startswith('python') for s in modules]):
         #     modules.append('python')
+
         if script_path.endswith('.py') or '.py ' in script_path:
-            com=f"{script_pre}{'python ' if not script_path.startswith('python ') else ''}{script_path} "
+            com=f"{script_pre}{'python run' if not script_path.startswith('python ') else ''} {script_path} "
             if not expand_pms:
-                 com+=f" --pms {pms_path}"
+                ## safer than expand_pms 
+                com+=f" --input-path {pms_path}"
             else:
-                 com+=_expand_pms(pms)   
+                from roux.workflow.pms import expand_pms
+                com+=expand_pms(pms)   
             # packages.append('argh')
             # pass
             # return "under dev"
@@ -1304,6 +1302,20 @@ def run_tasks(
 
     # if test:
     #     cache_dir_path=f"{wd_path}/{cache_dir_path}"
+    if runner in ['slurm','bash'] and script_type in ['ipynb']:
+        ## use py because of possible kernel issues
+        ## infer py
+        from roux.workflow.io import to_py_path
+        script_path_=to_py_path(script_path)
+        assert Path(script_path_).exists(), script_path_
+        if Path(script_path).exists():
+            logging.warning(
+                f"script_path -> {script_path_}"    
+            )
+        script_path=script_path_
+        del script_path_
+        script_type='py'
+    
     if runner.startswith('py'):
         from roux.lib.sys import is_interactive_notebook
         test=is_interactive_notebook()
