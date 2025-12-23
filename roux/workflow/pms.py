@@ -216,7 +216,6 @@ def expand_pms(
 
 
 ## I/O
-import json
 import nbformat
 
 def read_pms(notebook_path, tag='parameters'):
