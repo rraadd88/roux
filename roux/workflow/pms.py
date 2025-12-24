@@ -257,10 +257,14 @@ def pre_params(
     output_path_base=None,
     flt_input_exists=False,
     flt_output_exists=False,
+    drop_if_path_exists:str=None,
+    drop_by_patterns:list=None,
+
     verbose=False,
     force=False,
     test1: bool = False,
     testn: int = None,
+    outp=None, ## save
 ):
     """
     Unified pre-processing for params, used by both run_tasks_nb and run_tasks.
@@ -318,8 +322,8 @@ def pre_params(
     # --- Filtering by output existence, as in flt_params ---
     before = len(param_list)
 
-    # print(len(param_list))
-    if flt_output_exists:
+    if flt_output_exists==True:
+        ## keep
         print(len(param_list),end='->')
         param_list = [
             d
@@ -328,10 +332,32 @@ def pre_params(
         ]
         # print(len(param_list))
     else:
+        ## drop
         param_list = [
             d
             for d in param_list
-            if (force if force else not Path(d["output_path"]).expanduser().exists())
+            if (force or not Path(d["output_path"]).expanduser().exists())
+        ]
+    
+    if drop_if_path_exists:
+        ## drop if sub-path exists
+        print(len(param_list),end=f' -drop_if_path_exists-> ')
+        assert isinstance(drop_if_path_exists,str), drop_if_path_exists
+        param_list = [
+            d
+            for d in param_list
+            if (force or not Path(Path(d['output_path']).with_suffix('').as_posix()+"/"+drop_if_path_exists).exists())
+        ]
+
+    if drop_by_patterns:
+        ## drop if sub-path exists
+        print(len(param_list),end=f' -drop_by_patterns-> ')
+        print(drop_by_patterns)
+        assert isinstance(drop_by_patterns,list), drop_by_patterns
+        param_list = [
+            d
+            for d in param_list
+            if (force or not any([s in d['input_path'] for s in drop_by_patterns]))
         ]
 
     # print(len(param_list))
@@ -366,5 +392,10 @@ def pre_params(
         "Duplicate output_path found in params."
     assert all([Path(d["input_path"]) != Path(d["output_path"]) if isinstance(d["input_path"],str) else True for d in param_list]), \
         "Some input_path == output_path in params."
+    
+    print(len(param_list))
 
-    return param_list
+    if not outp:
+        return param_list
+    else:
+        to_dict(param_list,outp)

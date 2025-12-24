@@ -23,6 +23,7 @@ from roux.lib.io import (
     )
 
 from roux.workflow.log import test_params
+from roux.workflow.pms import pre_params
 from roux.workflow.io import replacestar, to_clean_nb, to_html, to_src, to_nb_kernel
 
 from roux.workflow.task import (
@@ -144,6 +145,7 @@ parser.add_commands(
             to_cfg_run_arc,
         ## workflow execution
             test_params,
+            pre_params,
             run_tasks,
             ## slurm
             check_tasks,

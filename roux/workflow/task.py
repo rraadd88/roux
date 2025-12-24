@@ -561,7 +561,7 @@ class SLURMJob:
         ntasks=1, 
         partition="default",
         
-        post_arxv: bool = True,
+        post_arxv: bool = False,
         post_clean: bool = False,
         ):
         
@@ -1155,7 +1155,7 @@ def run_tasks(
     test1 : bool =False,
     testn : int =None,
     test : bool =False, ## saves more log files
-    test_cpus: int = 3, 
+    test_cpus: int = 3,
 
     **kws_runner,
     ):
@@ -1182,7 +1182,10 @@ def run_tasks(
             feed_interval = '1s',
             feed_if_jobs_max = 0.5,    
     """    
-    
+    # arg. dtype
+    if testn=='None':
+        testn=None 
+        
     if simulate:
         test=True
         verbose=True
@@ -1213,11 +1216,6 @@ def run_tasks(
     else:
         wd_path=Path(wd_path).as_posix()
         os.chdir(wd_path)
-        
-    if kernel is None:
-        ## inferring kernel
-        kernel=Path(os.environ.get('VIRTUAL_ENV')).parent.stem
-        logging.info(f"inferred kernel: {kernel}")
 
     runner=infer_runner(
         runner=runner,
@@ -1302,7 +1300,7 @@ def run_tasks(
 
     # if test:
     #     cache_dir_path=f"{wd_path}/{cache_dir_path}"
-    if runner in ['slurm','bash'] and script_type in ['ipynb']:
+    if runner in ['slurm','bash'] and script_type in ['ipynb'] and kernel is None:
         ## use py because of possible kernel issues
         ## infer py
         from roux.workflow.io import to_py_path
@@ -1315,7 +1313,13 @@ def run_tasks(
         script_path=script_path_
         del script_path_
         script_type='py'
-    
+    else:
+        ## run nbs
+        if kernel is None:
+            ## inferring kernel
+            kernel=Path(os.environ.get('VIRTUAL_ENV')).parent.stem
+            logging.info(f"inferred kernel: {kernel}")
+
     if runner.startswith('py'):
         from roux.lib.sys import is_interactive_notebook
         test=is_interactive_notebook()
