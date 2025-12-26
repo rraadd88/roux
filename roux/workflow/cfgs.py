@@ -46,6 +46,8 @@ def get_cfgs(
         # g: Construct the overrides list
         current_overrides = []
         for key, val in zip(param_keys, combination):
+            if val is None:
+                val = 'null' 
             current_overrides.append(f"{key}={val}")
             
         name=';'.join(current_overrides)
