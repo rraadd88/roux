@@ -712,7 +712,12 @@ def read_dict(
         logging.error("supported extensions: .yml .yaml .json .pickle .joblib")
 
 
-def to_dict(d, p, **kws):
+def to_dict(
+    d, 
+    p,
+    compress=False,
+    **kws
+    ):
     """Save dictionary file.
 
     Parameters:
@@ -733,10 +738,25 @@ def to_dict(d, p, **kws):
         logging.warning("probably working on google drive; space/s left in the path.")
     makedirs(p)
     if p.endswith(".yml") or p.endswith(".yaml"):
+        
         import yaml
-
+        if not compress:
+            import json
+            d=json.loads(
+                json.dumps(d)
+            )
         with open(p, "w") as f:
-            yaml.safe_dump(d, f, **{**dict(sort_keys=False),**kws})
+            yaml.safe_dump(
+                ## no aliases
+                d, 
+                f,
+                **{
+                    **dict(
+                        sort_keys=False
+                    ),
+                    **kws
+                }
+                )
         return p
     elif p.endswith(".json"):
         import json
