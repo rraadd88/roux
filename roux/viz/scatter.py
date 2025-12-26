@@ -85,7 +85,9 @@ def plot_scatter(
     ## stats
     stat_method: str = "spearman",
     stat_resample: bool = False,
-    stat_kws={},
+    stat_kws={
+        # 'n_min':10
+    },
     # stats_annot_kws={},
     ## aes
     hollow: bool = False,
