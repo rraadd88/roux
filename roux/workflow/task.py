@@ -534,7 +534,7 @@ def submit_job(
         logging.error(f"skipped because already running: {job_name}.")
         return 
     
-    com = f'sbatch {p}'
+    com = f"sbatch '{p}'"
     res=run_com(
         com,
         verbose=verbose,
@@ -597,6 +597,8 @@ class SLURMJob:
         packages=None,
         
         verbose=False,
+
+        job_name='name',#'path',
         ):
         """Generate the SLURM script"""
         
@@ -612,7 +614,8 @@ class SLURMJob:
         #     #         logging.error(e)
         #     self.job_name=outp
         # self.job_name=f"roux:{self.job_name}"
-        self.job_name=f"roux:{Path(outp).as_posix()}"
+
+        self.job_name=f"roux:{Path(outp).as_posix() if job_name=='path' else Path(outp).name if job_name=='name' else job_name}"
 
         modules_load_str=''
         packages_install_str=''
@@ -655,7 +658,7 @@ f"""#!/bin/bash
             f.write(
 f"""
 ## archive the subdir (if job completed)
-roux post-tasks -p {self.log_path}/pms.yaml {'--arxv' if self.post_arxv else ''} {'--clean' if self.post_clean else ''} 
+roux post-tasks -p '{self.log_path}/pms.yaml' {'--arxv' if self.post_arxv else ''} {'--clean' if self.post_clean else ''} 
 """
             )
             # f.write("exit(0)\n")
@@ -674,7 +677,8 @@ def check_tasks(
     query_expr='| tail -n 10',
     eff=False,
     ):
-    cols=['JobID','State','Elapsed','End','JobName']
+    cols=['JobID','State','Elapsed','End','JobName',] 
+    # 'COMMAND' sacct: error: Invalid field requested: "COMMAND"
     com=f"sacct -u $USER --format={','.join(cols)}%200 | grep '.*{state}.*roux:.*{job_name_expr}.*' {query_expr}"
     txt=run_com(
         com,
@@ -841,13 +845,13 @@ def to_sbatch_script(
         elif script_path.endswith('.ipynb'):
             log_path=f"{log_dir_path}/{Path(script_path).name}"
             com=(
-                f"{script_pre}papermill --parameters_file {pms_path} "
-                f"--stdout-file {Path(log_path).with_suffix('.out')} --stderr-file {Path(log_path).with_suffix('.err')} "
+                f"{script_pre}papermill --parameters_file '{pms_path}' "
+                f"--stdout-file '{Path(log_path).with_suffix('.out')}' --stderr-file '{Path(log_path).with_suffix('.err')}' "
                 # kernel_name=kernel,
                 "--start-timeout=600 "
                 "--report-mode "
                 # "--allow_errors=False "
-                f"{script_path} {log_path}"
+                f"'{script_path}' '{log_path}'"
             )
             # --kernel
             # packages.append('papermill')
@@ -1107,7 +1111,7 @@ def run_tasks(
     pre: bool = True,
     no_pre: bool = False,
 
-    post_arxv: bool = True,
+    post_arxv: bool = False,
     no_post_arxv: bool = False,
 
     post_clean: bool = False,
@@ -1461,7 +1465,7 @@ def run_tasks(
 
         if runner!='slurm':
             coms.append(
-                f"bash {sbatch_path} &> {log_dir_path}/stdout",
+                f"bash '{sbatch_path}' &> '{log_dir_path}/stdout'",
             )
         
         sbatch_paths.append(sbatch_path)
