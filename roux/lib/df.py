@@ -10,6 +10,20 @@ import pandas as pd
 ## internal
 from roux.lib import to_rd
 
+## beacuse NA in pandas
+@to_rd
+def reset_index(
+    df,
+    **kws,
+):
+    """
+    Named levels only.
+    """
+    return df.reset_index(
+        [i for i in df.index.names if i],
+        **kws
+    )
+
 @to_rd
 def loca(
     df,
@@ -43,7 +57,7 @@ def loca(
     if d1["to"]==(0,0):
         logging.warning('loca: na')
     return df
-    
+   
 @to_rd
 def get_name(
     df1: pd.DataFrame,

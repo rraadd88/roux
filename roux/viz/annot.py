@@ -820,7 +820,6 @@ def show_scatter_stats(
             [x, y],
             **kws_stat,
         )
-    
     kws_set_label={
             **dict(
                 zorder=zorder,
@@ -830,11 +829,11 @@ def show_scatter_stats(
             **kws_set_label,
         }
     
-    if kws_set_label.get('loc') is not None:
-        ## if no inputs provided, use the one inferred
-        kws_set_label['loc']=0
+    ## if no inputs provided, use the one inferred
+    kws_set_label['loc']=kws_set_label.get('loc',0)
         
-    logging.debug(kws_set_label)
+    if verbose:
+        logging.info(kws_set_label)
     
     _ = set_label(
         ax=ax,

@@ -232,15 +232,8 @@ def plot_scatter(
             kws_parcorr['x_covar']=kws['x_partial']
         elif kws.get('y_partial',None):
             kws_parcorr['y_covar']=kws['y_partial']
-                    
-    ax=show_scatter_stats(
-        ax,
-        data=data,
-        x=x,
-        y=y,
-        z=z,
-        zorder=5,
-        **{
+
+    kws_={
             **{
                 **dict(
                     method=stat_method[0],
@@ -250,7 +243,16 @@ def plot_scatter(
                 **kws_parcorr,
             },
             **annot_kws,
-        },
+        }
+    logging.info(kws_)        
+    ax=show_scatter_stats(
+        ax,
+        data=data,
+        x=x,
+        y=y,
+        z=z,
+        zorder=5,
+        **kws_,
     )
     return ax
 

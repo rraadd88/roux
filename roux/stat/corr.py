@@ -64,9 +64,17 @@ def _pre(
         cols_covar=[c for c in covar+[x_covar,y_covar] if c is not None]
         cols_covar=list(set(cols_covar))
     
+    try:
+        df = (
+            df
+                .replace([np.inf, -np.inf], np.nan)
+            ) 
+    except Exception as e:
+        logging.warning(str(e))
+        logging.warning(df.to_string())
+        
     df = (
         df
-            .replace([np.inf, -np.inf], np.nan)
             .dropna(
                 subset=['x','y']+cols_covar
             )
