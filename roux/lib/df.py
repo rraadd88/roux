@@ -2554,7 +2554,7 @@ def check_diff(
     plot=False, 
     ax=None,
     
-    out=False,
+    out=False, # stats
     
     kws_plot={},
     kws_plot_set={},

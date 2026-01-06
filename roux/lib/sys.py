@@ -108,27 +108,32 @@ def read_ps(
     """
     
     if isinstance(ps, str):
-        if "*" in ps:
+        # g: Check for any glob magic characters (*, ?, [)
+        _glob_chars = ['*', '?', '['] # g: added
+        if any(c in ps for c in _glob_chars): # g: modified
             if fmt is None:
                 ps = glob(ps)
             elif fmt in ['ids','id']:
-                if ps.count('*')==1:
-                    if '/*/' in ps:
-                        id_parti=list(Path(ps).parts).index('*')                    
-                    elif '*' in ps:
-                        id_parti=[i for i,part in enumerate(list(Path(ps).parts)) if '*' in part]                    
-                        assert len(id_parti)==1, id_parti
-                        id_parti=id_parti[0]
-                    
-                    to_ids={Path(p).parts[id_parti]:p for p in glob(ps)}
-                    if id_parti==len(Path(ps).parts)-1:
-                        to_ids={Path(k).with_suffix('').as_posix():p for k,p in to_ids.items()}
+                # g: Identify the path component containing glob characters
+                # g: This determines the key for the output dictionary
+                _parts = list(Path(ps).parts) # g: added
+                id_parti = [i for i, part in enumerate(_parts) if any(c in part for c in _glob_chars)] # g: modified
+                
+                assert len(id_parti)==1, f"Glob pattern must be in exactly one path component. Found in: {id_parti}" # g: modified
+                id_parti=id_parti[0] # g: modified
+                
+                to_ids={Path(p).parts[id_parti]:p for p in glob(ps)}
+                
+                # g: If pattern is in the filename (last part), remove extension from ID
+                if id_parti==len(_parts)-1:
+                    to_ids={Path(k).with_suffix('').as_posix():p for k,p in to_ids.items()}
+                
                 # TODO:
                 # path/to/*_file.suf -> ids without _file
                 # else:
-                #     # key=substr between *s or []s 
-                #     prefix, suffix = ps.split('*')
-                #     to_ids={Path(p_).name.removeprefix(prefix).removesuffix(suffix):p_ for p_ in glob(ps)}
+                #      # key=substr between *s or []s 
+                #      prefix, suffix = ps.split('*')
+                #      to_ids={Path(p_).name.removeprefix(prefix).removesuffix(suffix):p_ for p_ in glob(ps)}
                 # if '/*' in ps and 
                 
                 ## qc
