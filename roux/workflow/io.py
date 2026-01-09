@@ -247,6 +247,7 @@ def run(
     )
     
     t_end="""
+    return output_path
 
 ## CLI-setup
 parser = argh.ArghParser()
