@@ -383,6 +383,78 @@ def merge_dfs(
         k1=k2        
     return df3
 
+def merge_hi(
+    df_ids, ## contains groups
+    df_right,
+    
+    col_id,
+    col_group,
+    
+    cols_right, ## metadata
+    ):
+    """
+    Hierarchical merge to propagate cols_right attributes to all members of those groups, preventing data loss or sparse results (NaNs).
+    It enforces a dense association between groups and attributes, filling missing values
+    
+    Map ids in groups (left) with another dataframe (right), without na.     
+    
+    Notes: 
+        required when otherwise, inner merge -> drops, left merge -> nans 
+    """
+    ## reduce to groups
+    df_ids=(
+        df_ids
+            .groupby(col_group,as_index=False)
+                .filter(
+                    lambda df: df[col_id].isin(df_right[col_id].tolist()).any()
+                )
+            .log(col_group)
+            .log(col_id)
+    )
+    
+    # reduce to ids in groups
+    # inner merge
+    df_right=(
+        df_right
+            .log.merge(
+                right=df_ids.loc[:,[col_id]],
+                on=col_id,
+                how='inner',
+                validate="m:1",
+            )
+            .log(col_id)
+    )
+
+    ## propagate
+    return (
+        df_right
+            .groupby(
+                cols_right,
+                as_index=False,
+            )
+                .apply(
+                    lambda df: (
+                        df
+                            .merge(
+                                right=df_ids,
+                                on=[
+                                    col_id,
+                                    # col_group
+                                   ],
+                                how='right',
+                                validate='1:1',
+                            )
+                            ## without na
+                            .assign(
+                                **dict(zip(cols_right,df.name))
+                            )                        
+                    )
+                )
+            .reset_index(drop=True)
+        .rd.assert_dense(
+            cols_right+[col_group,col_id]
+        )
+)
 
 def compare_rows(
     df1,

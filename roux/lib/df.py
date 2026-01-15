@@ -30,11 +30,16 @@ def loca(
     index=None,
     columns=None,
     # errors='raise', 
+    verbose=False,
     ):
     """
     loc_available
     """
-    assert not (index is None and columns is None)
+    if (index is None and columns is None):
+        if verbose:
+            logging.warning('(index is None and columns is None)')
+        return df
+        
     if index is None:
         index=df.index.tolist()
     if columns is None:
@@ -573,6 +578,7 @@ def check_nunique(
     df: pd.DataFrame,
     subset: list = None,
     groupby: str = None,
+    # expr: str = None,
     perc: bool = False,
     auto=True,
     out=True,
@@ -590,6 +596,10 @@ def check_nunique(
     Returns:
         ds (Series): output stats.
     """
+    ## TODO: need disconnected copy 
+    # if expr is not None:
+    #     assert not out, f"for clarity, filter separately. expr={expr} .. "
+    #     df=df.copy(deep=True).query(expr=expr)
     if subset is None and auto:
         subset = df.select_dtypes((object, bool)).columns.tolist()
         logging.warning(f"Auto-detected columns (subset): {subset}")
@@ -626,7 +636,10 @@ def check_nunique(
         ## no logging
         return ds_
     else:
-        str_log = f"{'by '+to_str(groupby,log=True)+', nunique '+to_str(subset,log=True)+':' if groupby is not None else 'nunique:'} {to_str(ds_)}"
+        str_log = (
+            # f"{expr if expr is not None else ' ':}: "
+            f"{'by '+to_str(groupby,log=True)+', nunique '+to_str(subset,log=True)+':' if groupby is not None else 'nunique:'} {to_str(ds_)}"
+            )
         if log:
             logging.info(str_log)
             return df  # input
