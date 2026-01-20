@@ -102,10 +102,14 @@ def plot_dists_by_bins(
         data,
         x=x,
         y=f"{y} bin",
-        showfliers=False,
         
         ax=get_ax(ax),
-        **kws_plot_dists,
+        **{
+            **dict(
+                # showfliers=False
+            ),
+            **kws_plot_dists
+        },
     )
     if show_corr!=False:
         if show_corr==True:

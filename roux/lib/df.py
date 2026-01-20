@@ -2456,13 +2456,32 @@ def sort_columns_by_values(
         )
     return df1
 
+def _log_df_query(
+    df1,
+    expr,
+):
+    ## log relevant cols only
+    from roux.lib.str import get_fills
+    cols=get_fills(expr,marks='`')
+    try:
+        df1=(
+            df1
+                .loc[:,cols]
+        )
+    except:
+        pass
+    return (
+        df1
+            .query(expr=expr)
+    )
+        
 @to_rd
 def assert_expr(
     df1,
     expr,
     **kws
     ):
-    assert df1.query(expr=expr,**kws).shape[0]==df1.shape[0], df1.query(f"~({expr})")
+    assert df1.query(expr=expr,**kws).shape[0]==df1.shape[0], _log_df_query(df1,f"~({expr})") 
     return df1
     
 ## paired stats
