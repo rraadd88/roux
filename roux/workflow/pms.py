@@ -216,7 +216,6 @@ def expand_pms(
 
 
 ## I/O
-import json
 import nbformat
 
 def read_pms(notebook_path, tag='parameters'):
@@ -345,7 +344,7 @@ def pre_params(
     
     if drop_if_path_exists:
         ## drop if sub-path exists
-        print(len(param_list),end=f' -drop_if_path_exists-> ')
+        print(len(param_list),end=' -drop_if_path_exists-> ')
         assert isinstance(drop_if_path_exists,str), drop_if_path_exists
         param_list = [
             d
@@ -355,7 +354,7 @@ def pre_params(
 
     if drop_by_patterns:
         ## drop if sub-path exists
-        print(len(param_list),end=f' -drop_by_patterns-> ')
+        print(len(param_list),end=' -drop_by_patterns-> ')
         print(drop_by_patterns)
         assert isinstance(drop_by_patterns,list), drop_by_patterns
         param_list = [
