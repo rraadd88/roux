@@ -216,6 +216,7 @@ def expand_pms(
 
 
 ## I/O
+import json
 import nbformat
 
 def read_pms(notebook_path, tag='parameters'):
@@ -298,6 +299,9 @@ def pre_params(
     # print(len(param_list))
     if isinstance(param_list, str):
         param_list = read_dict(param_list)
+        if isinstance(param_list,dict):
+            ## remove the constants in UPPER cases
+            param_list={k:v for k,v in param_list.items() if not k.isupper()}
 
     # print(len(param_list))
     if not param_list or (isinstance(param_list, (list, dict)) and len(param_list) == 0):
@@ -341,7 +345,7 @@ def pre_params(
     
     if drop_if_path_exists:
         ## drop if sub-path exists
-        print(len(param_list),end=' -drop_if_path_exists-> ')
+        print(len(param_list),end=f' -drop_if_path_exists-> ')
         assert isinstance(drop_if_path_exists,str), drop_if_path_exists
         param_list = [
             d
@@ -351,7 +355,7 @@ def pre_params(
 
     if drop_by_patterns:
         ## drop if sub-path exists
-        print(len(param_list),end=' -drop_by_patterns-> ')
+        print(len(param_list),end=f' -drop_by_patterns-> ')
         print(drop_by_patterns)
         assert isinstance(drop_by_patterns,list), drop_by_patterns
         param_list = [
@@ -393,7 +397,7 @@ def pre_params(
     assert all([Path(d["input_path"]) != Path(d["output_path"]) if isinstance(d["input_path"],str) else True for d in param_list]), \
         "Some input_path == output_path in params."
     
-    print(len(param_list))
+    # print(len(param_list))
 
     if not outp:
         return param_list

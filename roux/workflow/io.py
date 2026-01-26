@@ -99,6 +99,11 @@ def check_py(
     E712	pycodestyle	Comparison to True should be if cond is True: or if cond:.
     F541	Pyflakes	f-string without any placeholders.
     """
+    init_path=f"{Path(p).parent}/__init__.py"
+    if not Path(init_path).exists():
+        Path(init_path).touch()
+        logging.warning(f'created missing: {init_path}')
+        
     import os
     com=f"ruff check {p} --ignore {ruff_ignore}"
     res=os.system(com)
