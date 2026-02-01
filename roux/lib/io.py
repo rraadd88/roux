@@ -687,6 +687,15 @@ def read_dict(
         with open(p, "r") as p:
             return json.load(p, **kws)
 
+    ## custom ext.s for formats that can be opened in a fail-safe manner, meaning a plain text editor e.g yaml
+    elif (
+        p.endswith(".cfg") or fmt == "cfg" ## conf.s
+        # or 
+        # p.endswith(".pms") or fmt == "pms" ## params
+        ):
+        from roux.workflow.cfgs import read_config
+        return read_config(p)
+
     elif p.startswith("https"):
         from urllib.request import urlopen
 

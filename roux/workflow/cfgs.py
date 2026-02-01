@@ -95,14 +95,22 @@ def read_config(
 
     if isinstance(config_base, str):
         if Path(config_base).exists():
-            config_base = OmegaConf.create(read_dict(config_base))
+            config_base = OmegaConf.create(
+                read_dict(
+                        config_base,
+                        fmt='yaml'
+                    )
+                )
             # logging.info(f"Base config read from: {config_base}")
         else:
             logging.warning(f"Base config path not found: {config_base}")
     ## read config
     if isinstance(p,(str)):
         if '\n' not in p and Path(p).is_file():
-            d1 = read_dict(p)
+            d1 = read_dict(
+                p,
+                fmt='yaml',
+                )
         else:
             import yaml
             d1 =yaml.safe_load(p)
