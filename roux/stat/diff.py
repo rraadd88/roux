@@ -292,7 +292,7 @@ def get_stat(
         )
         df2.columns = cols_subsets
 
-    if func is None:
+    if func in [None,'mannwhitneyu']:
         logging.info("mannwhitneyu used")
     else:
         logging.info(f"custom function used: {str(func)}")
@@ -681,6 +681,7 @@ def get_diff_inferred(
     hue: str = None, 
     order: list = None, 
     hue_order: list = None, 
+    # method='mannwhitneyu', #TODO: func=method
     show_p: bool = True, 
     verbose: bool = False, 
     kws_stats: dict = {}

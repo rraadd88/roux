@@ -742,6 +742,7 @@ def show_scatter_stats(
     x_covar=None,
     y_covar=None,
     covar=None,
+    n_min=10,
     
     resample: bool = False,
     show_p: bool = True,
@@ -752,7 +753,6 @@ def show_scatter_stats(
     wrap=False,
     
     zorder: int = 5,
-    # kws_stat={},
     verbose: bool = True,
     kws_stat={},
     kws_set_label={},
@@ -786,6 +786,8 @@ def show_scatter_stats(
             x_covar=x_covar,
             y_covar=y_covar,
             covar=covar,
+            n_min=n_min,
+            # **kws_stat,
         )
         if res is not None and len(res) != 0:
             label += _to_string(

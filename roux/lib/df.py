@@ -2579,32 +2579,43 @@ def check_diff(
     y,
     cols_id,
     method=None, # mannwhitneyu
-    verbose=True,
 
-    validate=None, 
+    order: list = None, 
+    hue: str = None, ## subcategories compared
+    hue_order: list = None, 
+
+    out=False, # stats
     
     plot=False, 
     ax=None,
-    
-    out=False, # stats
-    
     kws_plot={},
-    kws_plot_set={},
-    **kws_stats,
-    ):        
+    kws_plot_set={},    
     
+    validate=None, 
+    verbose=True,
+    **kws_stats,
+    ):
+    
+    kws_diff=dict(
+        x=x,
+        y=y,
+        colindex=cols_id,
+
+        order=order, 
+        hue=hue, ## subcategories compared
+        hue_order=hue_order, 
+    )
+    kws_stats=dict(
+                func=method,
+            )
     if validate in [False,'']:
         validate=None
     if plot in [False, None]:
         from roux.stat.diff import get_diff_inferred
         res,_=get_diff_inferred(
             data,
-            x=x,
-            y=y,
-            colindex=cols_id,
-            kws_stats=dict(
-                func=method,
-            ),
+            kws_stats=kws_stats,
+            **kws_diff,
         )
     else:
         ## plot --> kws_plot, kws_plot_set, deprecate kws_plot, kws_plot_set         
@@ -2630,14 +2641,10 @@ def check_diff(
         from roux.viz.dist import plot_dists
         ax=plot_dists(
             data,
-            x=x,
-            y=y,
-            colindex=cols_id,
-            kws_stats=dict(
-                func=method,
-            ),
+            kws_stats=kws_stats,
             verbose=False,
             **{
+                **kws_diff,
                 **dict(
                     ax=ax
                 ),

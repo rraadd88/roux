@@ -258,7 +258,7 @@ def run_tasks_nb(
         1. Integrate with apply_on_paths for parallel processing etc.
 
     Notes:
-    1. To resolve `RuntimeError: This event loop is already running in python` from `multiprocessing`, execute
+    1. To resolve `RuntimeError: This event loop is already running in python` from `multiprocessing`, or `zmq.error.ZMQError: Address already in use` run this before,
         import nest_asyncio
         nest_asyncio.apply()
     """

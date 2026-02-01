@@ -83,6 +83,7 @@ def plot_scatter(
     ## trendline
     line_kws={},
     ## stats
+    show_p=True,
     stat_method: str = "spearman",
     stat_resample: bool = False,
     stat_kws={
@@ -243,6 +244,9 @@ def plot_scatter(
                 **kws_parcorr,
             },
             **annot_kws,
+            **dict(
+                show_p=show_p,
+            )
         }
     logging.info(kws_)        
     ax=show_scatter_stats(
