@@ -2,8 +2,33 @@
 
 import logging
 import nbformat
-from roux.workflow.io import to_nb_cells
 
+## nbs
+def to_nb_cells(
+    notebook,
+    outp,
+    new_cells,
+    validate_diff=None,
+):
+    """
+    Replace notebook cells.
+    """
+    import nbformat
+
+    logging.info(
+        f"notebook length change: {len(notebook.cells):>2}->{len(new_cells):>2} cells"
+    )
+    if validate_diff is not None:
+        assert len(notebook.cells) - len(new_cells) == validate_diff
+    elif validate_diff == ">":  # filtering
+        assert len(notebook.cells) > len(new_cells)
+    elif validate_diff == "<":  # appending
+        assert len(notebook.cells) < len(new_cells)
+    notebook.cells = new_cells
+    # Save the modified notebook
+    with open(outp, "w", encoding="utf-8") as new_notebook_file:
+        nbformat.write(notebook, new_notebook_file)
+    return outp
 
 def get_lines(p: str, keep_comments: bool = True) -> list:
     """Get lines of code from notebook.
@@ -361,3 +386,269 @@ def to_filtered_outputs(
 #         logging.info('Differences between notebooks:')
 #         logging.info('\n'.join(urls_output))
 #     return urls_output
+
+## meta
+def to_clean_nb(
+    p,
+    outp: str = None,
+    in_place: bool = False,
+    temp_outp: str = None,
+    clear_outputs=False,
+    drop_code_lines_containing=[
+        ## dev
+        r".*%run .*",
+        ## unused params
+        r"^#\s*.*=.*",
+        ## unused strings
+        r'^#\s*".*',
+        r"^#\s*'.*",
+        r'^#\s*f".*',
+        r"^#\s*f'.*",
+        r"^#\s*df.*",
+        r"^#\s*.*kws_.*",
+        ## lines with one hashtag (not a comment)
+        r"^\s*#\s*$",
+        r"^\s*#\s*break\s*$",
+        ## unused
+        # "\[X", #noqa
+        # "\[old ", #noqa
+        "#old",
+        "# old",
+        # "\[not used", #noqa
+        "# not used",
+        ## development
+        "#tmp",
+        "# tmp",
+        "#temp",
+        "# temp",
+        "check ",
+        "checking",
+        "# check",
+        # "\[SKIP", #noqa
+        "DEBUG ",
+        # "#todos","# todos",'todos',
+    ],
+    drop_headers_containing=[
+        "check",
+        "[check",
+        "old",
+        "[old",
+        "tmp",
+        "[tmp",
+    ],
+    ## ruff
+    fix_stars=False,
+    lint=False,
+    format=False,
+    **kws_fix_code,
+) -> str:
+    """
+    Wraper around the notebook post-processing functions.
+
+    Usage:
+        For notebooks developed using roux.global_imports.
+
+        On command line:
+
+        ## single input
+        roux to-clean-nb in.ipynb out.ipynb -c -l -f
+
+        ## multiple inputs
+        roux to-clean-nb "in*.ipynb" -i -c -l -f
+
+    Parameters:
+        temp_outp (str): path to the intermediate output.
+    """
+    from roux.lib.io import read_ps
+
+    input_paths = read_ps(p)
+    if len(input_paths) > 1:
+        assert in_place, in_place
+        logging.info(f"Processing {len(input_paths)} files ..")
+        ## Recursive
+        outps = []
+        for inp in input_paths:
+            logging.info(f"Processing {inp} ..")
+            outps.append(
+                to_clean_nb(
+                    p=inp,
+                    outp=outp,
+                    in_place=in_place,
+                    temp_outp=temp_outp,
+                    clear_outputs=clear_outputs,
+                    drop_code_lines_containing=drop_code_lines_containing,
+                    drop_headers_containing=drop_headers_containing,
+                    ## ruff
+                    lint=lint,
+                    format=format,
+                    **kws_fix_code,
+                )
+            )
+        return
+
+    from roux.workflow.nb import (
+        to_clear_unused_cells,
+        to_clear_outputs,
+        to_filtered_outputs,
+        to_filter_nbby_patterns,
+        to_replaced_nb,
+    )
+    from roux.lib.sys import grep
+
+    if in_place:
+        outp = p
+    else:
+        # makedirs(outp)
+        from pathlib import Path
+
+        Path(outp).parent.mkdir(parents=True, exist_ok=True)
+
+    if temp_outp is None:
+        import tempfile
+
+        temp_outp = f"{tempfile.gettempdir()}/to_clean_nb.ipynb"
+
+    # Remove the code blocks that have all commented code and empty lines
+    to_clear_unused_cells(
+        p,
+        temp_outp,
+    )
+
+    if clear_outputs:
+        to_clear_outputs(
+            temp_outp,
+            temp_outp,
+        )
+
+    to_filtered_outputs(temp_outp, temp_outp)
+
+    to_filter_nbby_patterns(temp_outp, temp_outp, patterns=drop_headers_containing)
+
+    to_replaced_nb(
+        nb_path=temp_outp,
+        output_path=temp_outp,
+        replaces={
+            ## to replace the star
+            " import * #noqa": " import *",
+            " import *  #noqa": " import *",
+            'if "metadata" in globals(): del metadata': 'if "metadata" in globals():\n   del metadata #noqa',
+        },
+        cell_type="code",
+        drop_lines_with_substrings=drop_code_lines_containing,
+    )
+
+    _l = grep(
+        p=temp_outp,
+        checks=drop_code_lines_containing,
+        exclude=["## backup old files if overwriting (force is True)"],
+    )
+
+    assert len(_l) == 0, (p, _l)
+
+    if fix_stars:
+        try:    
+            __import__("removestar")
+        except:
+            raise ModuleNotFoundError(
+                "Optional interactive-use dependencies missing, install by running: pip install removestar"
+            )
+        
+        res = replacestar(
+            input_path=temp_outp,
+            output_path=outp,
+            replace_from="from roux.global_imports import *",
+            in_place=False,
+            attributes={"pandarallel": ["parallel_apply"], "rd": [".rd.", ".log."]},
+            verbose=False,
+            test=False,
+            **kws_fix_code,
+        )
+        if res is None:
+            return
+    post_code(
+        p=outp,
+        lint=lint,
+        format=format,
+    )
+    return outp
+
+
+## post tasks
+from roux.lib.sys import run_com
+def valid_post_task_deps(
+    ):
+    return run_com('which quarto',returncodes=[0,1])!=''
+def to_html(
+    p,
+    # outp=None,
+    env='docs',
+    kws="",
+    verbose=False,
+    ):
+    """
+    Args:
+        verbose: True: include stderr        
+    """
+    if env is not None:
+        pre=f"micromamba run -n {env} "
+    else:
+        pre=""
+    # if outp is None:
+    outp=Path(p).with_suffix(".html").as_posix()
+
+    if isinstance(kws,list):
+        kws=" -M ".join(kws)
+    if verbose:
+        kws+=" -M warning:false -M error:false" 
+    ## convert
+    run_com(
+        f"{pre}quarto render {p} --to html --toc -M code-fold:true -M code-summary:'_' -M code-tools:true -M self-contained:true -M mermaid-theme=default "+kws,# --output-dir {Path(outp).parent.as_posix()} --output {Path(outp).name}",
+        verbose=verbose,
+    )
+    ## clean
+    # invalid escape sequence '\/'
+    # run_com(
+    #     "sed -i '' 's/<\/head>/<style>summary { display: none; }<\/style><\/head>/' "+outp,
+    #     verbose=verbose,
+    # )
+    return outp
+
+def to_nb_kernel(
+    p : str,
+    kernel : str = None,
+    outp : str = None,
+    ):
+    """
+    Because no-kernel means previous kernel. 
+    """
+    from glob import glob
+    if len(glob(p))>1:
+        # recursive
+        d={}
+        for p_ in glob(p):
+            d[p_]=to_nb_kernel(
+                p_,
+                kernel = kernel,# : str = None,
+                outp = outp,# : str = None,
+            )
+            print(p_,d[p_])
+        return # d
+        
+    import nbformat
+    
+    # Load the notebook
+    nb = nbformat.read(p, as_version=nbformat.NO_CONVERT)
+    
+    # Update the kernelspec (or remove it)
+    if "kernelspec" in nb.metadata:
+        if kernel is None:
+            return nb.metadata.kernelspec.name
+        else:
+            nb.metadata.kernelspec.name = kernel
+            nb.metadata.kernelspec.display_name = kernel
+            # Or to remove it entirely:
+            # del nb.metadata["kernelspec"]
+            # Save the modified notebook
+            outp = p if outp is None else outp
+            nbformat.write(nb, outp)
+            return kernel

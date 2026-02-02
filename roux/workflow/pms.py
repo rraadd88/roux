@@ -402,3 +402,45 @@ def pre_params(
         return param_list
     else:
         to_dict(param_list,outp)
+
+
+## io parameters
+def infer_parameters(input_value, default_value):
+    """
+    Infer the input values and post warning messages.
+
+    Parameters:
+        input_value: the primary value.
+        default_value: the default/alternative/inferred value.
+
+    Returns:
+        Inferred value.
+    """
+    if input_value is None:
+        logging.warning(
+            f"input is None; therefore using the the default value i.e. {default_value}."
+        )
+        return default_value
+    else:
+        return input_value
+
+
+def to_parameters(f: object, test: bool = False) -> dict:
+    """Get function to parameters map.
+
+    Args:
+        f (object): function.
+        test (bool, optional): test mode. Defaults to False.
+
+    Returns:
+        dict: output.
+    """
+    import inspect
+
+    sign = inspect.signature(f)
+    params = {}
+    for arg in sign.parameters:
+        argo = sign.parameters[arg]
+        params[argo.name] = argo.default
+    #     break
+    return params

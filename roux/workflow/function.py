@@ -7,6 +7,20 @@ from roux.lib.io import to_path
 from roux.lib.set import unique, dropna
 import pandas as pd
 
+from roux.lib.sys import (
+    abspath,
+)
+
+def import_from_file(pyp: str):
+    """Import functions from python (`.py`) file.
+
+    Args:
+        pyp (str): python file (`.py`).
+
+    """
+    from importlib.machinery import SourceFileLoader
+
+    return SourceFileLoader(abspath(pyp), abspath(pyp)).load_module()
 
 def get_quoted_path(s1: str) -> str:
     """Quoted paths.
@@ -384,14 +398,28 @@ def to_task(
         "    rule", "rule"
     ), df0["outputs"].tolist()
 
+from functools import lru_cache
 
-def get_global_imports() -> pd.DataFrame:
+@lru_cache(maxsize=None)
+def get_global_imports(
+    markers=[
+        '## start replacestar',
+        '## end replacestar',
+        ],
+    clear_cache=False,
+    out_fmt='df',
+) -> pd.DataFrame:
     """
     Get the metadata of the functions imported from `from roux import global_imports`.
     """
     from roux import global_imports
+    text = open(global_imports.__file__, "r").read()
 
-    lines = open(global_imports.__file__, "r").read()
+    assert markers[0] in text, markers[0] 
+    assert markers[1] in text, markers[1]
+
+    lines=text.split(markers[0])[1].split(markers[1])[0]
+
     ## start with '## '
     lines = ('## '+lines.split('## ',1)[1]).split("\n")
 
@@ -403,6 +431,12 @@ def get_global_imports() -> pd.DataFrame:
 
     # lines=
     lines = dropna(list(map(clean_, lines)))
+
+    lines = [s.strip() for s in lines]
+    lines = [s for s in lines if s != ""] + [""]
+
+    if out_fmt=='lines':
+        return lines
 
     lines_grouped = {}
     k = None
@@ -423,7 +457,7 @@ def get_global_imports() -> pd.DataFrame:
         .rename_axis(["rank", "function comment"])
         .reset_index()
         .dropna(subset=["import statement"])
-        .query(expr="~(`import statement`.str.strip().str.startswith('#'))")
+        .query(expr="~(`import statement`.str.strip().str.startswith('#') | `import statement`.str.contains('#ignore'))")
     )
     # df1
 
@@ -442,7 +476,7 @@ def get_global_imports() -> pd.DataFrame:
 
     def clean_import_statements(s, attribute, function_name):
         if not attribute:
-            s = s.split("# ")[0]
+            s = s.split("#")[0]
             if "," in s:
                 s = f"{s.split(' import ')[0]} import {function_name}"
         return s

@@ -43,7 +43,7 @@ warnings.warn(
     stacklevel=2,
 )
 
-## begin replacestar    
+## start replacestar
 ## data functions
 # import itertools
 import numpy as np #noqa
@@ -54,20 +54,17 @@ import sys #noqa
 from pathlib import Path #noqa
 from os.path import exists,dirname,basename,abspath,isdir,splitext #noqa # pathlib to be preferred in the future
 ## system functions from roux
-from roux.lib.sys import (
-    read_ps, with_stem_suffix, #noqa
+from roux.lib.sys import read_ps, with_stem_suffix #noqa
+from roux.lib.sys import basenamenoext, to_path, makedirs, get_datetime #noqa
 
-    ## TODO: to be removed bcz rarely used
-    basenamenoext, to_path, makedirs, get_datetime #noqa
-    ) 
 from roux.lib.io import read_dict, to_dict, read_table, to_table, read_data, to_version, backup #noqa
 ## data functions from roux
 from roux.lib.str import get_bracket, replace_many, get_suffix, get_prefix #noqa
 from roux.lib.set import dropna, flatten, unique, assert_overlaps_with, validate_overlaps_with, check_non_overlaps_with #noqa
 ## dataframe attribute from roux
 # attributes
-import roux.lib.dfs as rd #noqa
-import roux.viz.ds as rs #noqa
+import roux.lib.dfs as rd # attribute #keep #noqa
+import roux.viz.ds as rs # attribute #keep #noqa
 
 ## stats functions from roux
 from roux.stat.binary import perc #noqa
@@ -78,22 +75,21 @@ import matplotlib.pyplot as plt #noqa
 import seaborn as sns #noqa
 
 ## visualization functions from roux
-from roux.viz.theme import set_theme #noqa
+from roux.viz.theme import set_theme #keep #noqa
 from roux.viz.ax_ import format_ax #noqa
 from roux.viz.colors import get_colors_default #noqa
 from roux.viz.diagram import diagram_nb #noqa
 from roux.viz.io import begin_plot,to_plot,read_plot #noqa
 
 ## workflow functions from roux
-from roux.workflow.io import infer_parameters #noqa #, read_config, to_diff_notebooks
+from roux.workflow.pms import infer_parameters #noqa #, read_config, to_diff_notebooks
 from roux.workflow.cfgs import read_config, read_metadata #noqa
 from roux.workflow.log import test_params #noqa
 from roux.workflow.task import run_tasks #noqa
 
 ## logging functions
-## setting states
+import logging #noqa
 
-import logging
 # root logger level for the imported functions
 root_logger = logging.getLogger()
 root_logger.setLevel(logging.INFO)
@@ -117,15 +113,18 @@ else:
     # g: Also ensure the handler's level is permissive (if needed)
     # root_logger.handlers[0].setLevel(logging.INFO)
 
-## for the notebook
+## notebook related
 try:    
-    from roux.lib.log import Logger
-    logging = Logger() # level='INFO'
+    from roux.lib.log import Logger #ignore #noqa
+    logging = Logger() #ignore #noqa
 except:
-    import logging #noqa
-    logging.basicConfig(level='INFO', force=True)
+    import logging #ignore #noqa
+    logging.basicConfig(level='INFO', force=True) #ignore #noqa
 
 from tqdm import tqdm #noqa
+
+# ## if locals exist
+from roux.workflow.io import set_outputs #noqa
 ## end replacestar
 
 ## system functions from roux
@@ -171,6 +170,3 @@ else:
 #     import scipy as sc
 # except ImportError:
 #     logging.warning('Optional dependency scipy missing, install by running: pip install roux[stat]')
-
-# ## if locals exist
-from roux.workflow.io import set_outputs #noqa

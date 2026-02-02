@@ -332,7 +332,7 @@ def run_tasks_nb(
     #     clean=False
     if pre: 
         logging.debug("pre-processing nb ..")
-        from roux.workflow.io import to_nb_kernel
+        from roux.workflow.nb import to_nb_kernel
         to_nb_kernel(
             script_path,
             kernel=kernel,
@@ -412,7 +412,7 @@ def run_tasks_nb(
         # return ds2
         
         if post and not fast:        
-            from roux.workflow.io import valid_post_task_deps, to_html
+            from roux.workflow.nb import valid_post_task_deps, to_html
             if valid_post_task_deps:
                 df1['html path']=(
                     df1

@@ -24,8 +24,8 @@ from roux.lib.io import (
 
 from roux.workflow.log import test_params
 from roux.workflow.pms import pre_params
-from roux.workflow.io import replacestar, to_clean_nb, to_html, to_src, to_nb_kernel
-
+from roux.workflow.io import replacestar, to_src
+from roux.workflow.nb import to_nb_kernel, to_clean_nb, to_html
 from roux.workflow.task import (
     # run_task, 
     run_tasks ## preferred because it infers setup for the outputs

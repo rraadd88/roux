@@ -438,16 +438,16 @@ def to_script(
     )
     # save def
     with open(srcp, "w") as f:
-        f.write("from roux.global_imports import *\n")
+        f.write("    from roux.global_imports import *\n")
         f.write(lines)
     if test:
         print(lines)
 
     if validate:
         ## replacestar
-        from roux.workflow.io import replacestar_ruff
+        from roux.workflow.io import replacestar
 
-        replacestar_ruff(
+        replacestar(
             p=srcp,
             outp=srcp,
             verbose=test,
@@ -563,7 +563,7 @@ def read_plot(p: str, safe: bool = False, test: bool = False, **kws) -> plt.Axes
             p = f"{remove_exts(p)}/plot.py"
             if test:
                 logging.info(p)
-        from roux.workflow.io import import_from_file
+        from roux.workflow.function import import_from_file
 
         ax = import_from_file(p).plot_(**kws)
         return ax
