@@ -349,7 +349,7 @@ def replacestar_ruff(
     lines=get_global_imports(out_fmt='lines')
     ## remove #noqa
     replace_with='\n'.join(
-        [s.replace("#noqa", "") if not '#keep' in s else s for s in lines]
+        [s.replace("#noqa", "") if '#keep' not in s else s for s in lines]
         # lines
         ).replace('\n\n','\n')
 
