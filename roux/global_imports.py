@@ -1,11 +1,11 @@
 """
-(*Mise en place*) Importing commonly used functions.
+Importing commonly used functions.
 
 Requirements: 
 
     pip install roux[all]
     
-Usage: in interactive sessions (e.g. in jupyter notebooks) to facilitate faster code development.
+Usage: in interactive sessions (e.g. in jupyter notebooks) to facilitate faster code development (*Mise en place*).
 
 Note: Post-development, to remove *s from the code, use removestar (pip install removestar).
 

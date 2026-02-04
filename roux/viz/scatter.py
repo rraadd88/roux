@@ -388,25 +388,41 @@ def _prepare_volcano_data(
     data: pd.DataFrame,
     colx: str,
     coly: str,
-    style: str,
-    line_pvalue: float,
-    line_x: float,
-    line_x_min: float,
-    p_min: float,
     hue: str,
     colindex: str,
-    errors: str,    
-    kws_scatterplot: dict,
-    
-    xlim=None,
+    style: str,
+
+    ## min. signi bounds
+    signi_bin_exprs: dict=None, ## overrides
+    xabs_gt: float=0,
+    p_lt: float=0.1,
+
+    ## max. signi bounds 
+    xlim=None, 
+    p_min: float=0.001,
+
+    errors: str='raise',    
+    kws_scatterplot: dict={},
 ):
     """Prepares the DataFrame for plot_volcano."""
+    if signi_bin_exprs is None:
+        assert xabs_gt is not None and p_lt is not None, (xabs_gt,p_lt)
+        signi_bin_exprs={
+            'increase':f"`{colx}`>{xabs_gt} & `{coly}`<{p_lt}",
+            'decrease':f"`{colx}`<{-1*xabs_gt} & `{coly}`<{p_lt}",
+        }
+        signi_bin_exprs['ns']=f"~(({signi_bin_exprs['increase']}) | ({signi_bin_exprs['decrease']}))"
+
+        logging.warning(signi_bin_exprs)
+        del xabs_gt,p_lt
+
     if errors == 'raise':
         assert not data[colindex].duplicated().any(), 'set errors=None if this is un-necessary ..'
     
     from roux.stat.transform import log_pval
     data = data.reset_index(drop=True)
 
+    ## max. signi bounds 
     if not coly.lower().startswith("significance"):
         if xlim is None:
             xlim = [
@@ -461,6 +477,7 @@ def _prepare_volcano_data(
     elif style not in data:
         data[style] = "o"
 
+    ## min. signi bounds
     data["significance bin"] = pd.cut(
         data[coly],
         bins=log_pval([0, 0.05, 0.1, 1])[::-1],
@@ -469,34 +486,11 @@ def _prepare_volcano_data(
     )
     assert not data["significance bin"].isnull().any()
 
-    data = (
-        data.assign(
-            **{
-                "significance direction bin": lambda df: df.apply(
-                    lambda x: "increase"
-                    if x[coly] > log_pval(line_pvalue)
-                    and (
-                        x[colx] > line_x
-                        if line_x_min is not None
-                        else x[colx] >= line_x
-                    )
-                    else "decrease"
-                    if x[coly] > log_pval(line_pvalue)
-                    and (
-                        x[colx] < line_x_min
-                        if line_x_min is not None
-                        else x[colx] <= -1 * line_x
-                    )
-                    else "ns",
-                    axis=1,
-                ),
-            }
-        ).sort_values(
-            "significance direction bin", ascending=False
-        )
+    data=data.rd.assignby_expr(
+        expr=signi_bin_exprs,
+        col='significance direction bin',
     )
     assert not data["significance direction bin"].isnull().any()
-
     if hue == "x":
         hue = "significance direction bin"
         kws_scatterplot["hue_order"] = ["increase", "decrease", "ns"]
@@ -519,12 +513,16 @@ def plot_volcano(
     coly: str,
     colindex: str,
     hue: str = "x",
+    
+    ## min. signi bounds
+    signi_bin_exprs: dict=None, ## overrides
+    xabs_gt: float=0,
+    p_lt: float=0.1,
 
-    xlim=None,
-    p_min: float = None, # ymax 
-    ## thresholds
-    line_pvalue=0.1,
-
+    ## max. signi bounds 
+    xlim=None, 
+    p_min: float=0.001,
+    
     style: str = "marker_style",
     style_order: list = [
         "o",
@@ -547,10 +545,8 @@ def plot_volcano(
     collabel: str = None,
     
     ## guide line
-    line_x: float = 0.0,  
     ### dotted line
-    show_lines: bool = False,
-    line_x_min: float = None,
+    # show_lines: bool = False,
     
     show_text: bool = True,
     show_n=True,
@@ -587,22 +583,26 @@ def plot_volcano(
             assert len(collabel)==1, "if show_labels, collabel (colindex) should be one"
             collabel=collabel[0]
 
-    data, coly, hue, kws_scatterplot = _prepare_volcano_data(        
+    data, coly, hue, kws_scatterplot=_prepare_volcano_data(        
         data=data, 
         colx=colx, 
         coly=coly, 
-        xlim=xlim,
         style=style, 
-        line_pvalue=line_pvalue, 
-        line_x=line_x, 
-        line_x_min=line_x_min, 
-        p_min=p_min, 
+        
+        ## min. signi bounds
+        signi_bin_exprs=signi_bin_exprs, ## overrides
+        xabs_gt=xabs_gt,
+        p_lt=p_lt,
+
+        ## max. signi bounds 
+        xlim=xlim, 
+        p_min=p_min,
+
         hue=hue, 
         colindex=colindex, 
         errors=errors, 
         kws_scatterplot=kws_scatterplot
     )
-
     ax = sns.scatterplot(
         data=data,
         **{
@@ -683,24 +683,24 @@ def plot_volcano(
     xlim = ax.get_xlim()
     ylim = ax.get_ylim()
 
-    ## set lines
-    if show_lines:
-        from roux.stat.transform import log_pval
-        for side in [-1, 1]:
-            print(
-                [xlim[0 if side == -1 else 1], line_x * side, line_x * side],
-                [log_pval(line_pvalue), log_pval(line_pvalue), ylim[1]],
-            )
-            ax.plot(
-                [
-                    xlim[0 if side == -1 else 1],
-                    (line_x_min if line_x_min is not None else line_x * side),
-                    (line_x_min if line_x_min is not None else line_x * side),
-                ],
-                [log_pval(line_pvalue), log_pval(line_pvalue), ylim[1]],
-                color="gray",
-                linestyle=":",
-            )
+    # ## set lines
+    # if show_lines:
+    #     from roux.stat.transform import log_pval
+    #     for side in [-1, 1]:
+    #         print(
+    #             [xlim[0 if side == -1 else 1], line_x * side, line_x * side],
+    #             [log_pval(line_pvalue), log_pval(line_pvalue), ylim[1]],
+    #         )
+    #         ax.plot(
+    #             [
+    #                 xlim[0 if side == -1 else 1],
+    #                 (line_x_min if line_x_min is not None else line_x * side),
+    #                 (line_x_min if line_x_min is not None else line_x * side),
+    #             ],
+    #             [log_pval(line_pvalue), log_pval(line_pvalue), ylim[1]],
+    #             color="gray",
+    #             linestyle=":",
+    #         )
     ## set labels
     # if show_labels is not None:  # show_labels overrides show_outlines
     #     show_outlines = show_labels

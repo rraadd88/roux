@@ -115,12 +115,19 @@ def check_py(
         logging.warning(f"fix following by running: {com}")
     return stdout
 
+from roux.lib.text import replace_text
 def post_code(
     p: str,
     lint: bool,
     format: bool,
     verbose: bool = True,
 ):
+    ## %run
+    replace_text(
+        p,
+        {"get_ipython()":"# get_ipython()"}
+        )
+        
     ## ruff
     com = ""
     if lint:
@@ -238,30 +245,25 @@ def to_scr(
             [pre_pms, post_pms],
             pms
         )
+    if with_pms:
+        t_splits,params=split_by_pms(t_tab)
+        ## remove comments
+        params_lines=params.split('\n')
+        params='\n'.join([s.split('#')[0] for s in params_lines])
         
-    t_splits,params=split_by_pms(t_tab)
-    ## remove comments
-    params_lines=params.split('\n')
-    params='\n'.join([s.split('#')[0] for s in params_lines])
-    
-    from roux.workflow.pms import extract_pms
-    params_str=',\n    '.join(
-        extract_pms(
-            params.split('    ')[1:],
-            fmt='str',
+        from roux.workflow.pms import extract_pms
+        params_str=',\n    '.join(
+            extract_pms(
+                params.split('    ')[1:],
+                fmt='str',
+            )
         )
-    )
-    if verbose:
-        logging.info(params_str)
+        if verbose:
+            logging.info(params_str)
+    else:
+        t_splits=['',t_tab]
 
-    t_def=(
-    """
-import argh
-def run(
-    """+
-    params_str+
-    """
-    ):
+    t_def_pre="""
     if input_path is not None and output_path is None:
         ## should be params
         from roux.workflow.task import pre_params
@@ -278,7 +280,18 @@ def run(
     assert input_path is not None
     assert output_path is not None
     """
-    )
+
+    t_def='\n'.join([
+    """
+import argh
+def run(
+    """,
+    params_str if with_pms else '',
+    """
+    ):
+    """,
+    t_def_pre if with_pms else ''
+    ])
     
     t_end="""
     return output_path
@@ -442,11 +455,9 @@ def replacestar(
                 )
                 ['import statement'].tolist()
                 )
-            (
-                open(input_path,'w')
-                    .write(
-                        open(input_path,'r').read().replace(replace_from,'\n'+imports)
-                        )
+            replace_text(
+                input_path,
+                {replace_from:'\n'+imports}
             )
     else:
         output_path=replacestar_ruff(

@@ -2149,8 +2149,36 @@ def assignby_expr(
     df,
     expr, # .query-style
     col=None,
+    clean=True,
     verbose=False,
 ):
+    if isinstance(expr,dict):
+        ## recurse
+        if col is not None and clean:
+            ## -> one col
+            sep_temp='__'
+        else:
+            sep_temp=''
+        cols_temp=[]
+        for c,e in expr.items():
+            col_temp=f"{sep_temp}{c}"
+            df=assignby_expr(
+                df,
+                expr=e, # .query-style
+                col=col_temp,
+                verbose=verbose,
+            )
+            cols_temp.append(col_temp)
+        if col is None:
+            return df
+        else:
+            df=df.reset_index(drop=True)
+            ## collapse dummies
+            df[col]=pd.from_dummies(df.loc[:,cols_temp])[''].str.replace(sep_temp,'')
+            if clean:
+                df=df.drop(cols_temp,axis=1)
+            return df
+            
     if col is None:
         col=expr
     df=df.reset_index(drop=True)

@@ -76,7 +76,7 @@ def plot_dists_by_bins(
     x,
     y, # bin
     bins,
-    show_corr=False, ## also taked kws
+    show_corr=False, ## also takes kws
     corr_offs=[0,0],
     ax=None,
     **kws_plot_dists,
@@ -84,6 +84,7 @@ def plot_dists_by_bins(
     ## binning
     data=(
         data
+        .log.dropna(subset=[x,y])
         .rd.get_bins(
             col=y,
             bins=bins,
@@ -102,14 +103,10 @@ def plot_dists_by_bins(
         data,
         x=x,
         y=f"{y} bin",
+        showfliers=False,
         
         ax=get_ax(ax),
-        **{
-            **dict(
-                # showfliers=False
-            ),
-            **kws_plot_dists
-        },
+        **kws_plot_dists,
     )
     if show_corr!=False:
         if show_corr==True:

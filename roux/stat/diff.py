@@ -453,6 +453,7 @@ def get_stats(
                 df3[f"difference between {s} (subset1-subset2)"] = (
                     df3[f"{s} subset1"] - df3[f"{s} subset2"]
                 )
+                # TODO check if df3 is empty
                 df3.loc[
                     (df3[f"difference between {changeby} (subset1-subset2)"] > 0),
                     "change",
