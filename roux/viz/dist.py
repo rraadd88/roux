@@ -266,7 +266,8 @@ def plot_dists(
     show_n_ha=None,
     show_n_ticklabels: bool = True,
     show_outlines: bool = False,
-    showmeans=True,    
+    showmeans=True,   
+    showfliers=False,
     kws_outlines: dict = {},
     alternative: str = "two-sided",
     offx_n: float = 0,
@@ -453,7 +454,7 @@ def plot_dists(
         ## blends
         if k == "box":
             # if (("swarm" in kind) or ("strip" in kind)):
-            kws_["showfliers"] = False
+            kws_["showfliers"] = showfliers
             kws_["boxprops"] = {
                 **kws_["boxprops"],
                 **dict(
@@ -463,7 +464,9 @@ def plot_dists(
             
         if k in ["swarm", "strip"] and ("box" in kind):
             kws_["alpha"] = alpha
-            
+        # print(
+        #     kws_, kind[k]
+        # )
         getattr(sns, k + "plot")(
             data=df1,
             x=x,

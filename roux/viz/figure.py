@@ -158,8 +158,10 @@ def get_ax(
 ):    
     if isinstance(ax,plt.Axes): 
         return ax
-    elif ax in ['same','.',None]:
-        fig=set_fig(figsize)
+    elif ax in [None]:
+        return plt.gca()
+    elif ax in ['same','.']:
+        _=set_fig(figsize)
         return plt.gca()
     elif isinstance(ax,dict):
         ## recurse
