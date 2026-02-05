@@ -199,10 +199,28 @@ def plot_intersection_counts(
         else:
             dplot_=dplot.copy()
         ax = dplot_.plot.barh(stacked=True, ax=ax)
+        ax.legend(
+            title=ax.get_legend().get_title().get_text(),
+            ncols=2,
+            frameon=False,
+            handletextpad=0.2,# Space between handle and text
+            columnspacing=0.5,# Space between columns                
+        )
         ax.set(
             xlabel="count" if not perc_counts else '%',
             # ylabel=None if not dplot_.index.name is None else dplot_.index.name,
+            ylim=[
+                min(ax.get_ylim()),
+                max(ax.get_ylim())+(max(ax.get_ylim())-min(ax.get_ylim()))
+                ],
         )
+        # Hide the top, left, and right spines
+        ax.spines['top'].set_visible(False)
+        ax.spines['left'].set_visible(False)
+        ax.spines['right'].set_visible(False)
+
+        # Keep the bottom spine visible (it's visible by default)
+        ax.spines['bottom'].set_visible(True)        
         if show_counts:
             if not pre_data:
                 logging.warning("can't show_counts because pre_data=False ..")
@@ -234,7 +252,7 @@ def plot_sets(
     order_x=None,
     order_y=None,    
     kws_stats={},
-    
+    kind='bar',
     ax=None,
     **kws_plot_intersection_counts,
     ):
@@ -258,7 +276,7 @@ def plot_sets(
                 cols=[x,y],
                 order_x=order_x,
                 order_y=order_y,        
-                loc='bottom',
+                loc='center' if kind=='bar' else 'bottom',
             ),
             **kws_stats
         },
@@ -274,7 +292,7 @@ def plot_sets(
         data1,
         **{
             **dict(
-                kind='bar',
+                kind=kind,
                 pre_data=False,
                 show_pval=False,
                 perc_counts=True,

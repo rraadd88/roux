@@ -266,6 +266,7 @@ def plot_dists(
     show_n_ha=None,
     show_n_ticklabels: bool = True,
     show_outlines: bool = False,
+    showmeans=True,    
     kws_outlines: dict = {},
     alternative: str = "two-sided",
     offx_n: float = 0,
@@ -385,7 +386,7 @@ def plot_dists(
     
     kind_defaults={
         'box':dict(
-            showfliers=False,  
+            showfliers=False,
             boxprops=dict(
                 ec='none',
             )
@@ -400,10 +401,11 @@ def plot_dists(
             linestyle='none',
         )
     }
-    if kind.get('box'):
-        if kind['box'].get('showmeans')==True:
+    if 'box' in kind:
+        if kind['box'].get('showmeans')==True or showmeans:
             kind['box']={
                 **dict(
+                    showmeans=True,
                     meanprops=dict(
                         marker= "$\mu$", 
                         markerfacecolor= "black", 

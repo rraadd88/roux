@@ -2513,28 +2513,34 @@ def assert_expr(
     return df1
     
 ## paired stats
+from roux.viz import apply_plot
+
 @to_rd
 def check_corr(
     data,
     x,
     y,
+    cols_id=None,
     method='spearman',
     resample=False,
     verbose=True,
 
     validate=None, 
     
-    plot=False,
+    plot=False,    
+    
+    ## to be deprecated
     kws_plot={},
     kws_plot_set={},
     ax=None,
-    
+
     out=False,
-    
     **kws_get_corr,
-    ):    
+    ):
     if validate in [False,'']:
         validate=None
+    if cols_id is not None:
+        logging.warning("cols_id is not implemented.")
     kws_stat={
         **dict(
             method=method,
@@ -2552,42 +2558,61 @@ def check_corr(
             **kws_stat,
         )    
     else:    
-        if plot==True:
-            plot={}
+        try:
+            if not isinstance(plot,dict):
+                plot={}
+            
+            ## to be removed part
+            if len(kws_plot)>0 or len(kws_plot_set)>0 or ax is not None:
+                logging.warning('kws_plot,kws_plot_set and ax  will be deprecated, provide them in the plot arg. instead')
+
+                plot={
+                    **dict(
+                        set=kws_plot_set,
+                        ax=ax,
+                        )
+                    ## override
+                    **{
+                        **kws_plot,
+                        **plot,
+                    }
+                    }
+                logging.warning(f"plot={plot}")
+
+            from roux.viz.scatter import plot_scatter
+            ax=apply_plot(
+                plot_scatter,
+                data,
+                kws_plot={
+                        **dict(
+                            plot=dict(
+                                x=x,
+                                y=y,
+                                stat_kws=kws_stat,
+                            ),
+                        ),
+                        **plot
+                    },
+                )
+            res=ax.stats
+        except Exception as e:
+            logging.exception(str(e))            
+            ## return stats only
+            return check_corr(
+                data=data, #,
+                x=x, #,
+                y=y, #,
+                method=method, #='spearman',
+                resample=resample, #=False,
+                verbose=verbose, #=True,
+
+                validate=validate, #=None, 
                 
-        if len(kws_plot)!=0 or len(kws_plot_set)!=0:
-            ## old: plot=kws_plot['plot']
-            ## new: plot = kws_plot (with plot and set)
-            ## deprecate kws_plot, kws_plot_set         
-            kws_plot={
-                'plot':{
-                    **kws_plot,
-                    **plot,
-                },
-                'set':kws_plot_set,
-            }
-            del kws_plot_set
-        else:
-            kws_plot=plot
-        del plot            
-                    
-        from roux.viz.scatter import plot_scatter
-        ax=plot_scatter(
-            data,
-            x=x,
-            y=y,
-            stat_kws=kws_stat,
-            **{
-                **dict(
-                    ax=ax
-                ),
-                **kws_plot.get('plot',{})
-            },
-        )
-        ax.set(
-            **kws_plot.get('set',{})
-        )
-        res=ax.stats
+                plot=False,    
+                
+                out=out, #=False,
+                **kws_get_corr,
+                )
     df1=pd.Series(res).to_frame().T
     if verbose:
         logging.info(f'{data.name if hasattr(data,"name") else ""}{x} - {y}\n'+df1.to_string(index=False))
@@ -2615,10 +2640,12 @@ def check_diff(
     out=False, # stats
     
     plot=False, 
-    ax=None,
-    kws_plot={},
-    kws_plot_set={},    
     
+    ## to be deprecated
+    kws_plot={},
+    kws_plot_set={},
+    ax=None, 
+
     validate=None, 
     verbose=True,
     **kws_stats,
@@ -2646,42 +2673,61 @@ def check_diff(
             **kws_diff,
         )
     else:
-        ## plot --> kws_plot, kws_plot_set, deprecate kws_plot, kws_plot_set         
-        if plot==True:
-            plot={}
-        kws_plot={
-            'plot':{
-                **{
-                    'kind':dict(
-                        box=dict(
-                            showmeans=True,
+        try:
+            if not isinstance(plot,dict):
+                plot={}
+            
+            ## to be removed part
+            if len(kws_plot)>0 or len(kws_plot_set)>0 or ax is not None:
+                logging.warning('kws_plot,kws_plot_set and ax  will be deprecated, provide them in the plot arg. instead')
+
+                plot={
+                    **dict(
+                        set=kws_plot_set,
+                        ax=ax,
                         )
-                    )
-                },
-                **kws_plot,
-                **plot,
-            },
-            'set':kws_plot_set,
-        }
-        del plot
-        del kws_plot_set
-        
-        from roux.viz.dist import plot_dists
-        ax=plot_dists(
-            data,
-            kws_stats=kws_stats,
-            verbose=False,
-            **{
-                **kws_diff,
-                **dict(
-                    ax=ax
-                ),
-                **kws_plot.get('plot',{})
-            },
-        )
-        ax.set(
-            **kws_plot.get('set',{})
-        )
+                    ## override
+                    **{
+                        **kws_plot,
+                        **plot,
+                    }
+                    }
+                logging.warning(f"plot={plot}")
+
+            from roux.viz.dist import plot_dists
+            ax=apply_plot(
+                plot_dists,
+                data,
+                kws_plot={
+                        **dict(
+                            plot=kws_diff,
+                        ),
+                        **plot
+                    },
+                )
+            res=ax.stats
+        except Exception as e:
+            logging.exception(str(e))            
+            ## return stats only        
+            return check_diff(
+                data=data, #,
+                x=x, #,
+                y=y, #,
+                cols_id=cols_id, #,
+                method=method, #=None, # mannwhitneyu
+
+                order=order, #: list = None, 
+                hue=hue, #: str = None, ## subcategories compared
+                hue_order=hue_order, #: list = None, 
+
+                out=out, #=False, # stats
+                
+                plot=False, 
+                
+                validate=validate, #=None, 
+                verbose=verbose, #=True,
+                **kws_stats,
+                )
         res=ax.stats
     # df1=pd.Series(res).to_frame().T
     df1=res
@@ -2703,24 +2749,30 @@ def check_sass(
     data,
     x,
     y,
-
     order_x=None,
     order_y=None,
 
     method=None, 
+    cols_id=None, ## not implemented
     verbose=True,
 
     validate=None, 
     
     plot=False, 
-    ax=None,
     
+    ## to be deprecated
+    kws_plot={},
+    kws_plot_set={},
+    ax=None, 
+
     out=False,
     **kws_stats,
     ):
 
     if validate in [False,'']:
         validate=None
+    if cols_id is not None:
+        logging.warning("cols_id is not implemented.")
         
     kws_stats={
         **kws_stats,
@@ -2741,26 +2793,64 @@ def check_sass(
             **kws_stats
         )
     else:
-        if plot==True:
-            plot={}
-        kws_plot=plot
-        del plot
-        
-        from roux.viz.sets import plot_sets
-        ax=plot_sets(
-            data,
-            x=x,
-            y=y,
-            kws_stats=kws_stats,
-            **{
-                **dict(ax=ax),
-                **kws_plot.get('plot',{}),
-            }
-        )
-        ax.set(
-            **kws_plot.get('set',{})
-        )
-        res=ax.stats
+        try:
+            if not isinstance(plot,dict):
+                plot={}
+            
+            ## to be removed part
+            if len(kws_plot)>0 or len(kws_plot_set)>0 or ax is not None:
+                logging.warning('kws_plot,kws_plot_set and ax  will be deprecated, provide them in the plot arg. instead')
+
+                plot={
+                    **dict(
+                        set=kws_plot_set,
+                        ax=ax,
+                        )
+                    ## override
+                    **{
+                        **kws_plot,
+                        **plot,
+                    }
+                    }
+                logging.warning(f"plot={plot}")
+
+            from roux.viz.sets import plot_sets
+            ax=apply_plot(
+                plot_sets,
+                data,
+                kws_plot={
+                        **dict(
+                            plot=dict(
+                                x=x,
+                                y=y,
+                                kws_stats=kws_stats,
+                            ),
+                        ),
+                        **plot
+                    },
+                )
+            res=ax.stats
+        except Exception as e:
+            logging.exception(str(e))
+            return check_sass(
+                data,
+                x=x, #,
+                y=y, #,
+
+                order_x=order_x, #=None,
+                order_y=order_y, #=None,
+
+                method=method, #=None, 
+                verbose=verbose, #=True,
+
+                validate=validate, #=None, 
+                
+                plot=False, 
+                
+                out=out, #=False,
+                **kws_stats,
+                )
+
     df1=pd.Series(res).to_frame().T.drop(['ax','table'],axis=1,errors='ignore')
     if df1 is None:
         return None
@@ -2789,7 +2879,7 @@ def check_links(
     kws_stats={},
     # method={}, # mannwhitneyu
     # validate={}, 
-    plot=False, 
+    plot=False, ## or dict with get_ax kws
     ## common
     verbose=True,
     out=False,    
@@ -2833,31 +2923,27 @@ def check_links(
         )
     )    
 
-    # if plot==True:
-    #     plot={k: dict(plot={}) for k in }
-        
-    ## get_ax
-    from roux.viz.figure import get_ax
+    if plot==True and not isinstance(plot,dict):
+        plot={}
     kws_checks={}
     for k in ['corr','diffx','diffy','sass']:
         kws_checks[k]={
             **kws_common,
             **kws_stats.get(k[:4],{}),
             **dict(
-                plot=plot,
+                plot={
+                    **dict(
+                        # specific default kws_get_ax
+                        ax=dict(
+                            ax='gca',
+                            cols_max=2,
+                            figsize=[8,6],
+                        )
+                    ),
+                    **plot,
+                    },
             ),
-        }        
-        if kws_checks[k]['plot'] in [False,None]:
-            continue
-        if plot==True:
-            kws_checks[k]['plot']={}
-        # if plot.get(k):
-        #     if isinstance(plot.get(k).get('plot'),dict):
-        # if kws_checks[k]['plot'].get('ax') is None:
-        #     
-        #     kws_checks[k]['plot']['ax']=get_ax('gca',cols_max=2)
-
-    # print(kws_checks)
+        }
     
     df1=(
         df0
@@ -2866,8 +2952,6 @@ def check_links(
                 check_corr,
                 x=x,
                 y=y,
-                
-                ax=get_ax('gca',cols_max=2) if plot not in [False,None] else None,
                 **kws_checks['corr'],
             )
             .pipe(
@@ -2875,8 +2959,6 @@ def check_links(
                 x=x,
                 y=col_ybin,
                 cols_id=cols_id,
-
-                ax=get_ax('gca',cols_max=2) if plot not in [False,None] else None,
                 **kws_checks['diffx'],
             )
             .pipe(
@@ -2884,8 +2966,6 @@ def check_links(
                 x=col_xbin,
                 y=y,
                 cols_id=cols_id,
-                
-                ax=get_ax('gca',cols_max=2) if plot not in [False,None] else None,
                 **kws_checks['diffy'],
             )
             .pipe(
@@ -2895,8 +2975,6 @@ def check_links(
 
                 order_x=xbins,
                 order_y=ybins,
-
-                ax=get_ax('gca',cols_max=2) if plot not in [False,None] else None,
                 **kws_checks['sass'],
             )
     )

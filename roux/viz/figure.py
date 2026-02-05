@@ -103,8 +103,15 @@ def fig_grid(
     # --- 4. Rotate the Right Margin Titles (by finding Text objects) ---
     return g
 
+def set_fig(figsize):
+    # 1. Get the current figure and axes
+    fig = plt.gcf()
+    if list(fig.get_size_inches())!=figsize:
+        fig.set_size_inches(figsize[0], figsize[1], forward=True)
+    return fig
+
 ## subplots in relaation to figs
-def gca(
+def set_ax(
     cols_max=4,
     figsize=[8,2],
     ):
@@ -117,11 +124,7 @@ def gca(
     Returns:
         matplotlib.axes.Axes: The newly created subplot axes.
     """
-    # 1. Get the current figure and axes
-    fig = plt.gcf()
-    
-    if list(fig.get_size_inches())!=figsize:
-        fig.set_size_inches(figsize[0], figsize[1], forward=True)
+    fig=set_fig(figsize)
 
     existing_axes = fig.axes
     n_existing = len(existing_axes)
@@ -150,25 +153,32 @@ def gca(
 
 def get_ax(
     ax=None,
+    figsize=[8,2],
     **kws
 ):    
     if isinstance(ax,plt.Axes): 
         return ax
-    elif ax in ['.',None]:
+    elif ax in ['same','.',None]:
+        fig=set_fig(figsize)
         return plt.gca()
     elif isinstance(ax,dict):
         ## recurse
         ## e.g. ax=dict(ax='gca',cols_max=1)
         return get_ax(
-            **ax
+            **{
+                **dict(figsize=figsize),
+                **ax
+            },
         )
     elif ax=='new':
         return plt.subplots(
             1,1,
+            figsize=figsize,
             **kws                
         )[1]
     elif ax in ['+','append','gca']:
-        return gca(
+        return set_ax(
+            figsize=figsize,
             **kws    
         )
     else:
