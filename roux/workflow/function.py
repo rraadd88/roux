@@ -501,6 +501,7 @@ def get_global_imports(
             }
         )
         .explode("function name")
+        .dropna(subset=["function name"])
         .assign(
             **{
                 "import statement": lambda df: df.apply(
