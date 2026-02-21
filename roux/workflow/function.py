@@ -22,6 +22,25 @@ def import_from_file(pyp: str):
 
     return SourceFileLoader(abspath(pyp), abspath(pyp)).load_module()
 
+import inspect
+
+def call_with_kws(func, kws):
+    """
+    Calls a function with a filtered dictionary of keyword arguments.
+    Logs an error if excess arguments are provided.
+    """
+    # g: Extract valid parameter names from the target function
+    valid_args = inspect.signature(func).parameters.keys()
+    
+    # g: Retain only the arguments that exist in the function signature
+    kws_filtered = {k: v for k, v in kws.items() if k in valid_args}
+    
+    # g: Identify any keys in kws that are not accepted by the function
+    excess_kws = set(kws.keys()) - set(valid_args)
+    if len(excess_kws) > 0:
+        logging.error(f"Excess arguments provided for {func.__name__}: {excess_kws}")        
+    return func(**kws_filtered)
+
 def get_quoted_path(s1: str) -> str:
     """Quoted paths.
 

@@ -634,7 +634,9 @@ class SLURMJob:
         with open(outp, 'w') as f:
             f.write(
 #SBATCH --partition={self.partition}
-f"""#!/bin/bash
+f"""#!/usr/bin/env bash
+set -e
+
 #SBATCH --job-name={self.job_name}
 #SBATCH --err={self.log_path}/%j.err
 #SBATCH --output={self.log_path}/%j.out                
@@ -651,6 +653,10 @@ f"""#!/bin/bash
 {modules_load_str}
 
 {packages_install_str}
+
+# g: Redirects all subsequent stdout/stderr to both the file and the terminal.
+# g: This avoids the pipefail masking issue entirely.     
+exec > >(tee '{self.log_path}/stdout') 2>&1; 
 
 """)
             for command in self.commands:
@@ -841,7 +847,10 @@ def to_sbatch_script(
             # return "under dev"
             # if verbose:
             #     print(com) 
-        
+            com = (
+                f"{com}"
+                # f' || {{ echo "{script_path} crashed"; exit 1; }}'
+            )
         elif script_path.endswith('.ipynb'):
             log_path=f"{log_dir_path}/{Path(script_path).name}"
             com=(
@@ -852,6 +861,7 @@ def to_sbatch_script(
                 "--report-mode "
                 # "--allow_errors=False "
                 f"'{script_path}' '{log_path}'"
+                # f' || {{ echo "{script_path} crashed"; exit 1; }}'
             )
             # --kernel
             # packages.append('papermill')
@@ -1250,7 +1260,7 @@ def run_tasks(
             )
         
         dfs_run={}
-        for step in tqdm(cfg_run):
+        for step in tqdm(cfg_run, disable=len(cfg_run) <= 1):
             logging.processing(step) 
             
             dfs_run[step]=run_tasks(
@@ -1428,7 +1438,7 @@ def run_tasks(
     job_ids=[]
 
     _logged=False    
-    for pms in tqdm(params):  
+    for pms in tqdm(params, disable=len(params) <= 1):
         log_dir_path=pre_task(
             pms,
             cache_dir_path=cache_dir_path,
@@ -1465,7 +1475,7 @@ def run_tasks(
 
         if runner!='slurm':
             coms.append(
-                f"bash '{sbatch_path}' &> '{log_dir_path}/stdout'",
+                f"bash '{sbatch_path}'",
             )
         
         sbatch_paths.append(sbatch_path)

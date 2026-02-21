@@ -564,14 +564,21 @@ def run_com(
         )
     else:
         if wait:
+            # try:
             response = subprocess.run(
                 com,
                 shell=True,
                 stdout=subprocess.PIPE,
                 stderr=subprocess.PIPE,
-                text=True
+                text=True,
+                # check=True, #ensures an exception is raised on failure
                 )
-            # print(res.stdout)
+            # except subprocess.CalledProcessError as response:
+            #     response=response
+            #     # g: handle the error here
+            #     logging.error(f"response.returncode={response.returncode}")
+            #     logging.error(f"response.stderr={response.stderr}")         
+            #     pass
             assert response.returncode in returncodes, response
             return response.stdout
         else:
