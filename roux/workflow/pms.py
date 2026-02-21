@@ -11,6 +11,7 @@ from roux.lib.io import read_dict, to_dict
 
 import ast
 import re
+import json
 
 def _code_string_to_dict(code_string):
     """
@@ -211,8 +212,9 @@ def expand_pms(
     ):
     """
     dict -> cli str
+
     """
-    return ' '.join([f"--{k.replace('_','-')} {v}" for k,v in pms.items()])
+    return ' '.join([f"""--{k.replace('_','-')} {"'" if not isinstance(v,str) else ""}{json.dumps(v)}{"'" if not isinstance(v,str) else ""}""" for k,v in pms.items()])
 
 
 ## I/O
@@ -344,7 +346,7 @@ def pre_params(
     
     if drop_if_path_exists:
         ## drop if sub-path exists
-        print(len(param_list),end=' -drop_if_path_exists-> ')
+        print(len(param_list),end=f' -drop_if_path_exists-> ')
         assert isinstance(drop_if_path_exists,str), drop_if_path_exists
         param_list = [
             d
@@ -354,7 +356,7 @@ def pre_params(
 
     if drop_by_patterns:
         ## drop if sub-path exists
-        print(len(param_list),end=' -drop_by_patterns-> ')
+        print(len(param_list),end=f' -drop_by_patterns-> ')
         print(drop_by_patterns)
         assert isinstance(drop_by_patterns,list), drop_by_patterns
         param_list = [
@@ -402,45 +404,3 @@ def pre_params(
         return param_list
     else:
         to_dict(param_list,outp)
-
-
-## io parameters
-def infer_parameters(input_value, default_value):
-    """
-    Infer the input values and post warning messages.
-
-    Parameters:
-        input_value: the primary value.
-        default_value: the default/alternative/inferred value.
-
-    Returns:
-        Inferred value.
-    """
-    if input_value is None:
-        logging.warning(
-            f"input is None; therefore using the the default value i.e. {default_value}."
-        )
-        return default_value
-    else:
-        return input_value
-
-
-def to_parameters(f: object, test: bool = False) -> dict:
-    """Get function to parameters map.
-
-    Args:
-        f (object): function.
-        test (bool, optional): test mode. Defaults to False.
-
-    Returns:
-        dict: output.
-    """
-    import inspect
-
-    sign = inspect.signature(f)
-    params = {}
-    for arg in sign.parameters:
-        argo = sign.parameters[arg]
-        params[argo.name] = argo.default
-    #     break
-    return params

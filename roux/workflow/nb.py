@@ -390,57 +390,18 @@ def to_filtered_outputs(
 ## meta
 def to_clean_nb(
     p,
-    outp: str = None,
-    in_place: bool = False,
-    temp_outp: str = None,
+    outp: str,
     clear_outputs=False,
-    drop_code_lines_containing=[
-        ## dev
-        r".*%run .*",
-        ## unused params
-        r"^#\s*.*=.*",
-        ## unused strings
-        r'^#\s*".*',
-        r"^#\s*'.*",
-        r'^#\s*f".*',
-        r"^#\s*f'.*",
-        r"^#\s*df.*",
-        r"^#\s*.*kws_.*",
-        ## lines with one hashtag (not a comment)
-        r"^\s*#\s*$",
-        r"^\s*#\s*break\s*$",
-        ## unused
-        # "\[X", #noqa
-        # "\[old ", #noqa
-        "#old",
-        "# old",
-        # "\[not used", #noqa
-        "# not used",
-        ## development
-        "#tmp",
-        "# tmp",
-        "#temp",
-        "# temp",
-        "check ",
-        "checking",
-        "# check",
-        # "\[SKIP", #noqa
-        "DEBUG ",
-        # "#todos","# todos",'todos',
-    ],
-    drop_headers_containing=[
-        "check",
-        "[check",
-        "old",
-        "[old",
-        "tmp",
-        "[tmp",
-    ],
-    ## ruff
-    fix_stars=False,
-    lint=False,
-    format=False,
-    **kws_fix_code,
+    drop_code_lines_containing=[],
+    drop_headers_containing=[],
+
+    ## TODO: update
+        temp_outp: str = None,
+        ## ruff
+        fix_stars=False,
+        lint=False,
+        format=False,
+        **kws_fix_code,    
 ) -> str:
     """
     Wraper around the notebook post-processing functions.
@@ -457,13 +418,12 @@ def to_clean_nb(
         roux to-clean-nb "in*.ipynb" -i -c -l -f
 
     Parameters:
-        temp_outp (str): path to the intermediate output.
+        outp (str): path to the intermediate output.
     """
     from roux.lib.io import read_ps
 
     input_paths = read_ps(p)
     if len(input_paths) > 1:
-        assert in_place, in_place
         logging.info(f"Processing {len(input_paths)} files ..")
         ## Recursive
         outps = []
@@ -473,8 +433,7 @@ def to_clean_nb(
                 to_clean_nb(
                     p=inp,
                     outp=outp,
-                    in_place=in_place,
-                    temp_outp=temp_outp,
+                    in_place=False,
                     clear_outputs=clear_outputs,
                     drop_code_lines_containing=drop_code_lines_containing,
                     drop_headers_containing=drop_headers_containing,
@@ -490,43 +449,34 @@ def to_clean_nb(
         to_clear_unused_cells,
         to_clear_outputs,
         to_filtered_outputs,
-        to_filter_nbby_patterns,
+        # to_filter_nbby_patterns,
         to_replaced_nb,
     )
     from roux.lib.sys import grep
 
-    if in_place:
-        outp = p
-    else:
-        # makedirs(outp)
-        from pathlib import Path
-
-        Path(outp).parent.mkdir(parents=True, exist_ok=True)
-
-    if temp_outp is None:
-        import tempfile
-
-        temp_outp = f"{tempfile.gettempdir()}/to_clean_nb.ipynb"
+    # makedirs(outp)
+    from pathlib import Path
+    Path(outp).parent.mkdir(parents=True, exist_ok=True)
 
     # Remove the code blocks that have all commented code and empty lines
     to_clear_unused_cells(
         p,
-        temp_outp,
+        outp,
     )
 
     if clear_outputs:
         to_clear_outputs(
-            temp_outp,
-            temp_outp,
+            outp,
+            outp,
         )
 
-    to_filtered_outputs(temp_outp, temp_outp)
+    to_filtered_outputs(outp, outp)
 
-    to_filter_nbby_patterns(temp_outp, temp_outp, patterns=drop_headers_containing)
+    to_filter_nbby_patterns(outp, outp, patterns=drop_headers_containing)
 
     to_replaced_nb(
-        nb_path=temp_outp,
-        output_path=temp_outp,
+        nb_path=outp,
+        output_path=outp,
         replaces={
             ## to replace the star
             " import * #noqa": " import *",
@@ -538,38 +488,39 @@ def to_clean_nb(
     )
 
     _l = grep(
-        p=temp_outp,
+        p=outp,
         checks=drop_code_lines_containing,
         exclude=["## backup old files if overwriting (force is True)"],
     )
 
     assert len(_l) == 0, (p, _l)
 
-    if fix_stars:
-        try:    
-            __import__("removestar")
-        except:
-            raise ModuleNotFoundError(
-                "Optional interactive-use dependencies missing, install by running: pip install removestar"
-            )
+    # if fix_stars:
+    #     try:    
+    #         __import__("removestar")
+    #     except:
+    #         raise ModuleNotFoundError(
+    #             "Optional interactive-use dependencies missing, install by running: pip install removestar"
+    #         )
         
-        res = replacestar(
-            input_path=temp_outp,
-            output_path=outp,
-            replace_from="from roux.global_imports import *",
-            in_place=False,
-            attributes={"pandarallel": ["parallel_apply"], "rd": [".rd.", ".log."]},
-            verbose=False,
-            test=False,
-            **kws_fix_code,
-        )
-        if res is None:
-            return
-    post_code(
-        p=outp,
-        lint=lint,
-        format=format,
-    )
+    #     res = replacestar(
+    #         input_path=outp,
+    #         output_path=outp,
+    #         replace_from="from roux.global_imports import *",
+    #         in_place=False,
+    #         attributes={"pandarallel": ["parallel_apply"], "rd": [".rd.", ".log."]},
+    #         verbose=False,
+    #         test=False,
+    #         **kws_fix_code,
+    #     )
+    #     if res is None:
+    #         return
+    # from roux.workflow.io import check_py
+    # check_py(
+    #     p=outp,
+    #     lint=lint,
+    #     format=format,
+    # )
     return outp
 
 

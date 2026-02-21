@@ -36,6 +36,7 @@ def replace_many(
     replacewith: str = "",
     errors='raise',
     ignore: bool = False,
+    use_template=True,
     **kws_subs,
 ):
     """Rename by replacing sub-strings.
@@ -54,7 +55,7 @@ def replace_many(
         logging.warning("use errors=None instead")
         
     s_ = s
-    if "${" in s:
+    if "${" in s and use_template:
         from string import Template
         s=(
             getattr(

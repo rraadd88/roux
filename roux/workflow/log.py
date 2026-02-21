@@ -18,7 +18,7 @@ def print_parameters(
         else:
             logger=print
     elif isinstance(logger,str):
-        logger=getattr(logging,logger)
+        logger=getattr(logging,logger.lower())
     logger(
         f"## for testing\nimport os\nos.chdir('{Path.cwd().as_posix()}')\n\n## parameters\n"+(
             "\n".join(
@@ -33,7 +33,7 @@ def print_parameters(
 def test_params(
     params,
     i=0, #index
-    logger=None,
+    logger='INFO',
     ):
     if isinstance(params, str):
         from roux.lib.io import read_dict

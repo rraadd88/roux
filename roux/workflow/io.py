@@ -86,7 +86,7 @@ def to_py(
 def check_py(
     p,
     errors='raise',
-    ruff_ignore='E402,E722,F841,E741,F401,E712,F541', # while prototyping
+    ruff_ignore='E402,E722,F841,E741,F401,E712,F541,F841', # while prototyping
 ):
     """
     E402	pycodestyle	Module level import not at top of file.
@@ -96,11 +96,13 @@ def check_py(
     F401	Pyflakes	Module imported but unused.
     E712	pycodestyle	Comparison to True should be if cond is True: or if cond:.
     F541	Pyflakes	f-string without any placeholders.
+    F841    Variable defined but not used
     """
-    init_path=f"{Path(p).parent}/__init__.py"
-    if not Path(init_path).exists():
-        Path(init_path).touch()
-        logging.warning(f'created missing: {init_path}')
+    if p.endswith('.py'):
+        init_path=f"{Path(p).parent}/__init__.py"
+        if not Path(init_path).exists():
+            Path(init_path).touch()
+            logging.warning(f'created missing: {init_path}')
         
     com=f"ruff check {p} --ignore {ruff_ignore}"
     from roux.lib.sys import run_com  
@@ -198,6 +200,12 @@ def to_scr(
     with_pms=True, # py with --pms (preferred)
     mark_end='## END',
 
+    replaces={
+        "get_ipython":'#get_ipython',
+        "sys.exit()":'return',
+        "sys.exit(0)":'return',
+        "sys.exit(1)":'return',
+    },
     ## ruff
     check=True,
     fix=False, # replacestar+format
@@ -227,10 +235,14 @@ def to_scr(
         )
     
     t_raw=open(pyp,'r').read()
+    # print(t_raw[:100])
 
     t_raw=t_raw.split(mark_end)[0]
-    
+    # print(t_raw[:100])
+
+    ## TODO: use textwrap
     t_tab=t_raw.replace('\n','\n    ')
+    # print(t_tab[:100])
     
     def split_by_pms(text):
         splits1=re.split(r"# In\[\s*\d*\s*\]:\n    #+ param", text)
@@ -308,7 +320,15 @@ if __name__ == "__main__": # and sys.stdin.isatty():
     """
     
     t_src=t_splits[0]+t_def+t_splits[1]+t_end
-    # print(t_src)
+    
+    from roux.lib.str import replace_many
+    t_src=replace_many(
+            t_src,
+            replaces,
+            errors=None,
+            use_template=False,
+        )    
+
     Path(outp).parent.mkdir(exist_ok=True)
     open(outp,'w').write(t_src)
     if check and not fix:
@@ -341,7 +361,7 @@ def replacestar_ruff(
     p: str,
     outp: str,
     replace: str = "from roux.global_imports import *",
-    clean=True,
+    clean=False,
     verbose=True,
 ) -> str:
     from roux.workflow.function import get_global_imports
@@ -377,7 +397,6 @@ def replacestar_ruff(
     )
 
     replaced_lines = open(temp, "r").read().split("\n")
-
     # import shutil
     # shutil.move(temp,outp)
 
@@ -396,6 +415,7 @@ def replacestar_ruff(
             s_ = s
         replaced_lines = [s for i, s in enumerate(replaced_lines) if i not in drop_lines]
 
+    # print(open(outp,'r').read()[:100])
     replaced_text = "\n".join(replaced_lines)
 
     open(outp, "w").write(replaced_text)
