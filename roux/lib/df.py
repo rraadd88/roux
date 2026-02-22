@@ -2940,7 +2940,7 @@ def check_links(
                             figsize=[8,6],
                         )
                     ),
-                    **plot,
+                    **(plot if isinstance(plot,dict) else {}),
                     },
             ),
         }

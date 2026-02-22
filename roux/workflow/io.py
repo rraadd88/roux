@@ -280,18 +280,19 @@ def to_scr(
         ## should be params
         from roux.workflow.task import pre_params
         params=pre_params(input_path)
-        if len(params)!=1:
-            print(f"warning: {len(params)} pms found")
+        # if len(params)!=1:
+        #     logging.info(f"processing {len(params)} pms")
         from roux.workflow.function import call_with_kws
-        for i,kws in enumerate(params):
+        for i,_kws in enumerate(params):
             call_with_kws(
                 run,
-                kws,
+                _kws,
+                **{k:v for k,v in dict(verbose=locals().get('verbose'),force=locals().get('force'),).items() if v is not None}
             )
         return 
 
     ## for cli
-    assert input_path is not None
+    assert input_path is not None, 'check docs using --help'
     assert output_path is not None
     """
 

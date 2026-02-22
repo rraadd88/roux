@@ -1162,7 +1162,7 @@ def run_tasks(
     simulate: bool = False,
     
     verbose: bool = False,
-    log_level: str = 'INFO',    
+    log_level: str = 'INFO',
     
     ## pre_params
     flt_input_exists=False, # should input_path exist
@@ -1218,8 +1218,17 @@ def run_tasks(
         cache_dir_path=None
         logging.warning("cache_dir_path=None")
         
-    ## script_path
+    # ## script_path
+    # # g: Imported as an alias to prevent AttributeError if the 'logging' variable was accidentally reassigned to a Logger instance
+    # print()
+    # if log_level is None:
+    import logging as _logging
+    log_level_root=_logging.getLevelName(_logging.getLogger().getEffectiveLevel())
+    if log_level!=log_level_root:
+        log_level=log_level_root
+    
     logging.setLevel(level=log_level)
+
     script_path=Path(script_path).resolve().as_posix()
     script_type=Path(script_path.split(' ')[0]).suffix[1:]# if not '.py run' in script_path else 'py'
 
@@ -1371,7 +1380,7 @@ def run_tasks(
     if isinstance(params,dict):
         params=list(params.values())
                 
-    _time=logging.configuring("paths ..",get_time=True)
+    _time_start=logging.configuring("paths ..",time=True)
     
     Path(cache_dir_path).mkdir(parents=True, exist_ok=True)
 
@@ -1453,7 +1462,7 @@ def run_tasks(
         
         if not Path(sbatch_path).exists() or force_setup:
             if runner!='slurm' and not _logged:
-                logging.warning("forcing setup (re-rewiting the sbatch scripts)..")
+                # logging.warning("forcing setup (re-rewiting the sbatch scripts)..")
                 _logged=True
             # job=
             # if not simulate:
@@ -1506,12 +1515,12 @@ def run_tasks(
     
     # logging.info("jobs submitted.")
     if runner=='slurm':
-        logging.info(get_sq())  
+        logging.info(get_sq())
         
         
     # logging.saving('outputs.')
     if not simulate:
-        logging.done('processing.',time=_time)
+        logging.done(Path(script_path).stem,time=_time_start)
 
     # if wd_path!=cwd_path:
     #     ## back to current work dir    
