@@ -618,7 +618,13 @@ def plot_many_dists(
     ref_data=None,
     ref_expr=None,
     ref_agg='median', # because of the boxplot
-    ref_kws_plot={},
+    ref_func_plot='plot',
+    ref_kws_plot=dict(
+        linestyle=':',
+        lw=1.5,
+        color='k',
+        zorder=5,
+    ),
     
     ax=None,
     **kws_plot_dists,
@@ -644,12 +650,14 @@ def plot_many_dists(
         ax=plt.gca()
     
     if ref_expr is not None:
+        logging.info('ref_data filtering:')
         ref_data=(
             data
                 .log.query(expr=ref_expr)
                 .groupby(y)[x].agg(ref_agg)
                 .reset_index()
             )
+        logging.info('data filtering:')
         data=(
             data
                 .log.query(expr=ref_expr.replace('==','!='))
@@ -677,7 +685,7 @@ def plot_many_dists(
                 show_p=False,
                 fmt_pval='*',
                 offs_pval={"x": 0, "y": 0.2},
-                width=0.7,
+                # width=0.7,
                 showfliers=False,
             ),
             **kws_plot_dists
@@ -692,18 +700,18 @@ def plot_many_dists(
             ref_data
             .assign(y_pos=lambda df: df[y].map(get_ticklabel_position(ax, 'y')))
             .apply(
-                lambda row: ax.plot(
-                    [row[x], row[x]],
-                    [row['y_pos'] - 0.5, row['y_pos'] + 0.5],
-                    **{
-                        **dict(
-                            linestyle=':',
-                            lw=1.5,
-                            color='k',
-                            zorder=5,
-                        ),
-                        **ref_kws_plot
-                    }
+                lambda row: (
+                        ax.plot(
+                            [row[x], row[x]],
+                            [row['y_pos'] - 0.5, row['y_pos'] + 0.5],
+                            **ref_kws_plot
+                        ) 
+                    if ref_func_plot=='plot' else 
+                        ax.scatter(
+                            [row[x]],
+                            [row['y_pos']],
+                            **ref_kws_plot
+                        )
                 ),
                 axis=1
             )

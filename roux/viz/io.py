@@ -448,8 +448,8 @@ def to_script(
         from roux.workflow.io import replacestar
 
         replacestar(
-            p=srcp,
-            outp=srcp,
+            srcp,
+            srcp,
             verbose=test,
         )
     return srcp

@@ -17,6 +17,8 @@ from roux.lib.sys import (
     makedirs,
 )
 
+from roux.workflow.pms import read_cli_pm
+
 ## for backcompatibility
 from roux.workflow.cfgs import read_config, read_metadata ##noqa
 
@@ -197,8 +199,10 @@ def to_scr(
     p,
     outp=None,
 
-    with_pms=True, # py with --pms (preferred)
+    with_pms='True', # py with --pms (preferred)
     mark_end='## END',
+
+    pre_clean=None,
 
     replaces={
         "get_ipython":'#get_ipython',
@@ -227,6 +231,29 @@ def to_scr(
     if outp is None:
         outp=to_py_path(p)
         logging.warning(f"outp={outp}")
+
+    ## TODO: use decorator
+    with_pms=read_cli_pm(with_pms)
+    pre_clean=read_cli_pm(pre_clean) 
+
+    if pre_clean:
+        if pre_clean==True: #noqa
+            pre_clean={}
+        assert isinstance(pre_clean,dict), pre_clean
+
+        from roux.workflow.nb import to_clean_nb
+        p=to_clean_nb(
+            p,
+            f'.to_src/{Path(p).name}',
+            **{
+                **dict(
+                    clear_outputs=False,
+                    drop_code_lines_containing=[],
+                    drop_headers_containing=[],
+                    ),
+                **pre_clean,
+                },
+        )
 
     pyp=to_py(
         p,
