@@ -90,6 +90,7 @@ class _PiperPlotter:
         self,
         subset=None,
         sample=None,
+        show_n=True,
         func_ax=None,
         **kws,
     ):      
@@ -122,21 +123,22 @@ class _PiperPlotter:
             )
             # if ax.get_legend() is not None:
             #     ax.get_legend().remove()
-            
-        from roux.viz.ax_ import set_label
-        set_label(
-            **{
-                **dict(
-                    ax=ax,
-                    x=1,
-                    y=0,
-                    s=f"n={len(self._obj)}",
-                    ha='right',
-                    va='bottom',
-                ),
-                # **kws_set_label_n
-            }
-        )      
+        if show_n:            
+            from roux.viz.ax_ import set_label
+            set_label(
+                **{
+                    **dict(
+                        ax=ax,
+                        x=0,
+                        y=0,
+                        s=f"n={len(self._obj)}",
+                        ha='right',
+                        va='top',
+                        transform=ax.transAxes,
+                    ),
+                    # **kws_set_label_n
+                }
+            )      
         return ax
         # if func_ax is not None:
         #     func_ax(ax)            
@@ -151,11 +153,47 @@ class rd:
 
     def __init__(self, pandas_obj):
         self._obj = pandas_obj
+
+        ## seaborn (preferred)
+        ## pandas (not preferred)
         self.plot = _PiperPlotter(self._obj)
+
+import inspect
+import seaborn as sns
+# g: dynamically identify and attach all seaborn plotting functions
+for _attr in dir(sns):
+    if _attr.endswith('plot') and callable(getattr(sns, _attr)):
+        
+        # g: closure to capture the specific seaborn function
+        def _plot_wrapper(
+            self,
+            *args,
+            _func_name=_attr,
+            out=False,
+            **kwargs
+            ):
+            _func = getattr(sns, _func_name)
+            
+            # g: inject the current dataframe instance
+            kwargs['data'] = self._obj
+            
+            # g: enforce ax logic if the target function is axis-level
+            if 'ax' in inspect.signature(_func).parameters:
+                if 'ax' in kwargs:
+                    kwargs['ax']=get_ax(kwargs['ax'])
+            
+            ax = _func(*args, **kwargs)
+            if out:
+                return ax
+            else:
+                return self._obj
+        # g: attach the wrapped method to the accessor class
+        setattr(rd, _attr, _plot_wrapper)
 
 # create the `roux-dataframe` (`.rd`) decorator
 to_rd = to_class(rd)
 
+## TODO: to be deprecated in favour of rd
 @pd.api.extensions.register_series_accessor("rs")
 class rs:
     """`roux-series` (`.rs`) extension."""

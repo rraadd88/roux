@@ -392,6 +392,7 @@ def replacestar_ruff(
     outp: str,
     replace: str = "from roux.global_imports import *",
     clean=False,
+    indent=None,
     verbose=True,
 ) -> str:
     from roux.workflow.function import get_global_imports
@@ -404,8 +405,9 @@ def replacestar_ruff(
         ).replace('\n\n','\n')
 
     ## indent
-    import textwrap
-    indent=' '*(len(replace) - len(replace.lstrip(' ')))
+    if indent is None:
+        import textwrap
+        indent=' '*(len(replace) - len(replace.lstrip(' ')))
     if verbose:
         logging.info(f"indent='{indent}'")
     replace_with=textwrap.indent(replace_with, indent)
@@ -457,6 +459,7 @@ def replacestar(
     output_path=None,
     replace_from="from roux.global_imports import *",
     method='filter', # select
+    method_kws={},
     errors='raise',
     verbose: bool = False,
 ):
@@ -515,6 +518,7 @@ def replacestar(
             output_path,
             replace_from,
             verbose=verbose,
+            **method_kws,
         )
     check_py(output_path,errors=errors)
     return output_path
