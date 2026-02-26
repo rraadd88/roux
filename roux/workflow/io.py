@@ -58,6 +58,7 @@ def clear_dataframes():
 def to_py(
     notebookp: str,
     pyp: str = None,
+    clean=False,
     force: bool = False,
     **kws_get_lines,
 ) -> str:
@@ -76,9 +77,12 @@ def to_py(
     if exists(pyp) and not force:
         return
     makedirs(pyp)
-    from roux.workflow.nb import get_lines
 
+    from roux.workflow.nb import get_lines
     l1 = get_lines(notebookp, **kws_get_lines)
+    if clean:
+        l1=[s for s in l1 if not s.strip().startswith('# In')]
+
     l1 = "\n".join(l1).encode("ascii", "ignore").decode("ascii")
     with open(pyp, "w+") as fh:
         fh.writelines(l1)
@@ -203,7 +207,7 @@ def to_scr(
     mark_end='## END',
 
     pre_clean=None,
-
+    clean=True,
     replaces={
         "get_ipython":'#get_ipython',
         "sys.exit()":'return',
@@ -258,6 +262,7 @@ def to_scr(
     pyp=to_py(
         p,
         pyp=f'.to_src/{Path(p).stem}.py',
+        clean=clean,
         force=True,
         )
     

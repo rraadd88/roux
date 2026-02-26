@@ -124,21 +124,14 @@ class _PiperPlotter:
             # if ax.get_legend() is not None:
             #     ax.get_legend().remove()
         if show_n:            
-            from roux.viz.ax_ import set_label
+            from roux.viz.ax_ import set_label    
             set_label(
-                **{
-                    **dict(
-                        ax=ax,
-                        x=0,
-                        y=0,
-                        s=f"n={len(self._obj)}",
-                        ha='right',
-                        va='top',
-                        transform=ax.transAxes,
-                    ),
-                    # **kws_set_label_n
-                }
-            )      
+                f"({len(self._obj)})",
+                loc=3,
+                place='out',
+                offs=[-0.1,-0.1],
+                color='gray',
+            )            
         return ax
         # if func_ax is not None:
         #     func_ax(ax)            

@@ -400,7 +400,15 @@ def plot_dists(
         'point':dict(
             estimator='mean',  
             linestyle='none',
-        )
+        ),
+        'bar':dict(
+            alpha=alpha,
+            dodge=True,
+            gap=0.2,
+            err_kws=dict(
+                lw=1,
+            ),
+        ),
     }
     if 'box' in kind:
         if kind['box'].get('showmeans')==True or showmeans:
