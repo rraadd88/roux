@@ -11,7 +11,7 @@ import matplotlib.pyplot as plt
 from roux.lib.str import num2str
 from roux.stat.binary import perc
 from roux.viz.ax_ import get_axlims, set_ylabel
-
+from roux.viz.figure import get_ax
 
 def plot_barh(
     df1: pd.DataFrame,
@@ -579,6 +579,102 @@ def plot_bar_serial(
 
     return ax
 
+def plot_bar_perc(
+    data,
+    colx,
+    col_id, # above
+    col_label=None, # below
+    order=None,
+    colors=None,
+    text_y_off=0,
+    ax=None,
+    ):
+    if ax is None:
+        ax=plt.gca()
+        
+    if col_label is None:
+        col_label='_label'
+        data[col_label]=data[col_id]
+    if order is None:
+        order=data[col_id].tolist()
+        
+    # labels_order=data.set_index(col_id)[col_label].tolist()
+    
+    from roux.viz.colors import get_ncolors
+    if colors is None:
+        colors=get_ncolors(
+            len(data),
+            'Blues',
+            vmin=0.1,    
+            vmax=0.9,    
+        )
+        
+    df_=(
+        data
+        .set_index(
+            col_id,
+        )
+        .loc[order,[colx,col_label]]
+    )
+    df_['x']=df_[colx].cumsum()
+    df_['x+1']=df_['x'].shift(1)#.fillna(0)
+    df_['colors']=colors
+    
+    ax=(
+        df_
+        .loc[:,[colx]]
+        .T.plot.barh(
+            stacked=True,
+            color=df_['colors'],
+            ax=ax,
+            legend=False
+        )
+    )
+    df_.apply(
+        lambda x: ax.text(
+            x['x' if x.name==order[0] else 'x+1'],
+            0.7+text_y_off,
+            f"{x[col_label]} " if x.name==order[0] else f" {x[col_label]}",            
+            ha='right' if x.name==order[0] else 'left',
+            va='top',
+            zorder=10,
+        ),
+        axis=1,
+    )
+    print(df_)
+    df_.reset_index().apply(
+        lambda x: ax.text(
+            x['x' if x[col_id]==order[0] else 'x+1'],
+            -0.7+text_y_off,
+            f"{x[col_id]} " if x[col_id]==order[0] else f" {x[col_id]}",
+            ha='right' if x[col_id]==order[0] else 'left',
+            va='bottom',
+            # bbox=dict(
+            #     facecolor='none', edgecolor='none', 
+            #           pad=10),
+            zorder=10,
+        ),
+        axis=1,
+    )
+    
+    ax.axvline(df_.loc[:,colx][order[0]],linestyle=':',color='k')
+    ax.set(
+        xlim=[0,data[colx].sum()],
+        ylim=[-0.5,0.5],
+        yticks=[],
+        xticks=[],
+        # xticks=[0,0.01,1],
+        # xscale='log',    
+        # title=col,
+    )
+    ax.set_axis_off()
+    from roux.viz.ax_ import set_axlims
+    set_axlims(
+        ax=ax,
+        off=0.4,
+        axes=['y'],
+        )    
+    return ax
 
 def plot_barh_stacked_percentage_intersections(
     df0: pd.DataFrame,

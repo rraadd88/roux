@@ -549,7 +549,7 @@ def to_plot(
     return plotp
 
 
-def read_plot(p: str, safe: bool = False, test: bool = False, **kws) -> plt.Axes:
+def read_plot(p: str, safe: bool = False, test: bool = False, **kws_plot) -> plt.Axes:
     """Generate the plot from data, parameters and a script.
 
     Args:
@@ -568,14 +568,23 @@ def read_plot(p: str, safe: bool = False, test: bool = False, **kws) -> plt.Axes
                 logging.info(p)
         from roux.workflow.function import import_from_file
 
-        ax = import_from_file(p).plot_(**kws)
+        ax = (
+            import_from_file(p)
+                .plot_(
+                    **{
+                        **kws_plot,
+                        ## override
+                        **dict(plotp=Path(p).parent.as_posix()),
+                    },
+                )
+            )
         return ax
     else:
         from roux.viz.image import plot_image
 
         if p.endswith(".py"):
             p = (read_ps(f"{dirname(p)}.*png") + read_ps(f"{dirname(p)}.*pdf"))[0]
-        return plot_image(p, **kws)
+        return plot_image(p, **kws_plot)
 
 
 ## files
