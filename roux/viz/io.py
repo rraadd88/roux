@@ -305,7 +305,10 @@ def get_plot_inputs(
         ## remove suffixes
         outd = remove_exts(plotp) + "/"
     if df1 is None:
-        df1 = read_table(f"{outd}/data.tsv")
+        data_path=read_ps(f"{outd}/data.*")
+        assert len(data_path)==1, data_path
+        data_path=data_path[0]
+        df1 = read_table(data_path)
     kws_plot = update_kws_plot(kws_plot, kws_plotp=f"{outd}/config.yaml")
 
     if out_fmt is None:
