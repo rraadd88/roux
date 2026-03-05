@@ -89,8 +89,12 @@ def compare_classes(
     
     order_x=[str(s) for s in order_x]
     order_y=[str(s) for s in order_y]
-        
-    df1=df1.loc[order_y,order_x]
+
+    try:
+        df1=df1.loc[order_y,order_x]
+    except Exception as e:
+        logging.error((df1.index,df1.columns))
+        raise ValueError(str(e))
         
     ## stats
     if df1.shape != (2, 2) or method == "chi2":

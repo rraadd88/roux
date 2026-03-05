@@ -1,6 +1,7 @@
 import logging
 from pathlib import Path
 
+
 def print_parameters(
     d: dict,
     logger=None
@@ -51,12 +52,22 @@ def test_params(
             params=[params]
         
     logging.info(f"total params: {len(params)}")
-    print_parameters(
-        params[i],
-        logger=logger
-        )
 
-    ## tests
-    if 'input_path' in params[i] and isinstance(params[i]['input_path'],str) and Path(params[i]['input_path']).is_file():
-        if not Path(params[i]['input_path']).exists():
-            logging.warning(f"not found: {params[i]['input_path']}")
+    ## all
+    available=range(len(params))
+    if i is not None:
+        selected=i
+        if isinstance(selected,int):
+            selected=[selected]
+        assert isinstance(selected,list), selected
+        available=list(set(available) & set(selected))
+    for i in available:
+        print_parameters(
+            params[i],
+            logger=logger
+            )
+
+        ## tests
+        if 'input_path' in params[i] and isinstance(params[i]['input_path'],str) and Path(params[i]['input_path']).is_file():
+            if not Path(params[i]['input_path']).exists():
+                logging.warning(f"not found: {params[i]['input_path']}")
