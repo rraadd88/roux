@@ -17,6 +17,8 @@ from roux.lib.sys import (
     makedirs,
 )
 
+from roux.workflow.pms import read_cli_pm
+
 ## for backcompatibility
 from roux.workflow.cfgs import read_config, read_metadata ##noqa
 
@@ -56,6 +58,7 @@ def clear_dataframes():
 def to_py(
     notebookp: str,
     pyp: str = None,
+    clean=False,
     force: bool = False,
     **kws_get_lines,
 ) -> str:
@@ -74,9 +77,12 @@ def to_py(
     if exists(pyp) and not force:
         return
     makedirs(pyp)
-    from roux.workflow.nb import get_lines
 
+    from roux.workflow.nb import get_lines
     l1 = get_lines(notebookp, **kws_get_lines)
+    if clean:
+        l1=[s for s in l1 if not s.strip().startswith('# In')]
+
     l1 = "\n".join(l1).encode("ascii", "ignore").decode("ascii")
     with open(pyp, "w+") as fh:
         fh.writelines(l1)
@@ -197,9 +203,11 @@ def to_scr(
     p,
     outp=None,
 
-    with_pms=True, # py with --pms (preferred)
+    with_pms='True', # py with --pms (preferred)
     mark_end='## END',
 
+    pre_clean=None,
+    clean=True,
     replaces={
         "get_ipython":'#get_ipython',
         "sys.exit()":'return',
@@ -228,9 +236,33 @@ def to_scr(
         outp=to_py_path(p)
         logging.warning(f"outp={outp}")
 
+    ## TODO: use decorator
+    with_pms=read_cli_pm(with_pms)
+    pre_clean=read_cli_pm(pre_clean) 
+
+    if pre_clean:
+        if pre_clean==True: #noqa
+            pre_clean={}
+        assert isinstance(pre_clean,dict), pre_clean
+
+        from roux.workflow.nb import to_clean_nb
+        p=to_clean_nb(
+            p,
+            f'.to_src/{Path(p).name}',
+            **{
+                **dict(
+                    clear_outputs=False,
+                    drop_code_lines_containing=[],
+                    drop_headers_containing=[],
+                    ),
+                **pre_clean,
+                },
+        )
+
     pyp=to_py(
         p,
         pyp=f'.to_src/{Path(p).stem}.py',
+        clean=clean,
         force=True,
         )
     
@@ -365,6 +397,7 @@ def replacestar_ruff(
     outp: str,
     replace: str = "from roux.global_imports import *",
     clean=False,
+    indent=None,
     verbose=True,
 ) -> str:
     from roux.workflow.function import get_global_imports
@@ -377,8 +410,9 @@ def replacestar_ruff(
         ).replace('\n\n','\n')
 
     ## indent
-    import textwrap
-    indent=' '*(len(replace) - len(replace.lstrip(' ')))
+    if indent is None:
+        import textwrap
+        indent=' '*(len(replace) - len(replace.lstrip(' ')))
     if verbose:
         logging.info(f"indent='{indent}'")
     replace_with=textwrap.indent(replace_with, indent)
@@ -430,6 +464,7 @@ def replacestar(
     output_path=None,
     replace_from="from roux.global_imports import *",
     method='filter', # select
+    method_kws={},
     errors='raise',
     verbose: bool = False,
 ):
@@ -488,6 +523,7 @@ def replacestar(
             output_path,
             replace_from,
             verbose=verbose,
+            **method_kws,
         )
     check_py(output_path,errors=errors)
     return output_path

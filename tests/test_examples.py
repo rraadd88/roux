@@ -68,6 +68,13 @@ def test_roux_lib_dfs(
         p,
     )
 
+def test_roux_lib_df_plot(
+    p="examples/roux_lib_df_plot.ipynb"
+    ):
+    return run_test(
+        p,
+    )
+
 def test_roux_lib_df_apply(
     p="examples/roux_lib_df_apply.ipynb"
     ):

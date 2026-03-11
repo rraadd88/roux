@@ -109,8 +109,9 @@ def plot_dists_by_bins(
         **kws_plot_dists,
     )
     if show_corr!=False:
-        if show_corr==True:
-            kws_show_corr={}
+        kws_show_corr={}
+        if isinstance(show_corr,dict):
+            kws_show_corr=show_corr
         assert isinstance(kws_show_corr,dict)
         from roux.viz.annot import show_scatter_stats
         show_scatter_stats(

@@ -3,14 +3,13 @@
 import itertools
 from pathlib import Path
 
+import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 
-import matplotlib.pyplot as plt
-
-from roux.lib.str import num2str
 from roux.stat.binary import perc
 from roux.viz.ax_ import get_axlims, set_ylabel
+from roux.viz.figure import get_ax
 
 
 def plot_barh(
@@ -63,6 +62,78 @@ def plot_barh(
     ax.invert_yaxis()
     ax.set(
         xlabel=colx,
+    )
+    return ax
+
+def plot_bar_line(
+    ds: pd.Series,
+    x,
+    y,
+    colors : dict,
+    ylen=5,
+    yoff=0,
+    lw=10,
+    orient='v',
+    ax=None,
+    ):
+    """
+    Plots stacked bar plot using ax{v/h}lines.
+
+    Example:
+        ax=plt.subplot()
+        plot_bar_line(
+            pd.Series({'a':2,'b':34,'c':54}),
+            x=1,
+            y=1,#=0.5,0.5
+            colors={
+                'a':'r',
+                'b':'g',
+                'c':'w',        
+            },
+            ylen=5,
+            yoff=0,
+            lw=10,
+            orient='h',
+            )
+    """
+    if ax is None:
+        ax=plt.gca()
+    data=(
+        (ds/ds.sum()).to_frame('frac')
+        .assign(
+            ymax_=lambda df: df['frac'].cumsum(),
+            ymin_=lambda df: df['ymax_']-df['frac'],
+    
+            ymin=lambda df: y+yoff+(df['ymin_']*ylen),
+            ymax=lambda df: y+yoff+(df['ymax_']*ylen),
+            # ymin=lambda df: df['ymin_'],
+            # ymax=lambda df: df['ymax_'],
+        )
+        .rename_axis('id')
+        .reset_index()
+    )
+    (
+        data
+        .apply(
+            lambda x: getattr(ax,orient+'lines')(
+                **(
+                    dict(
+                        x=x,
+                        ymin=x['ymin'],
+                        ymax=x['ymax'],
+                    ) if orient=='v' else 
+                  dict(
+                    y=x,
+                    xmin=x['ymin'],
+                    xmax=x['ymax'],
+                 )
+                ),
+                color=colors[x['id']],
+                lw=lw,
+                # for .plot solid_capstyle='butt',
+            ),
+            axis=1,
+        )
     )
     return ax
 
@@ -234,229 +305,6 @@ def plot_value_counts(
             if grid:
                 axes.set_axisbelow(False)
 
-
-def plot_barh_stacked_percentage(
-    df1: pd.DataFrame,
-    coly: str,
-    colannot: str,
-    color: str = None,
-    yoff: float = 0,
-    ax: plt.Axes = None,
-) -> plt.Axes:
-    """Plot horizontal stacked bar plot with percentages.
-
-    Args:
-        df1 (pd.DataFrame): input data. values in rows sum to 100%.
-        coly (str): y column. yticklabels, e.g. retained and dropped.
-        colannot (str): column with annotations.
-        color (str, optional): color. Defaults to None.
-        yoff (float, optional): y-offset. Defaults to 0.
-        ax (plt.Axes, optional): `plt.Axes` object. Defaults to None.
-
-    Returns:
-        plt.Axes: `plt.Axes` object.
-    """
-
-    from roux.viz.ax_ import get_ticklabel2position
-    from roux.viz.colors import get_colors_default
-
-    if color is None:
-        color = get_colors_default()[0]
-    ax = plt.subplot() if ax is None else ax
-    df2 = df1.set_index(coly).apply(lambda x: (x / sum(x)) * 100, axis=1)
-    ax = df2.plot.barh(stacked=True, ax=ax)
-    ticklabel2position = get_ticklabel2position(ax, "y")
-    from roux.viz.colors import saturate_color
-
-    _ = df2.reset_index().apply(
-        lambda x: ax.text(
-            1,
-            ticklabel2position[x[coly]] - yoff,
-            f"{x[colannot]:.1f}%",
-            ha="left",
-            va="center",
-            color=saturate_color(color, 2),
-        ),
-        axis=1,
-    )
-    ax.legend(bbox_to_anchor=[1, 1], title=df1.columns.name)
-    d1 = df1.set_index(coly).T.sum().to_dict()
-    ax.set(
-        xlim=[0, 100],
-        xlabel="%",
-        yticklabels=[
-            f"{t.get_text()}\n(n={d1[t.get_text()]})" for t in ax.get_yticklabels()
-        ],
-    )
-    return ax
-
-def plot_bar_stacked_bins(
-    data,
-    colx,
-    col_group,
-    col_label=None, # Now used for bottom label, fallback to col_group
-    order=None,
-    colors=None,
-    cmap='Blues',
-    text_y_off=0,
-    normalize=True,
-    show_bin_labels=True,
-    show_nums=True,
-    kws_text={},
-    ax=None,
-):
-    """
-    Generates a stacked horizontal bar plot, with options for percentages or raw counts.
-
-    This function combines functionalities for plotting percentages and raw counts into
-    a single integrated function. It can normalize data to show percentages or display
-    raw counts directly.
-
-    Args:
-        data (pd.DataFrame): The input data.
-        colx (str): The column name for the values to be plotted (counts or percentages).
-        col_group (str): The column name for grouping the bars.
-        col_label (str, optional): The column for the bottom labels. If None, 
-            `col_group` is used. Defaults to None.
-        order (list, optional): The order for the bars. If None, it's inferred from 
-            `col_group`. Defaults to None.
-        colors (list, optional): A list of colors for the bars. If None, colors are 
-            generated from `cmap`. Defaults to None.
-        cmap (str, optional): The colormap to use if `colors` is not provided. 
-            Defaults to 'Blues'.
-        text_y_off (float, optional): Vertical offset for text labels. Defaults to 0.
-        normalize (bool, optional): If True, normalizes `colx` to percentages (sum=100).
-            If False, plots raw counts. Defaults to True.
-        show_bin_labels (bool, optional): If True, shows the bin labels at the bottom. 
-            Defaults to True.
-        show_nums (bool, optional): If True, shows the counts/percentages. 
-            Defaults to True.
-        ax (matplotlib.axes.Axes, optional): The axes to plot on. If None, a new one is 
-            created. Defaults to None.
-
-    Returns:
-        matplotlib.axes.Axes: The axes with the plot.
-    """
-    from roux.viz.colors import get_ncolors
-    from roux.viz.ax_ import set_axlims
-    
-    if ax is None:
-        ax = plt.gca()
-
-    df = data.copy()
-
-    if normalize:
-        total = df[colx].sum()
-        if total > 0:
-            df[colx] = (df[colx] / total) * 100
-
-    bottom_label_col = col_label if col_label else col_group
-    
-    required_cols = {colx, col_group, bottom_label_col}
-    if not required_cols.issubset(df.columns):
-        missing_cols = required_cols - set(df.columns)
-        raise ValueError(f"Missing required columns: {missing_cols}")
-
-    if order is None:
-        order = df[col_group].tolist()
-
-    if colors is None:
-        colors = get_ncolors(
-            len(order),
-            cmap,
-            vmin=0.1,
-            vmax=0.9,
-        )
-
-    cols_to_keep = list(set([colx, bottom_label_col]))
-    df_ = (
-        df
-        .set_index(col_group)
-        .loc[order, cols_to_keep]
-    )
-    df_['x'] = df_[colx].cumsum()
-    df_['x+1'] = df_['x'].shift(1)
-    df_['colors'] = colors
-
-    offset = df_.loc[order[0], colx] if order else 0
-
-    # print(df_)
-    left = 0
-    for item_id, row in df_.iterrows():
-        ax.barh(y=0, width=row[colx], left=left - offset, height=1.0, color=row['colors'])
-        left += row[colx]
-        
-    # Top labels
-    if show_nums and show_bin_labels:
-        df_.apply(
-            lambda row: ax.text(
-                (row['x'] if row.name == order[0] else row['x+1']) - offset,
-                0.7 + text_y_off,
-                (f"{row[colx]:.1f}% " if normalize else f"{int(row[colx])} ") if row.name == order[0] else (f" {row[colx]:.1f}%" if normalize else f" {int(row[colx])}"),
-                ha='right' if row.name == order[0] else 'left',
-                va='top',
-                **{
-                    **dict(zorder=10),
-                    **kws_text,
-                },
-            ),
-            axis=1,
-        )
-
-    # Bottom labels
-    if show_bin_labels:
-        df_.reset_index().apply(
-            lambda row: ax.text(
-                (row['x'] if row[col_group] == order[0] else row['x+1']) - offset,
-                -0.7 + text_y_off,
-                f"{row[bottom_label_col]} " if row[col_group] == order[0] else f" {row[bottom_label_col]}",
-                ha='right' if row[col_group] == order[0] else 'left',
-                va='bottom',
-                **{
-                    **dict(zorder=10),
-                    **kws_text,
-                },
-            ),
-            axis=1,
-        )
-    elif show_nums: # and not show_bin_labels
-        df_.reset_index().apply(
-            lambda row: ax.text(
-                (row['x'] if row[col_group] == order[0] else row['x+1']) - offset,
-                -0.7 + text_y_off,
-                (f"{row[colx]:.1f}% " if normalize else f"{int(row[colx])} ") if row[col_group] == order[0] else (f" {row[colx]:.1f}%" if normalize else f" {int(row[colx])}"),
-                ha='right' if row[col_group] == order[0] else 'left',
-                va='bottom',
-                **{
-                    **dict(zorder=10),
-                    **kws_text,
-                },
-            ),
-            axis=1,
-        )
-
-    ax.axvline(0, linestyle=':', color='k')
-
-    if normalize:
-        xlim_max = 100
-    else:
-        xlim_max = df_[colx].sum()
-
-    ax.set(
-        xlim=[-offset, xlim_max - offset],
-        ylim=[-0.5, 0.5],
-        yticks=[],
-        xticks=[],
-    )
-    ax.set_axis_off()
-
-    set_axlims(
-        ax=ax,
-        off=0.4,
-        axes=['y'],
-    )
-    return ax
-    
 def plot_bar_serial(
     d1: dict,
     polygon: bool = False,
@@ -579,6 +427,399 @@ def plot_bar_serial(
 
     return ax
 
+## TODO: combine all barplots below related to perc/counts/bins to one UI called plot_bars
+def plot_barh_stacked_percentage(
+    df1: pd.DataFrame,
+    coly: str,
+    colannot: str,
+    color: str = None,
+    yoff: float = 0,
+    ax: plt.Axes = None,
+) -> plt.Axes:
+    """Plot horizontal stacked bar plot with percentages.
+
+    Args:
+        df1 (pd.DataFrame): input data. values in rows sum to 100%.
+        coly (str): y column. yticklabels, e.g. retained and dropped.
+        colannot (str): column with annotations.
+        color (str, optional): color. Defaults to None.
+        yoff (float, optional): y-offset. Defaults to 0.
+        ax (plt.Axes, optional): `plt.Axes` object. Defaults to None.
+
+    Returns:
+        plt.Axes: `plt.Axes` object.
+    """
+
+    from roux.viz.ax_ import get_ticklabel2position
+    from roux.viz.colors import get_colors_default
+
+    if color is None:
+        color = get_colors_default()[0]
+    ax = plt.subplot() if ax is None else ax
+    df2 = df1.set_index(coly).apply(lambda x: (x / sum(x)) * 100, axis=1)
+    ax = df2.plot.barh(stacked=True, ax=ax)
+    ticklabel2position = get_ticklabel2position(ax, "y")
+    from roux.viz.colors import saturate_color
+
+    _ = df2.reset_index().apply(
+        lambda x: ax.text(
+            1,
+            ticklabel2position[x[coly]] - yoff,
+            f"{x[colannot]:.1f}%",
+            ha="left",
+            va="center",
+            color=saturate_color(color, 2),
+        ),
+        axis=1,
+    )
+    ax.legend(bbox_to_anchor=[1, 1], title=df1.columns.name)
+    d1 = df1.set_index(coly).T.sum().to_dict()
+    ax.set(
+        xlim=[0, 100],
+        xlabel="%",
+        yticklabels=[
+            f"{t.get_text()}\n(n={d1[t.get_text()]})" for t in ax.get_yticklabels()
+        ],
+    )
+    return ax
+
+def plot_bar_stack(
+    data,
+    x,
+    hue,
+    col_id,
+    cmap=None,
+    ax=None,
+    ylim=None,
+    legend_ncol=5,
+    ):
+    """
+    TODO: similar to plot_bar_stacked_bins, prefer this bcz simpler implementation.
+    """
+    id_prefix=col_id.split(' ')[0]
+    df1=(
+        data
+        .log()
+        # .log.query(
+        #     expr="`% of samples bin` == '$\\leq$25'"
+        # )    
+        .groupby([
+            x,
+            hue,
+        ])[col_id].nunique()
+        .unstack(0)
+        .apply(lambda x: 100*(x/x.sum()))
+        .T
+        .reset_index()
+    )    
+    ### Plot
+    if cmap is not None:
+        from roux.viz.colors import get_ncolors
+        colors=get_ncolors(
+            len(df1.columns.tolist())-1,
+            cmap=cmap,
+            vmin=0.2,
+            vmax=1,
+        )
+    else:
+        colors=None
+    
+    # from roux.viz.colors import get_cmap_section
+    # get_cmap_section?
+    
+    if ax is None:
+        ax=plt.gca()
+        
+    df1.set_index(x).plot.bar(
+        stacked=True,
+        ax=ax,
+        color=colors,
+    )
+    plt.xticks(rotation=0)
+    ax.set(
+        xlabel=x,
+        ylabel=f'% of {id_prefix}s',
+        ylim=ylim,
+        # **kws_plot['set'],
+        )
+    from roux.viz.ax_ import format_ax
+    _=format_ax(
+        ax,
+        kws_legend=dict(
+            ncol=len(ax.get_legend_handles_labels()[1]) if legend_ncol is None else legend_ncol,
+            loc='lower right',
+            bbox_to_anchor=[
+                1,
+                # 0.95
+                1,
+            ],
+        ),
+    )
+    return ax
+
+def plot_bar_stacked_bins(
+    data,
+    colx,
+    col_group,
+    col_label=None, # Now used for bottom label, fallback to col_group
+    order=None,
+    colors=None,
+    cmap='Blues',
+    text_y_off=0,
+    normalize=True,
+    show_bin_labels=True,
+    show_nums=True,
+    kws_text={},
+    ax=None,
+):
+    """
+    Generates a stacked horizontal bar plot, with options for percentages or raw counts.
+
+    This function combines functionalities for plotting percentages and raw counts into
+    a single integrated function. It can normalize data to show percentages or display
+    raw counts directly.
+
+    Args:
+        data (pd.DataFrame): The input data.
+        colx (str): The column name for the values to be plotted (counts or percentages).
+        col_group (str): The column name for grouping the bars.
+        col_label (str, optional): The column for the bottom labels. If None, 
+            `col_group` is used. Defaults to None.
+        order (list, optional): The order for the bars. If None, it's inferred from 
+            `col_group`. Defaults to None.
+        colors (list, optional): A list of colors for the bars. If None, colors are 
+            generated from `cmap`. Defaults to None.
+        cmap (str, optional): The colormap to use if `colors` is not provided. 
+            Defaults to 'Blues'.
+        text_y_off (float, optional): Vertical offset for text labels. Defaults to 0.
+        normalize (bool, optional): If True, normalizes `colx` to percentages (sum=100).
+            If False, plots raw counts. Defaults to True.
+        show_bin_labels (bool, optional): If True, shows the bin labels at the bottom. 
+            Defaults to True.
+        show_nums (bool, optional): If True, shows the counts/percentages. 
+            Defaults to True.
+        ax (matplotlib.axes.Axes, optional): The axes to plot on. If None, a new one is 
+            created. Defaults to None.
+
+    Returns:
+        matplotlib.axes.Axes: The axes with the plot.
+    """
+    from roux.viz.ax_ import set_axlims
+    from roux.viz.colors import get_ncolors
+    
+    if ax is None:
+        ax = plt.gca()
+
+    df = data.copy()
+
+    if normalize:
+        total = df[colx].sum()
+        if total > 0:
+            df[colx] = (df[colx] / total) * 100
+
+    bottom_label_col = col_label if col_label else col_group
+    
+    required_cols = {colx, col_group, bottom_label_col}
+    if not required_cols.issubset(df.columns):
+        missing_cols = required_cols - set(df.columns)
+        raise ValueError(f"Missing required columns: {missing_cols}")
+
+    if order is None:
+        order = df[col_group].tolist()
+
+    if colors is None:
+        colors = get_ncolors(
+            len(order),
+            cmap,
+            vmin=0.1,
+            vmax=0.9,
+        )
+
+    cols_to_keep = list(set([colx, bottom_label_col]))
+    df_ = (
+        df
+        .set_index(col_group)
+        .loc[order, cols_to_keep]
+    )
+    df_['x'] = df_[colx].cumsum()
+    df_['x+1'] = df_['x'].shift(1)
+    df_['colors'] = colors
+
+    offset = df_.loc[order[0], colx] if order else 0
+
+    # print(df_)
+    left = 0
+    for item_id, row in df_.iterrows():
+        ax.barh(y=0, width=row[colx], left=left - offset, height=1.0, color=row['colors'])
+        left += row[colx]
+        
+    # Top labels
+    if show_nums and show_bin_labels:
+        df_.apply(
+            lambda row: ax.text(
+                (row['x'] if row.name == order[0] else row['x+1']) - offset,
+                0.7 + text_y_off,
+                (f"{row[colx]:.1f}% " if normalize else f"{int(row[colx])} ") if row.name == order[0] else (f" {row[colx]:.1f}%" if normalize else f" {int(row[colx])}"),
+                ha='right' if row.name == order[0] else 'left',
+                va='top',
+                **{
+                    **dict(zorder=10),
+                    **kws_text,
+                },
+            ),
+            axis=1,
+        )
+
+    # Bottom labels
+    if show_bin_labels:
+        df_.reset_index().apply(
+            lambda row: ax.text(
+                (row['x'] if row[col_group] == order[0] else row['x+1']) - offset,
+                -0.7 + text_y_off,
+                f"{row[bottom_label_col]} " if row[col_group] == order[0] else f" {row[bottom_label_col]}",
+                ha='right' if row[col_group] == order[0] else 'left',
+                va='bottom',
+                **{
+                    **dict(zorder=10),
+                    **kws_text,
+                },
+            ),
+            axis=1,
+        )
+    elif show_nums: # and not show_bin_labels
+        df_.reset_index().apply(
+            lambda row: ax.text(
+                (row['x'] if row[col_group] == order[0] else row['x+1']) - offset,
+                -0.7 + text_y_off,
+                (f"{row[colx]:.1f}% " if normalize else f"{int(row[colx])} ") if row[col_group] == order[0] else (f" {row[colx]:.1f}%" if normalize else f" {int(row[colx])}"),
+                ha='right' if row[col_group] == order[0] else 'left',
+                va='bottom',
+                **{
+                    **dict(zorder=10),
+                    **kws_text,
+                },
+            ),
+            axis=1,
+        )
+
+    ax.axvline(0, linestyle=':', color='k')
+
+    if normalize:
+        xlim_max = 100
+    else:
+        xlim_max = df_[colx].sum()
+
+    ax.set(
+        xlim=[-offset, xlim_max - offset],
+        ylim=[-0.5, 0.5],
+        yticks=[],
+        xticks=[],
+    )
+    ax.set_axis_off()
+
+    set_axlims(
+        ax=ax,
+        off=0.4,
+        axes=['y'],
+    )
+    return ax
+
+def plot_bar_perc(
+    data,
+    colx,
+    col_id, # above
+    col_label=None, # below
+    order=None,
+    colors=None,
+    text_y_off=0,
+    ax=None,
+    ):
+    if ax is None:
+        ax=plt.gca()
+        
+    if col_label is None:
+        col_label='_label'
+        data[col_label]=data[col_id]
+    if order is None:
+        order=data[col_id].tolist()
+        
+    # labels_order=data.set_index(col_id)[col_label].tolist()
+    
+    from roux.viz.colors import get_ncolors
+    if colors is None:
+        colors=get_ncolors(
+            len(data),
+            'Blues',
+            vmin=0.1,    
+            vmax=0.9,    
+        )
+        
+    df_=(
+        data
+        .set_index(
+            col_id,
+        )
+        .loc[order,[colx,col_label]]
+    )
+    df_['x']=df_[colx].cumsum()
+    df_['x+1']=df_['x'].shift(1)#.fillna(0)
+    df_['colors']=colors
+    
+    ax=(
+        df_
+        .loc[:,[colx]]
+        .T.plot.barh(
+            stacked=True,
+            color=df_['colors'],
+            ax=ax,
+            legend=False
+        )
+    )
+    df_.apply(
+        lambda x: ax.text(
+            x['x' if x.name==order[0] else 'x+1'],
+            0.7+text_y_off,
+            f"{x[col_label]} " if x.name==order[0] else f" {x[col_label]}",            
+            ha='right' if x.name==order[0] else 'left',
+            va='top',
+            zorder=10,
+        ),
+        axis=1,
+    )
+    print(df_)
+    df_.reset_index().apply(
+        lambda x: ax.text(
+            x['x' if x[col_id]==order[0] else 'x+1'],
+            -0.7+text_y_off,
+            f"{x[col_id]} " if x[col_id]==order[0] else f" {x[col_id]}",
+            ha='right' if x[col_id]==order[0] else 'left',
+            va='bottom',
+            # bbox=dict(
+            #     facecolor='none', edgecolor='none', 
+            #           pad=10),
+            zorder=10,
+        ),
+        axis=1,
+    )
+    
+    ax.axvline(df_.loc[:,colx][order[0]],linestyle=':',color='k')
+    ax.set(
+        xlim=[0,data[colx].sum()],
+        ylim=[-0.5,0.5],
+        yticks=[],
+        xticks=[],
+        # xticks=[0,0.01,1],
+        # xscale='log',    
+        # title=col,
+    )
+    ax.set_axis_off()
+    from roux.viz.ax_ import set_axlims
+    set_axlims(
+        ax=ax,
+        off=0.4,
+        axes=['y'],
+        )    
+    return ax
 
 def plot_barh_stacked_percentage_intersections(
     df0: pd.DataFrame,
@@ -875,74 +1116,3 @@ def plot_sankey(
     return fig
 
 
-def plot_bar_line(
-    ds: pd.Series,
-    x,
-    y,
-    colors : dict,
-    ylen=5,
-    yoff=0,
-    lw=10,
-    orient='v',
-    ax=None,
-    ):
-    """
-    Plots stacked bar plot using ax{v/h}lines.
-
-    Example:
-        ax=plt.subplot()
-        plot_bar_line(
-            pd.Series({'a':2,'b':34,'c':54}),
-            x=1,
-            y=1,#=0.5,0.5
-            colors={
-                'a':'r',
-                'b':'g',
-                'c':'w',        
-            },
-            ylen=5,
-            yoff=0,
-            lw=10,
-            orient='h',
-            )
-    """
-    if ax is None:
-        ax=plt.gca()
-    data=(
-        (ds/ds.sum()).to_frame('frac')
-        .assign(
-            ymax_=lambda df: df['frac'].cumsum(),
-            ymin_=lambda df: df['ymax_']-df['frac'],
-    
-            ymin=lambda df: y+yoff+(df['ymin_']*ylen),
-            ymax=lambda df: y+yoff+(df['ymax_']*ylen),
-            # ymin=lambda df: df['ymin_'],
-            # ymax=lambda df: df['ymax_'],
-        )
-        .rename_axis('id')
-        .reset_index()
-    )
-    (
-        data
-        .apply(
-            lambda x: getattr(ax,orient+'lines')(
-                **(
-                    dict(
-                        x=x,
-                        ymin=x['ymin'],
-                        ymax=x['ymax'],
-                    ) if orient=='v' else 
-                  dict(
-                    y=x,
-                    xmin=x['ymin'],
-                    xmax=x['ymax'],
-                 )
-                ),
-                color=colors[x['id']],
-                lw=lw,
-                # for .plot solid_capstyle='butt',
-            ),
-            axis=1,
-        )
-    )
-    return ax

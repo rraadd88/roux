@@ -109,16 +109,88 @@ def set_axes_arrows(
 
 
 # labels
+def get_pos(
+    loc=None,
+    x=None,
+    y=None,
+    offs=(0, 0), # g: Changed to immutable tuple to prevent default argument mutation bugs
+):
+    """
+    Get coordinates based on matplotlib-style location codes or explicit x,y values.
+    """
+    assert not all([t is None for t in [x,y,loc]]), [x,y,loc]
+    if isinstance(offs,(float,int)):
+        offs=[offs,offs]
+
+    if loc is not None:
+        # g: matplotlib style locations
+        if loc == 0: # g: User defined default
+            x, y = 1, 0
+        elif loc == 1: # upper right
+            x, y = 1, 1
+        elif loc == 2: # upper left
+            x, y = 0, 1
+        elif loc == 3: # lower left
+            x, y = 0, 0
+        elif loc == 4: # lower right
+            x, y = 1, 0
+        else:
+            raise NotImplementedError(f"loc={loc} is not implemented.")
+    else:
+        # g: custom location QC
+        assert x is not None and y is not None, "Both x and y must be provided if loc is None."
+
+    return x + offs[0], y + offs[1]
+
+def get_ta(
+    loc,
+    place,
+    ha=None,
+    va=None,
+):
+    if loc in [0, 4]:
+        if place=='in':
+            ha_,va_ = "right","bottom"
+        else:
+            ha_,va_ = "left","top"
+    elif loc == 1:
+        if place=='in':
+            ha_,va_ = "right","top"
+        else:
+            ha_,va_ = "left","bottom"
+    elif loc == 2:
+        if place=='in':
+            ha_,va_ = "left","top"
+        else:
+            ha_,va_ = "right","bottom"
+    elif loc == 3:
+        if place=='in':
+            ha_,va_ = "left","bottom"
+        else:
+            ha_,va_ = "right","top"
+    return (
+        ha_ if ha is None else ha,
+        va_ if va is None else va
+        )
+
 ## TODO: move to text.py
 def set_label(
     s: str,
-    ax: plt.Axes,
+    ax: plt.Axes=None,
+    loc=None,
+    place='in',
+    
+    ## loc, pos
     x: float = None,
     y: float = None,
-    ha: str = "left",
-    va: str = "top",
-    loc=None,
-    off_loc=0.01,
+    offs=(0.01, 0.01),
+
+    ## ta, place
+    ha: str = None,
+    va: str = None,
+
+    ## bc
+    off_loc=None,
     title: bool = False,
     **kws,
 ) -> plt.Axes:
@@ -138,47 +210,48 @@ def set_label(
     Returns:
         plt.Axes: `plt.Axes` object.
     """    
+    if ax is None:
+        ax=plt.gca()
     if title:
         ax.set_title(s, **kws)
         return ax
-    # else:
-    assert not all([t is None for t in [x,y,loc]])
-        
-    if loc is not None and (x is None and y is None):
-        if loc == 1 or loc == "upper right":
-            x = 1 - off_loc
-            y = 1 - off_loc
-            ha = "right"
-            va = "top"
-        elif loc == 2 or loc == "upper left":
-            x = 0 + off_loc
-            y = 1 - off_loc
-            ha = "left"
-            va = "top"
-        elif loc == 3 or loc == "lower left":
-            x = 0 + off_loc
-            y = 0 + off_loc
-            ha = "left"
-            va = "bottom"
-        elif loc in [0, 4] or loc == "lower right":
-            x = 1 - off_loc
-            y = 0 + off_loc
-            ha = "right"
-            va = "bottom"
-        else:
-            # raise ValueError(loc)
-            logging.warning(f"loc={loc}. hence defaulting to x=0,y=0")
-            x,y=0,0
 
-    # kws={
-    #     **dict(),
-    # }
-    ax.text(s=s, 
-            x=x, 
-            y=y, 
-            ha=ha, 
+    ## bc:
+    if off_loc is not None:
+        logging.warning("use offs instead of off_loc")
+        offs=off_loc
+        del off_loc
+
+    x,y=get_pos(
+        loc=loc,
+        x=x,
+        y=y,
+        offs=offs,
+    )
+
+    if loc is not None and (ha is None or va is None):
+        ha,va=get_ta(
+            loc=loc,
+            place=place,
+            ha=ha,
             va=va,
-            transform=ax.transAxes, **kws)
+        )
+    else:
+        ha,va="center","center"
+
+    ax.text(
+        **{
+            **dict(
+                s=s, 
+                x=x, 
+                y=y, 
+                ha=ha, 
+                va=va,
+                transform=ax.transAxes,
+                ),
+            **kws
+            }
+        )
     return ax
 
 

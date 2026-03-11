@@ -216,6 +216,13 @@ def expand_pms(
     """
     return ' '.join([f"""--{k.replace('_','-')} {"'" if not isinstance(v,str) else ""}{json.dumps(v)}{"'" if not isinstance(v,str) else ""}""" for k,v in pms.items()])
 
+def read_cli_pm(pm):
+    if pm in ['True','False','None']:
+        pm=eval(pm)
+    elif isinstance(pm,str):
+        pm=json.loads(pm)
+        assert not isinstance(pm,str), pm
+    return pm
 
 ## I/O
 import nbformat

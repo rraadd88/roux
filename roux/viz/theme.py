@@ -96,6 +96,12 @@ def set_theme(
         # 'figure.labelweight': 'bold'      # g: Controls weight of supxlabel/supylabel
     })
     # plt.rcParams['figure.title_fontfamily'] = font
+    
+    ### TODO: seaborn
     # sns.set_context('notebook') # paper < notebook < talk < poster
+    ## scatter
+
+    ## dists
+    # kind_defaults
 
 set_theme()
