@@ -16,7 +16,8 @@ from omegaconf import OmegaConf
 ## mod.s
 def get_cfgs(
     cfg,
-    alts
+    alts,
+    resolve=True, ## interpolations
 ):
     """
     Generates a list of DictConfigs by sweeping over alternative values.
@@ -57,8 +58,60 @@ def get_cfgs(
         
         # g: Merge the base config with the overrides
         cfg = OmegaConf.merge(base_conf, overrides_conf)
-        configs[name]=OmegaConf.to_container(cfg, resolve=True)
+        configs[name]=OmegaConf.to_container(cfg, resolve=resolve)
     return configs
+
+def resolve_cfg(cfg: dict, resolves: dict):
+    """
+    Fills missing interpolation keys in a dictionary using omegaconf.
+    Returns a dictionary of configs mapped by unique names if any input is a list (parameter sweep).
+    """
+    import itertools
+    
+    # g: check if sweeping is required
+    is_sweep = any(isinstance(v, list) for v in resolves.values())
+    
+    # g: sort the dictionary to ensure consistent naming orders
+    resolves_sorted = dict(sorted(resolves.items()))
+    
+    # g: normalize inputs to lists for Cartesian product
+    param_keys = list(resolves_sorted.keys())
+    param_values = [v if isinstance(v, list) else [v] for v in resolves_sorted.values()]
+    
+    configs = {} if is_sweep else []
+    base_cfg = OmegaConf.create(cfg)
+    
+    # g: iterate over Cartesian product of all alternative values
+    for combination in itertools.product(*param_values):
+        # g: construct the unique name for the combination
+        current_overrides = []
+        for key, val in zip(param_keys, combination):
+            val_str = 'null' if val is None else str(val)
+            current_overrides.append(f"{key}={val_str}")
+            
+        name = ';'.join(current_overrides)
+        
+        # g: map current combination back to keys
+        current_resolves = dict(zip(param_keys, combination))
+        resolves_cfg = OmegaConf.create(current_resolves)
+        
+        # g: merge to allow interpolation resolution
+        merged = OmegaConf.merge(base_cfg, resolves_cfg)
+        
+        # g: resolve interpolations and convert back to a standard dictionary
+        resolved = OmegaConf.to_container(merged, resolve=True)
+        
+        # g: filter out the injected inputs to retain only the original dictionary's keys
+        filtered_resolved = {k: resolved[k] for k in cfg.keys()}
+        
+        if is_sweep:
+            configs[name] = filtered_resolved
+        else:
+            configs.append(filtered_resolved)
+        
+    # g: return a dictionary if sweeping over alternatives, otherwise the single dict
+    return configs if is_sweep else configs[0]
+
     
 ## I/O
 def read_config(

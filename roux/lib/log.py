@@ -223,11 +223,26 @@ def to_diff(
 
 from contextlib import contextmanager
 @contextmanager
-def no_logging(level=logging.CRITICAL):
-    logger = logging.getLogger()
-    previous_level = logger.level
-    logger.setLevel(level + 1)
-    try:
-        yield
-    finally:
-        logger.setLevel(previous_level)
+def no_logging(
+    level=logging.CRITICAL,
+    method='disable'
+    ):
+    if method=='disable':
+        # g: fetch the current global disable state instead of just the root logger's level
+        previous_level = logging.root.manager.disable
+        
+        # g: logging.disable globally overrides all loggers, affecting nested calls
+        logging.disable(level)
+        try:
+            yield
+        finally:
+            # g: restore the global disable state
+            logging.disable(previous_level)
+    else:
+        logger = logging.getLogger()
+        previous_level = logger.level
+        logger.setLevel(level + 1)
+        try:
+            yield
+        finally:
+            logger.setLevel(previous_level)

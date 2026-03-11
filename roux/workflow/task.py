@@ -1407,7 +1407,7 @@ def run_tasks(
     
     kws_runner={
         **dict(
-            script_path= f"{script_path} {sub_com}", #, ## preffix
+            script_path= ' '.join([s for s in [script_path,sub_com] if s!='']), #, ## preffix
             script_pre= script_pre, #='', ## e.g. micromamba run -n env
 
             append_header=slurm_header,                       
