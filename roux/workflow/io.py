@@ -278,9 +278,10 @@ def to_scr(
     
     def split_by_pms(text):
         splits1=re.split(r"# In\[\s*\d*\s*\]:\n    #+ param", text)
-
-        pre_pms=splits1[0].replace('\n    ','\n')
+        assert len(splits1)==2, text
         
+        pre_pms=splits1[0].replace('\n    ','\n')
+
         pms=re.split(r"\n    # In\[\s*\d*\s*\]:", splits1[1])[0]
         
         post_pms=re.split(r"\n    # In\[\s*\d*\s*\]:", splits1[1],1)[1]
