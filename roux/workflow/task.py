@@ -635,7 +635,6 @@ class SLURMJob:
             f.write(
 #SBATCH --partition={self.partition}
 f"""#!/usr/bin/env bash
-set -e
 
 #SBATCH --job-name={self.job_name}
 #SBATCH --err={self.log_path}/%j.err
@@ -647,6 +646,9 @@ set -e
 
 ## overriding settings (--slurm-header)
 {self.append_header}
+
+## Stop script execution on any error
+set -e
 
 {job_pre}
 
@@ -835,7 +837,7 @@ def to_sbatch_script(
         #     modules.append('python')
 
         if script_path.endswith('.py') or '.py ' in script_path:
-            com=f"{script_pre}{'python' if not script_path.startswith('python ') else ''} {script_path} run "
+            com=f"{script_pre}{'python' if not script_path.startswith('python ') else ''} {script_path} {'' if ' ' in script_path else ' run'} "
             if not expand_pms:
                 ## safer than expand_pms 
                 com+=f" --input-path {pms_path}"
@@ -1228,6 +1230,15 @@ def run_tasks(
         log_level=log_level_root
     
     logging.setLevel(level=log_level)
+    
+    script_path=script_path.strip().split(' ',1)
+    if len(script_path)==1:
+        sub_com=''
+        script_path=script_path[0]
+    else:
+        script_path,sub_com=script_path
+
+    assert Path(script_path).exists(), script_path
 
     script_path=Path(script_path).resolve().as_posix()
     script_type=Path(script_path.split(' ')[0]).suffix[1:]# if not '.py run' in script_path else 'py'
@@ -1396,7 +1407,7 @@ def run_tasks(
     
     kws_runner={
         **dict(
-            script_path= script_path, #, ## preffix
+            script_path= ' '.join([s for s in [script_path,sub_com] if s!='']), #, ## preffix
             script_pre= script_pre, #='', ## e.g. micromamba run -n env
 
             append_header=slurm_header,                       

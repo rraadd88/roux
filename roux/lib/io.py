@@ -694,7 +694,7 @@ def read_dict(
         # p.endswith(".pms") or fmt == "pms" ## params
         ):
         from roux.workflow.cfgs import read_config
-        return read_config(p)
+        return read_config(p,**kws)
 
     elif p.startswith("https"):
         from urllib.request import urlopen

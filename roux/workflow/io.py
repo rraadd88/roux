@@ -118,7 +118,7 @@ def check_py(
 
     if errors=='raise':
         logging.warning(stdout)
-        assert 'All checks passed!' in stdout, com
+        assert (stdout=='') or ('All checks passed!' in stdout), (com,stdout)
     else:
         logging.warning(f"fix following by running: {com}")
     return stdout
