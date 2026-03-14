@@ -2,24 +2,26 @@
 
 # (str ->) sys -> io
 ## for file paths
-from os.path import (
-    exists,
-    dirname,
-    basename,
-    abspath,
-    isdir,
-    splitext,
-)  ## prefer `pathlib` over `os.path`
-from pathlib import Path
-from glob import glob
-from roux.lib.str import replace_many, encode
+import logging
+import shutil
 
 #
 import subprocess
 import sys
-import logging
-import shutil
-    
+from glob import glob
+from os.path import (
+    abspath,
+    basename,
+    dirname,
+    exists,
+    isdir,
+    splitext,
+)  ## prefer `pathlib` over `os.path`
+from pathlib import Path
+
+from roux.lib.str import encode, replace_many
+
+
 ## for file paths
 def basenamenoext(p):
     """Basename without the extension.
@@ -206,8 +208,12 @@ def to_path(
 
     Returns:
         s (string): output string.
-    """
+    """    
     import re
+
+    ## pre.
+    from roux.lib.str import remove_brackets
+    s=remove_brackets(s)
 
     s = re.sub(r"(/)\1+", r"\1", s)  # remove multiple /'s
     if max([len(s_) for s_ in s.split("/")]) < coff_len_escape_replacement:
@@ -220,6 +226,7 @@ def to_path(
     else:
         if verbose:
             logging.info("replacements not done; possible long IDs in the path.")
+    
     return s.replace(f"/My{replacewith}Drive/", "/My Drive/")  # google drive
 
 #     return re.sub('\W+',replacewith, s.lower() )
@@ -483,8 +490,8 @@ def get_env(
     Returns:
         d (dict): parameters of the virtual environment.
     """
-    import sys
     import os
+    import sys
 
     env = os.environ.copy()
     env_name_current = sys.executable.split("anaconda3/envs/")[1].split("/")[0]
@@ -830,8 +837,8 @@ def p2time(filename: str, time_type="m"):
     Returns:
         time (str): time.
     """
-    import os
     import datetime
+    import os
 
     if time_type == "m":
         t = os.path.getmtime(filename)
@@ -849,8 +856,9 @@ def ps2time(ps: list, **kws_p2time):
     Returns:
         ds (Series): paths mapped to corresponding times.
     """
-    import pandas as pd
     from glob import glob
+
+    import pandas as pd
 
     if isinstance(ps, str):
         if isdir(ps):
@@ -892,8 +900,9 @@ def grep(
     Parameters:
         p (str): input path
     """
-    from roux.lib.set import flatten
     import subprocess
+
+    from roux.lib.set import flatten
 
     l2 = []
     for s in checks:

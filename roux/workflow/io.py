@@ -4,23 +4,21 @@ For input/output of workflow.
 
 ## logging
 import logging
+import re
+from pathlib import Path
 
 ## data
 import pandas as pd
-
-from pathlib import Path
-
-import re
 
 from roux.lib.sys import (
     exists,
     makedirs,
 )
 
+## for backcompatibility
+from roux.workflow.cfgs import read_config, read_metadata  ##noqa
 from roux.workflow.pms import read_cli_pm
 
-## for backcompatibility
-from roux.workflow.cfgs import read_config, read_metadata ##noqa
 
 ## variables
 def clear_variables(
@@ -111,7 +109,7 @@ def check_py(
             logging.warning(f'created missing: {init_path}')
         
     com=f"ruff check {p} --ignore {ruff_ignore}"
-    from roux.lib.sys import run_com  
+    from roux.lib.sys import run_com
     stdout = run_com(com, wait=True,
         returncodes=[0,1], #get stdout regardless 
     )  # Captures both streams  
@@ -124,6 +122,8 @@ def check_py(
     return stdout
 
 from roux.lib.text import replace_text
+
+
 def post_code(
     p: str,
     lint: bool,
@@ -207,7 +207,7 @@ def to_scr(
     mark_end='## END',
 
     pre_clean=None,
-    clean=True,
+    clean=False,
     replaces={
         "get_ipython":'#get_ipython',
         "sys.exit()":'return',
@@ -278,9 +278,14 @@ def to_scr(
     
     def split_by_pms(text):
         splits1=re.split(r"# In\[\s*\d*\s*\]:\n    #+ param", text)
-
-        pre_pms=splits1[0].replace('\n    ','\n')
+        # splits1=re.split(r"# In\[\s*\d*\s*\]:\n\s*#+\s*params?", text)
+        # splits1 = re.split(r"[ \t]*# In\[\s*\d*\s*\]:\n\s*#+\s*params?", text)
+        # splits1=re.split(r"\s*# In\[\s*\d*\s*\]:\n\s*#+\s*params?", text)
+        # print(text[:200])
+        assert len(splits1)==2, f"{text[:200].replace('\n','\\n')} .."
         
+        pre_pms=splits1[0].replace('\n    ','\n')
+
         pms=re.split(r"\n    # In\[\s*\d*\s*\]:", splits1[1])[0]
         
         post_pms=re.split(r"\n    # In\[\s*\d*\s*\]:", splits1[1],1)[1]
@@ -296,11 +301,12 @@ def to_scr(
         params='\n'.join([s.split('#')[0] for s in params_lines])
         
         from roux.workflow.pms import extract_pms
-        params_str=',\n    '.join(
+        params_str=' '*4+(
+            ',\n    '.join(
             extract_pms(
                 params.split('    ')[1:],
                 fmt='str',
-            )
+            ))
         )
         if verbose:
             logging.info(params_str)
@@ -331,12 +337,9 @@ def to_scr(
     t_def='\n'.join([
     """
 import argh
-def run(
-    """,
+def run(""",
     params_str if with_pms else '',
-    """
-    ):
-    """,
+    """):""",
     t_def_pre if with_pms else ''
     ])
     
@@ -569,7 +572,7 @@ def check_for_exit(
 
     if not exit:
         if isinstance(p,str):
-            from roux.lib.io import is_table_empty    
+            from roux.lib.io import is_table_empty
             exit=is_table_empty(p)
         elif isinstance(p,pd.DataFrame):
             exit=(len(p)==0)

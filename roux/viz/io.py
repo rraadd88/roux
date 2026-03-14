@@ -83,7 +83,8 @@ def to_plotp(
         {
             '.':'',
             '/':'',
-        }
+        },
+        errors=None,
     )
     plotp = (
         f"{prefix}{fn}{suffix}"
@@ -474,6 +475,7 @@ def to_plot(
     data: pd.DataFrame = None,
     df1: pd.DataFrame = None,
     kws_plot: dict = dict(),
+    stats: dict = dict(),
     logp: str = "log_notebook.log",
     sep: str = "begin_plot()",
     validate: bool = False,
@@ -511,6 +513,10 @@ def to_plot(
             log_notebookp=f'log_notebook.log';open(log_notebookp, 'w').close();get_ipython().run_line_magic('logstart','{log_notebookp} over')
 
     """
+    if stats is not None and isinstance(plotp,plt.Axes):
+        if hasattr(plotp,'stats'):
+            stats=plotp.stats
+
     # save plot
     plotp = savefig(
         plotp,
@@ -536,13 +542,25 @@ def to_plot(
     outd = remove_exts(outd)
     if test:
         logging.info(outd)
-    df1p = f"{outd}/data.tsv"
-    paramp = f"{outd}/config.yaml"
-    srcp = f"{outd}/plot.py"
+    outps=dict(
+        data=f'{outd}/data.pqt',
+        code=f'{outd}/plot.py',
+        config=f'{outd}/config.yaml',
+        stats=f'{outd}/stats.yaml',
+    )    
     # save data
-    to_table(df1, df1p)
+    to_table(df1, outps['data'])
+    if stats is not None:
+        try: 
+            from roux.lib.dict import flatten_dict
+            stats=flatten_dict(stats)
+            to_dict(stats, outps['stats'])
+        except Exception as e:
+            logging.warning("stats could not be saved because ..")
+            logging.error(str(e))
+
     srcp = to_script(
-        srcp=srcp,
+        srcp=outps['code'],
         plotp=plotp,
         logp=logp,
         sep=sep,
@@ -551,9 +569,9 @@ def to_plot(
     )
     if srcp is None:
         return plotp
-    to_dict(kws_plot, paramp)
+    to_dict(kws_plot, outps['config'])
     if test:
-        print({"plot": plotp, "data": df1p, "param": paramp})
+        print(outps)
     if validate:
         read_plot(srcp)
     logging.info(plotp)

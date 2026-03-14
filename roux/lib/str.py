@@ -1,7 +1,8 @@
 """For processing strings."""
 
-import re
 import logging
+import re
+
 
 def capitalize_first(s):
     """ Capitalize the first letter and append the rest of the string"""
@@ -347,6 +348,28 @@ def get_bracket(
     else:
         return ""
 
+
+def remove_brackets(text: str,verbose=False) -> str:
+    """
+    Removes all substrings enclosed in (), [], or {} from a string.
+    """
+    # g: count the total number of bracket characters in the string
+    bracket_count = sum(text.count(b) for b in "()[]{}")
+    
+    # g: skip removal if more than 2 bracket characters are observed
+    if bracket_count > 2:
+        if verbose:
+            logging.warning(f'bracket_count > 2 in: {text}')
+        return text
+        
+    # g: match parentheses, square brackets, and curly braces along with their internal contents
+    pattern = r'\([^)]*\)|\[[^\]]*\]|\{[^}]*\}'
+    
+    # g: substitute matches with an empty string
+    cleaned = re.sub(pattern, '', text)
+    
+    # g: collapse multiple spaces into a single space and strip edges
+    return re.sub(r'\s+', ' ', cleaned).strip()
 
 ## split
 def align(

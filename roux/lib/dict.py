@@ -111,6 +111,65 @@ def flip_dict(d):
     #             d_[v]=k
     #     return d_
 
+def flatten_keys(
+    stats,
+    sep=':',
+    clean=False,
+    ): 
+    from roux.lib.sys import to_path
+    stats={to_path(k) if not isinstance(k,tuple) else sep.join([to_path(str(s)) for s in k]) :v for k,v in stats.items()}
+    if clean:
+        ## remove _s
+        stats={k.replace(f'_{sep}',sep).replace(f'{sep}_',sep):v for k,v in stats.items()}
+    return stats
+
+def flatten_vals(d: dict, parent_key: str = '', sep: str = ':') -> dict:
+    """
+    Flatten a nested dictionary using a specified separator.
+    
+    Parameters:
+        d (dict): Nested dictionary to flatten.
+        parent_key (str): Prefix for the current level.
+        sep (str): Separator between nested keys.
+        
+    Returns:
+        dict: Flattened dictionary.
+    """
+    if isinstance(d,pd.DataFrame):
+        df_=d
+        if len(df_)==1:
+            d=df_.iloc[0,:].to_dict()
+        else:
+            # d=df_.set_index(df_.rd.infer_index()).T.to_dict()
+            d=pd.json_normalize(
+                df_.rd.clean().set_index(df_.rd.infer_index()).T.to_dict(),
+                sep=':',
+            ).iloc[0,:].to_dict()
+
+    assert isinstance(d,dict), d
+    items = []
+    for k, v in d.items():
+        # g: construct the new key with the separator if a parent key exists
+        new_key = f"{parent_key}{sep}{k}" if parent_key else k
+        
+        # g: recursively flatten if the value is a dictionary
+        if isinstance(v, dict):
+            items.extend(flatten_dict(v, new_key, sep=sep).items())
+        else:
+            items.append((new_key, v))
+    return dict(items)
+
+def flatten_dict(d,sep=':'):
+    d_flat=flatten_vals(d,sep=sep)
+    # size=len(d_flat)
+    _keys=list(d_flat.keys())
+    
+    d_flat=flatten_keys(d_flat,sep=sep)
+    # assert len(d_flat)==size,(len(d_flat),size)
+    assert len(d_flat)==len(_keys),f"\n{list(d_flat.keys())}\n{_keys}"
+    
+    return d_flat
+
 ## find
 def contains_keys(
     obj,
