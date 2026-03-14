@@ -1238,7 +1238,8 @@ def run_tasks(
     else:
         script_path,sub_com=script_path
 
-    assert Path(script_path).exists(), script_path
+    if Path(script_path).suffix!='':
+        assert Path(script_path).exists(), script_path
 
     script_path=Path(script_path).resolve().as_posix()
     script_type=Path(script_path.split(' ')[0]).suffix[1:]# if not '.py run' in script_path else 'py'
