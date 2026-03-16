@@ -123,6 +123,24 @@ def flatten_keys(
         stats={k.replace(f'_{sep}',sep).replace(f'{sep}_',sep):v for k,v in stats.items()}
     return stats
 
+def pre_dict(
+    d  
+    ):
+    if isinstance(d,pd.DataFrame):
+        df_=d
+        if len(df_)==1:
+            d=df_.iloc[0,:].to_dict()
+        else:
+            # d=df_.set_index(df_.rd.infer_index()).T.to_dict()
+            d=pd.json_normalize(
+                df_.rd.clean().rd.set_index().T.to_dict(),
+                sep=':',
+            ).iloc[0,:].to_dict()
+    elif isinstance(d,pd.Series):
+        d=d.to_dict()
+    assert isinstance(d,dict), d
+    return d
+    
 def flatten_vals(d: dict, parent_key: str = '', sep: str = ':') -> dict:
     """
     Flatten a nested dictionary using a specified separator.
@@ -135,26 +153,24 @@ def flatten_vals(d: dict, parent_key: str = '', sep: str = ':') -> dict:
     Returns:
         dict: Flattened dictionary.
     """
-    if isinstance(d,pd.DataFrame):
-        df_=d
-        if len(df_)==1:
-            d=df_.iloc[0,:].to_dict()
-        else:
-            # d=df_.set_index(df_.rd.infer_index()).T.to_dict()
-            d=pd.json_normalize(
-                df_.rd.clean().set_index(df_.rd.infer_index()).T.to_dict(),
-                sep=':',
-            ).iloc[0,:].to_dict()
 
-    assert isinstance(d,dict), d
+    d=pre_dict(
+        d  
+    )
+    
     items = []
     for k, v in d.items():
         # g: construct the new key with the separator if a parent key exists
         new_key = f"{parent_key}{sep}{k}" if parent_key else k
         
         # g: recursively flatten if the value is a dictionary
+        if not isinstance(v, (dict,int,float,str,list,tuple)):
+            v=pre_dict(
+                v  
+            )
+            
         if isinstance(v, dict):
-            items.extend(flatten_dict(v, new_key, sep=sep).items())
+            items.extend(flatten_vals(v, parent_key=new_key, sep=sep).items())
         else:
             items.append((new_key, v))
     return dict(items)

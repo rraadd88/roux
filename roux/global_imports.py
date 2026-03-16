@@ -37,6 +37,7 @@ from roux.workflow.io import get_source_path,to_src
 to_src(get_source_path())
 """
 import warnings
+
 warnings.warn(
     "'from roux.global_imports import * #noqa' is intended for interactive use in environments like Jupyter. Elsewhere, explicit imports are recommended.",
     UserWarning,
@@ -61,6 +62,7 @@ from roux.lib.io import read_dict, to_dict, read_table, to_table, read_data, to_
 ## data functions from roux
 from roux.lib.str import get_bracket, replace_many, get_suffix, get_prefix #noqa
 from roux.lib.set import dropna, flatten, unique, assert_overlaps_with, validate_overlaps_with, check_non_overlaps_with #noqa
+from roux.lib.dict import flatten_dict  #noqa
 ## dataframe attribute from roux
 # attributes
 import roux.lib.dfs as rd # attribute #keep #noqa

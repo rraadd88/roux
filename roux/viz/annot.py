@@ -1,15 +1,18 @@
 """For annotations."""
 
 import logging
+
+import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-import matplotlib.pyplot as plt
 import seaborn as sns
+
 from roux.lib.str import linebreaker
-from roux.viz.ax_ import set_label
 
 # redirects
 from roux.stat.io import pval2annot
+from roux.viz.ax_ import set_label
+
 
 def annot_side_curved(
     data,
@@ -134,7 +137,7 @@ def annot_side_curved(
             kws_text_multicolored={}
         for s in data1[col_label].unique():
             try:
-                from roux.viz.text import set_text_multicolored    
+                from roux.viz.text import set_text_multicolored
                 text_func=set_text_multicolored  
         
                 from roux.viz.figure import get_text
@@ -145,7 +148,7 @@ def annot_side_curved(
                 )
                 # assert len(t)==1, t
                 for t in ts:
-                    from roux.viz.text import set_text_multicolored        
+                    from roux.viz.text import set_text_multicolored
                     set_text_multicolored(
                         s=t,
                         **kws_text_multicolored,
@@ -536,7 +539,7 @@ def outline_scatter(
         ax=plt.gca()
     points=data.loc[:,[x,y]].values
     
-    from scipy.spatial import ConvexHull    
+    from scipy.spatial import ConvexHull
     # Compute the convex hull
     hull = ConvexHull(points)
     out_pts=np.vstack([points[hull.vertices, 0],points[hull.vertices, 1]]).T
@@ -597,8 +600,8 @@ def show_confidence_ellipse(x, y, ax, n_std=3.0, facecolor="none", **kwargs):
     ----------
     https://matplotlib.org/3.5.0/gallery/statistics/confidence_ellipse.html
     """
-    from matplotlib.patches import Ellipse
     import matplotlib.transforms as transforms
+    from matplotlib.patches import Ellipse
 
     if x.size != y.size:
         raise ValueError("x and y must be the same size")
@@ -774,7 +777,7 @@ def show_scatter_stats(
         # verbose=verbose,
         # **kws_stat,
         # )
-        from roux.stat.corr import get_corr, _to_string
+        from roux.stat.corr import _to_string, get_corr
 
         res = get_corr(
             x=x,
@@ -1039,6 +1042,10 @@ def show_crosstab_stats(
         ax=ax,
         **kws_set_label,
     )
+    if hasattr(ax,'stats') and ax.stat is not None:
+        logging.warning('overwritten ax.stats')
+    ax.stats=res
+    
     return {
         **res,
         **dict(

@@ -2009,7 +2009,7 @@ def infer_index(
 
 
     """    
-    cols=(
+    df_=(
         data
         .drop(cols_drop, axis=1)
         .select_dtypes(
@@ -2021,9 +2021,12 @@ def infer_index(
         .to_frame('nunique')
         .reset_index()
         .query(expr="`nunique`>1")
-        ['index'].tolist()
     )
-    
+    if 'index' not in df_:
+        return []
+
+    cols=df_['index'].tolist()
+        
     cols_id=[]
     for c in cols:
         cols_id+=[c]
@@ -2033,6 +2036,32 @@ def infer_index(
             ):
             return cols_id
 
+@to_rd
+def set_index(
+    data: pd.DataFrame,
+    keys=None,
+    # kws_infer_index,
+    cols_drop=[],
+    include=object,
+    exclude=None,    
+    **kws_set_index,
+) -> list:
+    if keys is None:
+        keys= infer_index(
+            data=data,#: pd.DataFrame,
+            cols_drop=cols_drop,#=[],
+            include=include,#=object,
+            exclude=exclude,#=None,
+        )
+        
+    if len(keys)==0:
+        return data
+        
+    return data.set_index(
+        keys=keys,
+        **kws_set_index,
+    )
+    
 ## multiindex
 @to_rd
 def to_multiindex_columns(df, suffixes, test=False):
