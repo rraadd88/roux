@@ -205,3 +205,26 @@ def contains_keys(
 
     recurse(obj)
     return all(k in found for k in keys_to_find)
+
+def diff_dicts(
+    d1, # old 
+    d2, # new
+    path="",
+    ignore=[]
+    ):
+    """Recursively find differences between two dictionaries."""
+    for k in d1:
+        if k not in d2: # and k not in ignore:
+            print(f"{path} ! : '{k}' not in d2")
+        else:
+            if isinstance(d1[k], dict) and isinstance(d2[k], dict):
+                diff_dicts(d1[k], d2[k], f"{path} : {k}" if path else k, ignore=ignore)
+            elif d1[k] != d2[k]:
+                current_path = f"{path} : {k}" if path else k
+                print(f"{current_path}:")
+                print(f" - : {d1[k]}")
+                print(f" + : {d2[k]}")
+
+    for k in d2:
+        if k not in d1: # and k not in ignore:
+            print(f"{path} ! : '{k}' not in d1")
