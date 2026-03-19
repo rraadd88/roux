@@ -383,6 +383,7 @@ def merge_dfs(
         k1=k2        
     return df3
 
+@to_rd
 def merge_hi(
     df_ids, ## contains groups
     df_right,
@@ -455,6 +456,46 @@ def merge_hi(
             cols_right+[col_group,col_id]
         )
 )
+
+@to_rd
+def merge_by_subset(
+    df1: pd.DataFrame, 
+    df2: pd.DataFrame, 
+    on,
+    **kws_merge
+) -> pd.DataFrame:
+    """
+    Merge two dataframes where the list in `on` column of df1 is a subset of the list in `on` column of df2.
+    """
+    # g: pre-compute sets to minimize overhead during the loop
+    sets2 = [set(lst) for lst in df2[on]]
+    
+    idx1 = []
+    idx2 = []
+    
+    # g: use nested python loops to map indices, completely avoiding memory-heavy pandas cross joins
+    for i, lst1 in enumerate(df1[on]):
+        s1 = set(lst1)
+        for j, s2 in enumerate(sets2):
+            if s1.issubset(s2):
+                idx1.append(i)
+                idx2.append(j)
+                
+    if not idx1:
+        # g: fallback to an empty merge just to generate the correct column schema
+        return df1.iloc[:0].merge(df2.iloc[:0], left_index=True, right_index=True, suffixes=suffixes)
+        
+    # g: subset the first dataframe and map corresponding rows from the second dataframe directly by index
+    return (
+        df1.iloc[idx1].reset_index(drop=True)
+        .merge(
+            df2.iloc[idx2].reset_index(drop=True), 
+            left_index=True, 
+            right_index=True, 
+            # suffixes=suffixes
+            **kws_merge
+        )
+    )
 
 def compare_rows(
     df1,
