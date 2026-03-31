@@ -238,7 +238,7 @@ def list2str(
                 logging.warning("more than 1 str value encountered, returning list")
                 return x
         elif fmt == "id":
-            return ";".join(x)
+            return ";".join(map(str,x))
         # elif fmt.lower().startswith('count'):
         # elif fmt=='dict':
         else:
