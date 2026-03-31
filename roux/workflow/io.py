@@ -282,7 +282,7 @@ def to_scr(
         # splits1 = re.split(r"[ \t]*# In\[\s*\d*\s*\]:\n\s*#+\s*params?", text)
         # splits1=re.split(r"\s*# In\[\s*\d*\s*\]:\n\s*#+\s*params?", text)
         # print(text[:200])
-        assert len(splits1)==2, f"{text[:200].replace('\n','\\n')} .."
+        assert len(splits1)==2, text[:200].replace('\n','\\n')+" .."
         
         pre_pms=splits1[0].replace('\n    ','\n')
 
