@@ -1115,6 +1115,86 @@ def show_confusion_matrix_stats(
     )
     return ax
 
+def show_means(  
+    ax=None,   
+    meanprops=None,   
+    orient=None,  
+    data=None,  
+    x=None,  
+    y=None,  
+    alpha=0.5,
+):  
+    """  
+    Overlays a diamond marker with a mu symbol on top of barplot patches.  
+    Matches the behavior of showmeans=True in plot_dists.  
+    """  
+    from roux.viz.colors import get_colors_default  
+      
+    if ax is None:  
+        ax = plt.gca()  
+    if meanprops is None:  
+        meanprops = {}  
+      
+    # Infer orient from dtypes if orient is None  
+    if orient is None:  
+        if data is not None and x is not None and y is not None:  
+            if data[y].dtype not in [int, float]:  
+                # y is categorical, values on x-axis → horizontal  
+                orient = "h"  
+            else:  
+                # y is numeric, values on y-axis → vertical  
+                orient = "v"  
+        else:  
+            # fallback to vertical if no dataframe info provided  
+            orient = "v"  
+          
+    for p in ax.patches:  
+        if orient == "h":  
+            val = p.get_width()  
+            pos = p.get_y() + p.get_height() / 2  
+            x_, y_ = val, pos  
+        else:  
+            val = p.get_height()  
+            pos = p.get_x() + p.get_width() / 2  
+            x_, y_ = pos, val  
+              
+        # if np.isnan(val) or val == 0:  
+        #     continue  
+        # if val == 0:
+        # print(p,x_, y_)
+        # if y_ ==0:
+            # middle
+            # continue
+              
+        # Diamond marker (matches sns.pointplot in plot_dists)  
+        ax.plot(  
+            x_, y_,  
+            marker='D',  
+            markerfacecolor=meanprops.get("markerfacecolor", 
+                                          # get_colors_default()[0]
+                                         p.get_facecolor(),
+                                         ),  
+            markeredgecolor=meanprops.get("markeredgecolor", "none"),  
+            markersize=float(meanprops.get("markersize", 15)),  
+            alpha=alpha,  
+            markeredgewidth=0,  
+            clip_on=False,  
+            linestyle="None"  
+        )  
+          
+        # Mu marker on top (matches meanprops in plot_dists box plot)  
+        ax.plot(  
+            x_, y_,  
+            marker=r"$\mu$",  
+            markerfacecolor=meanprops.get("mu_color", "black"),  
+            markeredgecolor="none",  
+            markersize=10,  
+            clip_on=False,  
+            linestyle="None"  
+        )  
+        # break
+    return ax 
+
 
 # # logo
 # def get_logo_ax(
