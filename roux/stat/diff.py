@@ -765,6 +765,7 @@ def get_diff_inferred(
                 colsubset=hue,
                 cols_value=[x], 
                 colindex=colindex,
+                subsets=hue_order,
                 alpha=0.05, 
                 axis=0, 
                 **kws_stats,
