@@ -10,6 +10,7 @@ import pandas as pd
 ## internal
 from roux.lib import to_rd
 
+
 ## beacuse NA in pandas
 @to_rd
 def reset_index(
@@ -1223,8 +1224,9 @@ def query(
     if groupby is not None:
         kws_log['groupby']=groupby
     
-    from roux.lib.str import get_fills
     import re
+
+    from roux.lib.str import get_fills
 
     # Pre-calculate once outside the loop
     df_columns_set = set(df.columns)
@@ -2544,6 +2546,7 @@ def assert_expr(
 ## paired stats
 from roux.viz import apply_plot
 
+
 @to_rd
 def check_corr(
     data,
@@ -3164,19 +3167,19 @@ def log_apply(
     d1["to"] = df.shape
     log_shape_change(d1, fun=fun,label=label)
     if validate_equal_length:
-        assert d1["from"][0] == d1["to"][0], f"validate_equal_length: {(d1["from"][0], d1["to"][0])}"
+        assert d1["from"][0] == d1["to"][0], f"validate_equal_length: {(d1['from'][0], d1['to'][0])}"
     if validate_equal_width:
-        assert d1["from"][1] == d1["to"][1], f"validate_equal_width: {(d1["from"][1], d1["to"][1])}"
+        assert d1["from"][1] == d1["to"][1], f"validate_equal_width: {(d1['from'][1], d1['to'][1])}"
     if validate_no_decrease_length:
-        assert d1["from"][0] <= d1["to"][0], f"validate_no_decrease_length: {(d1["from"][0], d1["to"][0])}"
+        assert d1["from"][0] <= d1["to"][0], f"validate_no_decrease_length: {(d1['from'][0], d1['to'][0])}"
     if validate_no_decrease_width:
-        assert d1["from"][1] <= d1["to"][1], f"validate_no_decrease_width: {(d1["from"][1], d1["to"][1])}"
+        assert d1["from"][1] <= d1["to"][1], f"validate_no_decrease_width: {(d1['from'][1], d1['to'][1])}"
     if validate_no_increase_length:
-        assert d1["from"][0] >= d1["to"][0], f"validate_no_increase_length: {(d1["from"][0], d1["to"][0])}"
+        assert d1["from"][0] >= d1["to"][0], f"validate_no_increase_length: {(d1['from'][0], d1['to'][0])}"
     if validate_no_increase_width:
-        assert d1["from"][1] >= d1["to"][1], f"validate_no_increase_width: {(d1["from"][1], d1["to"][1])}"
+        assert d1["from"][1] >= d1["to"][1], f"validate_no_increase_width: {(d1['from'][1], d1['to'][1])}"
     if validate_equal_shape:
-        assert d1["from"] == d1["to"], f"validate_equal_shape: {(d1["from"], d1["to"])}"
+        assert d1["from"] == d1["to"], f"validate_equal_shape: {(d1['from'], d1['to'])}"
     return df
 
 def _get_preview_log_str(
