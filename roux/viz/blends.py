@@ -5,6 +5,7 @@ __all__ = ['plot_ranks', 'plot_dists_by_bins']
 
 # %% ../../examples/roux_viz_blends.ipynb 1
 """Blends of plotting functions."""
+import logging
 
 import matplotlib.pyplot as plt
 import pandas as pd
@@ -95,8 +96,8 @@ def plot_dists_by_bins(
             {f"{y} bin":str}
         )
     )
-    # if kws_plot_dists.get('order',None) is None:
-    #     kws_plot_dists['order']
+    kws_plot_dists['order']=data.sort_values(y)[f"{y} bin"].unique().tolist()[::-1]
+    logging.info(f"kws_plot_dists['order']={kws_plot_dists['order']}")
 
     from roux.viz.dist import plot_dists
     ax=plot_dists(

@@ -915,6 +915,8 @@ def show_dists_stats(
             stats.items(), 
             key=lambda item: abs(ticklabel2position[item[0]] - ref_pos)
         )
+        show_lines=show_lines and len(ticklabel2position)>2
+
         for i, (k, s) in enumerate(stats_sorted):
             # g: 2. Determine Staggered Offsets
             # g: Use 5% of the continuous axis length as a staggered step to prevent overlapping lines
