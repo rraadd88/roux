@@ -802,7 +802,7 @@ def show_scatter_stats(
             )
             if wrap:
                 label=label.replace('$\pm$','\n$\pm$')
-            if loc is None:
+            if loc is None and kws_set_label.get('x') is None and kws_set_label.get('y') is None:
                 ## infer
                 if res["r"] >= 0:
                     loc = 2

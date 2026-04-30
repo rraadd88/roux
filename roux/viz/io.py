@@ -620,9 +620,12 @@ def read_plot(p: str, safe: bool = False, test: bool = False, **kws_plot) -> plt
 def label_pdf(
     p,
     output_writer,
-    label='fn',
-    x=-36,
-    y=-72,
+    label='fn', # stem
+
+    ## bottom
+    x=-36,y=-72,
+
+    ## aes
     size=5,
     color=[0.5,0.5,0.5],
     font="Helvetica",
@@ -646,6 +649,8 @@ def label_pdf(
         can.translate(inch,inch)
         if label =='fn':
             label = Path(p).stem
+        elif callable(label):
+            label = label(p)
         else:
             ## disable
             label = ''
