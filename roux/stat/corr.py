@@ -71,7 +71,7 @@ def _pre(
             ) 
     except Exception as e:
         logging.warning(str(e))
-        logging.warning(df.to_string())
+        logging.warning(df.loc[:,[x,y]].to_string())
         
     df = (
         df

@@ -835,25 +835,7 @@ def to_sbatch_script(
     else:
         # if not any([s.startswith('python') for s in modules]):
         #     modules.append('python')
-
-        if script_path.endswith('.py') or '.py ' in script_path:
-            com=f"{script_pre}{'python' if not script_path.startswith('python ') else ''} {script_path} {'' if ' ' in script_path else ' run'} "
-            if not expand_pms:
-                ## safer than expand_pms 
-                com+=f" --input-path {pms_path}"
-            else:
-                from roux.workflow.pms import expand_pms
-                com+=expand_pms(pms)   
-            # packages.append('argh')
-            # pass
-            # return "under dev"
-            # if verbose:
-            #     print(com) 
-            com = (
-                f"{com}"
-                # f' || {{ echo "{script_path} crashed"; exit 1; }}'
-            )
-        elif script_path.endswith('.ipynb'):
+        if script_path.endswith('.ipynb'):
             log_path=f"{log_dir_path}/{Path(script_path).name}"
             com=(
                 f"{script_pre}papermill --parameters_file '{pms_path}' "
@@ -870,8 +852,34 @@ def to_sbatch_script(
             # return "under dev"
             # Using -b or --parameters_base64, users can provide a YAML string, base64-encoded, containing parameter values.
             # $ papermill local/input.ipynb s3://bkt/output.ipynb -b YWxwaGE6IDAuNgpsMV9yYXRpbzogMC4xCg==
+
+        elif script_path.endswith('.py') or '.py ' in script_path:
+            ## TODO: python is not expected in script_path anyways 
+            _cmd=script_path.split('python ')[-1].strip()
+            com=f"{script_pre}python {_cmd} {'' if ' ' in _cmd else ' run'} "
+            if not expand_pms:
+                ## safer than expand_pms 
+                com+=f" --input-path {pms_path}"
+            else:
+                from roux.workflow.pms import expand_pms
+                com+=expand_pms(pms)
+            com = (
+                f"{com}"
+                # f' || {{ echo "{script_path} crashed"; exit 1; }}'
+            )
         else:
-            raise ValueError(script_path)
+            com=script_path
+            if not expand_pms:
+                ## safer than expand_pms 
+                com+=f" --input-path {pms_path}"
+            else:
+                from roux.workflow.pms import expand_pms
+                com+=expand_pms(pms)
+            com = (
+                f"{com}"
+                # f' || {{ echo "{script_path} crashed"; exit 1; }}'
+            )            
+            # raise ValueError(script_path)
 
     if verbose:
         logging.debug(com)
@@ -1241,8 +1249,15 @@ def run_tasks(
     if Path(script_path).suffix!='':
         assert Path(script_path).exists(), script_path
 
-    script_path=Path(script_path).resolve().as_posix()
     script_type=Path(script_path.split(' ')[0]).suffix[1:]# if not '.py run' in script_path else 'py'
+    if verbose:
+        logging.info(f"script_type='{script_type}' sub_com='{sub_com}'")
+
+    if script_type!='':
+        script_path=Path(script_path).resolve().as_posix()
+
+    if verbose:
+        logging.info(f"script_path='{script_path}'")
 
     cwd_path=Path().cwd().as_posix()
     
@@ -1355,7 +1370,7 @@ def run_tasks(
             kernel=Path(os.environ.get('VIRTUAL_ENV')).parent.stem
             logging.info(f"inferred kernel: {kernel}")
 
-    if runner.startswith('py'):
+    if runner.startswith('py') and script_type=='ipynb':
         from roux.lib.sys import is_interactive_notebook
         test=is_interactive_notebook()
 

@@ -1128,7 +1128,6 @@ def show_means(
     Overlays a diamond marker with a mu symbol on top of barplot patches.  
     Matches the behavior of showmeans=True in plot_dists.  
     """  
-    from roux.viz.colors import get_colors_default  
       
     if ax is None:  
         ax = plt.gca()  
