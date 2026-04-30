@@ -33,38 +33,6 @@ def pval2annot(
             None: values without decimals, upto pmin
             *:
             <:
-
-    Notes:
-        Test:
-        
-        %run io.py
-        for p in [
-            1,
-            0.1,
-            0.05,
-            0.06,
-            1e-1,1e-2,1e-3,1e-4,
-            2e-9,3e-10,5.239847e-11
-        ]:
-            print(
-                p,
-                pval2annot(
-                    p,
-                    fmt=None,
-                )
-            )
-        
-        1 $p$=1
-        0.1 $p$=0.1
-        0.05 $p$=0.05
-        0.06 $p$=0.06
-        0.1 $p$=0.1
-        0.01 $p$=0.01
-        0.001 $p$=0.001
-        0.0001 $p$=0.0001
-        2e-09 $p$=2x$10^{-9}$
-        3e-10 $p$=3x$10^{-10}$
-        5.239847e-11 $p$<5x$10^{-11}$
     """
     if alternative is None and alpha is None:
         raise ValueError("both alternative and alpha are None")

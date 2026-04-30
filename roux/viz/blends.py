@@ -79,7 +79,6 @@ def plot_dists_by_bins(
     show_corr=False, ## also takes kws
     corr_offs=[0,0],
     ax=None,
-    verbose=False,
     **kws_plot_dists,
     ):
     ## binning
@@ -115,7 +114,12 @@ def plot_dists_by_bins(
             kws_show_corr=show_corr
         assert isinstance(kws_show_corr,dict)
         from roux.viz.annot import show_scatter_stats
-        kws_show_scatter_stats={
+        show_scatter_stats(
+            ax=ax,
+            data=data,
+            x=x,
+            y=y,
+            **{
                 **dict(
                     z=None,
                     method='spearman',
@@ -131,17 +135,9 @@ def plot_dists_by_bins(
                         va='center',
                         linespacing=0.75,
                     ),
-                verbose=verbose,
                 ),
                 **kws_show_corr,
-            }
-        print(kws_show_scatter_stats)
-        show_scatter_stats(
-            ax=ax,
-            data=data,
-            x=x,
-            y=y,
-            **kws_show_scatter_stats,
+            },
         )
     ax.set(
         ylabel=y,

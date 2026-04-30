@@ -909,8 +909,13 @@ def show_dists_stats(
         # g: 1. Identify the Reference Category
         ref_cats = list(set(ticklabel2position.keys()) - set(stats.keys()))
         ref_pos = ticklabel2position[ref_cats[0]] if ref_cats else 0
-            
-        for i, (k, s) in enumerate(stats.items()):
+        
+        # g: sort stats by distance from reference position to draw shorter (inner) brackets first
+        stats_sorted = sorted(
+            stats.items(), 
+            key=lambda item: abs(ticklabel2position[item[0]] - ref_pos)
+        )
+        for i, (k, s) in enumerate(stats_sorted):
             # g: 2. Determine Staggered Offsets
             # g: Use 5% of the continuous axis length as a staggered step to prevent overlapping lines
             offset = i * (axlims[axis_cont]['len'] * 0.02)
