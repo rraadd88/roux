@@ -1,16 +1,17 @@
 """For setting up subplots."""
 
 # import seaborn as sns
-import pandas as pd
-import numpy as np
 import logging
 
 ## viz basic
 import matplotlib
 import matplotlib.pyplot as plt
 import matplotlib.transforms as transforms
+import numpy as np
+import pandas as pd
 
-from roux.lib.str import replace_many, capitalize_first
+from roux.lib.str import capitalize_first, replace_many
+
 
 def set_axes_minimal(
     ax,
@@ -726,7 +727,8 @@ def split_ticklabels(
         if show_group_span:
             # print(axlims[axis]['min']-(group_pad*5.5))
             # print(axlims[axis]['min'])
-            axhspan_kws = dict(
+            # axhspan_kws 
+            _ = dict(
                 zip(["xmin", "xmax"], sorted([group_x, axlims[axis]["min"]]))
             )
             # print(axhspan_kws)

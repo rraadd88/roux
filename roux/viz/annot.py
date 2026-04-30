@@ -848,6 +848,131 @@ def show_scatter_stats(
     ax.stats=res   
     return ax    
 
+def show_dists_stats(
+    stats: dict,
+    axlims: dict,
+    ticklabel2position: dict,
+    axis_desc: str = "y",
+    axis_cont: str = "x",
+    offs_pval: dict = None,
+    show_p: bool = True,
+    alternative: str = "two-sided",
+    fmt_pval: str = "{:.2e}",
+    hue: str = None,
+
+    show_lines=True,
+    show_brackets=False, ## TODO: caps should be constants
+
+    # color='k',
+
+    test: bool = False,
+    ax=None,
+):
+    """
+    Annotates categorical plots with offset p-values and brackets.
+    """
+    if ax is None:
+        ax = plt.gca()
+
+    if show_p != False:
+        # g: renamed d1 to stats
+        stats = {
+            k: pval2annot(
+                stats[k],
+                alternative=alternative,
+                fmt=fmt_pval,
+                linebreak=False,
+            )
+            for k in stats
+        }
+    else:
+        stats = {}
+        
+    if offs_pval is None:
+        offs_pval = {}
+    offs_pval = {**{"x": 0, "y": 0}, **offs_pval}
+
+    # g: renamed d1 to stats
+    if hue is None and (len(stats) == 1 or show_p == 'paired'):
+        offs_pval[axis_desc] += -0.5            
+        
+    if test:
+        logging.info(offs_pval)
+
+    # g: renamed d1 to stats
+    if isinstance(stats, dict):
+        if test:
+            # g: logging.info typically expects a single message string; 
+            # left as-is to preserve your exact snippet structure.
+            logging.info(stats, ticklabel2position, axlims)
+            
+        # g: 1. Identify the Reference Category
+        ref_cats = list(set(ticklabel2position.keys()) - set(stats.keys()))
+        ref_pos = ticklabel2position[ref_cats[0]] if ref_cats else 0
+            
+        for i, (k, s) in enumerate(stats.items()):
+            # g: 2. Determine Staggered Offsets
+            # g: Use 5% of the continuous axis length as a staggered step to prevent overlapping lines
+            offset = i * (axlims[axis_cont]['len'] * 0.02)
+            
+            # g: 3. Calculate Line Coordinates
+            target_pos = ticklabel2position[k]
+            current_max = axlims[axis_cont]["max"] + offs_pval[axis_cont] + offset
+            
+            if axis_cont == 'x':
+                x_coords = [current_max, current_max]
+                y_coords = [ref_pos, target_pos]
+            else:
+                x_coords = [ref_pos, target_pos]
+                y_coords = [current_max, current_max]
+
+            if show_lines:            
+                # g: 4. Draw the Bracket (Main Line + Caps)
+                # g: define cap length as 2% of the continuous axis length
+                cap_len = axlims[axis_cont]['len'] * 0.02
+                
+                # g: main line
+                ax.plot(x_coords, y_coords, color="k", lw=1.0,clip_on=False)
+
+                if show_brackets:          
+                    # g: draw inward pointing caps and define text alignment based on orientation
+                    if axis_cont == 'x':
+                        ax.plot([current_max, current_max - cap_len], [ref_pos, ref_pos], color="k", lw=1.0)
+                        ax.plot([current_max, current_max - cap_len], [target_pos, target_pos], color="k", lw=1.0)
+                        text_va = "center"
+                        text_ha = "left" # g: outside the bracket to the right
+                        text_pad = axlims[axis_cont]['len'] * 0.01
+                    else:
+                        ax.plot([ref_pos, ref_pos], [current_max, current_max - cap_len], color="k", lw=1.0)
+                        ax.plot([target_pos, target_pos], [current_max, current_max - cap_len], color="k", lw=1.0)
+                        text_va = "bottom" # g: outside the bracket on top
+                        text_ha = "center"
+                        text_pad = axlims[axis_cont]['len'] * 0.01
+                sns.despine()
+            # g: 5. Align Text to Midpoint
+            mid_pos = (ref_pos + target_pos) / 2.0
+                
+            ax.text(
+                **{
+                    # axis_cont: current_max + text_pad, 
+                    # axis_desc: mid_pos + offs_pval[axis_desc],
+                    axis_cont: axlims[axis_cont]["max"]
+                    + offs_pval[
+                        axis_cont
+                    ],  # +((axlims[axis_cont]['len']*offx_pval) if axis_desc=='y' else 0),
+                    axis_desc: ticklabel2position[k] + offs_pval[axis_desc],                    
+                },
+                s=s,
+                # va=text_va,
+                # ha=text_ha,
+                va="center" if axis_desc == "y" else "top",
+                ha="right" if axis_desc == "y" else "center",
+
+                zorder=5,
+            )
+            
+    return ax
+
 def show_stats_by_sides(
     df_stats, ## contains column with ticklabel
     col_mid, ## [left,mid,rt],
@@ -1036,7 +1161,7 @@ def show_crosstab_stats(
         + (", " if show_stat and not linebreak else "\n")
         + (
             pval2annot(
-                pval, alternative="two-sided", alpha=alpha, fmt="<", linebreak=False
+                pval, alternative="two-sided", alpha=alpha, fmt=None, linebreak=False
             ) if show_pval else ''
         ),
         ax=ax,

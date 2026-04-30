@@ -1,15 +1,17 @@
 """For distribution plots."""
 
 import logging
-import pandas as pd
+
 import matplotlib.pyplot as plt
+import pandas as pd
 import scipy as sc
+import seaborn as sns
+
 import roux.lib.df as rd  # noqa
 from roux.lib.set import dropna
-from roux.viz.colors import get_colors_default
 from roux.viz.annot import pval2annot
 from roux.viz.ax_ import get_axlims, get_ticklabel_position, rename_ticklabels
-import seaborn as sns
+from roux.viz.colors import get_colors_default
 
 
 ## single distributions.
@@ -225,7 +227,7 @@ def plot_normal(
     )
     ax.set_title(
         "SW test "
-        + pval2annot(sc.stats.shapiro(x)[1], alpha=0.05, fmt="<", linebreak=False)
+        + pval2annot(sc.stats.shapiro(x)[1], alpha=0.05, fmt=None, linebreak=False)
     )
     ax.legend()
     return ax
@@ -275,7 +277,7 @@ def plot_dists(
     axis_cont_scale: str = "linear",
     offs_pval: dict = None,
     col_pval='P',
-    fmt_pval: str = "<",
+    fmt_pval: str = None,
     alpha: float = 0.5,
     # saturate_color_alpha: float=1.5,
     ax: plt.Axes = None,
@@ -496,47 +498,70 @@ def plot_dists(
     axlims = get_axlims(ax)
     ## show p-value
     if isinstance(show_p, (bool, dict,str)):
-        if show_p!=False:
-            d1 = {
-                k: pval2annot(
-                    d1[k],
-                    alternative=alternative,
-                    fmt=fmt_pval,
-                    linebreak=False,
-                )
-                for k in d1
-            }
-        else:
-            d1 = {}
-        if offs_pval is None:
-            offs_pval = {}
-        offs_pval = {**{"x": 0, "y": 0}, **offs_pval}
+        from roux.viz.annot import show_dists_stats
+        show_dists_stats(
+            stats=d1,
+            axlims=axlims,
+            ticklabel2position=ticklabel2position,
+            axis_desc= axis_desc, #: str = "y",
+            axis_cont= axis_cont, #: str = "x",
+            offs_pval= offs_pval, #: dict = None,
+            show_p= show_p, #: bool = True,
+            alternative= alternative, #: str = "two-sided",
+            fmt_pval= fmt_pval, #: str = "{:.2e}",
+            hue= hue, #: str = None,
+            test= test, #: bool = False,
+            ax=ax,
+        )        
+        # print(
+        #     d1,
+        #     offs_pval,
+        #     axis_desc,
+        #     axis_cont,
+        #     axlims,
+        #     ticklabel2position,
+        #     )
+        # if show_p!=False:
+        #     d1 = {
+        #         k: pval2annot(
+        #             d1[k],
+        #             alternative=alternative,
+        #             fmt=fmt_pval,
+        #             linebreak=False,
+        #         )
+        #         for k in d1
+        #     }
+        # else:
+        #     d1 = {}
+        # if offs_pval is None:
+        #     offs_pval = {}
+        # offs_pval = {**{"x": 0, "y": 0}, **offs_pval}
 
-        if hue is None and (len(d1) == 1 or show_p=='paired'):
-            offs_pval[axis_desc] += -0.5            
-        if test:
-            logging.info(offs_pval)
+        # if hue is None and (len(d1) == 1 or show_p=='paired'):
+        #     offs_pval[axis_desc] += -0.5            
+        # if test:
+        #     logging.info(offs_pval)
 
-        # if isinstance(show_p,str): # e.g. paired
-        #     show_p=True
+        # # if isinstance(show_p,str): # e.g. paired
+        # #     show_p=True
             
-        if isinstance(d1, dict):
-            if test:
-                logging.info(d1, ticklabel2position, axlims)
-            for k, s in d1.items():
-                ax.text(
-                    **{
-                        axis_cont: axlims[axis_cont]["max"]
-                        + offs_pval[
-                            axis_cont
-                        ],  # +((axlims[axis_cont]['len']*offx_pval) if axis_desc=='y' else 0),
-                        axis_desc: ticklabel2position[k] + offs_pval[axis_desc],
-                    },
-                    s=s,
-                    va="center" if axis_desc == "y" else "top",
-                    ha="right" if axis_desc == "y" else "center",
-                    zorder=5,
-                )
+        # if isinstance(d1, dict):
+        #     if test:
+        #         logging.info(d1, ticklabel2position, axlims)
+        #     for k, s in d1.items():
+        #         ax.text(
+        #             **{
+        #                 axis_cont: axlims[axis_cont]["max"]
+        #                 + offs_pval[
+        #                     axis_cont
+        #                 ],  # +((axlims[axis_cont]['len']*offx_pval) if axis_desc=='y' else 0),
+        #                 axis_desc: ticklabel2position[k] + offs_pval[axis_desc],
+        #             },
+        #             s=s,
+        #             va="center" if axis_desc == "y" else "top",
+        #             ha="right" if axis_desc == "y" else "center",
+        #             zorder=5,
+        #         )
 
     ## show sample sizes
     if show_n:

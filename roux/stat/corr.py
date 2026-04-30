@@ -3,12 +3,12 @@
 import logging
 
 import numpy as np
-from scipy import stats, spatial
-
 import pandas as pd
+from scipy import spatial, stats
 
 # attributes
 import roux.lib.dfs as rd  # noqa
+
 
 def _pre(
     x: str,
@@ -334,8 +334,8 @@ def _to_string(
     Returns:
         str: string with the correation stats.
     """
-    from roux.viz.annot import pval2annot
     from roux.lib.str import num2str
+    from roux.viz.annot import pval2annot
 
     method = res["method"]
     if method_suffix:
@@ -356,7 +356,19 @@ def _to_string(
     if "ci" in res:
         s0 += f"$\pm${res['ci']:.2f}{res['ci_type'] if res['ci_type']!='max' else ''}"
     if show_p:
-        s0 += f"\n{pval2annot(res['P'],fmt='<',linebreak=False, alpha=0.05)}"
+        _pval_str=pval2annot(
+            res['P'],
+            **{
+                **dict(
+                    fmt=None,
+                    linebreak=False,
+                    alpha=0.05,
+                ),
+                **kws_pval2annot,
+                }
+            )
+            
+        s0 += f"\n{_pval_str}"
     if show_n:
         s0 += f"\n({show_n_prefix}{num2str(num=res['n'],magnitude=False)})"
     return s0

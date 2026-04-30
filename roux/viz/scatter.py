@@ -2,13 +2,11 @@
 
 import logging
 
-import pandas as pd
-import numpy as np
-
 import matplotlib.pyplot as plt
-import seaborn as sns
-
+import numpy as np
+import pandas as pd
 import scipy as sc
+import seaborn as sns
 
 import roux.lib.df as rd  # noqa
 from roux.stat.io import pval2annot
@@ -153,7 +151,7 @@ def plot_scatter(
         plot_scatter_agg(data, x, y, z, **kws)
     ## points
     if "scatter" in kind:
-        from roux.viz.colors import saturate_color, get_colors_default
+        from roux.viz.colors import get_colors_default, saturate_color
 
         ## shape
         if hollow:
@@ -276,7 +274,7 @@ def plot_qq(x: pd.Series) -> plt.Axes:
     sm.qqplot(x, dist=sc.stats.norm, line="s", ax=ax)
     ax.set_title(
         "SW test "
-        + pval2annot(sc.stats.shapiro(x)[1], alpha=0.05, fmt="<", linebreak=False)
+        + pval2annot(sc.stats.shapiro(x)[1], alpha=0.05, fmt=None, linebreak=False)
     )
     from roux.viz.ax_ import set_equallim
 
