@@ -892,6 +892,10 @@ def show_dists_stats(
         offs_pval = {}
     offs_pval = {**{"x": 0, "y": 0}, **offs_pval}
 
+    if show_lines:
+        offs_lines=offs_pval.copy()
+        offs_pval[axis_cont] += (-0.01*(axlims[axis_cont]['len']))
+
     # g: renamed d1 to stats
     if hue is None and (len(stats) == 1 or show_p == 'paired'):
         offs_pval[axis_desc] += -0.5            
@@ -924,7 +928,7 @@ def show_dists_stats(
             
             # g: 3. Calculate Line Coordinates
             target_pos = ticklabel2position[k]
-            current_max = axlims[axis_cont]["max"] + offs_pval[axis_cont] + offset
+            current_max = axlims[axis_cont]["max"] + offs_lines[axis_cont] + offset
             
             if axis_cont == 'x':
                 x_coords = [current_max, current_max]

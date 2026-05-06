@@ -346,6 +346,7 @@ def plot_dists(
     colindex=kws_plot.get('colindex',None)
         
     ## get stats
+    stats={}
     if show_p:            
         if df2 is not None:
             if hue is None:
@@ -353,13 +354,13 @@ def plot_dists(
                 if show_p!='paired':
                     df2 = df2.loc[(df2["subset1"] == order[0]), :]
                 try:
-                    d1 = df2.rd.to_dict(["subset2", col_pval])
+                    stats = df2.rd.to_dict(["subset2", col_pval])
                 except:
                     raise ValueError(df2.columns.tolist())
             else:
-                d1 = df2.set_index(y)[col_pval].to_dict()
+                stats = df2.set_index(y)[col_pval].to_dict()
                 if test:
-                    logging.info(d1)
+                    logging.info(stats)
             
             if verbose:
                 try:
@@ -370,7 +371,7 @@ def plot_dists(
             show_p = False 
             logging.error("p-value could not be estimated.")
                 
-    # print(d1) # {ticklabel: pval}
+    # print(stats) # {ticklabel: pval}
     
     ## axes
     if ax is None:
@@ -389,6 +390,7 @@ def plot_dists(
     
     kind_defaults={
         'box':dict(
+            showcaps=False,
             showfliers=False,
             boxprops=dict(
                 ec='none',
@@ -500,7 +502,7 @@ def plot_dists(
     if isinstance(show_p, (bool, dict,str)):
         from roux.viz.annot import show_dists_stats
         show_dists_stats(
-            stats=d1,
+            stats=stats,
             axlims=axlims,
             ticklabel2position=ticklabel2position,
             axis_desc= axis_desc, #: str = "y",
