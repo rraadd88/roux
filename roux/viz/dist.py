@@ -380,7 +380,6 @@ def plot_dists(
         
     if show_p:
         ax.stats=df2
-    
     ## distributions
     if isinstance(kind, str):
         kind = {kind: {}}
@@ -414,6 +413,7 @@ def plot_dists(
             ),
         ),
     }
+
     if 'box' in kind:
         if kind['box'].get('showmeans')==True or showmeans:
             kind['box']={
@@ -442,7 +442,7 @@ def plot_dists(
                 ),
                 **kind['point'],
             }
-    
+    # logging.info(kind)
     for k in kind:
         kws_ = kws.copy()
         # print(kws['palette'],kind)
