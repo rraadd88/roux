@@ -25,7 +25,7 @@ def to_class(cls):
     return decorator
 
 from pandas.plotting._core import PlotAccessor
-
+from roux.viz.figure import get_ax
 # 1. The helper class that dynamically creates plotting methods
 class _PiperPlotter:
     def __init__(self, pandas_obj):
@@ -37,8 +37,11 @@ class _PiperPlotter:
             if not plot_method_name.startswith('_'):
                 plot_method = getattr(PlotAccessor, plot_method_name)
                 if callable(plot_method):
-                    # Use a function factory to correctly capture the method and its name
-                    wrapped_method = self._make_piper_plot_method(plot_method_name)
+                        # Use a function factory to correctly capture the method and its name
+                    wrapped_method = self._make_piper_plot_method(
+                        name=plot_method_name,
+                        real_plot_method=None if plot_method_name != 'hist' else self.hist,
+                    )
                     setattr(self, plot_method_name, wrapped_method)
                     
         # import seaborn as sns
@@ -62,42 +65,128 @@ class _PiperPlotter:
 
         def piper_plot_method(
             func_ax=None, #lambda
+            out=False,
             **kwargs,
             ):
             """This is the wrapped method that will be called.
             It calls the real plot function and then returns the DataFrame.
             """
+            if 'ax' in kwargs:
+                kwargs['ax']=get_ax(kwargs['ax'])
             # print(kwargs)
-            ax=real_plot_method(**kwargs)
+            ax=real_plot_method(
+                **kwargs
+                )
             if func_ax is not None:
                 func_ax(ax)
-            return self._obj # Return the DataFrame for chaining
-            
+            if not out:
+                return self._obj # Return the DataFrame for chaining
+            else:
+                return ax        
         return piper_plot_method
 
+    ## exceptions
+    def hist(
+        self,
+        subset=None,
+        sample=None,
+        show_n=True,
+        func_ax=None,
+        **kws,
+    ):      
+        if subset is None:
+            assert self._obj.shape[1]==1, self._obj.head()
+            subset=self._obj.columns.tolist()
+            
+        # if isinstance(subset,(str)):
+        #     subset=[subset]
+        if sample is not None:
+            if isinstance(sample,dict):
+                kws_sample=sample
+            else:
+                kws_sample={}
+                if isinstance(sample,int):
+                    kws_sample['n']=sample
+                elif isinstance(sample,float) and 0 <= sample <= 1:
+                    kws_sample['frac']=sample
+                else:
+                    raise ValueError(sample)
+                
+        axs=self._obj.loc[:,subset].hist(**{**dict(label=subset),**kws})
+        ax=axs.ravel()[0]
+        ax.set(
+            ylabel='Count',
+        )
+        if len(subset)==1:
+            ax.set(
+                xlabel=subset[0],
+            )
+            # if ax.get_legend() is not None:
+            #     ax.get_legend().remove()
+        if show_n:            
+            from roux.viz.ax_ import set_label    
+            set_label(
+                f"({len(self._obj)})",
+                loc=3,
+                place='out',
+                offs=[-0.1,-0.1],
+                color='gray',
+            )            
+        return ax
+        # if func_ax is not None:
+        #     func_ax(ax)            
+        # return self._obj
+        
+    ## TODO?: scatter -> df.rd.check_scatter
+    ## TODO?: dists -> df.rd.check_diff
+    
 @pd.api.extensions.register_dataframe_accessor("rd")
 class rd:
     """`roux-dataframe` (`.rd`) extension."""
 
     def __init__(self, pandas_obj):
         self._obj = pandas_obj
+
+        ## seaborn (preferred)
+        ## pandas (not preferred)
         self.plot = _PiperPlotter(self._obj)
 
-    ## exceptions
-    def hist(
-        self,
-        func_ax=None,
-        **kws,
-    ):
-        ax=self._obj.hist(**kws)
-        if func_ax is not None:
-            func_ax(ax)
-        return self._obj
-
+import inspect
+import seaborn as sns
+# g: dynamically identify and attach all seaborn plotting functions
+for _attr in dir(sns):
+    if _attr.endswith('plot') and callable(getattr(sns, _attr)):
+        
+        # g: closure to capture the specific seaborn function
+        def _plot_wrapper(
+            self,
+            *args,
+            _func_name=_attr,
+            out=False,
+            **kwargs
+            ):
+            _func = getattr(sns, _func_name)
+            
+            # g: inject the current dataframe instance
+            kwargs['data'] = self._obj
+            
+            # g: enforce ax logic if the target function is axis-level
+            if 'ax' in inspect.signature(_func).parameters:
+                if 'ax' in kwargs:
+                    kwargs['ax']=get_ax(kwargs['ax'])
+            
+            ax = _func(*args, **kwargs)
+            if out:
+                return ax
+            else:
+                return self._obj
+        # g: attach the wrapped method to the accessor class
+        setattr(rd, _attr, _plot_wrapper)
 
 # create the `roux-dataframe` (`.rd`) decorator
 to_rd = to_class(rd)
 
+## TODO: to be deprecated in favour of rd
 @pd.api.extensions.register_series_accessor("rs")
 class rs:
     """`roux-series` (`.rs`) extension."""

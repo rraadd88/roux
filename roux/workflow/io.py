@@ -1,24 +1,24 @@
-"""For input/output of workflow."""
+"""
+For input/output of workflow.
+"""
 
 ## logging
 import logging
+import re
+from pathlib import Path
 
 ## data
 import pandas as pd
 
-from pathlib import Path
-import shutil  # for copying files
-
-import re
-
 from roux.lib.sys import (
-    abspath,
     exists,
     makedirs,
 )
 
 ## for backcompatibility
-from roux.workflow.cfgs import read_config, read_metadata ##noqa
+from roux.workflow.cfgs import read_config, read_metadata  ##noqa
+from roux.workflow.pms import read_cli_pm
+
 
 ## variables
 def clear_variables(
@@ -52,11 +52,11 @@ def clear_dataframes():
         variables=None,
     )
 
-
 ## io files
 def to_py(
     notebookp: str,
     pyp: str = None,
+    clean=False,
     force: bool = False,
     **kws_get_lines,
 ) -> str:
@@ -75,70 +75,217 @@ def to_py(
     if exists(pyp) and not force:
         return
     makedirs(pyp)
-    from roux.workflow.nb import get_lines
 
+    from roux.workflow.nb import get_lines
     l1 = get_lines(notebookp, **kws_get_lines)
+    if clean:
+        l1=[s for s in l1 if not s.strip().startswith('# In')]
+
     l1 = "\n".join(l1).encode("ascii", "ignore").decode("ascii")
     with open(pyp, "w+") as fh:
         fh.writelines(l1)
     return pyp
 
-def extract_kws(
-    lines,
-    fmt='dict',
-    ):
-    if fmt=='dict':
-        parameters = {}
-    else:
-        parameters=[]
-    for line in lines:
-        # Remove comments
-        line = re.sub(r'#.*', '', line).strip()
-        # Match valid assignments
-        match = re.match(r'(\w+)\s*=\s*(.+)', line)
-        if match:
-            key, value = match.groups()
-            # Evaluate value if it's a valid literal, otherwise keep it as a string
-            try:
-                eval(value)
-                string=False
-            except:
-                string=True
-            if fmt=='dict':
-                parameters[key] = value.strip() if string else eval(value)
-            else:
-                parameters.append(
-                    f"{key}="+("'"+value+"'" if string else value)
-                )
-    return parameters
-    
-def to_src(
+## export helper
+def check_py(
     p,
-    outp, 
-    validate=True,
+    errors='raise',
+    ruff_ignore='E402,E722,F841,E741,F401,E712,F541,F841', # while prototyping
+):
+    """
+    E402	pycodestyle	Module level import not at top of file.
+    E722	pycodestyle	Do not use bare except: (use except Exception:).
+    F841	Pyflakes	Local variable is assigned to but never used.
+    E741	pycodestyle	Do not use variables named 'l', 'O', or 'I' (ambiguous characters).
+    F401	Pyflakes	Module imported but unused.
+    E712	pycodestyle	Comparison to True should be if cond is True: or if cond:.
+    F541	Pyflakes	f-string without any placeholders.
+    F841    Variable defined but not used
+    """
+    if p.endswith('.py'):
+        init_path=f"{Path(p).parent}/__init__.py"
+        if not Path(init_path).exists():
+            Path(init_path).touch()
+            logging.warning(f'created missing: {init_path}')
+        
+    com=f"ruff check {p} --ignore {ruff_ignore}"
+    from roux.lib.sys import run_com
+    stdout = run_com(com, wait=True,
+        returncodes=[0,1], #get stdout regardless 
+    )  # Captures both streams  
+
+    if errors=='raise':
+        logging.warning(stdout)
+        assert (stdout=='') or ('All checks passed!' in stdout), (com,stdout)
+    else:
+        logging.warning(f"fix following by running: {com}")
+    return stdout
+
+from roux.lib.text import replace_text
+
+
+def post_code(
+    p: str,
+    lint: bool,
+    format: bool,
+    verbose: bool = True,
+):
+    ## %run
+    replace_text(
+        p,
+        {"get_ipython()":"# get_ipython()"}
+        )
+        
+    ## ruff
+    com = ""
+    if lint:
+        com += f"ruff check --fix {p};" #-unsafe-fixes
+    if format:
+        com += f"ruff format {p};"
+    import subprocess
+
+    res = subprocess.run(
+        com, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True
+    )
+    if verbose:
+        logging.info(res.stdout)
+    return res
+
+## used in ui
+from roux.lib.sys import get_source_path #noqa
+def to_mod(
+    p=None, #nb
+    outp=None, #py
+
+    kws_nb_export={},
+
+    ## ruff
+    errors='raise',
+    **kws_check_py,
+    ):
+    if p is None:
+        from roux.lib.sys import get_source_path
+        p=get_source_path()
+        logging.warning(f"p={p}")        
+
+    if outp is None:
+        outp=f"../{'modules/' if Path(p).stem.count('_')==1 else '' if Path(p).stem.count('_')==2 else ValueError(Path(p).stem)}{Path(p).stem.replace('_','/')}.py"
+
+    kws_nb_export={
+        **dict(
+            nbname=p,
+            lib_path=Path(outp).parent.as_posix(),
+            name=Path(outp).stem,
+        ),
+        ## override
+        **kws_nb_export
+        }
+    from nbdev.export import nb_export
+    nb_export(
+        **kws_nb_export,
+    )
+    # _py_path=f"{kws_nb_export['lib_path']}/{kws_nb_export['nbname'].split('.')[0].split('_')[-1]}.py"
+    _py_path=f"{kws_nb_export['lib_path']}/{kws_nb_export['name']}.py"
+    logging.info(_py_path)
+
+    check_py(
+        _py_path,
+        errors=errors,
+        **kws_check_py,
+        )
+
+    return outp
+
+def to_py_path(p):
+    return '/'.join(list(Path(p).parts[:-2])+[Path(p).parts[-2].replace('nbs','').replace('notebooks','').strip('_'),Path(p).stem+'.py'])    
+
+def to_scr(
+    p,
+    outp=None,
+
+    with_pms='True', # py with --pms (preferred)
+    mark_end='## END',
+
+    pre_clean=None,
+    clean=False,
+    replaces={
+        "get_ipython":'#get_ipython',
+        "sys.exit()":'return',
+        "sys.exit(0)":'return',
+        "sys.exit(1)":'return',
+    },
+    ## ruff
+    check=True,
+    fix=False, # replacestar+format
+    errors='raise',
+
     verbose=False,
-    mark_end='## END'
+    **kws_check_py,
     ):
     """
     Notebook to command line script.
+    
+    # roux to-src ipynb py
+    # ruff check py --ignore E402    
+
+    TODO:
+        Prefer py with --pms
     """
+
+    if outp is None:
+        outp=to_py_path(p)
+        logging.warning(f"outp={outp}")
+
+    ## TODO: use decorator
+    with_pms=read_cli_pm(with_pms)
+    pre_clean=read_cli_pm(pre_clean) 
+
+    if pre_clean:
+        if pre_clean==True: #noqa
+            pre_clean={}
+        assert isinstance(pre_clean,dict), pre_clean
+
+        from roux.workflow.nb import to_clean_nb
+        p=to_clean_nb(
+            p,
+            f'.to_src/{Path(p).name}',
+            **{
+                **dict(
+                    clear_outputs=False,
+                    drop_code_lines_containing=[],
+                    drop_headers_containing=[],
+                    ),
+                **pre_clean,
+                },
+        )
+
     pyp=to_py(
         p,
         pyp=f'.to_src/{Path(p).stem}.py',
+        clean=clean,
         force=True,
         )
     
     t_raw=open(pyp,'r').read()
+    # print(t_raw[:100])
 
     t_raw=t_raw.split(mark_end)[0]
-    
+    # print(t_raw[:100])
+
+    ## TODO: use textwrap
     t_tab=t_raw.replace('\n','\n    ')
+    # print(t_tab[:100])
     
     def split_by_pms(text):
-        splits1=re.split(r"# In\[\s*\d*\s*\]:\n    ## param", text)
-
-        pre_pms=splits1[0].replace('\n    ','\n')
+        splits1=re.split(r"# In\[\s*\d*\s*\]:\n    #+ param", text)
+        # splits1=re.split(r"# In\[\s*\d*\s*\]:\n\s*#+\s*params?", text)
+        # splits1 = re.split(r"[ \t]*# In\[\s*\d*\s*\]:\n\s*#+\s*params?", text)
+        # splits1=re.split(r"\s*# In\[\s*\d*\s*\]:\n\s*#+\s*params?", text)
+        # print(text[:200])
+        assert len(splits1)==2, text[:200].replace('\n','\\n')+" .."
         
+        pre_pms=splits1[0].replace('\n    ','\n')
+
         pms=re.split(r"\n    # In\[\s*\d*\s*\]:", splits1[1])[0]
         
         post_pms=re.split(r"\n    # In\[\s*\d*\s*\]:", splits1[1],1)[1]
@@ -147,36 +294,59 @@ def to_src(
             [pre_pms, post_pms],
             pms
         )
+    if with_pms:
+        t_splits,params=split_by_pms(t_tab)
+        ## remove comments
+        params_lines=params.split('\n')
+        params='\n'.join([s.split('#')[0] for s in params_lines])
         
-    t_splits,params=split_by_pms(t_tab)
-    # t_splits
-    
-    params_str=',\n    '.join(
-        extract_kws(
-            params.split('    ')[1:],
-            fmt='str',
+        from roux.workflow.pms import extract_pms
+        params_str=' '*4+(
+            ',\n    '.join(
+            extract_pms(
+                params.split('    ')[1:],
+                fmt='str',
+            ))
         )
-    )
-    if verbose:
-        print(params_str)
-    
-    t_def=(
+        if verbose:
+            logging.info(params_str)
+    else:
+        t_splits=['',t_tab]
+
+    t_def_pre="""
+    if input_path is not None and output_path is None:
+        ## should be params
+        from roux.workflow.task import pre_params
+        params=pre_params(input_path)
+        # if len(params)!=1:
+        #     logging.info(f"processing {len(params)} pms")
+        from roux.workflow.function import call_with_kws
+        for i,_kws in enumerate(params):
+            call_with_kws(
+                run,
+                _kws,
+                **{k:v for k,v in dict(verbose=locals().get('verbose'),force=locals().get('force'),).items() if v is not None}
+            )
+        return 
+
+    ## for cli
+    assert input_path is not None, 'check docs using --help'
+    assert output_path is not None
     """
-def run(
-    """+
-    params_str+
+
+    t_def='\n'.join([
     """
-    ):
-    """
-    )
+import argh
+def run(""",
+    params_str if with_pms else '',
+    """):""",
+    t_def_pre if with_pms else ''
+    ])
     
     t_end="""
-    
-## for recursive operations
-run_rec=run
+    return output_path
 
 ## CLI-setup
-import argh
 parser = argh.ArghParser()
 parser.add_commands(
     [
@@ -188,218 +358,118 @@ if __name__ == "__main__": # and sys.stdin.isatty():
     """
     
     t_src=t_splits[0]+t_def+t_splits[1]+t_end
-    # print(t_src)
+    
+    from roux.lib.str import replace_many
+    t_src=replace_many(
+            t_src,
+            replaces,
+            errors=None,
+            use_template=False,
+        )    
+
     Path(outp).parent.mkdir(exist_ok=True)
     open(outp,'w').write(t_src)
-
-    com=f"ruff check {outp} --ignore E402"
-    if validate:
-        import os
-        res=os.system(com)
-        assert res==0, res
-    else:
-        logging.warning(f"validate by running: {com}")        
-    return outp
-    
-def to_nb_cells(
-    notebook,
-    outp,
-    new_cells,
-    validate_diff=None,
-):
-    """
-    Replace notebook cells.
-    """
-    import nbformat
-
-    logging.info(
-        f"notebook length change: {len(notebook.cells):>2}->{len(new_cells):>2} cells"
-    )
-    if validate_diff is not None:
-        assert len(notebook.cells) - len(new_cells) == validate_diff
-    elif validate_diff == ">":  # filtering
-        assert len(notebook.cells) > len(new_cells)
-    elif validate_diff == "<":  # appending
-        assert len(notebook.cells) < len(new_cells)
-    notebook.cells = new_cells
-    # Save the modified notebook
-    with open(outp, "w", encoding="utf-8") as new_notebook_file:
-        nbformat.write(notebook, new_notebook_file)
-    return outp
-
-
-def import_from_file(pyp: str):
-    """Import functions from python (`.py`) file.
-
-    Args:
-        pyp (str): python file (`.py`).
-
-    """
-    from importlib.machinery import SourceFileLoader
-
-    return SourceFileLoader(abspath(pyp), abspath(pyp)).load_module()
-
-
-## io parameters
-def infer_parameters(input_value, default_value):
-    """
-    Infer the input values and post warning messages.
-
-    Parameters:
-        input_value: the primary value.
-        default_value: the default/alternative/inferred value.
-
-    Returns:
-        Inferred value.
-    """
-    if input_value is None:
-        logging.warning(
-            f"input is None; therefore using the the default value i.e. {default_value}."
-        )
-        return default_value
-    else:
-        return input_value
-
-
-def to_parameters(f: object, test: bool = False) -> dict:
-    """Get function to parameters map.
-
-    Args:
-        f (object): function.
-        test (bool, optional): test mode. Defaults to False.
-
-    Returns:
-        dict: output.
-    """
-    import inspect
-
-    sign = inspect.signature(f)
-    params = {}
-    for arg in sign.parameters:
-        argo = sign.parameters[arg]
-        params[argo.name] = argo.default
-    #     break
-    return params
-
-def to_nb_kernel(
-    p : str,
-    kernel : str = None,
-    outp : str = None,
-    ):
-    """
-    Because no-kernel means previous kernel. 
-    """
-    from glob import glob
-    if len(glob(p))>1:
-        # recursive
-        d={}
-        for p_ in glob(p):
-            d[p_]=to_nb_kernel(
-                p_,
-                kernel = kernel,# : str = None,
-                outp = outp,# : str = None,
+    if check and not fix:
+        check_py(
+            outp,
+            errors=errors,
+            **kws_check_py,
             )
-            print(p_,d[p_])
-        return # d
-        
-    import nbformat
-    
-    # Load the notebook
-    nb = nbformat.read(p, as_version=nbformat.NO_CONVERT)
-    
-    # Update the kernelspec (or remove it)
-    if "kernelspec" in nb.metadata:
-        if kernel is None:
-            return nb.metadata.kernelspec.name
-        else:
-            nb.metadata.kernelspec.name = kernel
-            nb.metadata.kernelspec.display_name = kernel
-            # Or to remove it entirely:
-            # del nb.metadata["kernelspec"]
-            # Save the modified notebook
-            outp = p if outp is None else outp
-            nbformat.write(nb, outp)
-            return kernel
-
-
-def to_workflow(df2: pd.DataFrame, workflowp: str, tab: str = "    ") -> str:
-    """Save workflow file.
-
-    Args:
-        df2 (pd.DataFrame): input table.
-        workflowp (str): path of the workflow file.
-        tab (str, optional): tab format. Defaults to '    '.
-
-    Returns:
-        str: path of the workflow file.
-    """
-    makedirs(workflowp)
-    with open(workflowp, "w") as f:
-        ## add rule all
-        f.write(
-            "from roux.lib.io import read_dict\nfrom roux.workflow.io import read_metadata\nmetadata=read_metadata()\n"
-            + 'report: "workflow/report_template.rst"\n'
-            + "\nrule all:\n"
-            f"{tab}input:\n"
-            f"{tab}{tab}"
-            #                     +f",\n{tab}{tab}".join(flatten([flatten(l) for l in df2['output paths'].dropna().tolist()]))
-            + f",\n{tab}{tab}".join(df2["output paths"].dropna().tolist())
-            + "\n# rules below\n\n"
-            + "\n".join(df2["rule code"].dropna().tolist())
+    if fix:
+        replacestar(
+            outp,
+            output_path=None,
+            replace_from="    from roux.global_imports import *",
+            method='filter', # select
+            errors=errors,
+            verbose = verbose,
         )
-    return workflowp
+        post_code(
+            outp,
+            lint=True,
+            format=True,
+            verbose = verbose,
+        )
+    return outp
+## alias
+# source=script
+to_src=to_scr
 
+def replacestar_ruff(
+    p: str,
+    outp: str,
+    replace: str = "from roux.global_imports import *",
+    clean=False,
+    indent=None,
+    verbose=True,
+) -> str:
+    from roux.workflow.function import get_global_imports
 
-def create_workflow_report(
-    workflowp: str,
-    env: str,
-) -> int:
-    """
-    Create report for the workflow run.
+    lines=get_global_imports(out_fmt='lines')
+    ## remove #noqa
+    replace_with='\n'.join(
+        [s.replace("#noqa", "") if '#keep' not in s else s for s in lines]
+        # lines
+        ).replace('\n\n','\n')
 
-    Parameters:
-        workflowp (str): path of the workflow file (`snakemake`).
-        env (str): name of the conda virtual environment where required the workflow dependency is available i.e. `snakemake`.
-    """
-    workflowdp = str(Path(workflowp).absolute().with_suffix("")) + "/"
-    ## create a template file for the report
-    report_templatep = Path(f"{workflowdp}/report_template.rst")
-    if not report_templatep.exists():
-        report_templatep.parents[0].mkdir(parents=True, exist_ok=True)
-        report_templatep.touch()
+    ## indent
+    if indent is None:
+        import textwrap
+        indent=' '*(len(replace) - len(replace.lstrip(' ')))
+    if verbose:
+        logging.info(f"indent='{indent}'")
+    replace_with=textwrap.indent(replace_with, indent)
 
-    from roux.lib.sys import runbash
+    replaced = open(p, "r").read().replace(replace, replace_with)
 
-    runbash(
-        f"snakemake --snakefile {workflowp} --rulegraph > {workflowdp}/workflow.dot;sed -i '/digraph/,$!d' {workflowdp}/workflow.dot",
-        env=env,
+    import tempfile
+    temp = tempfile.NamedTemporaryFile().name + ".py"
+    # temp
+    open(temp, "w").write(replaced)
+    if verbose:
+        logging.info(temp)
+
+    post_code(
+        p=temp,
+        lint=True,
+        format=True,
+        verbose=verbose,
     )
 
-    ## format the flow chart
-    from roux.lib.set import read_list, to_list
+    replaced_lines = open(temp, "r").read().split("\n")
+    # import shutil
+    # shutil.move(temp,outp)
 
-    to_list(
-        [
-            s.replace("task", "").replace("_step", "\n")
-            for s in read_list(f"{workflowdp}/workflow.dot")
-        ],
-        f"{workflowdp}/workflow.dot",
-    )
+    if clean:
+        ## remove excessive comments
+        drop_lines = []
+        s_ = ""  # last
+        for i, s in enumerate(replaced_lines):
+            s = s.strip()
+            if s.startswith("## setting states"):
+                break
+            if s_.startswith("#") and s.startswith("#"):
+                drop_lines.append(i - 1)
+            # if s == "":
+            #     drop_lines.append(i)
+            s_ = s
+        replaced_lines = [s for i, s in enumerate(replaced_lines) if i not in drop_lines]
 
-    runbash(f"dot -Tpng {workflowdp}/workflow.dot > {workflowdp}/workflow.png", env=env)
-    runbash(f"snakemake -s workflow.py --report {workflowdp}/report.html", env=env)
+    # print(open(outp,'r').read()[:100])
+    replaced_text = "\n".join(replaced_lines)
 
+    open(outp, "w").write(replaced_text)
+    return outp
 
 ## post-processing
 def replacestar(
     input_path,
     output_path=None,
     replace_from="from roux.global_imports import *",
-    in_place: bool = False,
-    attributes={"pandarallel": ["parallel_apply"], "rd": [".rd.", ".log."]},
+    method='filter', # select
+    method_kws={},
+    errors='raise',
     verbose: bool = False,
-    test: bool = False,
-    **kws_fix_code,
 ):
     """
     Post-development, replace wildcard (global) import from roux i.e. 'from roux.global_imports import *' with individual imports with accompanying documentation.
@@ -424,485 +494,97 @@ def replacestar(
         roux replacestar -i notebook.ipynb
         roux replacestar -i notebooks/*.ipynb
     """
-    from roux.lib.io import read_ps
-
-    input_paths = read_ps(input_path)
-    if len(input_paths) > 1:
-        ## Recursion-mode
-        outps = []
-        for p in input_paths:
-            outps.append(
-                replacestar(
-                    p,
-                    output_path=None,
-                    replace_from=replace_from,
-                    in_place=in_place,
-                    attributes=attributes,
-                    verbose=verbose,
-                    test=test,
-                    **kws_fix_code,
-                )
-            )
-        return
-
     from roux.workflow.function import get_global_imports
-
-    ## infer input parameters
     if output_path is None:
-        if in_place:
-            output_path = input_path
-        else:
-            verbose = True
-    try:
-        from removestar.removestar import fix_code, replace_in_nb
-    except ImportError as error:
-        logging.error(
-            f"{error}: Install needed requirement using command: pip install removestar"
-        )
-        return
+        output_path=input_path
 
-    if input_path.endswith(".py"):
-        with open(input_path, encoding="utf-8") as f:
-            code = f.read()
-    elif input_path.endswith(".ipynb"):
-        with open(input_path) as f:
-            import nbformat
+    if method=='select':
+        stdout=check_py(input_path,errors=None)
+        # Find all F405 errors
+        # pattern=': F405 `'
+        pattern="\x1b[36m:\x1b[0m \x1b[1;31mF405\x1b[0m `"
+        funcs=sorted(list(set([s.split(
+            pattern
+            )[1].split('`')[0] for s in stdout.split('\n') if pattern in s])))
+        logging.warning(f"use roux replacestar for {funcs}")
 
-            nb = nbformat.reads(f.read(), nbformat.NO_CONVERT)
-
-        ## save as py
-        from nbconvert import PythonExporter
-
-        exporter = PythonExporter()
-        code, _ = exporter.from_notebook_node(nb)
-
-    # try:
-    import tempfile
-
-    replaces = fix_code(
-        code=code,
-        file=tempfile.NamedTemporaryFile().name,
-        return_replacements=True,
-    )
-    # except:
-    #     print(code)
-
-    if replace_from in replaces:
-        imports = replaces[replace_from]
-        if imports != "":
-            imports = imports.split(" import ")[1].split(", ")
-            if test:
-                logging.info(f"imports={imports}")
-        else:
-            imports = []
-            if verbose:
-                logging.warning(f"no function imports found in '{input_path}'")
-    else:
-        logging.info(f"'{replace_from}' not found in '{input_path}'")
-        if output_path is not None and not in_place:
-            logging.warning("copying the file, as it is.")
-            shutil.copy(input_path, output_path)
-        return output_path
-
-    imports_attrs = [k for k, v in attributes.items() if any([s in code for s in v])]
-    if len(imports_attrs) == 0:
-        if verbose:
-            logging.warning(f"no attribute imports found in '{input_path}'")
-
-    if len(imports + imports_attrs) == 0:
-        logging.info(f"no imports found in '{input_path}'")
-        if output_path is not None and not in_place:
-            logging.warning("copying the file, as it is.")
-            shutil.copy(input_path, output_path)
-        return output_path
-
-    df2 = get_global_imports()
-
-    def get_lines_replace_with(imports, df2):
-        ds = df2.query(expr=f"`function name` in {imports}").apply(
-            lambda x: f"## {x['function comment']}\n{x['import statement']}", axis=1
-        )
-        if len(ds) == 0:
-            return "\n"
-        lines = ds.tolist()
-        return "\n".join(lines)
-
-    replace_with = ""
-    if len(imports) != 0:
-        replace_with += get_lines_replace_with(imports, df2.query("`attribute`==False"))
-
-    if len(imports_attrs) != 0:
-        replace_with += "\n" + get_lines_replace_with(
-            imports_attrs, df2.query("`attribute`==True")
-        )
-    ## remove duplicate lines
-    replace_with = "\n".join(
-        pd.Series(replace_with.split("\n")).drop_duplicates(keep="first").tolist()
-    )
-
-    replace_with = replace_with.strip()
-    replaces_ = {**replaces, **{replace_from: replace_with}}
-
-    if verbose:
-        logging.info("replace     :\n" + ("\n".join([k for k in replaces_.keys()])))
-    if verbose:
-        logging.info("replace_with:\n\n" + ("\n".join([v for v in replaces_.values()])))
-
-    if output_path is not None:
-        # save files
-        if input_path.endswith(".py"):
-            from roux.lib.str import replace_many
-
-            new_code = replace_many(code, replaces_)
-
-            open(output_path, "w").write(new_code)
-        elif input_path.endswith(".ipynb"):
-            from roux.workflow.nb import to_replaced_nb
-
-            to_replaced_nb(
+        if len(funcs)>0:
+            imports='\n'.join(
+                get_global_imports()
+                .query(
+                    expr="`function name`=={funcs}"
+                )
+                ['import statement'].tolist()
+                )
+            replace_text(
                 input_path,
-                replaces=replaces_,
-                cell_type="code",
-                output_path=output_path,
+                {replace_from:'\n'+imports}
             )
-    ## to ensure the imports are inferred correctly
-    com = f"ruff check {output_path}"
-    print(com)
-    import subprocess
-
-    res = subprocess.run(
-        com, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True
-    )
-    print(res.stdout)
+    else:
+        output_path=replacestar_ruff(
+            output_path,
+            output_path,
+            replace_from,
+            verbose=verbose,
+            **method_kws,
+        )
+    check_py(output_path,errors=errors)
     return output_path
 
-
-def replacestar_ruff(
-    p: str,
-    outp: str,
-    replace: str = "from roux.global_imports import *",
-    verbose=True,
-) -> str:
-    from roux import global_imports
-
-    text = open(global_imports.__file__, "r").read()
-
-    lines = (
-        text.split("## begin replacestar")[1]
-        .split("## end replacestar")[0]
-        .replace("#noqa", "")
-        .replace("set_theme", "set_theme #noqa")
-        .replace("\n\n", "\n")
-        .split("\n")
-    )
-    lines = [s.strip() for s in lines]
-    lines = [s for s in lines if s != ""] + [""]
-    # lines
-    replace_with = "\n".join(lines)
-
-    replaced = open(p, "r").read().replace(replace, replace_with)
-
-    import tempfile
-
-    temp = tempfile.NamedTemporaryFile().name + ".py"
-    # temp
-
-    open(temp, "w").write(replaced)
-
-    from roux.workflow.io import post_code
-
-    post_code(
-        p=temp,
-        lint=True,
-        format=True,
-        verbose=verbose,
-    )
-
-    replaced_lines = open(temp, "r").read().split("\n")
-
-    # import shutil
-    # shutil.move(temp,outp)
-
-    drop_lines = []
-    s_ = ""  # last
-    for i, s in enumerate(replaced_lines):
-        s = s.strip()
-        if s.startswith("## setting states"):
-            break
-        if s_.startswith("#") and s.startswith("#"):
-            drop_lines.append(i - 1)
-        if s == "":
-            drop_lines.append(i)
-        s_ = s
-
-    cleaned_lines = [s for i, s in enumerate(replaced_lines) if i not in drop_lines]
-
-    cleaned_text = "\n".join(cleaned_lines)
-
-    open(outp, "w").write(cleaned_text)
-    return outp
-
-
-def post_code(
-    p: str,
-    lint: bool,
-    format: bool,
-    verbose: bool = True,
+## outputs setup
+def set_outputs(
+    output_path=None,
+    output_paths=None,
 ):
-    ## ruff
-    com = ""
-    if lint:
-        com += f"ruff check --fix {p};"
-    if format:
-        com += f"ruff format {p};"
-    import subprocess
-
-    res = subprocess.run(
-        com, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True
-    )
-    if verbose:
-        print(res.stdout)
-    return res
-
-
-def to_clean_nb(
-    p,
-    outp: str = None,
-    in_place: bool = False,
-    temp_outp: str = None,
-    clear_outputs=False,
-    drop_code_lines_containing=[
-        ## dev
-        r".*%run .*",
-        ## unused params
-        r"^#\s*.*=.*",
-        ## unused strings
-        r'^#\s*".*',
-        r"^#\s*'.*",
-        r'^#\s*f".*',
-        r"^#\s*f'.*",
-        r"^#\s*df.*",
-        r"^#\s*.*kws_.*",
-        ## lines with one hashtag (not a comment)
-        r"^\s*#\s*$",
-        r"^\s*#\s*break\s*$",
-        ## unused
-        # "\[X", #noqa
-        # "\[old ", #noqa
-        "#old",
-        "# old",
-        # "\[not used", #noqa
-        "# not used",
-        ## development
-        "#tmp",
-        "# tmp",
-        "#temp",
-        "# temp",
-        "check ",
-        "checking",
-        "# check",
-        # "\[SKIP", #noqa
-        "DEBUG ",
-        # "#todos","# todos",'todos',
-    ],
-    drop_headers_containing=[
-        "check",
-        "[check",
-        "old",
-        "[old",
-        "tmp",
-        "[tmp",
-    ],
-    ## ruff
-    fix_stars=False,
-    lint=False,
-    format=False,
-    **kws_fix_code,
-) -> str:
-    """
-    Wraper around the notebook post-processing functions.
-
-    Usage:
-        For notebooks developed using roux.global_imports.
-
-        On command line:
-
-        ## single input
-        roux to-clean-nb in.ipynb out.ipynb -c -l -f
-
-        ## multiple inputs
-        roux to-clean-nb "in*.ipynb" -i -c -l -f
-
-    Parameters:
-        temp_outp (str): path to the intermediate output.
-    """
-    from roux.lib.io import read_ps
-
-    input_paths = read_ps(p)
-    if len(input_paths) > 1:
-        assert in_place, in_place
-        logging.info(f"Processing {len(input_paths)} files ..")
-        ## Recursive
-        outps = []
-        for inp in input_paths:
-            logging.info(f"Processing {inp} ..")
-            outps.append(
-                to_clean_nb(
-                    p=inp,
-                    outp=outp,
-                    in_place=in_place,
-                    temp_outp=temp_outp,
-                    clear_outputs=clear_outputs,
-                    drop_code_lines_containing=drop_code_lines_containing,
-                    drop_headers_containing=drop_headers_containing,
-                    ## ruff
-                    lint=lint,
-                    format=format,
-                    **kws_fix_code,
-                )
-            )
-        return
-
-    from roux.workflow.nb import (
-        to_clear_unused_cells,
-        to_clear_outputs,
-        to_filtered_outputs,
-        to_filter_nbby_patterns,
-        to_replaced_nb,
-    )
-    from roux.lib.sys import grep
-
-    if in_place:
-        outp = p
-    else:
-        # makedirs(outp)
-        from pathlib import Path
-
-        Path(outp).parent.mkdir(parents=True, exist_ok=True)
-
-    if temp_outp is None:
-        import tempfile
-
-        temp_outp = f"{tempfile.gettempdir()}/to_clean_nb.ipynb"
-
-    # Remove the code blocks that have all commented code and empty lines
-    to_clear_unused_cells(
-        p,
-        temp_outp,
-    )
-
-    if clear_outputs:
-        to_clear_outputs(
-            temp_outp,
-            temp_outp,
-        )
-
-    to_filtered_outputs(temp_outp, temp_outp)
-
-    to_filter_nbby_patterns(temp_outp, temp_outp, patterns=drop_headers_containing)
-
-    to_replaced_nb(
-        nb_path=temp_outp,
-        output_path=temp_outp,
-        replaces={
-            ## to replace the star
-            " import * #noqa": " import *",
-            " import *  #noqa": " import *",
-            'if "metadata" in globals(): del metadata': 'if "metadata" in globals():\n   del metadata #noqa',
-        },
-        cell_type="code",
-        drop_lines_with_substrings=drop_code_lines_containing,
-    )
-
-    _l = grep(
-        p=temp_outp,
-        checks=drop_code_lines_containing,
-        exclude=["## backup old files if overwriting (force is True)"],
-    )
-
-    assert len(_l) == 0, (p, _l)
-
-    if fix_stars:
-        try:    
-            __import__("removestar")
-        except:
-            raise ModuleNotFoundError(
-                "Optional interactive-use dependencies missing, install by running: pip install removestar"
-            )
+    # if output_path is None:
+    #     output_path=locals().get('output_path')
+    # if output_paths is None:
+    #     output_paths=locals().get('output_paths')
         
-        res = replacestar(
-            input_path=temp_outp,
-            output_path=outp,
-            replace_from="from roux.global_imports import *",
-            in_place=False,
-            attributes={"pandarallel": ["parallel_apply"], "rd": [".rd.", ".log."]},
-            verbose=False,
-            test=False,
-            **kws_fix_code,
-        )
-        if res is None:
-            return
-    post_code(
-        p=outp,
-        lint=lint,
-        format=format,
-    )
-    return outp
-
-## post tasks
-from roux.lib.sys import run_com
-def valid_post_task_deps(
-    ):
-    return run_com('which quarto',returncodes=[0,1])!=''
-    
-def to_html(
-    p,
-    # outp=None,
-    env='docs',
-    kws="",
-    verbose=False,
-    ):
-    """
-    Args:
-        verbose: True: include stderr        
-    """
-    if env is not None:
-        pre=f"micromamba run -n {env} "
+    if isinstance(output_path,str):
+        output_dir_path=Path(output_path).with_suffix('').as_posix()
+        if isinstance(output_paths,list):
+            output_paths={fn:f"{output_dir_path}/{fn}" for fn in output_paths}
+            from roux.lib.log import log_dict
+            logging.info("output_paths:\n"+log_dict(output_paths,out=True))
+        else:
+            logging.info(f"output_dir_path: {output_dir_path}")        
+            output_paths={}
     else:
-        pre=""
-    # if outp is None:
-    outp=Path(p).with_suffix(".html").as_posix()
-
-    if isinstance(kws,list):
-        kws=" -M ".join(kws)
-    if verbose:
-        kws+=" -M warning:false -M error:false" 
-    ## convert
-    run_com(
-        f"{pre}quarto render {p} --to html --toc -M code-fold:true -M code-summary:'_' -M code-tools:true -M self-contained:true -M mermaid-theme=default "+kws,# --output-dir {Path(outp).parent.as_posix()} --output {Path(outp).name}",
-        verbose=verbose,
-    )
-    ## clean
-    # invalid escape sequence '\/'
-    # run_com(
-    #     "sed -i '' 's/<\/head>/<style>summary { display: none; }<\/style><\/head>/' "+outp,
-    #     verbose=verbose,
-    # )
-    return outp
-
-
+        output_dir_path,output_paths=None,{}
+    return output_dir_path,output_paths
+    
 ## tasks
-
 def check_for_exit(
-    p, # table
-    data, # e.g cfg
-    output_path, # in a script
+    ## check this if empty
+    p, # saved table
+    
+    ## save this before exiting
+    outp, # output path
+    data=None, # e.g output cfg
+
+    force=False,
     ):
     """
-    Check for early exit.
+    Check for early exit in a script.
     """
-    from roux.lib.io import is_table_empty, to_data
-    if is_table_empty(p):
+    exit=force
+
+    if not exit:
+        if isinstance(p,str):
+            from roux.lib.io import is_table_empty
+            exit=is_table_empty(p)
+        elif isinstance(p,pd.DataFrame):
+            exit=(len(p)==0)
+            if data is None:
+                data=p
+        
+    if exit:
         logging.warning("exiting early because table is empty..")
-        to_data(data,output_path)
+        if data is not None:
+            from roux.lib.io import to_data
+            to_data(data,outp)
+        else:
+            Path(outp).touch()
+        import sys
         sys.exit(0)

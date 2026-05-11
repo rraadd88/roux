@@ -1,15 +1,17 @@
 """For distribution plots."""
 
 import logging
-import pandas as pd
+
 import matplotlib.pyplot as plt
+import pandas as pd
 import scipy as sc
+import seaborn as sns
+
 import roux.lib.df as rd  # noqa
 from roux.lib.set import dropna
-from roux.viz.colors import get_colors_default
 from roux.viz.annot import pval2annot
 from roux.viz.ax_ import get_axlims, get_ticklabel_position, rename_ticklabels
-import seaborn as sns
+from roux.viz.colors import get_colors_default
 
 
 ## single distributions.
@@ -225,7 +227,7 @@ def plot_normal(
     )
     ax.set_title(
         "SW test "
-        + pval2annot(sc.stats.shapiro(x)[1], alpha=0.05, fmt="<", linebreak=False)
+        + pval2annot(sc.stats.shapiro(x)[1], alpha=0.05, fmt=None, linebreak=False)
     )
     ax.legend()
     return ax
@@ -266,13 +268,16 @@ def plot_dists(
     show_n_ha=None,
     show_n_ticklabels: bool = True,
     show_outlines: bool = False,
+    showmeans=True,   
+    showfliers=False,
     kws_outlines: dict = {},
     alternative: str = "two-sided",
     offx_n: float = 0,
     axis_cont_lim: tuple = None,
     axis_cont_scale: str = "linear",
     offs_pval: dict = None,
-    fmt_pval: str = "<",
+    col_pval='P',
+    fmt_pval: str = None,
     alpha: float = 0.5,
     # saturate_color_alpha: float=1.5,
     ax: plt.Axes = None,
@@ -341,20 +346,21 @@ def plot_dists(
     colindex=kws_plot.get('colindex',None)
         
     ## get stats
-    if show_p:
-        col_pval='P'
+    stats={}
+    if show_p:            
         if df2 is not None:
             if hue is None:
                 df2 = df2.reset_index()
-                df2 = df2.loc[(df2["subset1"] == order[0]), :]
+                if show_p!='paired':
+                    df2 = df2.loc[(df2["subset1"] == order[0]), :]
                 try:
-                    d1 = df2.rd.to_dict(["subset2", col_pval])
+                    stats = df2.rd.to_dict(["subset2", col_pval])
                 except:
                     raise ValueError(df2.columns.tolist())
             else:
-                d1 = df2.set_index(y)[col_pval].to_dict()
+                stats = df2.set_index(y)[col_pval].to_dict()
                 if test:
-                    logging.info(d1)
+                    logging.info(stats)
             
             if verbose:
                 try:
@@ -364,19 +370,79 @@ def plot_dists(
         else:
             show_p = False 
             logging.error("p-value could not be estimated.")
+                
+    # print(stats) # {ticklabel: pval}
     
     ## axes
     if ax is None:
-        ax = plt.gca()
+        from roux.viz.figure import get_ax
+        ax = get_ax(ax)
         
     if show_p:
         ax.stats=df2
-    
     ## distributions
     if isinstance(kind, str):
         kind = {kind: {}}
     elif isinstance(kind, list):
-        kind = {k: {} for k in kind}
+        kind = {k: {} for k in kind}    
+    assert isinstance(kind, dict), kind
+    
+    kind_defaults={
+        'box':dict(
+            showcaps=False,
+            showfliers=False,
+            boxprops=dict(
+                ec='none',
+            )
+        ),
+        'violin':dict(
+            density_norm='width',
+            cut=0,
+            fill=False,
+        ),
+        'point':dict(
+            estimator='mean',  
+            linestyle='none',
+        ),
+        'bar':dict(
+            alpha=alpha,
+            dodge=True,
+            gap=0.2,
+            err_kws=dict(
+                lw=1,
+            ),
+        ),
+    }
+
+    if 'box' in kind:
+        if kind['box'].get('showmeans')==True or showmeans:
+            kind['box']={
+                **dict(
+                    showmeans=True,
+                    meanprops=dict(
+                        marker= "$\mu$", 
+                        markerfacecolor= "black", 
+                        markeredgecolor= "none", 
+                        markersize= "10"
+                    )                    
+                ),
+                **kind['box'],
+            }
+            if 'point' not in kind:
+                kind['point']={}
+            kind['point']={
+                **kind_defaults['point'],
+                **dict(
+                    markers="D",
+                    errorbar=None,
+                    markersize=15,
+                    markeredgewidth=0,
+                    alpha=0.5,
+                    clip_on=False,                    
+                ),
+                **kind['point'],
+            }
+    # logging.info(kind)
     for k in kind:
         kws_ = kws.copy()
         # print(kws['palette'],kind)
@@ -386,13 +452,33 @@ def plot_dists(
         # if 'palette' in kws and k in ['swarm','strip']:
         # from roux.viz.colors import saturate_color
         # kws['palette']=[saturate_color(color=c, alpha=saturate_color_alpha+0.5) for c in kws['palette']]
-        if k == "box" and (("swarm" in kind) or ("strip" in kind)):
-            kws_["showfliers"] = False
-            kws_["boxprops"] = dict(alpha=alpha)
-        if k in ["swarm", "strip"] and ("box" in kind):
-            kws_["alpha"] = alpha
+
+        ## override defaults
+        if k=='box':
+            kws_={
+                **kind_defaults['box'],
+                **kws_,
+            }
+        ## common            
         if hue is None:
             kws_["color"] = get_colors_default()[0]
+
+        ## blends
+        if k == "box":
+            # if (("swarm" in kind) or ("strip" in kind)):
+            kws_["showfliers"] = showfliers
+            kws_["boxprops"] = {
+                **kws_["boxprops"],
+                **dict(
+                    alpha=alpha,
+                ),
+            }
+            
+        if k in ["swarm", "strip"] and ("box" in kind):
+            kws_["alpha"] = alpha
+        # print(
+        #     kws_, kind[k]
+        # )
         getattr(sns, k + "plot")(
             data=df1,
             x=x,
@@ -413,44 +499,71 @@ def plot_dists(
     ticklabel2position = get_ticklabel_position(ax, axis_desc)
     axlims = get_axlims(ax)
     ## show p-value
-    if isinstance(show_p, (bool, dict)):
-        if isinstance(show_p, bool) and show_p:
-            d1 = {
-                k: pval2annot(
-                    d1[k],
-                    alternative=alternative,
-                    fmt=fmt_pval,
-                    linebreak=False,
-                )
-                for k in d1
-            }
-        else:
-            d1 = {}
-        if offs_pval is None:
-            offs_pval = {}
-        offs_pval = {**{"x": 0, "y": 0}, **offs_pval}
+    if isinstance(show_p, (bool, dict,str)):
+        from roux.viz.annot import show_dists_stats
+        show_dists_stats(
+            stats=stats,
+            axlims=axlims,
+            ticklabel2position=ticklabel2position,
+            axis_desc= axis_desc, #: str = "y",
+            axis_cont= axis_cont, #: str = "x",
+            offs_pval= offs_pval, #: dict = None,
+            show_p= show_p, #: bool = True,
+            alternative= alternative, #: str = "two-sided",
+            fmt_pval= fmt_pval, #: str = "{:.2e}",
+            hue= hue, #: str = None,
+            test= test, #: bool = False,
+            ax=ax,
+        )        
+        # print(
+        #     d1,
+        #     offs_pval,
+        #     axis_desc,
+        #     axis_cont,
+        #     axlims,
+        #     ticklabel2position,
+        #     )
+        # if show_p!=False:
+        #     d1 = {
+        #         k: pval2annot(
+        #             d1[k],
+        #             alternative=alternative,
+        #             fmt=fmt_pval,
+        #             linebreak=False,
+        #         )
+        #         for k in d1
+        #     }
+        # else:
+        #     d1 = {}
+        # if offs_pval is None:
+        #     offs_pval = {}
+        # offs_pval = {**{"x": 0, "y": 0}, **offs_pval}
 
-        if hue is None and len(d1) == 1:
-            offs_pval[axis_desc] += -0.5
-        if test:
-            logging.info(offs_pval)
-        if isinstance(d1, dict):
-            if test:
-                logging.info(d1, ticklabel2position, axlims)
-            for k, s in d1.items():
-                ax.text(
-                    **{
-                        axis_cont: axlims[axis_cont]["max"]
-                        + offs_pval[
-                            axis_cont
-                        ],  # +((axlims[axis_cont]['len']*offx_pval) if axis_desc=='y' else 0),
-                        axis_desc: ticklabel2position[k] + offs_pval[axis_desc],
-                    },
-                    s=s,
-                    va="center" if axis_desc == "y" else "top",
-                    ha="right" if axis_desc == "y" else "center",
-                    zorder=5,
-                )
+        # if hue is None and (len(d1) == 1 or show_p=='paired'):
+        #     offs_pval[axis_desc] += -0.5            
+        # if test:
+        #     logging.info(offs_pval)
+
+        # # if isinstance(show_p,str): # e.g. paired
+        # #     show_p=True
+            
+        # if isinstance(d1, dict):
+        #     if test:
+        #         logging.info(d1, ticklabel2position, axlims)
+        #     for k, s in d1.items():
+        #         ax.text(
+        #             **{
+        #                 axis_cont: axlims[axis_cont]["max"]
+        #                 + offs_pval[
+        #                     axis_cont
+        #                 ],  # +((axlims[axis_cont]['len']*offx_pval) if axis_desc=='y' else 0),
+        #                 axis_desc: ticklabel2position[k] + offs_pval[axis_desc],
+        #             },
+        #             s=s,
+        #             va="center" if axis_desc == "y" else "top",
+        #             ha="right" if axis_desc == "y" else "center",
+        #             zorder=5,
+        #         )
 
     ## show sample sizes
     if show_n:
@@ -540,7 +653,13 @@ def plot_many_dists(
     ref_data=None,
     ref_expr=None,
     ref_agg='median', # because of the boxplot
-    ref_kws_plot={},
+    ref_func_plot='plot',
+    ref_kws_plot=dict(
+        linestyle=':',
+        lw=1.5,
+        color='k',
+        zorder=5,
+    ),
     
     ax=None,
     **kws_plot_dists,
@@ -566,12 +685,14 @@ def plot_many_dists(
         ax=plt.gca()
     
     if ref_expr is not None:
+        logging.info('ref_data filtering:')
         ref_data=(
             data
                 .log.query(expr=ref_expr)
                 .groupby(y)[x].agg(ref_agg)
                 .reset_index()
             )
+        logging.info('data filtering:')
         data=(
             data
                 .log.query(expr=ref_expr.replace('==','!='))
@@ -599,7 +720,7 @@ def plot_many_dists(
                 show_p=False,
                 fmt_pval='*',
                 offs_pval={"x": 0, "y": 0.2},
-                width=0.7,
+                # width=0.7,
                 showfliers=False,
             ),
             **kws_plot_dists
@@ -614,18 +735,18 @@ def plot_many_dists(
             ref_data
             .assign(y_pos=lambda df: df[y].map(get_ticklabel_position(ax, 'y')))
             .apply(
-                lambda row: ax.plot(
-                    [row[x], row[x]],
-                    [row['y_pos'] - 0.5, row['y_pos'] + 0.5],
-                    **{
-                        **dict(
-                            linestyle=':',
-                            lw=1.5,
-                            color='k',
-                            zorder=5,
-                        ),
-                        **ref_kws_plot
-                    }
+                lambda row: (
+                        ax.plot(
+                            [row[x], row[x]],
+                            [row['y_pos'] - 0.5, row['y_pos'] + 0.5],
+                            **ref_kws_plot
+                        ) 
+                    if ref_func_plot=='plot' else 
+                        ax.scatter(
+                            [row[x]],
+                            [row['y_pos']],
+                            **ref_kws_plot
+                        )
                 ),
                 axis=1
             )

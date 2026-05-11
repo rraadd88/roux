@@ -2,23 +2,24 @@
 
 # (str ->) sys -> io
 ## for file paths
-from os.path import (
-    exists,
-    dirname,
-    basename,
-    abspath,
-    isdir,
-    splitext,
-)  ## prefer `pathlib` over `os.path`
-from pathlib import Path
-from glob import glob
-from roux.lib.str import replace_many, encode
+import logging
+import shutil
 
 #
 import subprocess
 import sys
-import logging
-import shutil
+from glob import glob
+from os.path import (
+    abspath,
+    basename,
+    dirname,
+    exists,
+    isdir,
+    splitext,
+)  ## prefer `pathlib` over `os.path`
+from pathlib import Path
+
+from roux.lib.str import encode, replace_many
 
 
 ## for file paths
@@ -108,17 +109,36 @@ def read_ps(
     """
     
     if isinstance(ps, str):
-        if "*" in ps:
+        # g: Check for any glob magic characters (*, ?, [)
+        _glob_chars = ['*', '?', '['] # g: added
+        if any(c in ps for c in _glob_chars): # g: modified
             if fmt is None:
                 ps = glob(ps)
-            elif fmt=='ids':
-                assert ps.count('*')==1, ps                
-                if '/*/' in ps:
-                    id_parti=list(Path(ps).parts).index('*')                    
-                    to_ids={Path(p).parts[id_parti]:p for p in glob(ps)}
-                else:
-                    prefix, suffix = ps.split('*')
-                    to_ids={Path(p_).name.removeprefix(prefix).removesuffix(suffix):p_ for p_ in glob(ps)}
+            elif fmt in ['ids','id']:
+                # g: Identify the path component containing glob characters
+                # g: This determines the key for the output dictionary
+                _parts = list(Path(ps).parts) # g: added
+                id_parti = [i for i, part in enumerate(_parts) if any(c in part for c in _glob_chars)] # g: modified
+                
+                assert len(id_parti)==1, f"Glob pattern must be in exactly one path component. Found in: {id_parti}" # g: modified
+                id_parti=id_parti[0] # g: modified
+                
+                to_ids={Path(p).parts[id_parti]:p for p in glob(ps)}
+                
+                # g: If pattern is in the filename (last part), remove extension from ID
+                if id_parti==len(_parts)-1:
+                    to_ids={Path(k).with_suffix('').as_posix():p for k,p in to_ids.items()}
+                
+                # TODO:
+                # path/to/*_file.suf -> ids without _file
+                # else:
+                #      # key=substr between *s or []s 
+                #      prefix, suffix = ps.split('*')
+                #      to_ids={Path(p_).name.removeprefix(prefix).removesuffix(suffix):p_ for p_ in glob(ps)}
+                # if '/*' in ps and 
+                
+                ## qc
+                assert len(set(to_ids.keys()))==len(set(to_ids.values())), f"{len(set(to_ids.keys()))}!={len(set(to_ids.values()))}" 
                 logging.info(f"fmt: {len(to_ids)} {fmt}")                        
                 return to_ids         
             else:
@@ -188,8 +208,12 @@ def to_path(
 
     Returns:
         s (string): output string.
-    """
+    """    
     import re
+
+    ## pre.
+    from roux.lib.str import remove_brackets
+    s=remove_brackets(s)
 
     s = re.sub(r"(/)\1+", r"\1", s)  # remove multiple /'s
     if max([len(s_) for s_ in s.split("/")]) < coff_len_escape_replacement:
@@ -202,6 +226,7 @@ def to_path(
     else:
         if verbose:
             logging.info("replacements not done; possible long IDs in the path.")
+    
     return s.replace(f"/My{replacewith}Drive/", "/My Drive/")  # google drive
 
 #     return re.sub('\W+',replacewith, s.lower() )
@@ -264,6 +289,13 @@ def to_label(p):
     cleaned = re.sub(r'[^a-zA-Z0-9/]', '', Path(p).with_suffix('').as_posix()).replace('/', '_')
     return re.sub(r'^[^a-zA-Z0-9]+|[^a-zA-Z0-9]+$', '', cleaned)
 
+def with_stem_suffix(
+    p,
+    s,
+    sep='_',
+    ):
+    return f"{Path(p).parent}/{Path(p).stem}{sep}{to_path(s)}{Path(p).suffix}"
+    
 def makedirs(p: str, exist_ok=True, **kws):
     """Make directories recursively.
 
@@ -458,8 +490,8 @@ def get_env(
     Returns:
         d (dict): parameters of the virtual environment.
     """
-    import sys
     import os
+    import sys
 
     env = os.environ.copy()
     env_name_current = sys.executable.split("anaconda3/envs/")[1].split("/")[0]
@@ -538,14 +570,21 @@ def run_com(
         )
     else:
         if wait:
+            # try:
             response = subprocess.run(
                 com,
                 shell=True,
                 stdout=subprocess.PIPE,
                 stderr=subprocess.PIPE,
-                text=True
+                text=True,
+                # check=True, #ensures an exception is raised on failure
                 )
-            # print(res.stdout)
+            # except subprocess.CalledProcessError as response:
+            #     response=response
+            #     # g: handle the error here
+            #     logging.error(f"response.returncode={response.returncode}")
+            #     logging.error(f"response.stderr={response.stderr}")         
+            #     pass
             assert response.returncode in returncodes, response
             return response.stdout
         else:
@@ -723,6 +762,45 @@ def get_excecution_location(depth=1):
     return caller.filename, caller.lineno
 
 
+def get_source_path(
+    env_globals=None
+):
+    """
+    Robustly attempts to find the current file path (from where get_source_path() is exec.d).
+    Prioritizes explicit globals, then VS Code/Jupyter hooks, then inspection.
+    """
+    import inspect
+    if env_globals is None:
+        # g: Default to the caller's globals if not provided
+        # env_globals = inspect.stack()[1].frame.f_globals
+        env_globals = inspect.stack()[1].frame.f_locals
+
+    # g: 1. Check standard and environment-specific global keys
+    # g: '__vsc_ipynb_file__' is injected by VS Code's Jupyter extension
+    # g: '__file__' is standard for scripts        
+    target_keys = ['__file__', '__vsc_ipynb_file__',  '__session__']
+    for k in target_keys:
+        if env_globals.get(k):
+            return str(Path(env_globals[k]).resolve())
+
+    # g: 2. Check sys.argv[0] (Standard script entry point)
+    # g: Note: In Jupyter, this might return the kernel JSON, so valid extension check is needed
+    if sys.argv and sys.argv[0]:
+        _candidate = sys.argv[0]
+        if _candidate.endswith('.py') or _candidate.endswith('.ipynb'):
+             return str(Path(_candidate).resolve())
+
+    # g: 3. Inspect the caller's frame (Fallback for imported modules)
+    try:
+        _caller_file = inspect.stack()[1].filename
+        # g: Filter out irrelevant internal shells
+        if _caller_file and not _caller_file.startswith('<'): 
+            return str(Path(_caller_file).resolve())
+    except Exception:
+        pass
+        
+    raise NotImplementedError("Could not determine source path from current context.")
+
 ## time
 ## logging system
 def get_datetime(
@@ -759,8 +837,8 @@ def p2time(filename: str, time_type="m"):
     Returns:
         time (str): time.
     """
-    import os
     import datetime
+    import os
 
     if time_type == "m":
         t = os.path.getmtime(filename)
@@ -778,8 +856,9 @@ def ps2time(ps: list, **kws_p2time):
     Returns:
         ds (Series): paths mapped to corresponding times.
     """
-    import pandas as pd
     from glob import glob
+
+    import pandas as pd
 
     if isinstance(ps, str):
         if isdir(ps):
@@ -821,8 +900,9 @@ def grep(
     Parameters:
         p (str): input path
     """
-    from roux.lib.set import flatten
     import subprocess
+
+    from roux.lib.set import flatten
 
     l2 = []
     for s in checks:

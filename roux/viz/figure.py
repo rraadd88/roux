@@ -5,10 +5,116 @@ import logging
 import numpy as np
 
 import matplotlib.pyplot as plt
-
 from matplotlib.gridspec import GridSpec
+## types
+from matplotlib.axes import Axes
+from typing import Tuple
 
-def gca(cols_max=2):
+def to_pos_in_ax2(
+    ax: Axes,
+    ax2: Axes,
+    pt: Tuple[float, float],
+) -> Tuple[float, float]:
+    """
+    Converts a point from ax's data coordinates to ax2's data coordinates.
+
+    Args:
+        ax: The source Axes object.
+        ax2: The target Axes object.
+        pt: A tuple (x, y) in ax's data coordinates.
+
+    Returns:
+        A tuple (x_prime, y_prime) representing the point in 
+        ax2's data coordinates.
+    """
+    # Convert points from their respective data spaces to a common figure space (pixels)
+    # g: 1. Convert source point (ax data) to display (pixel) coordinates
+    pt_pixels = ax.transData.transform(pt)
+
+    # g: 2. Convert display (pixel) coordinates to target point (ax2 data)
+    return ax2.transData.inverted().transform(pt_pixels)
+    
+def fig_grid(
+    data,
+    plot_func=None,  ## takes data, ax and **kws
+    kws_plot={},
+    **kws_fig,    
+    ):
+    """
+    Examples:
+        func=lambda data,ax,**kws_plot: plot_image(
+                data['path'].tolist()[0],
+                ax=ax,
+                **kws_plot,
+            )
+    """
+    def read_plot_(data,ax,**kws_plot):
+        from roux.viz.io import read_plot
+        return read_plot(
+            data['path'].tolist()[0],
+            ax=ax,
+            **kws_plot,
+            )
+    if plot_func is None and 'path' in data:
+        plot_func=read_plot_
+        
+    import seaborn as sns
+    g = sns.FacetGrid(
+        data,
+        **{
+            **dict(
+                height=2.5,
+                aspect=1,
+                margin_titles=True,
+            ),        
+            **kws_fig,
+        },
+    )
+    g.set_titles(
+        row_template="{row_name}",
+        col_template="{col_name}",
+        )
+    def _map_plot(*args, **kwargs):
+        ## extract the inputs
+        ax=plt.gca()
+        kwargs['plot_func'](
+            kwargs['data'],
+            ax=ax,
+            **kwargs['kws_plot'],
+        )
+        return ax
+        
+    if plot_func is None:
+        logging.warning("plot_func is None")
+        return g
+        
+    # print(data.shape)
+    
+    g.map_dataframe(
+        func=_map_plot,
+        plot_func=plot_func,
+        kws_plot=kws_plot,
+        )
+    # for (row, col), ax in g.axes_dict.items():
+    #     ax.set(
+    #         xlim=[xlims.loc[col,'min'],xlims.loc[col,'max']]
+    #     )
+
+    # --- 4. Rotate the Right Margin Titles (by finding Text objects) ---
+    return g
+
+def set_fig(figsize):
+    # 1. Get the current figure and axes
+    fig = plt.gcf()
+    if list(fig.get_size_inches())!=figsize:
+        fig.set_size_inches(figsize[0], figsize[1], forward=True)
+    return fig
+
+## subplots in relaation to figs
+def set_ax(
+    cols_max=4,
+    figsize=[8,2],
+    ):
     """
     Dynamically adds a subplot, creating new rows after cols_max is reached.
 
@@ -18,8 +124,8 @@ def gca(cols_max=2):
     Returns:
         matplotlib.axes.Axes: The newly created subplot axes.
     """
-    # 1. Get the current figure and axes
-    fig = plt.gcf()
+    fig=set_fig(figsize)
+
     existing_axes = fig.axes
     n_existing = len(existing_axes)
     n_new_total = n_existing + 1
@@ -45,16 +151,52 @@ def gca(cols_max=2):
 
     return new_ax
 
+def get_ax(
+    ax=None,
+    figsize=[8,2],
+    **kws
+):    
+    if isinstance(ax,plt.Axes): 
+        return ax
+    elif ax in [None]:
+        return plt.gca()
+    elif ax in ['same','.']:
+        _=set_fig(figsize)
+        return plt.gca()
+    elif isinstance(ax,dict):
+        ## recurse
+        ## e.g. ax=dict(ax='gca',cols_max=1)
+        return get_ax(
+            **{
+                **dict(figsize=figsize),
+                **ax
+            },
+        )
+    elif ax=='new':
+        return plt.subplots(
+            1,1,
+            figsize=figsize,
+            **kws                
+        )[1]
+    elif ax in ['+','append','gca']:
+        return set_ax(
+            figsize=figsize,
+            **kws    
+        )
+    else:
+        raise ValueError(ax)
+        
 def get_children(fig):
     """
     Get all the individual objects included in the figure.
     """
-    from tqdm import tqdm
+    # from tqdm import tqdm
     from roux.lib.set import flatten
 
     ## figure
     l1 = []
-    for ax in tqdm(fig.get_children()):
+    # for ax in tqdm(fig.get_children()):
+    for ax in fig.get_children():
         if isinstance(ax, plt.Subplot):
             l1 += ax.get_children()
         else:
@@ -62,7 +204,8 @@ def get_children(fig):
     l1 = flatten(l1)
     ## subfigure
     l2 = []
-    for ax in tqdm(l1):
+    # for ax in tqdm(l1):
+    for ax in l1:
         if isinstance(ax, plt.Subplot):
             l2 += ax.get_children()
         else:

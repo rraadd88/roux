@@ -51,3 +51,24 @@ def cat(ps, outp):
             with open(p) as infile:
                 outfile.write(infile.read())
     return outp
+
+from roux.lib.str import replace_many
+def replace_text(
+    input_path,
+    replaces,
+    errors=None,
+    **kws_replace_many,
+    ):
+    text=replace_many(
+        open(input_path,'r').read(),
+        replaces,
+        errors=errors,
+        **kws_replace_many,
+    )
+    (
+        open(input_path,'w')
+            .write(
+                text
+        )
+    )
+    return input_path

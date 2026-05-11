@@ -1,12 +1,14 @@
 [project]
 name = "roux"
 version = "0.1.3"
+
+## docs
+readme = "README.md"
 description = "Convenience functions."
 authors = [
   { name = "rraadd88", email = "rohanadandage@gmail.com" }
 ]
 urls = { "Homepage" = "http://github.com/rraadd88/roux" }
-requires-python = '>=3.7, <4'
 classifiers = [
         "Programming Language :: Python",
         "Programming Language :: Python :: 3",
@@ -14,13 +16,13 @@ classifiers = [
         "Programming Language :: Python :: 3.11",
         "Programming Language :: Python :: 3.12",
 ]
-
 license = "GPL-3.0-or-later"
 
-readme = "README.md"
+## requires
+requires-python = '>=3.8, <4'
 dependencies = [
     "numpy>=1.17.3",
-    "pandas>=0.25.3,<=2.3.0",
+    "pandas>=0.25.3,<=2.3.3",
     "pyyaml>=5.1",
     "matplotlib>=2.2",
     "seaborn>=0.8",
@@ -28,60 +30,61 @@ dependencies = [
     # "regex>=2018.7.11",
 ]
 
-[optional-dependencies]
-interactive = [
-    "ipywidgets",
-    "ipykernel",
-    # "watermark", # session info
-]
-data = [
-    "pyarrow", # fast
-    "openpyxl", # special io
-    "numexpr", # faster querying
-]
-stat = [
-    "scipy>=1.1.0",
-    "statsmodels",
-    "networkx",
-    "scikit-learn",
-        ]
-viz = [
-    "altair",
-      ]
-workflow = [
-    "omegaconf",
-    "papermill",
-    "argh",
-    "ruff",
-    "nbconvert",
-    "removestar",
-]
-# An 'all' group that includes all other groups
-all = [
-    {include-group = "interactive"},
-    {include-group = "data"},
-    {include-group = "stat"},
-    {include-group = "viz"},
-    {include-group = "workflow"},
-]
+# [project.optional-dependencies]
+# interactive = [
+#     "ipywidgets",
+#     "ipykernel",
+#     # "watermark", # session info
+# ]
+# data = [
+#     "pyarrow", # fast
+#     "openpyxl", # special io
+#     "numexpr", # faster querying
+# ]
+# stat = [
+#     "scipy>=1.1.0",
+#     "statsmodels>=0.13.5",
+#     "networkx",
+#     "scikit-learn",
+#     "pingouin>=0.5.5",
+#     ]
+# viz = [
+#     "altair",
+#       ]
+# workflow = [
+#     "omegaconf",
+#     "papermill",
+#     "argh",
+#     "ruff",
+#     "nbconvert",
+#     "removestar",
+# ]
+# # An 'all' group that includes all other groups
+# all = [
+#     {include-group = "interactive"},
+#     {include-group = "data"},
+#     {include-group = "stat"},
+#     {include-group = "viz"},
+#     {include-group = "workflow"},
+# ]
 
-## development and maintenance
-dev = [
-    "pytest",
-    "tox",
-    "tox-gh-actions",
-    "jupyter","ipywidgets","ipykernel",
-    # "sphinx","recommonmark",
-    "black",
-    "coveralls == 3.*",
-    "flake8",
-    "isort",
-    "pytest-cov >= 2,< 7",
-    "papermill",
-    "lazydocs",
-    "regex", ## docs
-    {include-group = "all"},    
-]
+# ## development and maintenance
+# dev = [
+#     "pytest",
+#     "tox",
+#     "tox-gh-actions",
+#     "jupyter","ipywidgets","ipykernel",
+#     # "sphinx","recommonmark",
+#     "black",
+#     "coveralls == 3.*",
+#     "flake8",
+#     "isort",
+#     "pytest-cov >= 2,< 7",
+#     "papermill",
+#     "lazydocs",
+#     "regex", ## docs
+#     {include-group = "all"},    
+# ]
 
 ## for uv
 [dependency-groups]
@@ -100,6 +103,7 @@ stat = [
     "statsmodels",
     "networkx",
     "scikit-learn",
+    "pingouin>=0.5.5",
         ]
 viz = [
     "altair",

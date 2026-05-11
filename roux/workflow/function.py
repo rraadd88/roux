@@ -7,6 +7,43 @@ from roux.lib.io import to_path
 from roux.lib.set import unique, dropna
 import pandas as pd
 
+from roux.lib.sys import (
+    abspath,
+)
+
+def import_from_file(pyp: str):
+    """Import functions from python (`.py`) file.
+
+    Args:
+        pyp (str): python file (`.py`).
+
+    """
+    from importlib.machinery import SourceFileLoader
+
+    return SourceFileLoader(abspath(pyp), abspath(pyp)).load_module()
+
+import inspect
+
+def call_with_kws(func, kws, **kws_force):
+    """
+    Calls a function with a filtered dictionary of keyword arguments.
+    Logs an error if excess arguments are provided.
+    """
+    # g: Extract valid parameter names from the target function
+    valid_args = inspect.signature(func).parameters.keys()
+    
+    # g: Retain only the arguments that exist in the function signature
+    kws={
+        **kws,
+        **kws_force
+        }
+    kws_filtered = {k: v for k, v in kws.items() if k in valid_args}
+    
+    # g: Identify any keys in kws that are not accepted by the function
+    excess_kws = set(kws.keys()) - set(valid_args)
+    if len(excess_kws) > 0:
+        logging.warning(f"Excess arguments provided for {func.__name__}: {excess_kws}")        
+    return func(**kws_filtered)
 
 def get_quoted_path(s1: str) -> str:
     """Quoted paths.
@@ -384,14 +421,28 @@ def to_task(
         "    rule", "rule"
     ), df0["outputs"].tolist()
 
+from functools import lru_cache
 
-def get_global_imports() -> pd.DataFrame:
+@lru_cache(maxsize=None)
+def get_global_imports(
+    markers=[
+        '## start replacestar',
+        '## end replacestar',
+        ],
+    clear_cache=False,
+    out_fmt='df',
+) -> pd.DataFrame:
     """
     Get the metadata of the functions imported from `from roux import global_imports`.
     """
     from roux import global_imports
+    text = open(global_imports.__file__, "r").read()
 
-    lines = open(global_imports.__file__, "r").read()
+    assert markers[0] in text, markers[0] 
+    assert markers[1] in text, markers[1]
+
+    lines=text.split(markers[0])[1].split(markers[1])[0]
+
     ## start with '## '
     lines = ('## '+lines.split('## ',1)[1]).split("\n")
 
@@ -403,6 +454,12 @@ def get_global_imports() -> pd.DataFrame:
 
     # lines=
     lines = dropna(list(map(clean_, lines)))
+
+    lines = [s.strip() for s in lines]
+    lines = [s for s in lines if s != ""] + [""]
+
+    if out_fmt=='lines':
+        return lines
 
     lines_grouped = {}
     k = None
@@ -423,7 +480,7 @@ def get_global_imports() -> pd.DataFrame:
         .rename_axis(["rank", "function comment"])
         .reset_index()
         .dropna(subset=["import statement"])
-        .query(expr="~(`import statement`.str.strip().str.startswith('#'))")
+        .query(expr="~(`import statement`.str.strip().str.startswith('#') | `import statement`.str.contains('#ignore'))")
     )
     # df1
 
@@ -442,7 +499,7 @@ def get_global_imports() -> pd.DataFrame:
 
     def clean_import_statements(s, attribute, function_name):
         if not attribute:
-            s = s.split("# ")[0]
+            s = s.split("#")[0]
             if "," in s:
                 s = f"{s.split(' import ')[0]} import {function_name}"
         return s
@@ -467,6 +524,7 @@ def get_global_imports() -> pd.DataFrame:
             }
         )
         .explode("function name")
+        .dropna(subset=["function name"])
         .assign(
             **{
                 "import statement": lambda df: df.apply(

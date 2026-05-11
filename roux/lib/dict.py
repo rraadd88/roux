@@ -111,6 +111,81 @@ def flip_dict(d):
     #             d_[v]=k
     #     return d_
 
+def flatten_keys(
+    stats,
+    sep=':',
+    clean=False,
+    ): 
+    from roux.lib.sys import to_path
+    stats={to_path(k) if not isinstance(k,tuple) else sep.join([to_path(str(s)) for s in k]) :v for k,v in stats.items()}
+    if clean:
+        ## remove _s
+        stats={k.replace(f'_{sep}',sep).replace(f'{sep}_',sep):v for k,v in stats.items()}
+    return stats
+
+def pre_dict(
+    d  
+    ):
+    if isinstance(d,pd.DataFrame):
+        df_=d
+        if len(df_)==1:
+            d=df_.iloc[0,:].to_dict()
+        else:
+            # d=df_.set_index(df_.rd.infer_index()).T.to_dict()
+            d=pd.json_normalize(
+                df_.rd.clean().rd.set_index().T.to_dict(),
+                sep=':',
+            ).iloc[0,:].to_dict()
+    elif isinstance(d,pd.Series):
+        d=d.to_dict()
+    assert isinstance(d,dict), d
+    return d
+    
+def flatten_vals(d: dict, parent_key: str = '', sep: str = ':') -> dict:
+    """
+    Flatten a nested dictionary using a specified separator.
+    
+    Parameters:
+        d (dict): Nested dictionary to flatten.
+        parent_key (str): Prefix for the current level.
+        sep (str): Separator between nested keys.
+        
+    Returns:
+        dict: Flattened dictionary.
+    """
+
+    d=pre_dict(
+        d  
+    )
+    
+    items = []
+    for k, v in d.items():
+        # g: construct the new key with the separator if a parent key exists
+        new_key = f"{parent_key}{sep}{k}" if parent_key else k
+        
+        # g: recursively flatten if the value is a dictionary
+        if not isinstance(v, (dict,int,float,str,list,tuple)):
+            v=pre_dict(
+                v  
+            )
+            
+        if isinstance(v, dict):
+            items.extend(flatten_vals(v, parent_key=new_key, sep=sep).items())
+        else:
+            items.append((new_key, v))
+    return dict(items)
+
+def flatten_dict(d,sep=':'):
+    d_flat=flatten_vals(d,sep=sep)
+    # size=len(d_flat)
+    _keys=list(d_flat.keys())
+    
+    d_flat=flatten_keys(d_flat,sep=sep)
+    # assert len(d_flat)==size,(len(d_flat),size)
+    assert len(d_flat)==len(_keys),f"\n{list(d_flat.keys())}\n{_keys}"
+    
+    return d_flat
+
 ## find
 def contains_keys(
     obj,
@@ -130,3 +205,26 @@ def contains_keys(
 
     recurse(obj)
     return all(k in found for k in keys_to_find)
+
+def diff_dicts(
+    d1, # old 
+    d2, # new
+    path="",
+    ignore=[]
+    ):
+    """Recursively find differences between two dictionaries."""
+    for k in d1:
+        if k not in d2: # and k not in ignore:
+            print(f"{path} ! : '{k}' not in d2")
+        else:
+            if isinstance(d1[k], dict) and isinstance(d2[k], dict):
+                diff_dicts(d1[k], d2[k], f"{path} : {k}" if path else k, ignore=ignore)
+            elif d1[k] != d2[k]:
+                current_path = f"{path} : {k}" if path else k
+                print(f"{current_path}:")
+                print(f" - : {d1[k]}")
+                print(f" + : {d2[k]}")
+
+    for k in d2:
+        if k not in d1: # and k not in ignore:
+            print(f"{path} ! : '{k}' not in d1")

@@ -3,50 +3,50 @@
 ## logging
 import logging
 
-## data
-import pandas as pd
-import numpy as np
-
-from pathlib import Path
-
-from os.path import exists, basename, dirname
-from glob import glob
-
 # from roux.lib.sys import runbash
 import subprocess
+from glob import glob
+from os.path import basename, dirname, exists
+from pathlib import Path
 
 ## viz
 import matplotlib.pyplot as plt
+import numpy as np
 
-## internal
-from roux.lib.str import replace_many
+## data
+import pandas as pd
+
 from roux.lib.io import (
+    makedirs,
     read_dict,
     read_list,
     read_ps,
     read_table,
     to_dict,
     to_table,
-    makedirs,
 )
+
+## internal
+from roux.lib.str import replace_many
 from roux.lib.sys import (
-    basenamenoext,
-    is_interactive_notebook,
-    splitext,
-    to_path,
     abspath,
-    runbash,
+    basenamenoext,
     get_env,
+    is_interactive_notebook,
     remove_exts,
+    runbash,
+    splitext,
     to_output_path,
+    to_path,
 )
+
 
 ## matplotlib plots
 def to_plotp(
     ax: plt.Axes = None,
     prefix: str = "plot/plot_",
     suffix: str = "",
-    fmts: list = ["png"],
+    fmts: list = ['pdf','png'],
 ) -> str:
     """Infer output path for a plot.
 
@@ -63,6 +63,8 @@ def to_plotp(
         ax = plt.gca()
     if isinstance(ax, str):
         return ax
+
+    ## else infer path
     if isinstance(suffix, (list, tuple)):
         suffix = "_".join(suffix)
     suffix = suffix.replace("/", "_")
@@ -75,12 +77,20 @@ def to_plotp(
     # print(prefix)
     # print('_' if not prefix.endswith('_') else '')
     # print(to_path('_'.join([s for s in labels if not (s.replace(' ','')=='')])))
+    fn=to_path('_'.join([s for s in labels if not (s.replace(' ','')=='')])).lower()
+    fn=replace_many(
+        fn,
+        {
+            '.':'',
+            '/':'',
+        },
+        errors=None,
+    )
     plotp = (
-        f"{prefix}{to_path('_'.join([s for s in labels if not (s.replace(' ','')=='')])).lower().replace('.','')}{suffix}"
+        f"{prefix}{fn}{suffix}"
         + (f".{fmts[0]}" if len(fmts) == 1 else "")
     )
-    # logging.warning(f"Inferred path of the plot (plotp): '{plotp}'")
-    print(f"Inferred path of the plot (plotp): '{plotp}'")
+    logging.info(f"Inferred path of the plot (plotp): '{plotp}'")
     return plotp
 
 
@@ -88,7 +98,7 @@ def savefig(
     plotp: str,
     tight_layout: bool = True,
     bbox_inches: list = None,  # overrides tight_layout
-    fmts: list = ["png"],
+    fmts: list = ['pdf',"png"],
     savepdf: bool = False,
     normalise_path: bool = True,
     replaces_plotp: dict = None,
@@ -266,6 +276,7 @@ def get_plot_inputs(
     df1: pd.DataFrame = None,
     kws_plot: dict = {},
     outd: str = None,
+    out_fmt=None, #tuple
 ) -> tuple:
     """Get plot inputs.
 
@@ -295,10 +306,20 @@ def get_plot_inputs(
         ## remove suffixes
         outd = remove_exts(plotp) + "/"
     if df1 is None:
-        df1 = read_table(f"{outd}/data.tsv")
+        data_path=read_ps(f"{outd}/data.*")
+        assert len(data_path)==1, data_path
+        data_path=data_path[0]
+        df1 = read_table(data_path)
     kws_plot = update_kws_plot(kws_plot, kws_plotp=f"{outd}/config.yaml")
-    return plotp, df1, kws_plot
 
+    if out_fmt is None:
+        return plotp, df1, kws_plot
+    else:
+        return dict(
+            path=plotp,
+            data=df1,
+            kws_plot=kws_plot,
+        )
 
 def log_code():
     """Log the code."""
@@ -423,7 +444,7 @@ def to_script(
     lines = [f"    {l}" for l in lines]
     lines = "\n".join(lines)
     lines = (
-        f'def {defn}(\n{s4}plotp="{plotp}",\n{s4}data=None,\n{s4}df1=None,\n{s4}kws_plot=None,\n{s4}ax=None,\n{s4}fig=None,\n{s4}outd=None,\n{s4}fun_data=None,\n{s4}**kws_set,\n{s4}):\n{s4}\n{s4}## get the inputs\n{s4}from roux.viz.io import get_plot_inputs\n{s4}plotp,data,kws_plot=get_plot_inputs(plotp=plotp,df1=data,kws_plot=kws_plot,outd=f"{{dirname(__file__)}}");\n{s4}data=fun_data(data) if not fun_data is None else data;\n{s4}\n{s4}## plotting\n'
+        f'def {defn}(\n{s4}plotp=__file__,\n{s4}data=None,\n{s4}df1=None,\n{s4}kws_plot=None,\n{s4}ax=None,\n{s4}fig=None,\n{s4}outd=None,\n{s4}fun_data=None,\n{s4}**kws_set,\n{s4}):\n{s4}\n{s4}## get the inputs\n{s4}from roux.viz.io import get_plot_inputs\n{s4}plotp,data,kws_plot=get_plot_inputs(plotp=plotp,df1=data,kws_plot=kws_plot,outd=f"{{Path(__file__).parent}}");\n{s4}data=fun_data(data) if not fun_data is None else data;\n{s4}\n{s4}## plotting\n'
         + lines
         + f"\n{s4}ax.set(**kws_set)\n{s4}return ax\n"
     )
@@ -436,12 +457,15 @@ def to_script(
 
     if validate:
         ## replacestar
-        from roux.workflow.io import replacestar_ruff
+        from roux.workflow.io import replacestar
 
-        replacestar_ruff(
-            p=srcp,
-            outp=srcp,
+        replacestar(
+            srcp,
+            srcp,
             verbose=test,
+            method='filter',
+            # method_kws=dict(indent=''),
+            errors='raise',
         )
     return srcp
 
@@ -451,6 +475,7 @@ def to_plot(
     data: pd.DataFrame = None,
     df1: pd.DataFrame = None,
     kws_plot: dict = dict(),
+    stats: dict = dict(),
     logp: str = "log_notebook.log",
     sep: str = "begin_plot()",
     validate: bool = False,
@@ -488,6 +513,10 @@ def to_plot(
             log_notebookp=f'log_notebook.log';open(log_notebookp, 'w').close();get_ipython().run_line_magic('logstart','{log_notebookp} over')
 
     """
+    if stats is not None and isinstance(plotp,plt.Axes):
+        if hasattr(plotp,'stats'):
+            stats=plotp.stats
+
     # save plot
     plotp = savefig(
         plotp,
@@ -513,13 +542,25 @@ def to_plot(
     outd = remove_exts(outd)
     if test:
         logging.info(outd)
-    df1p = f"{outd}/data.tsv"
-    paramp = f"{outd}/config.yaml"
-    srcp = f"{outd}/plot.py"
+    outps=dict(
+        data=f'{outd}/data.pqt',
+        code=f'{outd}/plot.py',
+        config=f'{outd}/config.yaml',
+        stats=f'{outd}/stats.yaml',
+    )    
     # save data
-    to_table(df1, df1p)
+    to_table(df1, outps['data'])
+    if stats is not None:
+        try: 
+            from roux.lib.dict import flatten_dict
+            stats=flatten_dict(stats)
+            to_dict(stats, outps['stats'])
+        except Exception as e:
+            logging.warning("stats could not be saved because ..")
+            logging.error(str(e))
+
     srcp = to_script(
-        srcp=srcp,
+        srcp=outps['code'],
         plotp=plotp,
         logp=logp,
         sep=sep,
@@ -528,16 +569,16 @@ def to_plot(
     )
     if srcp is None:
         return plotp
-    to_dict(kws_plot, paramp)
+    to_dict(kws_plot, outps['config'])
     if test:
-        print({"plot": plotp, "data": df1p, "param": paramp})
+        print(outps)
     if validate:
         read_plot(srcp)
     logging.info(plotp)
     return plotp
 
 
-def read_plot(p: str, safe: bool = False, test: bool = False, **kws) -> plt.Axes:
+def read_plot(p: str, safe: bool = False, test: bool = False, **kws_plot) -> plt.Axes:
     """Generate the plot from data, parameters and a script.
 
     Args:
@@ -554,34 +595,47 @@ def read_plot(p: str, safe: bool = False, test: bool = False, **kws) -> plt.Axes
             p = f"{remove_exts(p)}/plot.py"
             if test:
                 logging.info(p)
-        from roux.workflow.io import import_from_file
+        from roux.workflow.function import import_from_file
 
-        ax = import_from_file(p).plot_(**kws)
+        ax = (
+            import_from_file(p)
+                .plot_(
+                    **{
+                        **kws_plot,
+                        ## override
+                        **dict(plotp=Path(p).parent.as_posix()),
+                    },
+                )
+            )
         return ax
     else:
         from roux.viz.image import plot_image
 
         if p.endswith(".py"):
             p = (read_ps(f"{dirname(p)}.*png") + read_ps(f"{dirname(p)}.*pdf"))[0]
-        return plot_image(p, **kws)
+        return plot_image(p, **kws_plot)
 
 
 ## files
 def label_pdf(
     p,
     output_writer,
-    label='fn',
-    x=-36,
-    y=-72,
+    label='fn', # stem
+
+    ## bottom
+    x=-36,y=-72,
+
+    ## aes
     size=5,
     color=[0.5,0.5,0.5],
     font="Helvetica",
     ):
+    from io import BytesIO
+
     from pypdf import PdfReader
-    from reportlab.pdfgen import canvas
     from reportlab.lib.pagesizes import letter
     from reportlab.lib.units import inch
-    from io import BytesIO
+    from reportlab.pdfgen import canvas
     # Create a PDF reader
     reader = PdfReader(p)
 
@@ -595,6 +649,8 @@ def label_pdf(
         can.translate(inch,inch)
         if label =='fn':
             label = Path(p).stem
+        elif callable(label):
+            label = label(p)
         else:
             ## disable
             label = ''
@@ -758,6 +814,7 @@ def to_gif(
         2. https://stackoverflow.com/a/57751793/3521099
     """
     import glob
+
     from PIL import Image
 
     img, *imgs = [

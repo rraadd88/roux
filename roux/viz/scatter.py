@@ -2,13 +2,11 @@
 
 import logging
 
-import pandas as pd
-import numpy as np
-
 import matplotlib.pyplot as plt
-import seaborn as sns
-
+import numpy as np
+import pandas as pd
 import scipy as sc
+import seaborn as sns
 
 import roux.lib.df as rd  # noqa
 from roux.stat.io import pval2annot
@@ -83,16 +81,22 @@ def plot_scatter(
     ## trendline
     line_kws={},
     ## stats
+    show_p=True,
     stat_method: str = "spearman",
     stat_resample: bool = False,
-    stat_kws={},
+    stat_kws={
+        # 'n_min':10
+    },
     # stats_annot_kws={},
     ## aes
     hollow: bool = False,
+    ## axes
+    diagonal=False,
     ## set
     ax: plt.Axes = None,
     verbose: bool = True,
     annot_kws={},
+    # kws_set={},
     **kws,
 ) -> plt.Axes:
     """Plot scatter with multiple layers and stats.
@@ -125,8 +129,8 @@ def plot_scatter(
         1. For a rasterized scatter plot set `scatter_kws={'rasterized': True}`
         2. This function does not apply multiple colors, similar to `sns.regplot`.
     """
-    ## axis
-    ax = plt.subplot() if ax is None else ax
+    from roux.viz.figure import get_ax
+    ax = get_ax(ax)
 
     ## string to list
     stat_method = (
@@ -147,7 +151,7 @@ def plot_scatter(
         plot_scatter_agg(data, x, y, z, **kws)
     ## points
     if "scatter" in kind:
-        from roux.viz.colors import saturate_color, get_colors_default
+        from roux.viz.colors import get_colors_default, saturate_color
 
         ## shape
         if hollow:
@@ -206,6 +210,11 @@ def plot_scatter(
             line_kws=line_kws,
             **kws,
         )
+    
+    if diagonal:
+        from roux.viz.ax_ import set_equallim
+        set_equallim(ax=ax,diagonal=True,**(diagonal if isinstance(diagonal,dict) else {}))
+
     ## stats
     from roux.viz.annot import show_scatter_stats
     
@@ -222,15 +231,8 @@ def plot_scatter(
             kws_parcorr['x_covar']=kws['x_partial']
         elif kws.get('y_partial',None):
             kws_parcorr['y_covar']=kws['y_partial']
-                    
-    ax=show_scatter_stats(
-        ax,
-        data=data,
-        x=x,
-        y=y,
-        z=z,
-        zorder=5,
-        **{
+
+    kws_={
             **{
                 **dict(
                     method=stat_method[0],
@@ -240,7 +242,19 @@ def plot_scatter(
                 **kws_parcorr,
             },
             **annot_kws,
-        },
+            **dict(
+                show_p=show_p,
+            )
+        }
+    logging.info(kws_)        
+    ax=show_scatter_stats(
+        ax,
+        data=data,
+        x=x,
+        y=y,
+        z=z,
+        zorder=5,
+        **kws_,
     )
     return ax
 
@@ -260,7 +274,7 @@ def plot_qq(x: pd.Series) -> plt.Axes:
     sm.qqplot(x, dist=sc.stats.norm, line="s", ax=ax)
     ax.set_title(
         "SW test "
-        + pval2annot(sc.stats.shapiro(x)[1], alpha=0.05, fmt="<", linebreak=False)
+        + pval2annot(sc.stats.shapiro(x)[1], alpha=0.05, fmt=None, linebreak=False)
     )
     from roux.viz.ax_ import set_equallim
 
@@ -372,49 +386,85 @@ def _prepare_volcano_data(
     data: pd.DataFrame,
     colx: str,
     coly: str,
-    style: str,
-    line_pvalue: float,
-    line_x: float,
-    line_x_min: float,
-    p_min: float,
     hue: str,
     colindex: str,
-    errors: str,
-    kws_scatterplot: dict,
+    style: str,
+
+    ## min. signi bounds
+    signi_bin_exprs: dict=None, ## overrides
+    xabs_gt: float=0,
+    p_lt: float=0.1,
+
+    ## max. signi bounds 
+    xlim=None, 
+    p_min: float=0.001,
+
+    errors: str='raise',    
+    kws_scatterplot: dict={},
 ):
     """Prepares the DataFrame for plot_volcano."""
+    if signi_bin_exprs is None:
+        assert xabs_gt is not None and p_lt is not None, (xabs_gt,p_lt)
+        signi_bin_exprs={
+            'increase':f"`{colx}`>{xabs_gt} & `{coly}`<{p_lt}",
+            'decrease':f"`{colx}`<{-1*xabs_gt} & `{coly}`<{p_lt}",
+        }
+        signi_bin_exprs['ns']=f"~(({signi_bin_exprs['increase']}) | ({signi_bin_exprs['decrease']}))"
+
+        logging.warning(signi_bin_exprs)
+        del xabs_gt,p_lt
+
     if errors == 'raise':
         assert not data[colindex].duplicated().any(), 'set errors=None if this is un-necessary ..'
     
     from roux.stat.transform import log_pval
     data = data.reset_index(drop=True)
 
+    ## max. signi bounds 
     if not coly.lower().startswith("significance"):
-        xlim_data = {
-            'max': data.loc[~np.isinf(data[colx]), colx].max(),
-            'min': data.loc[~np.isinf(data[colx]), colx].min(),
-        }
-        data = data.assign(
-            **{
-                style: lambda df: df.apply(
-                    lambda x:
-                    (
-                        "^" if x[coly] == 0 else
-                        ">" if x[colx] == np.inf else
-                        "<" if x[colx] == -np.inf else
-                        "o"
-                    ),
-                    axis=1,
-                ),
-                colx: lambda df: df[colx].apply(
-                    lambda x:
-                    (
-                        xlim_data['max'] if x == np.inf else
-                        xlim_data['min'] if x == -np.inf else
-                        x
+        if xlim is None:
+            xlim = [
+                data.loc[~np.isinf(data[colx]), colx].min(),
+                data.loc[~np.isinf(data[colx]), colx].max(),
+            ]
+        data = (
+            data
+                .assign(
+                    **{    
+                        ## clipped to inf
+                        colx:lambda df: df[colx].apply(
+                            lambda x:
+                            (
+                                np.inf if x > xlim[1]  else
+                                -np.inf if x < xlim[0] else
+                                x
+                            )
+                        ),
+                        style: lambda df: df.apply(
+                            lambda x:
+                            (
+                                "^" if x[coly] == 0 else
+                                ">" if x[colx] == np.inf else
+                                "<" if x[colx] == -np.inf else
+                                "o"
+                            ),
+                            axis=1,
+                        ),
+                    }
                     )
+                .assign(
+                    **{                         
+                        ## clipped to lim
+                        colx: lambda df: df[colx].apply(
+                            lambda x:
+                            (
+                                xlim[1] if x == np.inf else
+                                xlim[0] if x == -np.inf else
+                                x
+                            )
+                        ),
+                    },
                 )
-            },
         )
         logging.warning(f'transforming the coly ("{coly}") values.')
         coly_ = f"significance\n(-log10({coly}))"
@@ -425,6 +475,7 @@ def _prepare_volcano_data(
     elif style not in data:
         data[style] = "o"
 
+    ## min. signi bounds
     data["significance bin"] = pd.cut(
         data[coly],
         bins=log_pval([0, 0.05, 0.1, 1])[::-1],
@@ -433,34 +484,11 @@ def _prepare_volcano_data(
     )
     assert not data["significance bin"].isnull().any()
 
-    data = (
-        data.assign(
-            **{
-                "significance direction bin": lambda df: df.apply(
-                    lambda x: "increase"
-                    if x[coly] > log_pval(line_pvalue)
-                    and (
-                        x[colx] > line_x
-                        if line_x_min is not None
-                        else x[colx] >= line_x
-                    )
-                    else "decrease"
-                    if x[coly] > log_pval(line_pvalue)
-                    and (
-                        x[colx] < line_x_min
-                        if line_x_min is not None
-                        else x[colx] <= -1 * line_x
-                    )
-                    else "ns",
-                    axis=1,
-                ),
-            }
-        ).sort_values(
-            "significance direction bin", ascending=False
-        )
+    data=data.rd.assignby_expr(
+        expr=signi_bin_exprs,
+        col='significance direction bin',
     )
     assert not data["significance direction bin"].isnull().any()
-
     if hue == "x":
         hue = "significance direction bin"
         kws_scatterplot["hue_order"] = ["increase", "decrease", "ns"]
@@ -483,6 +511,16 @@ def plot_volcano(
     coly: str,
     colindex: str,
     hue: str = "x",
+    
+    ## min. signi bounds
+    signi_bin_exprs: dict=None, ## overrides
+    xabs_gt: float=0,
+    p_lt: float=0.1,
+
+    ## max. signi bounds 
+    xlim=None, 
+    p_min: float=0.001,
+    
     style: str = "marker_style",
     style_order: list = [
         "o",
@@ -496,24 +534,22 @@ def plot_volcano(
         "<", #-inf
         ">", #+inf
     ],
+    
     show_labels: int = None,
     labels_layout: str = 'side',
     labels_kws: dict = {},
     show_outlines: int = None,
     outline_colors: list = ["k"],
     collabel: str = None,
-
-    ## thresholds
-    line_pvalue=0.1,
-    line_x: float = 0.0,  
     
-    ## dotted line
-    show_lines: bool = False,
-    line_x_min: float = None,
+    ## guide line
+    ### dotted line
+    # show_lines: bool = False,
     
     show_text: bool = True,
-    text_increase: str = None,
-    text_decrease: str = None,
+    show_n=True,
+    text_increase: str = 'n',
+    text_decrease: str = 'n',
     text_diff: str = None,
     legend: bool = False,
     legend_kws=dict(
@@ -521,7 +557,6 @@ def plot_volcano(
         loc='lower left',
     ),    
     verbose: bool = False,
-    p_min: float = None,
     ax: plt.Axes = None,
     outmore: bool = False,
     kws_legend: dict = {},
@@ -542,23 +577,46 @@ def plot_volcano(
         fig, ax = plt.subplots(figsize=[4, 3])
     if collabel is None:
         collabel = colindex
+        if isinstance(collabel,list):
+            assert len(collabel)==1, "if show_labels, collabel (colindex) should be one"
+            collabel=collabel[0]
 
-    data, coly, hue, kws_scatterplot = _prepare_volcano_data(
-        data, colx, coly, style, line_pvalue, line_x, line_x_min, p_min, hue, colindex, errors, kws_scatterplot
+    data, coly, hue, kws_scatterplot=_prepare_volcano_data(        
+        data=data, 
+        colx=colx, 
+        coly=coly, 
+        style=style, 
+        
+        ## min. signi bounds
+        signi_bin_exprs=signi_bin_exprs, ## overrides
+        xabs_gt=xabs_gt,
+        p_lt=p_lt,
+
+        ## max. signi bounds 
+        xlim=xlim, 
+        p_min=p_min,
+
+        hue=hue, 
+        colindex=colindex, 
+        errors=errors, 
+        kws_scatterplot=kws_scatterplot
     )
-
     ax = sns.scatterplot(
         data=data,
-        x=colx,
-        y=coly,
-        hue=hue,
-        style=style,
-        style_order=style_order,
-        markers=markers,
-        ec=None,
+        **{
+            **dict(
+                x=colx,
+                y=coly,
+                hue=hue,
+                style=style,
+                style_order=style_order,
+                markers=markers,
+                ec=None,
+                legend=False,
+            ),
+            **kws_scatterplot,
+        },
         ax=ax,
-        legend=False,
-        **kws_scatterplot,
     )
     ## set text
     axlims = get_axlims(ax)
@@ -572,74 +630,75 @@ def plot_volcano(
                 va="center",
                 color="gray",
             )
+        
+    if show_n:
+        to_ns=data.groupby('significance direction bin')[colindex].nunique().to_dict()
+        kws_text_show_n=dict(
+            va="center" if (text_increase == "n" and text_decrease == "n") else 'bottom',
+            color="k" if ((text_increase == "n" and text_decrease == "n") or ("palette" not in kws_scatterplot)) else kws_scatterplot["palette"][0],            
+        )
         ax.text(
             x=ax.get_xlim()[1],
             y=ax.get_ylim()[1],
-            s="increase $\\rightarrow$"
-            + (
-                "\n(n="
-                + str(
-                    data.query(expr="`significance direction bin` == 'increase'")[
-                        colindex
-                    ].nunique()
+            s=(
+                to_ns.get('increase','')
+                    if text_increase == "n" else
+                (
+                    "increase $\\rightarrow$"
+                    + "\n(n="
+                    + str(to_ns.get('increase',0))
+                    + ")"
                 )
-                + ")"
-                if text_increase == "n"
-                else f"\n({text_increase})"
-                if text_increase is not None
-                else ""
+                    if text_increase == "dir(n)" else
+                f"\n({text_increase})"
+                    if text_increase is not None else
+                ""
             ),
             ha="right",
-            va="bottom",
-            color="k"
-            if "palette" not in kws_scatterplot
-            else kws_scatterplot["palette"][0],
+            **kws_text_show_n
         )
         ax.text(
             x=ax.get_xlim()[0],
             y=ax.get_ylim()[1],
-            s="$\\leftarrow$ decrease"
-            + (
-                "\n(n="
-                + str(
-                    data.query(expr="`significance direction bin` == 'decrease'")[
-                        colindex
-                    ].nunique()
+            s=(
+                to_ns.get('decrease','')
+                    if text_increase == "n" else
+                (
+                    "$\\leftarrow$ decrease"
+                    + "\n(n="
+                    + str(to_ns.get('decrease',0))
+                    + ")"
                 )
-                + ")"
-                if text_increase == "n"
-                else f"\n({text_decrease})"
-                if text_decrease is not None
-                else ""
+                    if text_increase == "dir(n)" else
+                f"\n({text_decrease})"
+                    if text_decrease is not None else
+                ""
             ),
             ha="left",
-            va="bottom",
-            color="k"
-            if "palette" not in kws_scatterplot
-            else kws_scatterplot["palette"][1],
+            **kws_text_show_n
         )
-
+    ## get from plot (i.e. data_plot)
     xlim = ax.get_xlim()
     ylim = ax.get_ylim()
 
-    ## set lines
-    if show_lines:
-        from roux.stat.transform import log_pval
-        for side in [-1, 1]:
-            print(
-                [xlim[0 if side == -1 else 1], line_x * side, line_x * side],
-                [log_pval(line_pvalue), log_pval(line_pvalue), ylim[1]],
-            )
-            ax.plot(
-                [
-                    xlim[0 if side == -1 else 1],
-                    (line_x_min if line_x_min is not None else line_x * side),
-                    (line_x_min if line_x_min is not None else line_x * side),
-                ],
-                [log_pval(line_pvalue), log_pval(line_pvalue), ylim[1]],
-                color="gray",
-                linestyle=":",
-            )
+    # ## set lines
+    # if show_lines:
+    #     from roux.stat.transform import log_pval
+    #     for side in [-1, 1]:
+    #         print(
+    #             [xlim[0 if side == -1 else 1], line_x * side, line_x * side],
+    #             [log_pval(line_pvalue), log_pval(line_pvalue), ylim[1]],
+    #         )
+    #         ax.plot(
+    #             [
+    #                 xlim[0 if side == -1 else 1],
+    #                 (line_x_min if line_x_min is not None else line_x * side),
+    #                 (line_x_min if line_x_min is not None else line_x * side),
+    #             ],
+    #             [log_pval(line_pvalue), log_pval(line_pvalue), ylim[1]],
+    #             color="gray",
+    #             linestyle=":",
+    #         )
     ## set labels
     # if show_labels is not None:  # show_labels overrides show_outlines
     #     show_outlines = show_labels
@@ -774,3 +833,192 @@ def plot_volcano(
     else:
         return ax, data
 
+def plot_volcano_split(
+    data,
+    col_label,
+    row,
+    row_order=None,
+    annot_expr=None,
+
+    signi_lt=0.05,
+    xlim=None,
+    text_x_offs=[0.25,-1],
+    
+    axd=None,
+    figsize=[5,2],
+    kws_annot={},
+    **kws_volcano,
+    ):
+    if row_order is None:
+        row_order=data[row].unique().tolist()
+        
+    if axd is None:
+        fig,axd=plt.subplot_mosaic(
+            [
+                row_order
+            ],
+            figsize=figsize,
+        )
+        
+    from roux.viz.ax_ import format_ax
+    from roux.viz.figure import to_pos_in_ax2
+    for rowi,title in enumerate(row_order):
+        ax=axd[title]
+        loc='right' if rowi==0 else 'left'
+        data_=data.groupby(row,sort=False).get_group(title)
+        
+        # from roux.viz.scatter import plot_volcano
+        ax,data_volcano=plot_volcano(
+            data_,
+            **{
+                **dict(
+                    colx='LFC',
+                    coly='Q',
+                    colindex='gene set id',
+
+                    line_pvalue=signi_lt,
+                    xlim=xlim,          
+                    outmore=True,
+                    show_text=False,
+                    show_n=False,
+            
+                    alpha=0.5,
+                    ),
+                **kws_volcano,
+            },
+            ax=ax
+        )
+        from roux.viz.annot import annot_side
+        data_annot=(
+            data_volcano
+                .log.query(
+                    expr="Q < 0.05"
+                )
+                .sort_values(
+                    [
+                        'LFC',
+                        'significance\n(-log10(Q))',
+                    ],
+                    ascending=[False,False]
+                )
+            )
+        if annot_expr is not None:
+            data_annot=(
+                data_annot
+                    .log.query(
+                        expr=annot_expr,
+                    )
+            )
+        if len(data_annot)==0:
+            continue
+        
+        kws_annot_side=kws_annot.copy()
+        if loc=='left':
+            annot_ax2={
+                k:to_pos_in_ax2(
+                pt=pt,
+                ax=axd[row_order[0]],
+                ax2=axd[row_order[-1]],
+                ) for k,pt in annot_ax1.items()
+            }
+            annot_df=(
+                pd.DataFrame(annot_ax2,index=['text_x','text_y']).T
+                    .rename_axis(col_label)
+                    .reset_index(0)
+            )
+            assert data_annot[col_label].isin(annot_df[col_label]).all(), data_annot[col_label].unique()
+            data_annot=(
+                data_annot
+                .log.merge(
+                    right=annot_df,
+                    on=col_label,
+                    how='inner',
+                    validate='m:1',
+                )
+                .assign(
+                    **{
+                        col_label: '',
+                        'text_x': lambda df: df['text_x']+text_x_offs[1],
+                    }
+                )
+            )
+            kws_annot_side={
+                **kws_annot_side,
+                **dict(
+                    text_x='text_x',
+                    text_y='text_y',
+                ),
+            }        
+        
+        annot_side(
+            data_annot,
+            colx='LFC',
+            coly='significance\n(-log10(Q))',
+            col_label=col_label,
+            ax=ax,
+            loc='left',
+            kind='curved',
+            off=text_x_offs[0],
+            
+            **{
+                **dict(
+                    size=10,
+                    linespacing=0.75,
+                    ha='center',
+                    limf=[0.1,0.9],
+                    kws_line=dict(
+                        zorder=5,
+                        ),
+                    zorder=10,
+                 ),
+                **kws_annot_side,
+            },
+        )
+        format_ax(
+            ax=ax,
+            xlabel='Enrichment (Log$_\mathrm{2}$(OR))',
+            # rotate_ylabel=True,
+            title=title,
+            # xticks=list(sorted(set([0]+list(ax.get_xticks())))),
+            xticks=xlim,
+            xlim=xlim,
+            ylim=[0,ax.get_ylim()[1]],
+        )
+        if loc=='right':
+            ax.invert_xaxis()
+            from roux.viz.figure import get_text
+            
+            annot_pos={
+                s: get_text(
+                    s,
+                    ax=ax,
+                )[0] for s in data_annot[col_label].astype(str).unique()
+            }
+            [t.set_zorder(100) for t in annot_pos.values()]
+            annot_pos={k: (
+                    t
+                    .get_window_extent(
+                        renderer=plt.gcf().canvas.get_renderer()
+                        )
+                    .transformed(ax.transData.inverted())
+                ) for k,t in annot_pos.items()}
+            annot_ax1={k:[t.xmin,np.mean([t.ymin,t.ymax])]for k,t in annot_pos.items()}
+        else:
+            ax.set(
+                # ylabel=None,
+                yticklabels=[],
+            )        
+        # g: 2. Move the Y-axis label text to the right side
+        ax.yaxis.set_label_position('left' if loc=='right' else 'right')
+        
+        # g: 3. Configure tick visibility (ensures left ticks are off 
+        # g:    and right ticks are explicitly on, though tick_right often handles this)
+        ax.tick_params(axis='y', left=loc=='right', right=(loc=='left'))
+        
+        # g: 4. The essential fix: Hide the left spine and show the right spine.
+        ax.spines[loc].set_visible(False)
+        ax.spines['left' if loc=='right' else 'right'].set_visible(True)
+        
+        # ax.legend()
+        # break
+    return axd

@@ -1,14 +1,16 @@
 """For setting up subplots."""
 
 # import seaborn as sns
-import pandas as pd
-import numpy as np
 import logging
 
 ## viz basic
+import matplotlib
 import matplotlib.pyplot as plt
+import matplotlib.transforms as transforms
+import numpy as np
+import pandas as pd
 
-from roux.lib.str import replace_many
+from roux.lib.str import capitalize_first, replace_many
 
 
 def set_axes_minimal(
@@ -108,15 +110,88 @@ def set_axes_arrows(
 
 
 # labels
+def get_pos(
+    loc=None,
+    x=None,
+    y=None,
+    offs=(0, 0), # g: Changed to immutable tuple to prevent default argument mutation bugs
+):
+    """
+    Get coordinates based on matplotlib-style location codes or explicit x,y values.
+    """
+    assert not all([t is None for t in [x,y,loc]]), [x,y,loc]
+    if isinstance(offs,(float,int)):
+        offs=[offs,offs]
+
+    if loc is not None:
+        # g: matplotlib style locations
+        if loc == 0: # g: User defined default
+            x, y = 1, 0
+        elif loc == 1: # upper right
+            x, y = 1, 1
+        elif loc == 2: # upper left
+            x, y = 0, 1
+        elif loc == 3: # lower left
+            x, y = 0, 0
+        elif loc == 4: # lower right
+            x, y = 1, 0
+        else:
+            raise NotImplementedError(f"loc={loc} is not implemented.")
+    else:
+        # g: custom location QC
+        assert x is not None and y is not None, "Both x and y must be provided if loc is None."
+
+    return x + offs[0], y + offs[1]
+
+def get_ta(
+    loc,
+    place,
+    ha=None,
+    va=None,
+):
+    if loc in [0, 4]:
+        if place=='in':
+            ha_,va_ = "right","bottom"
+        else:
+            ha_,va_ = "left","top"
+    elif loc == 1:
+        if place=='in':
+            ha_,va_ = "right","top"
+        else:
+            ha_,va_ = "left","bottom"
+    elif loc == 2:
+        if place=='in':
+            ha_,va_ = "left","top"
+        else:
+            ha_,va_ = "right","bottom"
+    elif loc == 3:
+        if place=='in':
+            ha_,va_ = "left","bottom"
+        else:
+            ha_,va_ = "right","top"
+    return (
+        ha_ if ha is None else ha,
+        va_ if va is None else va
+        )
+
+## TODO: move to text.py
 def set_label(
     s: str,
-    ax: plt.Axes,
-    x: float = 0,
-    y: float = 0,
-    ha: str = "left",
-    va: str = "top",
+    ax: plt.Axes=None,
     loc=None,
-    off_loc=0.01,
+    place='in',
+    
+    ## loc, pos
+    x: float = None,
+    y: float = None,
+    offs=(0.01, 0.01),
+
+    ## ta, place
+    ha: str = None,
+    va: str = None,
+
+    ## bc
+    off_loc=None,
     title: bool = False,
     **kws,
 ) -> plt.Axes:
@@ -135,41 +210,49 @@ def set_label(
 
     Returns:
         plt.Axes: `plt.Axes` object.
-    """
+    """    
+    if ax is None:
+        ax=plt.gca()
     if title:
         ax.set_title(s, **kws)
-    elif loc is not None and (x is None and y is None):
-        if loc == 1 or loc == "upper right":
-            x = 1 - off_loc
-            y = 1 - off_loc
-            ha = "right"
-            va = "top"
-        elif loc == 2 or loc == "upper left":
-            x = 0 + off_loc
-            y = 1 - off_loc
-            ha = "left"
-            va = "top"
-        elif loc == 3 or loc == "lower left":
-            x = 0 + off_loc
-            y = 0 + off_loc
-            ha = "left"
-            va = "bottom"
-        elif loc in [0, 4] or loc == "lower right":
-            x = 1 - off_loc
-            y = 0 + off_loc
-            ha = "right"
-            va = "bottom"
-        else:
-            raise ValueError(loc)
-    # kws={
-    #     **dict(),
-    # }
-    ax.text(s=s, 
-            x=x, 
-            y=y, 
-            ha=ha, 
+        return ax
+
+    ## bc:
+    if off_loc is not None:
+        logging.warning("use offs instead of off_loc")
+        offs=off_loc
+        del off_loc
+
+    x,y=get_pos(
+        loc=loc,
+        x=x,
+        y=y,
+        offs=offs,
+    )
+
+    if loc is not None and (ha is None or va is None):
+        ha,va=get_ta(
+            loc=loc,
+            place=place,
+            ha=ha,
             va=va,
-            transform=ax.transAxes, **kws)
+        )
+    else:
+        ha,va="center","center"
+
+    ax.text(
+        **{
+            **dict(
+                s=s, 
+                x=x, 
+                y=y, 
+                ha=ha, 
+                va=va,
+                transform=ax.transAxes,
+                ),
+            **kws
+            }
+        )
     return ax
 
 
@@ -225,7 +308,7 @@ def format_labels(
     rename_labels=None,
     
     rotate_ylabel=True,
-    show_axes_arrows=True,
+    show_axes_arrows=False,
     rotate_ylabel_offs=None,
     
     y=1.05,
@@ -329,7 +412,10 @@ def rename_ticklabels(
         )
     elif rename is not None:
         _ = getattr(ax, f"set_{k}")(
-            [rename[t.get_text()] for t in getattr(ax, f"get_{k}")()]
+            [
+                 rename[t.get_text()]
+                 for t in getattr(ax, f"get_{k}")()
+            ]
         )
     else:
         raise ValueError("either `rename` or `replace` should be provided.")
@@ -358,7 +444,10 @@ def get_ticklabel_position(
 
 
 def set_ticklabels_color(
-    ax: plt.Axes, ticklabel2color: dict, axis: str = "y"
+    ax: plt.Axes,
+    axis: str,
+    ticklabel2color: dict = None,
+    **kwargs,
 ) -> plt.Axes:
     """Set colors to ticklabels.
 
@@ -370,9 +459,68 @@ def set_ticklabels_color(
     Returns:
         plt.Axes: `plt.Axes` object.
     """
-    for tick in getattr(ax, f"get_{axis}ticklabels")():
-        if tick.get_text() in ticklabel2color.keys():
-            tick.set_color(ticklabel2color[tick.get_text()])
+    if ticklabel2color is not None:
+        for tick in getattr(ax, f"get_{axis}ticklabels")():
+            if tick.get_text() in ticklabel2color.keys():
+                tick.set_color(ticklabel2color[tick.get_text()])
+    else:
+        from roux.viz.text import set_text_multicolored
+        
+        if axis == 'y':
+            # Use a blended transform: y in data coords, x in axes coords
+            transform = transforms.blended_transform_factory(ax.transAxes, ax.transData)
+            
+            # Get original ticks and labels
+            ticks = ax.get_yticks()
+            labels = [label.get_text() for label in ax.get_yticklabels()]
+            
+            # Clear original labels
+            ax.set_yticklabels([])
+            
+            # Draw new labels for each tick
+            for tick_val, label_str in zip(ticks, labels):
+                if label_str:
+                     # x=-0.02 positions text slightly left of the y-axis spine
+                     set_text_multicolored(
+                         ax=ax,
+                         **{
+                             **dict(
+                                 x=-0.02, y=tick_val, s=label_str,
+                                 # sep=sep,
+                                 transform=transform, ha='right', 
+                                 # va='center',
+                             ),
+                             **kwargs,
+                         }
+                     )
+    
+        elif axis == 'x':
+            # Use a blended transform: x in data coords, y in axes coords
+            transform = transforms.blended_transform_factory(ax.transData, ax.transAxes)
+            
+            ticks = ax.get_xticks()
+            labels = [label.get_text() for label in ax.get_xticklabels()]
+            
+            ax.set_xticklabels([])
+            
+            for tick_val, label_str in zip(ticks, labels):
+                if label_str:
+                    # y=-0.02 positions text slightly below the x-axis spine
+                    set_text_multicolored(
+                        ax=ax,
+                        **{
+                            **dict(
+                                x=tick_val, y=-0.1, s=label_str,
+                                # sep=sep,
+                                transform=transform,
+                                ha='center', 
+                                # va='top',
+                            ),
+                            **kwargs
+                        }
+                    )
+        else:
+            raise ValueError("axis must be either 'x' or 'y'")
     return ax
 
 
@@ -383,6 +531,8 @@ def format_ticklabels(
     n: int = None,
     fmt: str = None,
     font: str = None,  #'DejaVu Sans Mono',#"Monospace"
+    change_color=False,
+    kws_set_ticklabels_color={},    
 ) -> plt.Axes:
     """format_ticklabels
 
@@ -443,6 +593,17 @@ def format_ticklabels(
         if font is not None:
             for tick in getattr(ax, f"get_{axis}ticklabels")():
                 tick.set_fontname(font)
+                
+        if change_color and axis=='y' and ax.axison and ('\n' in ax.get_yticklabels()[0].get_text() if len(ax.get_yticklabels())>0 else True):
+            ## where the text is usually ..
+            ## if any new line brackets e.g. (n=10)
+            _=set_ticklabels_color(
+                ax=ax,
+                axis=axis,
+                ticklabel2color = None,
+                sep='\n',
+                **kws_set_ticklabels_color,
+            )                
     return ax
 
 
@@ -533,7 +694,6 @@ def split_ticklabels(
         #     group_x=axlims[axis]['max']+(axlims[axis]['len']*group_pad)
         #     group_xlabel=axlims[axis]['max']+(axlims[axis]['len']*group_pad+0.1)
         # print(axlims[axis]['min']-(group_pad*5.5))
-        import matplotlib.transforms as transforms
 
         if show_group_line:
             df_.apply(
@@ -567,7 +727,8 @@ def split_ticklabels(
         if show_group_span:
             # print(axlims[axis]['min']-(group_pad*5.5))
             # print(axlims[axis]['min'])
-            axhspan_kws = dict(
+            # axhspan_kws 
+            _ = dict(
                 zip(["xmin", "xmax"], sorted([group_x, axlims[axis]["min"]]))
             )
             # print(axhspan_kws)
@@ -810,7 +971,7 @@ def format_legends(
         plt.Axes: `plt.Axes` object.
     """
     handles, labels = ax.get_legend_handles_labels()
-    labels = [str(s).capitalize() for s in labels]
+    labels = [capitalize_first(str(s)) for s in labels]
     kws_legend = {
         **dict(
             borderpad=0,
@@ -827,7 +988,9 @@ def format_legends(
         **{
             ## inferred
             **dict(
-                title=ax.get_legend().get_title().get_text().capitalize()
+                title=capitalize_first(
+                    ax.get_legend().get_title().get_text()
+                )
                     if ax.get_legend() is not None
                     else None,
             ),
@@ -999,6 +1162,60 @@ def set_legends_merged(
     )  # .get_frame().set_edgecolor((0.95,0.95,0.95))
 
 
+def get_legend2param(ax: plt.Axes) -> dict[str, str]:
+    """
+    Extracts a dictionary mapping legend label strings to their colors 
+    from the legend attached to the given Axes object.
+
+    Args:
+        ax: The matplotlib.axes.Axes object containing the legend.
+
+    Returns:
+        A dictionary where keys are legend label strings and values are color strings (hex or name).
+    """
+    # g: Check if a legend exists on the Axes
+    legend = ax.get_legend()
+    if legend is None:
+        return {}
+    
+    color_map = {}
+    
+    # g: Get the text objects (labels)
+    labels_list = [text.get_text() for text in legend.get_texts()]
+    
+    # g: Get the handles associated with the labels
+    # g: FIX: Changed deprecated 'legendHandles' to the correct 'legend_handles' property.
+    handles_list = legend.legend_handles
+    
+    # g: Quality Check: Check if the handles and labels match
+    if len(labels_list) != len(handles_list):
+        raise ValueError("Mismatched count of legend labels and handles.")
+    
+    for label, handle in zip(labels_list, handles_list):
+        color = None
+        
+        # g: Lines (e.g., from ax.plot)
+        if isinstance(handle, matplotlib.lines.Line2D):
+            # g: Get the color from the Line2D object
+            color = handle.get_color()
+            
+        # g: Patches (e.g., from ax.bar, ax.hist)
+        elif isinstance(handle, matplotlib.patches.Rectangle):
+            # g: Get the facecolor from the Patch object
+            color = handle.get_facecolor()
+            
+            # g: Convert RGB/RGBA tuple to hex string for cleaner output
+            if isinstance(color, tuple):
+                # g: Use Matplotlib utility to format RGB/RGBA tuple to hex string
+                color = to_hex(color, keep_alpha=True)
+            
+        # g: For other handle types, additional checks would be added here.
+        
+        if color is not None:
+            color_map[label] = color
+            
+    return color_map
+    
 def set_legend_custom(
     ax: plt.Axes,
     legend2param: dict,

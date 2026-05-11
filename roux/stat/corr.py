@@ -3,12 +3,12 @@
 import logging
 
 import numpy as np
-from scipy import stats, spatial
-
 import pandas as pd
+from scipy import spatial, stats
 
 # attributes
 import roux.lib.dfs as rd  # noqa
+
 
 def _pre(
     x: str,
@@ -64,9 +64,17 @@ def _pre(
         cols_covar=[c for c in covar+[x_covar,y_covar] if c is not None]
         cols_covar=list(set(cols_covar))
     
+    try:
+        df = (
+            df
+                .replace([np.inf, -np.inf], np.nan)
+            ) 
+    except Exception as e:
+        logging.warning(str(e))
+        logging.warning(df.loc[:,[x,y]].to_string())
+        
     df = (
         df
-            .replace([np.inf, -np.inf], np.nan)
             .dropna(
                 subset=['x','y']+cols_covar
             )
@@ -242,6 +250,8 @@ def get_corr(
         elif hasattr(spatial.distance, method):
             ## no-pvalue
             method_fun = getattr(spatial.distance, method)
+        elif hasattr(stats, method):
+            method_fun = getattr(stats, method)
         else:
             raise ValueError(method)
     else:
@@ -305,6 +315,7 @@ def get_corr(
 def _to_string(
     res: dict,
     show_n: bool = True,
+    show_p: bool = True,
     show_n_prefix="$n$=",
     fmt: dict = "<",
     method_suffix=True,
@@ -323,8 +334,8 @@ def _to_string(
     Returns:
         str: string with the correation stats.
     """
-    from roux.viz.annot import pval2annot
     from roux.lib.str import num2str
+    from roux.viz.annot import pval2annot
 
     method = res["method"]
     if method_suffix:
@@ -344,7 +355,20 @@ def _to_string(
     )
     if "ci" in res:
         s0 += f"$\pm${res['ci']:.2f}{res['ci_type'] if res['ci_type']!='max' else ''}"
-    s0 += f"\n{pval2annot(res['P'],fmt='<',linebreak=False, alpha=0.05)}"
+    if show_p:
+        _pval_str=pval2annot(
+            res['P'],
+            **{
+                **dict(
+                    fmt=None,
+                    linebreak=False,
+                    alpha=0.05,
+                ),
+                **kws_pval2annot,
+                }
+            )
+            
+        s0 += f"\n{_pval_str}"
     if show_n:
         s0 += f"\n({show_n_prefix}{num2str(num=res['n'],magnitude=False)})"
     return s0

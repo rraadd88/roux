@@ -23,8 +23,9 @@ from roux.lib.io import (
     )
 
 from roux.workflow.log import test_params
-from roux.workflow.io import replacestar, to_clean_nb, to_html, to_src, to_nb_kernel
-
+from roux.workflow.pms import pre_params, to_params
+from roux.workflow.io import replacestar, to_src
+from roux.workflow.nb import to_nb_kernel, to_clean_nb, to_html
 from roux.workflow.task import (
     # run_task, 
     run_tasks ## preferred because it infers setup for the outputs
@@ -192,7 +193,7 @@ def peek_table(
         use_dir_paths=False
     if not_use_paths: 
         use_paths=False
-        
+    
     from roux.lib.io import read_table
     df_=read_table(
         p,
@@ -200,7 +201,12 @@ def peek_table(
         use_paths=use_paths,
         **kws,
     )
+    
     logging.info(df_.shape)
+    from roux.lib.df import _get_preview_log_str
+    logging.info(
+        _get_preview_log_str(df_.head(1))
+    )
     if cols_desc:
         return df_[cols_desc].describe()
     else:        
@@ -282,7 +288,11 @@ parser.add_commands(
             read_metadata,
             to_cfg_run_arc,
         ## workflow execution
+          ## pms
             test_params,
+            pre_params,
+            to_params,
+          ## tasks
             run_tasks,
             ## slurm
             check_tasks,

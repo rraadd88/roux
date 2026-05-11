@@ -1,5 +1,8 @@
 """For task management."""
 
+import sys
+sys.tracebacklimit = 0 # needs to be at the very top
+
 import os
 import time
 from tqdm import tqdm
@@ -18,7 +21,9 @@ from pathlib import Path
 ## internal
 from roux.lib.sys import run_com
 from roux.lib.io import read_dict, to_dict, read_ps
+
 from roux.workflow.log import test_params
+from roux.workflow.pms import pre_params
 
 from roux.lib.sys import (
     exists,
@@ -47,148 +52,40 @@ except ImportError:
 
 import papermill as pm
 
-## validators
-def validate_params(
-    d: dict,
-) -> bool:
-    return ("input_path" in d) and ("output_path" in d)
-
-def pre_params(
-    params=None,
-    inputs=None,
-    output_path_base=None,
-    flt_input_exists=False,
-    flt_output_exists=False,
-    verbose=False,
-    force=False,
-    test1: bool = False,
-    testn: int = None,
-):
-    """
-    Unified pre-processing for params, used by both run_tasks_nb and run_tasks.
-    Handles conversion, checks, output path inference, and filtering (including test1/testn).
-    Returns a list of parameter dicts ready for execution.
-    """
-    # --- Handle input formats and output path inference ---
-    param_list = params
-    if param_list is None and inputs is not None and output_path_base is not None:
-        from roux.lib.sys import to_output_paths
-        param_list = to_output_paths(
-            inputs=inputs,
-            output_path_base=output_path_base,
-            encode_short=True,
-            key_output_path="output_path",
-            verbose=verbose,
-            force=force,
-        )
-        # Optionally save all parameters (as in run_tasks_nb)
-        for k, parameters in param_list.items():
-            output_dir_path = output_path_base.split("{KEY}")[0]
-            to_dict(
-                parameters,
-                f"{output_dir_path}/{k.split(output_dir_path)[1].split('/')[0]}/.parameters.yaml",
-            )
-
-    if isinstance(param_list, str):
-        param_list = read_dict(param_list)
-
-    if not param_list or (isinstance(param_list, (list, dict)) and len(param_list) == 0):
-        logging.info("nothing to process. use `force`=True to rerun.")
-        return []
-
-    # --- Convert dict to list if needed ---
-    if isinstance(param_list, dict):
-        if 'input_path' in param_list and 'output_path' in param_list:
-            ## pms
-            param_list=[param_list]
-        else:
-            if not any(['input_path' in d for d in param_list.values()]):
-                logging.warning("setting keys of params as input_path s ..")
-                param_list = {k: {**d, **{'input_path': k}} for k, d in param_list.items()}
-            if validate_params(list(param_list.values())[0]):
-                param_list = list(param_list.values())
-            else:
-                raise ValueError(param_list)
-
-    # --- Filtering by output existence, as in flt_params ---
-    before = len(param_list)
-
-    if flt_output_exists:
-        print(len(param_list),end='->')
-        param_list = [
-            d
-            for d in param_list
-            if Path(d["output_path"]).exists()
-        ]
-        print(len(param_list))
-    else:
-        param_list = [
-            d
-            for d in param_list
-            if (force if force else not Path(d["output_path"]).expanduser().exists())
-        ]
-
-    if flt_input_exists:
-        print(len(param_list),end='->')
-        param_list = [
-            d
-            for d in param_list
-            if (force if force else Path(d["input_path"]).exists())
-        ]
-        print(len(param_list))
-
-    
-    if not force:
-        if before - len(param_list) != 0:
-            logging.info(
-                f"parameters_list_flt reduced because force=False: {before} -> {len(param_list)}"
-            )
-
-    # --- Filtering by test1 and testn ---
-    if test1:
-        testn = 1
-    if testn is not None:
-        param_list = param_list[:testn]
-        logging.warning(f"filtered to {len(param_list)} jobs ..")
-
-    if len(param_list) == 0:
-        # logging.info("No tasks remaining after filtering.")
-        return []
-
-    # --- Final assertions ---
-    assert len(set([d["output_path"] for d in param_list])) == len(param_list), \
-        "Duplicate output_path found in params."
-    assert all([Path(d["input_path"]) != Path(d["output_path"]) if isinstance(d["input_path"],str) else True for d in param_list]), \
-        "Some input_path == output_path in params."
-
-    return param_list
-
-
 def pre_task(
     pms,
+    cache_dir_path=None,
     test=False,
-):
+    ) -> str:
+    
     if isinstance(pms,list):
         assert len(pms)==1, pms
 
+    if cache_dir_path is None:
+        test=True
+        logging.warning("log_dir_path={output_path}_logs")
+    
     if test:
         log_dir_path_=f"{Path(pms['output_path']).with_suffix('').as_posix()}_logs"
         log_dir_path=f"{log_dir_path_}/{get_datetime()}"
     else:
         from roux.lib.str import encode
-        log_dir_path_=f"{Path('~/scratch/.roux/').expanduser().as_posix()}"
-        log_dir_path=f"{log_dir_path_}/{get_datetime()}_{encode(pms['output_path'])}"
-
+        # log_dir_path_=f"{Path(cache_dir_path).expanduser().as_posix()}"
+        log_dir_path_=cache_dir_path
+        log_dir_path=f"{log_dir_path_}/{get_datetime()}_{encode(pms['output_path'],short=True)}"
+    
     # else:
         # [tmp dir not found by slurm]
         # log_dir_path=tempfile.mkdtemp(prefix=get_datetime())
 
         # log_dir_path=tempfile.mkdtemp(prefix=get_datetime())
-
-    to_dict(
-        pms,
-        f"{log_dir_path}/pms.yaml"
-    )    
+    try:    
+        to_dict(
+            pms,
+            f"{log_dir_path}/pms.yaml"
+        )    
+    except Exception as e:
+        logging.warning(str(e))
     return log_dir_path
     
 ## execution
@@ -196,11 +93,15 @@ def run_task_nb(
     parameters: dict,
     script_path: str,
     kernel: str = None,
+    
+    cache_dir_path: str = None,
     output_notebook_path: str = None,
+
     start_timeout: int = 600,
+
     verbose=False,
     force=False,
-    test=True,
+    # test=True,
     **kws_papermill,
 ) -> str:
     """
@@ -225,21 +126,29 @@ def run_task_nb(
     # ## save parameters
     # to_dict(parameters, f"{dirname(output_notebook_path)}/pms_latest.yaml")
 
-    log_dir_path=pre_task(
-        parameters,
-        test=test,
-    )
+    if cache_dir_path is None:
+        cache_dir_path=pre_task(
+            parameters,
+            cache_dir_path=cache_dir_path,
+            # test=test,
+        )
+    # print(cache_dir_path) 
     if not output_notebook_path:
         ## save report i.e. output notebook
-        output_notebook_path = f"{log_dir_path}_{Path(script_path).name}"
+        assert cache_dir_path is not None, cache_dir_path
+        output_notebook_path = f"{cache_dir_path}_{Path(script_path).name}"
     ## to open 
     output_notebook_path=Path(output_notebook_path).absolute()
     
     if verbose:
-        logging.info(parameters["output_path"], output_notebook_path)
-
-    if verbose:
-        logging.info(parameters)
+        # logging.warning(cache_dir_path)
+        # logging.info(parameters)
+        # logging.warning
+        print(
+            parameters["output_path"],
+            output_notebook_path
+             )
+        
     if kernel is None:
         logging.warning("`kernel` name not provided.")
     # try:
@@ -270,19 +179,22 @@ def apply_run_task_nb(
     force=False,
     **kws_papermill,
     ):
-    # try:
-    return run_task_nb(
-        x,
-        script_path=script_path,
-        kernel=kernel,
-        force=force,
-        **kws_papermill,
-    )
-    # except PapermillExecutionError as e:
-    #     e_last=str(e).split('Traceback (most recent call last)')[-1]
-    #     logging.error(f"{x['output_path']}\n{e_last}")
-    #     test_params(x)
-    #     sys.exit(0)
+    from papermill.exceptions import PapermillExecutionError
+    try:
+        return run_task_nb(
+            x,
+            script_path=script_path,
+            kernel=kernel,
+            force=force,
+            **kws_papermill,
+        )
+    except PapermillExecutionError as e:
+        test_params(x,logger=logging.error)
+        
+        e_last=str(e).split('Traceback (most recent call last)')[-1]
+        raise RuntimeError(f"{e_last}\n{x['output_path']}") from None
+        
+        sys.exit(0)
 
 def run_tasks_nb(
     script_path: str=None,
@@ -308,7 +220,6 @@ def run_tasks_nb(
     input_notebook_temp_path=None,
     out_paths: bool = True,
         
-    
     ## back.c.
     input_notebook_path: str=None, 
     parameters_list=None, # same as params
@@ -347,7 +258,7 @@ def run_tasks_nb(
         1. Integrate with apply_on_paths for parallel processing etc.
 
     Notes:
-    1. To resolve `RuntimeError: This event loop is already running in python` from `multiprocessing`, execute
+    1. To resolve `RuntimeError: This event loop is already running in python` from `multiprocessing`, or `zmq.error.ZMQError: Address already in use` run this before,
         import nest_asyncio
         nest_asyncio.apply()
     """
@@ -421,7 +332,7 @@ def run_tasks_nb(
     #     clean=False
     if pre: 
         logging.debug("pre-processing nb ..")
-        from roux.workflow.io import to_nb_kernel
+        from roux.workflow.nb import to_nb_kernel
         to_nb_kernel(
             script_path,
             kernel=kernel,
@@ -450,7 +361,7 @@ def run_tasks_nb(
         df1 = df1.head(1)
         logging.warning("testing only the first input.")
     
-    ## backcompatibility
+    ## back-compatibility
     if fast_workers is not None:
         cpus=fast_workers
     fast= cpus > 1
@@ -501,7 +412,7 @@ def run_tasks_nb(
         # return ds2
         
         if post and not fast:        
-            from roux.workflow.io import valid_post_task_deps, to_html
+            from roux.workflow.nb import valid_post_task_deps, to_html
             if valid_post_task_deps:
                 df1['html path']=(
                     df1
@@ -623,7 +534,7 @@ def submit_job(
         logging.error(f"skipped because already running: {job_name}.")
         return 
     
-    com = f'sbatch {p}'
+    com = f"sbatch '{p}'"
     res=run_com(
         com,
         verbose=verbose,
@@ -650,7 +561,7 @@ class SLURMJob:
         ntasks=1, 
         partition="default",
         
-        post_arxv: bool = True,
+        post_arxv: bool = False,
         post_clean: bool = False,
         ):
         
@@ -660,7 +571,10 @@ class SLURMJob:
         self.time = time
         self.cpus = cpus
         self.mem = mem
-        self.append_header = (open(append_header).read() if '/' in append_header and ' ' not in append_header else append_header.replace(' #SBATCH','\n#SBATCH').replace('module','\nmodule'))
+
+        ## could be a file path
+        # self.append_header = (open(append_header).read() if ('/' in append_header and ' ' not in append_header) else append_header.replace(' #SBATCH','\n#SBATCH').replace('module','\nmodule'))
+        self.append_header = (open(append_header).read() if (Path(append_header).is_file() and Path(append_header).exists()) else append_header.replace(' #SBATCH','\n#SBATCH').replace('module','\nmodule'))
         
         self.ntasks = ntasks
         self.partition = partition
@@ -683,6 +597,8 @@ class SLURMJob:
         packages=None,
         
         verbose=False,
+
+        job_name='name',#'path',
         ):
         """Generate the SLURM script"""
         
@@ -698,7 +614,8 @@ class SLURMJob:
         #     #         logging.error(e)
         #     self.job_name=outp
         # self.job_name=f"roux:{self.job_name}"
-        self.job_name=f"roux:{Path(outp).as_posix()}"
+
+        self.job_name=f"roux:{Path(outp).as_posix() if job_name=='path' else Path(outp).name if job_name=='name' else job_name}"
 
         modules_load_str=''
         packages_install_str=''
@@ -717,7 +634,8 @@ class SLURMJob:
         with open(outp, 'w') as f:
             f.write(
 #SBATCH --partition={self.partition}
-f"""#!/bin/bash
+f"""#!/usr/bin/env bash
+
 #SBATCH --job-name={self.job_name}
 #SBATCH --err={self.log_path}/%j.err
 #SBATCH --output={self.log_path}/%j.out                
@@ -729,11 +647,18 @@ f"""#!/bin/bash
 ## overriding settings (--slurm-header)
 {self.append_header}
 
+## Stop script execution on any error
+set -e
+
 {job_pre}
 
 {modules_load_str}
 
 {packages_install_str}
+
+# g: Redirects all subsequent stdout/stderr to both the file and the terminal.
+# g: This avoids the pipefail masking issue entirely.     
+exec > >(tee '{self.log_path}/stdout') 2>&1; 
 
 """)
             for command in self.commands:
@@ -741,7 +666,7 @@ f"""#!/bin/bash
             f.write(
 f"""
 ## archive the subdir (if job completed)
-roux post-tasks -p {self.log_path}/pms.yaml {'--arxv' if self.post_arxv else ''} {'--clean' if self.post_clean else ''} 
+roux post-tasks -p '{self.log_path}/pms.yaml' {'--arxv' if self.post_arxv else ''} {'--clean' if self.post_clean else ''} 
 """
             )
             # f.write("exit(0)\n")
@@ -755,12 +680,13 @@ def has_slurm(
     return run_com('sbatch --help',returncodes=[0,1,127],verbose=False)!=''
 
 def check_tasks(
-    state='COMPLETED',
+    state='',
     job_name_expr="",
-    query_expr='| tail -n 3',
+    query_expr='| tail -n 10',
     eff=False,
     ):
-    cols=['JobID','State','Elapsed','End','JobName']
+    cols=['JobID','State','Elapsed','End','JobName',] 
+    # 'COMMAND' sacct: error: Invalid field requested: "COMMAND"
     com=f"sacct -u $USER --format={','.join(cols)}%200 | grep '.*{state}.*roux:.*{job_name_expr}.*' {query_expr}"
     txt=run_com(
         com,
@@ -865,24 +791,19 @@ def infer_runner(
     if runner_in is not None and runner!=runner_in:
         logging.warning(f'runner={runner}')    
     else:
-        logging.debug(f'runner={runner}')
+        logging.info(f'runner={runner}')
         
     return runner
 
-def _expand_pms(
-    pms
-    ):
-    return ' '.join([f"--{k.replace('_','-')} {v}" for k,v in pms.items()])
-    
 def to_sbatch_script(
     script_path,
     pms,
     sbatch_path, # outp
     log_dir_path,
     
-    script_pre=None,
+    script_pre=None, ## e.g. bash
     
-    job_pre=None,
+    job_pre=None, ## bash setup.sh
     modules=None,
     packages=None,
 
@@ -891,7 +812,7 @@ def to_sbatch_script(
     # time,# "01:00:00",
     append_header="",
 
-    expand_pms=True, # argh
+    expand_pms=False,
     
     force=False,
     test=False,
@@ -914,36 +835,51 @@ def to_sbatch_script(
     else:
         # if not any([s.startswith('python') for s in modules]):
         #     modules.append('python')
-        if script_path.endswith('.py') or '.py ' in script_path:
-            com=f"{script_pre}{'python ' if not script_path.startswith('python ') else ''}{script_path} "
-            if not expand_pms:
-                 com+=f" --pms {pms_path}"
-            else:
-                 com+=_expand_pms(pms)   
-            # packages.append('argh')
-            # pass
-            # return "under dev"
-            # if verbose:
-            #     print(com) 
-        
-        elif script_path.endswith('.ipynb'):
+        if script_path.endswith('.ipynb'):
             log_path=f"{log_dir_path}/{Path(script_path).name}"
             com=(
-                f"{script_pre}papermill --parameters_file {pms_path} "
-                f"--stdout-file {Path(log_path).with_suffix('.out')} --stderr-file {Path(log_path).with_suffix('.err')} "
+                f"{script_pre}papermill --parameters_file '{pms_path}' "
+                f"--stdout-file '{Path(log_path).with_suffix('.out')}' --stderr-file '{Path(log_path).with_suffix('.err')}' "
                 # kernel_name=kernel,
                 "--start-timeout=600 "
                 "--report-mode "
                 # "--allow_errors=False "
-                f"{script_path} {log_path}"
+                f"'{script_path}' '{log_path}'"
+                # f' || {{ echo "{script_path} crashed"; exit 1; }}'
             )
             # --kernel
             # packages.append('papermill')
             # return "under dev"
             # Using -b or --parameters_base64, users can provide a YAML string, base64-encoded, containing parameter values.
             # $ papermill local/input.ipynb s3://bkt/output.ipynb -b YWxwaGE6IDAuNgpsMV9yYXRpbzogMC4xCg==
+
+        elif script_path.endswith('.py') or '.py ' in script_path:
+            ## TODO: python is not expected in script_path anyways 
+            _cmd=script_path.split('python ')[-1].strip()
+            com=f"{script_pre}python {_cmd} {'' if ' ' in _cmd else ' run'} "
+            if not expand_pms:
+                ## safer than expand_pms 
+                com+=f" --input-path {pms_path}"
+            else:
+                from roux.workflow.pms import expand_pms
+                com+=expand_pms(pms)
+            com = (
+                f"{com}"
+                # f' || {{ echo "{script_path} crashed"; exit 1; }}'
+            )
         else:
-            raise ValueError(script_path)
+            com=script_path
+            if not expand_pms:
+                ## safer than expand_pms 
+                com+=f" --input-path {pms_path}"
+            else:
+                from roux.workflow.pms import expand_pms
+                com+=expand_pms(pms)
+            com = (
+                f"{com}"
+                # f' || {{ echo "{script_path} crashed"; exit 1; }}'
+            )            
+            # raise ValueError(script_path)
 
     if verbose:
         logging.debug(com)
@@ -1115,360 +1051,6 @@ def pre_cfg_run(
 
     return cfg_run
 
-## wrapper
-def run_tasks(
-    script_path: str, ## prefix
-    params=None,
-
-    
-    runner=None, ## py, bash, slurm (None:auto)
-    cpus: int = 1,
-    kernel: str = None,
-
-    ## ipynb
-    ## kws_run
-    pre: bool = True,
-    
-    post_arxv: bool = True,
-    post_clean: bool = False,
-    post_nb: bool = False,
-        
-    ## slurm
-    script_pre : str ='', ## e.g. micromamba run -n env
-    
-    ## for slurm if available
-    slurm_header= "",
-    slurm_kws=dict(
-        # cpus=1,
-        # mem="5gb",
-        # time="01:00:00",
-    ),
-
-    ## slurm feeding
-    feed_duration : str ='1h', #hr 
-    feed_interval : str ='10m',
-    feed_if_jobs_max : float =0.5,
-
-    ## cfg_run
-    script_type: str=None, ## preffix
-    
-    ## common
-    force_setup : bool =True,
-    cache_dir_path='.roux/',
-    wd_path=None,    
-
-
-    ## back-compatible
-    parameters_list=None,
-
-    ## exec.
-    force : bool =False,
-    simulate: bool = False,
-    
-    verbose: bool = False,
-    log_level: str = 'INFO',    
-    
-    ## pre_params
-    flt_input_exists=False, # should input_path exist
-    test1 : bool =False,
-    testn : int =None,
-    test : bool =False, ## saves more log files
-    test_cpus: int = 3, 
-
-    **kws_runner,
-    ):
-    """
-    Run multipliers.
-    
-    Args:
-        script_path: 
-        params: params or run_cfg
-
-    Notes:
-        Slurm script is created even if runner=='bash'
-
-        Back-compatible: input_notebook_path:script_path
-    
-            grep -rl 'input_notebook_path=' ../*.ipynb
-            sed -i -e 's/input_notebook_path=//g' ../*.ipynb
-            
-            sed -i -e 's/parameters_list=/params=/g' ../*.ipynb
-        
-    Examples:    
-        Feeding:
-            feed_duration = '99h',
-            feed_interval = '1s',
-            feed_if_jobs_max = 0.5,    
-    """    
-    
-    if simulate:
-        test=True
-        verbose=True
-
-    ## script_path
-    logging.setLevel(level=log_level)
-    script_path=Path(script_path).resolve().as_posix()
-    script_type=Path(script_path.split(' ')[0]).suffix[1:]# if not '.py run' in script_path else 'py'
-    
-    if kernel is None:
-        ## inferring kernel
-        kernel=Path(os.environ.get('VIRTUAL_ENV')).parent.stem
-        logging.info(f"inferred kernel: {kernel}")
-
-    runner=infer_runner(
-        runner=runner,
-        script_type=script_type,
-    )
-    
-    ## params
-    if params is None and parameters_list is not None:
-        params=parameters_list
-        del parameters_list
-        logging.warning("arg: parameters_list will be depr.d.")
-    # if isinstance(params,str):
-    #     from roux.lib.io import is_dict
-    #     assert is_dict(params), f"expected params in dict format: {params}"
-    #     params=read_dict(params)
-
-    # if contains_keys(params,['pms_run','kws_run']):
-    from roux.lib.io import is_dict
-    if is_dict(script_path):
-        # cfg_run:
-        # recurse
-        cfg_run=read_dict(script_path)
-        del script_path
-        
-        cfg_run=pre_cfg_run(
-            cfg_run,
-            script_type=script_type,
-            )
-        
-        dfs_run={}
-        for step in tqdm(cfg_run):
-            logging.processing(step) 
-            
-            dfs_run[step]=run_tasks(
-                params=cfg_run[step]['pms_run'],
-                **{
-                    **dict(
-                        runner=runner,
-                        
-                        force_setup = force_setup,# True,
-                        cache_dir_path = cache_dir_path, # roux/',
-                        wd_path = wd_path,# None,
-                        
-                        force  = force,# False,
-                        simulate = simulate,#  False,
-                        
-                        verbose = verbose,#  False,
-                        log_level = log_level,#  'INFO',    
-                        
-                    ),
-                    **cfg_run[step]['kws_run'],
-                    # **dict(
-                    #     script_path=sp
-                    # )
-                    },
-                )
-            if not simulate:
-                ## wait 
-                while not Path(cfg_run[step]['pms_run']['output_path']).exists():
-                    time.sleep(2)
-            else:
-                if not Path(cfg_run[step]['pms_run']['output_path']).exists():
-                    test_params([cfg_run[step]['pms_run']])
-            
-        return pd.concat(dfs_run)
-        
-    params=pre_params(
-        params=params,
-        # inputs=inputs,
-        # output_path_base=output_path_base,
-        verbose=verbose,
-        force=force,
-        test1 = test1,
-        testn = testn,
-        flt_input_exists = flt_input_exists,
-    )
-
-    if len(params)==0:
-        return 
-    
-    if runner.startswith('py'):
-        from roux.lib.sys import is_interactive_notebook
-        test=is_interactive_notebook()
-
-        return run_tasks_nb(
-            script_path,
-            params=params,
-    
-            kernel = kernel,
-            cpus = cpus,
-            pre = pre,
-            post = post_nb,
-
-            simulate=simulate,
-            test1 = test1,
-            force = force,
-            test = test,
-            verbose=verbose,
-            
-            **kws_runner,
-        )
-        
-    logging.loading('params from the input_path ..')
-            
-    if isinstance(params,dict):
-        params=list(params.values())
-                
-    _time=logging.configuring("paths ..",get_time=True)
-    
-    if wd_path is None:
-        wd_path=os.getcwd()
-    cache_dir_path=f"{wd_path}/{cache_dir_path}"
-    Path(cache_dir_path).mkdir(parents=True, exist_ok=True)
-
-    if runner=='slurm':
-        logging.launching("jobs ..",n=min([cpus,5]))
-    
-    logging.status(f"processing on {runner}, {cpus} at a time ..",n=min([cpus,5]))
-    
-    coms=[]
-    # if runner in ['slurm','bash']:
-    ## recursive
-    assert isinstance(cpus,int), cpus
-    
-    kws_runner={
-        **dict(
-            script_path= script_path, #, ## preffix
-            script_pre= script_pre, #='', ## e.g. micromamba run -n env
-
-            append_header=slurm_header,                       
-            
-            post_arxv = post_arxv,
-            post_clean = post_clean,            
-        ),
-        **kws_runner,
-        **slurm_kws,
-    }
-
-    ## feed
-    ## each round feed cpus jobs from run_tasks
-    # from random import shuffle
-    # shuffle(params)
-    # if isinstance(params,dict):
-    #     job_keys_tried=get_tried_job_keys(
-    #         cache_dir_path
-    #     )
-    #     logging.info(f"found {len(job_keys_tried)} tried jobs, they will be deprioritized.")
-    #     params={
-    #         **{k:d for k,d in params.items() if k not in job_keys_tried},
-    #         **{k:d for k,d in params.items() if k in job_keys_tried},
-    #     }
-    # if not simulate:
-    #     if runner in ['slurm']:
-    #         feed_jobs(
-    #             com=params, ## all
-    #             jobs=cpus, ## feed each time
-    #             # user=user,
-    #             feed_duration=feed_duration,
-    #             feed_interval=feed_interval,
-    #             feed_if_jobs_max=feed_if_jobs_max,
-                
-    #             force= force, #=False,
-    #             test= test, #=False,
-
-    #             kws_runner=kws_runner,
-    #         )
-            
-    #         return
-
-    if runner=='slurm':
-        logging.status("q.ing jobs.. ")
-    
-    sbatch_paths=[]
-    params_jobs={}
-    job_ids=[]
-
-    _logged=False    
-    for pms in tqdm(params):  
-        log_dir_path=pre_task(
-            pms,
-            test=test,
-        )
-        
-        # key=encode(
-        #     pms,#['output_path']
-        #     short=True,
-        # )
-        # sbatch_path=f"{cache_dir_path}/{key}.sh"
-        sbatch_path=f"{log_dir_path}/run.sh"
-        
-        if not Path(sbatch_path).exists() or force_setup:
-            if runner!='slurm' and not _logged:
-                logging.warning("forcing setup (re-rewiting the sbatch scripts)..")
-                _logged=True
-            # job=
-            # if not simulate:
-            to_sbatch_script(
-                sbatch_path=sbatch_path,
-                pms=pms,
-                log_dir_path=log_dir_path,
-                **kws_runner,
-            )
-    
-        if runner=='slurm':
-            if not simulate:
-                # submit the jobs
-                job_ids.append(
-                    submit_job(
-                        sbatch_path
-                    )
-                )
-
-        if runner!='slurm':
-            coms.append(
-                f"bash {sbatch_path} &> {log_dir_path}/stdout",
-            )
-        
-        sbatch_paths.append(sbatch_path)
-        params_jobs[sbatch_path]=pms
-        
-    if len(coms)==0:
-        logging.warning("len(coms)==0")
-    
-    if runner!='slurm':
-        cpus_bash=min([cpus,test_cpus])
-        
-        if cpus>cpus_bash:
-            logging.warning(f"using test_cpus = {cpus_bash}")
-            
-        if not simulate:
-            
-            from multiprocessing import Pool
-            # Create a pool of worker processes
-            with Pool(processes=cpus_bash) as pool:
-                pool.map(run_com, coms)
-        
-    # logging.saving(f"params_jobs_path={params_jobs_path}")
-    # params_jobs_path=f"{cache_dir_path}/{encode(params_jobs,short=True)}.yaml"    
-    # to_dict(
-    #     params_jobs,
-    #     params_jobs_path,
-    # )
-    
-    # logging.info("jobs submitted.")
-    if runner=='slurm':
-        logging.info(get_sq())  
-        
-        
-    # logging.saving('outputs.')
-    if not simulate:
-        logging.done('processing.',time=_time)
-        
-    ## uniform output
-    return pd.Series(params_jobs).to_frame('params')['params']#.apply(pd.Series)
-
 def post_tasks(
     params=None,
 
@@ -1527,9 +1109,450 @@ def post_tasks(
                 verbose=verbose,
                 force=False,
                 wait=True,
-                exclude="'*.bam'",
+                exclude=["'*.bam'","'*.fastq'","'*.fq'","'*.h5'","'*.h5mu'","'*.h5ad'","'*.adata'"],
             )
             if simulate:
                 break
 
         # return outp
+        
+## wrapper
+def run_tasks(
+    script_path: str, ## prefix
+    params=None,
+
+    
+    runner=None, ## py, bash, slurm (None:auto)
+    cpus: int = 1,
+    kernel: str = None,
+
+    ## ipynb
+    ## kws_run
+    pre: bool = True,
+    no_pre: bool = False,
+
+    post_arxv: bool = False,
+    no_post_arxv: bool = False,
+
+    post_clean: bool = False,
+    post_nb: bool = False,
+        
+    ## slurm
+    script_pre : str ='', ## e.g. micromamba run -n env
+    
+    ## for slurm if available
+    slurm_header= "",
+    slurm_kws=dict(
+        # cpus=1,
+        # mem="5gb",
+        # time="01:00:00",
+    ),
+
+    ## slurm feeding
+    # feed_duration : str ='1h', #hr 
+    # feed_interval : str ='10m',
+    # feed_if_jobs_max : float =0.5,
+
+    ## cfg_run
+    script_type: str=None, ## preffix
+    
+    ## common
+    force_setup : bool =True,
+    no_force_setup : bool =False,
+
+    cache_dir_path='~/scratch/.roux', #'/tmp/.roux'
+    wd_path=None,    
+
+
+    ## back-compatible
+    parameters_list=None,
+
+    ## exec.
+    force : bool =False,
+    simulate: bool = False,
+    
+    verbose: bool = False,
+    log_level: str = 'INFO',
+    
+    ## pre_params
+    flt_input_exists=False, # should input_path exist
+    test1 : bool =False,
+    testn : int =None,
+    test : bool =False, ## saves more log files
+    test_cpus: int = 3,
+
+    **kws_runner,
+    ):
+    """
+    Run multipliers.
+    
+    Args:
+        script_path: 
+        params: params or run_cfg
+
+    Notes:
+        Slurm script is created even if runner=='bash'
+
+        Back-compatible: input_notebook_path:script_path
+    
+            grep -rl 'input_notebook_path=' ../*.ipynb
+            sed -i -e 's/input_notebook_path=//g' ../*.ipynb
+            
+            sed -i -e 's/parameters_list=/params=/g' ../*.ipynb
+        
+    Examples:    
+        Feeding:
+            feed_duration = '99h',
+            feed_interval = '1s',
+            feed_if_jobs_max = 0.5,    
+    """    
+    # arg. dtype
+    if testn=='None':
+        testn=None 
+        
+    if simulate:
+        test=True
+        verbose=True
+
+    ## CLI: negatives override
+    if no_post_arxv:
+        post_arxv=False
+    if no_pre:
+        pre=False
+    if no_force_setup:
+        force_setup=False
+
+    if not test1:
+        cache_dir_path=f"{Path(cache_dir_path).expanduser().as_posix()}"
+    else:
+        cache_dir_path=None
+        logging.warning("cache_dir_path=None")
+        
+    # ## script_path
+    # # g: Imported as an alias to prevent AttributeError if the 'logging' variable was accidentally reassigned to a Logger instance
+    # print()
+    # if log_level is None:
+    import logging as _logging
+    log_level_root=_logging.getLevelName(_logging.getLogger().getEffectiveLevel())
+    if log_level!=log_level_root:
+        log_level=log_level_root
+    
+    logging.setLevel(level=log_level)
+    
+    script_path=script_path.strip().split(' ',1)
+    if len(script_path)==1:
+        sub_com=''
+        script_path=script_path[0]
+    else:
+        script_path,sub_com=script_path
+
+    if Path(script_path).suffix!='':
+        assert Path(script_path).exists(), script_path
+
+    script_type=Path(script_path.split(' ')[0]).suffix[1:]# if not '.py run' in script_path else 'py'
+    if verbose:
+        logging.info(f"script_type='{script_type}' sub_com='{sub_com}'")
+
+    if script_type!='':
+        script_path=Path(script_path).resolve().as_posix()
+
+    if verbose:
+        logging.info(f"script_path='{script_path}'")
+
+    cwd_path=Path().cwd().as_posix()
+    
+    if wd_path is None:
+        wd_path=cwd_path
+    else:
+        wd_path=Path(wd_path).as_posix()
+        os.chdir(wd_path)
+
+    runner=infer_runner(
+        runner=runner,
+        script_type=script_type,
+    )
+    
+    ## params
+    if params is None and parameters_list is not None:
+        params=parameters_list
+        del parameters_list
+        logging.warning("arg: parameters_list will be depr.d.")
+    # if isinstance(params,str):
+    #     from roux.lib.io import is_dict
+    #     assert is_dict(params), f"expected params in dict format: {params}"
+    #     params=read_dict(params)
+
+    # if contains_keys(params,['pms_run','kws_run']):
+    from roux.lib.io import is_dict
+    if is_dict(script_path):
+        # cfg_run:
+        # recurse
+        cfg_run=read_dict(script_path)
+        del script_path
+        
+        cfg_run=pre_cfg_run(
+            cfg_run,
+            script_type=script_type,
+            )
+        
+        dfs_run={}
+        for step in tqdm(cfg_run, disable=len(cfg_run) <= 1):
+            logging.processing(step) 
+            
+            dfs_run[step]=run_tasks(
+                params=cfg_run[step]['pms_run'],
+                **{
+                    **dict(
+                        runner=runner,
+                        
+                        force_setup = force_setup,# True,
+                        cache_dir_path = cache_dir_path, # roux/',
+                        # wd_path = wd_path,# None,
+                        
+                        force  = force,# False,
+                        simulate = simulate,#  False,
+                        
+                        verbose = verbose,#  False,
+                        log_level = log_level,#  'INFO',    
+                        
+                    ),
+                    **cfg_run[step]['kws_run'],
+                    # **dict(
+                    #     script_path=sp
+                    # )
+                    },
+                )
+            if not simulate:
+                ## wait 
+                while not Path(cfg_run[step]['pms_run']['output_path']).exists():
+                    time.sleep(2)
+            else:
+                if not Path(cfg_run[step]['pms_run']['output_path']).exists():
+                    test_params([cfg_run[step]['pms_run']])
+            
+        return pd.concat(dfs_run)
+        
+    params=pre_params(
+        params=params,
+        # inputs=inputs,
+        # output_path_base=output_path_base,
+        verbose=verbose,
+        force=force,
+        test1 = test1,
+        testn = testn,
+        flt_input_exists = flt_input_exists,
+    )
+
+    if len(params)==0:
+        return 
+
+    kws_runner['verbose']=verbose
+
+    # if test:
+    #     cache_dir_path=f"{wd_path}/{cache_dir_path}"
+    if runner in ['slurm','bash'] and script_type in ['ipynb'] and kernel is None:
+        ## use py because of possible kernel issues
+        ## infer py
+        from roux.workflow.io import to_py_path
+        script_path_=to_py_path(script_path)
+        assert Path(script_path_).exists(), script_path_
+        if Path(script_path).exists():
+            logging.warning(
+                f"script_path -> {script_path_}"    
+            )
+        script_path=script_path_
+        del script_path_
+        script_type='py'
+    else:
+        ## run nbs
+        if kernel is None:
+            ## inferring kernel
+            kernel=Path(os.environ.get('VIRTUAL_ENV')).parent.stem
+            logging.info(f"inferred kernel: {kernel}")
+
+    if runner.startswith('py') and script_type=='ipynb':
+        from roux.lib.sys import is_interactive_notebook
+        test=is_interactive_notebook()
+
+        res=run_tasks_nb(
+            script_path,
+            params=params,
+
+            **{
+                **dict(
+                    ## logs
+                    # cache_dir_path=cache_dir_path,
+        
+                    kernel = kernel,
+                    cpus = cpus,
+                    pre = pre,
+                    post = post_nb,
+        
+                    simulate=simulate,
+                    test1 = test1,
+                    force = force,
+                    test = test,
+                    verbose=verbose,            
+                ),
+                **kws_runner,
+            },
+        )
+        if wd_path!=cwd_path:
+            ## back to current work dir    
+            os.chdir(cwd_path)  
+        return res
+        
+    logging.loading('params from the input_path ..')
+            
+    if isinstance(params,dict):
+        params=list(params.values())
+                
+    _time_start=logging.configuring("paths ..",time=True)
+    
+    Path(cache_dir_path).mkdir(parents=True, exist_ok=True)
+
+    if runner=='slurm':
+        logging.launching("jobs ..",n=min([cpus,5]))
+    
+    logging.status(f"processing on {runner}, {cpus} at a time ..",n=min([cpus,5]))
+    
+    coms=[]
+    # if runner in ['slurm','bash']:
+    ## recursive
+    assert isinstance(cpus,int), cpus
+    
+    kws_runner={
+        **dict(
+            script_path= ' '.join([s for s in [script_path,sub_com] if s!='']), #, ## preffix
+            script_pre= script_pre, #='', ## e.g. micromamba run -n env
+
+            append_header=slurm_header,                       
+            
+            post_arxv = post_arxv,
+            post_clean = post_clean,            
+        ),
+        **kws_runner,
+        **slurm_kws,
+    }
+
+    ## feed
+    ## each round feed cpus jobs from run_tasks
+    # from random import shuffle
+    # shuffle(params)
+    # if isinstance(params,dict):
+    #     job_keys_tried=get_tried_job_keys(
+    #         cache_dir_path
+    #     )
+    #     logging.info(f"found {len(job_keys_tried)} tried jobs, they will be deprioritized.")
+    #     params={
+    #         **{k:d for k,d in params.items() if k not in job_keys_tried},
+    #         **{k:d for k,d in params.items() if k in job_keys_tried},
+    #     }
+    # if not simulate:
+    #     if runner in ['slurm']:
+    #         feed_jobs(
+    #             com=params, ## all
+    #             jobs=cpus, ## feed each time
+    #             # user=user,
+    #             feed_duration=feed_duration,
+    #             feed_interval=feed_interval,
+    #             feed_if_jobs_max=feed_if_jobs_max,
+                
+    #             force= force, #=False,
+    #             test= test, #=False,
+
+    #             kws_runner=kws_runner,
+    #         )
+            
+    #         return
+
+    if runner=='slurm':
+        logging.status("q.ing jobs.. ")
+    
+    sbatch_paths=[]
+    params_jobs={}
+    job_ids=[]
+
+    _logged=False    
+    for pms in tqdm(params, disable=len(params) <= 1):
+        log_dir_path=pre_task(
+            pms,
+            cache_dir_path=cache_dir_path,
+            test=test,
+        )
+        
+        # key=encode(
+        #     pms,#['output_path']
+        #     short=True,
+        # )
+        sbatch_path=f"{log_dir_path}/run.sh"
+        
+        if not Path(sbatch_path).exists() or force_setup:
+            if runner!='slurm' and not _logged:
+                # logging.warning("forcing setup (re-rewiting the sbatch scripts)..")
+                _logged=True
+            # job=
+            # if not simulate:
+            to_sbatch_script(
+                sbatch_path=sbatch_path,
+                pms=pms,
+                log_dir_path=log_dir_path,
+                **kws_runner,
+            )
+    
+        if runner=='slurm':
+            if not simulate:
+                # submit the jobs
+                job_ids.append(
+                    submit_job(
+                        sbatch_path
+                    )
+                )
+
+        if runner!='slurm':
+            coms.append(
+                f"bash '{sbatch_path}'",
+            )
+        
+        sbatch_paths.append(sbatch_path)
+        params_jobs[sbatch_path]=pms
+        
+    if len(coms)==0:
+        logging.warning("len(coms)==0")
+    
+    if runner!='slurm':
+        cpus_bash=min([cpus,test_cpus])
+        
+        if cpus>cpus_bash:
+            logging.warning(f"using test_cpus = {cpus_bash}")
+            
+        if not simulate:
+            
+            from multiprocessing import Pool
+            # Create a pool of worker processes
+            with Pool(processes=cpus_bash) as pool:
+                pool.map(run_com, coms)
+        
+    # logging.saving(f"params_jobs_path={params_jobs_path}")
+    # params_jobs_path=f"{cache_dir_path}/{encode(params_jobs,short=True)}.yaml"    
+    # to_dict(
+    #     params_jobs,
+    #     params_jobs_path,
+    # )
+    
+    # logging.info("jobs submitted.")
+    if runner=='slurm':
+        logging.info(get_sq())
+        
+        
+    # logging.saving('outputs.')
+    if not simulate:
+        logging.done(Path(script_path).stem,time=_time_start)
+
+    # if wd_path!=cwd_path:
+    #     ## back to current work dir    
+    #     os.chdir(cwd_path)  
+    
+    ## uniform output
+    return pd.Series(params_jobs).to_frame('params')['params']#.apply(pd.Series)
+

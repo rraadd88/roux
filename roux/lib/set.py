@@ -65,10 +65,10 @@ def check_non_overlaps_with(
     l1: list,
     l2: list,
     out_count: bool = False,
-    log=True,
+    verbose=True,
 ):
     l_ = set(l1) - set(l2)
-    if log:
+    if verbose:
         from roux.stat.io import perc_label
         logging.info(
             f"{perc_label(len(l_),len(set(l1)))} non overlapping items found in l1 {'' if len(l_)<=20 else 'e.g.'} : {list(l_)[:20]}"
@@ -82,25 +82,26 @@ def check_non_overlaps_with(
 def validate_overlaps_with(
     l1,
     l2,
-    verbose=False,
+    verbose=True,
     **kws_check
     ):
-    if verbose:
-        print(check_non_overlaps_with(l1, l2, **kws_check))
-        print(set(l1) & set(l2))
+    # if verbose:
+    #     print(check_non_overlaps_with(l1, l2, verbose=verbose,**kws_check))
+    #     print(set(l1) & set(l2))
         
-    return (len(check_non_overlaps_with(l1, l2, **kws_check)) == 0) and len(set(l1) & set(l2))>0
+    return (len(check_non_overlaps_with(l1, l2, verbose=verbose,**kws_check)) == 0) and len(set(l1) & set(l2))>0
 
 
 def assert_overlaps_with(
     l1,
     l2,
-    out_count=False
+    out_count=False,
+    verbose=True,
     ):
     assert validate_overlaps_with(
         l1,
         l2,
-        log=False,
+        verbose=False,
     ), f"Non-ovelapping item/s: {check_non_overlaps_with(l1,l2,out_count=out_count)}"
 
 
@@ -237,7 +238,7 @@ def list2str(
                 logging.warning("more than 1 str value encountered, returning list")
                 return x
         elif fmt == "id":
-            return ";".join(x)
+            return ";".join(map(str,x))
         # elif fmt.lower().startswith('count'):
         # elif fmt=='dict':
         else:

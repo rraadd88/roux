@@ -90,19 +90,24 @@ def get_val2color(
         vmin = min(ds)
     if vmax is None:
         vmax = max(ds)
+        
+    # categories
     colors = [
         (plt.get_cmap(cmap) if isinstance(cmap, str) else cmap)(
             (i - vmin) / (vmax - vmin)
         )
         for i in ds
     ]
-    legend2color = {
+    cats=dict(zip(ds, colors))
+    
+    # not-categories
+    vals = {
         i: (plt.get_cmap(cmap) if isinstance(cmap, str) else cmap)(
             (i - vmin) / (vmax - vmin)
         )
         for i in [vmin, np.mean([vmin, vmax]), vmax]
     }
-    return dict(zip(ds, colors)), legend2color
+    return cats, vals
 
 
 #    columns=['value','c']

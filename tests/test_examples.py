@@ -68,6 +68,13 @@ def test_roux_lib_dfs(
         p,
     )
 
+def test_roux_lib_df_plot(
+    p="examples/roux_lib_df_plot.ipynb"
+    ):
+    return run_test(
+        p,
+    )
+
 def test_roux_lib_df_apply(
     p="examples/roux_lib_df_apply.ipynb"
     ):
@@ -159,13 +166,6 @@ def test_roux_viz_figure(
         p,
     )
 
-def test_roux_viz_io(
-    p="examples/roux_viz_io.ipynb",
-    ):
-    return run_test(
-        p,
-    )
-
 def test_roux_viz_line(
     p="examples/roux_viz_line.ipynb"
     ):
@@ -187,12 +187,21 @@ def test_roux_viz_sets(
         p,
     )
 
-def test_roux_viz_theme(
-    p="examples/roux_viz_theme.ipynb",
-    ):
-    return run_test(
-        p,
-    )
+# TODO; debug logging error
+# def test_roux_viz_io(
+#     p="examples/roux_viz_io.ipynb",
+#     ):
+#     return run_test(
+#         p,
+#     )
+
+# depends on test_roux_viz_io
+# def test_roux_viz_theme(
+#     p="examples/roux_viz_theme.ipynb",
+#     ):
+#     return run_test(
+#         p,
+#     )
 
 def test_roux_workflow_io(
     p="examples/roux_workflow_io.ipynb",

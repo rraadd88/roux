@@ -1,21 +1,30 @@
 """For annotations."""
 
 import logging
+
+import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-import matplotlib.pyplot as plt
 import seaborn as sns
+
 from roux.lib.str import linebreaker
-from roux.viz.ax_ import set_label
 
 # redirects
 from roux.stat.io import pval2annot
+from roux.viz.ax_ import set_label
+
 
 def annot_side_curved(
     data,
     colx: str,
     coly: str,
+        
     col_label: str,
+    
+    ## fixed text pos
+    text_x=None,
+    text_y=None,
+    
     off: float=0.5,
     lim: tuple=None,
     limf: tuple=None, ## limits as fractions
@@ -25,6 +34,8 @@ def annot_side_curved(
     ax=None,
     test: bool = False,
     kws_text={},
+    
+    text_multicolored=False,
     **kws_line,
 ):
     """Annot elements of the plots on the of the side plot using bezier lines.
@@ -55,13 +66,21 @@ def annot_side_curved(
     from roux.stat.paired import get_diff_sorted
     lim_=(lims['xlim'] if loc=='right' else lims['ylim'])
     size=get_diff_sorted(*lim_)
-    off=max(lim_)+(size*off)
+    if loc in ['right','top']:
+        off=max(lim_)+(size*off)
+    else:
+        off=min(lim_)-(size*off)        
     # print(off)
     
     if loc=='right':
         kws_text_loc=dict(
             va="center",
             ha="right",    
+        )
+    elif loc=='left':
+        kws_text_loc=dict(
+            va="center",
+            ha="left",    
         )
     else:
         ## top
@@ -71,28 +90,29 @@ def annot_side_curved(
             rotation=90,
         )
     ## sorted labels
+    
     data1 = (
         data
         .sort_values(
-            coly if loc=='right' else colx,
-            ascending=lims['ylim'][0]<lims['ylim'][1] if loc=='right' else lims['xlim'][0]<lims['xlim'][1],
+            coly if loc in ['right','left'] else colx,
+            ascending=lims['ylim'][0]<lims['ylim'][1] if loc in ['right','left'] else lims['xlim'][0]<lims['xlim'][1],
             # ascending=True,
         )
         .loc[:, [col_label]]
         .drop_duplicates()
         .assign(
             **{
-                'x' if loc=='right' else 'y':lambda df: np.repeat(off, len(df)),
-                'y' if loc=='right' else 'x':lambda df: np.linspace(
+                'x' if loc in ['left','right'] else 'y':lambda df: np.repeat(off, len(df)),
+                'y' if loc in ['left','right'] else 'x':lambda df: np.linspace(
                     *lim,
                     len(df),
                 ),
-                ('x' if loc=='right' else 'y')+'_text':lambda df: df.apply(
+                ('x' if loc in ['left','right'] else 'y')+'_text':lambda df: df.apply(
                     lambda x: getattr(
                         (
                             ax.text(
-                                x["x"],
-                                x["y"],
+                                x=x["x"],
+                                y=x["y"],
                                 s=x[col_label],
                                 **{
                                     **kws_text_loc,
@@ -102,13 +122,40 @@ def annot_side_curved(
                             .get_window_extent(renderer=plt.gcf().canvas.get_renderer())
                             .transformed(ax.transData.inverted())
                         ),
-                        'xmin' if  loc=='right' else 'ymin'
+                        'xmin' if  loc=='right' else 'xmax' if  loc=='left' else 'ymin'
                     ),
                     axis=1,
                 ),
             }
         )
     )
+
+    if text_multicolored not in [False, None]:
+        if isinstance(text_multicolored,dict):
+            kws_text_multicolored=text_multicolored
+        else:
+            kws_text_multicolored={}
+        for s in data1[col_label].unique():
+            try:
+                from roux.viz.text import set_text_multicolored
+                text_func=set_text_multicolored  
+        
+                from roux.viz.figure import get_text
+                ts=get_text(
+                    s,
+                    # fig=fig,
+                    ax=ax,
+                )
+                # assert len(t)==1, t
+                for t in ts:
+                    from roux.viz.text import set_text_multicolored
+                    set_text_multicolored(
+                        s=t,
+                        **kws_text_multicolored,
+                    )
+            except Exception as e:
+                logging.error(str(e))
+    
     # print(data1)
     # return data1
     ## lines
@@ -117,14 +164,29 @@ def annot_side_curved(
         how="inner",
         on=col_label,
         # validate="1:1"
+        suffixes=["",' inferred'],
     )
-    from roux.viz.line import plot_bezier
 
+    # print(data2.columns)
+    
+    from roux.viz.line import plot_bezier
     data2.apply(
         lambda x: plot_bezier(
+            ## A point
             [x[colx], x[coly]],
-            [x["x_text"], x["y"]] if loc=='right' else [x["x"], x["y_text"]],
-            direction='h' if loc=='right' else 'v',
+            ## B text            
+            (
+                [
+                    (x["x_text"] if text_x is None else text_x if not (isinstance(text_x,str) or text_x in x) else x[text_x]), 
+                    (x["y"] if not (isinstance(text_y,str) or text_y in x) else x[text_y])
+                ]
+                    if loc in ['left','right'] else
+                [
+                    (x["x"] if not (isinstance(text_x,str) or text_x in x) else x[text_x]), 
+                    (x["y_text"] if text_y is None else text_y if not (isinstance(text_y,str) or text_y in x) else x[text_y])
+                ]
+            ),
+            direction='h' if loc in ['left','right'] else 'v',
             ax=ax,
             **{
                 **dict(
@@ -151,6 +213,11 @@ def annot_side(
     
     ## comp. with curved
     col_label: str = None,
+
+    ## fixed text pos
+    text_x=None,
+    text_y=None,
+    
     off: float=0.5,
     lim: tuple=None,
     limf: tuple=None, ## limits as fractions
@@ -166,14 +233,18 @@ def annot_side(
     offymin: float = 0.1,
     offymax: float = 0.9,
     length_axhline: float = 3,
+    
     text=True,
     text_offx: float = 0,
     text_offy: float = 0,
+    text_multicolored=False,
+    
     invert_xaxis: bool = False,
     break_pt: int = 25,
     va: str = "bottom",
     zorder: int = 2,
-    color: str = "gray",
+    
+    color: str = "gray",    
     kws_line: dict = {},
     kws_scatter: dict = {},  #'zorder':2,'alpha':0.75,'marker':'|','s':100},
     
@@ -216,6 +287,11 @@ def annot_side(
             colx = colx, #: str,
             coly = coly, #: str,
             col_label = col_label, #: str,
+
+            ## fixed text pos
+            text_x=text_x,
+            text_y=text_y,
+            
             off = off, #: float=0.5,
             lim = lim, #: tuple=None,
             limf = limf, #: tuple=None, ## limits as fractions
@@ -225,6 +301,8 @@ def annot_side(
             ax = ax, #=None,
             test = test, #: bool = False,
             kws_text = kws_text, #={},
+            
+            text_multicolored=text_multicolored,
             
             **kws_line,
         )
@@ -461,7 +539,7 @@ def outline_scatter(
         ax=plt.gca()
     points=data.loc[:,[x,y]].values
     
-    from scipy.spatial import ConvexHull    
+    from scipy.spatial import ConvexHull
     # Compute the convex hull
     hull = ConvexHull(points)
     out_pts=np.vstack([points[hull.vertices, 0],points[hull.vertices, 1]]).T
@@ -522,8 +600,8 @@ def show_confidence_ellipse(x, y, ax, n_std=3.0, facecolor="none", **kwargs):
     ----------
     https://matplotlib.org/3.5.0/gallery/statistics/confidence_ellipse.html
     """
-    from matplotlib.patches import Ellipse
     import matplotlib.transforms as transforms
+    from matplotlib.patches import Ellipse
 
     if x.size != y.size:
         raise ValueError("x and y must be the same size")
@@ -667,14 +745,17 @@ def show_scatter_stats(
     x_covar=None,
     y_covar=None,
     covar=None,
+    n_min=10,
     
     resample: bool = False,
+    show_p: bool = True,
     show_n: bool = True,
     show_n_prefix: str = "",
     prefix: str = "",
     loc=None,
+    wrap=False,
+    
     zorder: int = 5,
-    # kws_stat={},
     verbose: bool = True,
     kws_stat={},
     kws_set_label={},
@@ -696,7 +777,7 @@ def show_scatter_stats(
         # verbose=verbose,
         # **kws_stat,
         # )
-        from roux.stat.corr import get_corr, _to_string
+        from roux.stat.corr import _to_string, get_corr
 
         res = get_corr(
             x=x,
@@ -708,15 +789,20 @@ def show_scatter_stats(
             x_covar=x_covar,
             y_covar=y_covar,
             covar=covar,
+            n_min=n_min,
+            # **kws_stat,
         )
         if res is not None and len(res) != 0:
             label += _to_string(
                 res,
+                show_p=show_p,
                 show_n=show_n,
                 show_n_prefix=show_n_prefix,
                 method_suffix=False, ## change x|y label instead
             )
-            if loc is None:
+            if wrap:
+                label=label.replace('$\pm$','\n$\pm$')
+            if loc is None and kws_set_label.get('x') is None and kws_set_label.get('y') is None:
                 ## infer
                 if res["r"] >= 0:
                     loc = 2
@@ -739,24 +825,251 @@ def show_scatter_stats(
             [x, y],
             **kws_stat,
         )
-    _ = set_label(
-        ax=ax,
-        s=label,
-        **{
+    kws_set_label={
             **dict(
                 zorder=zorder,
                 loc=loc,
             ),
             **kws,
             **kws_set_label,
-        },
+        }
+    
+    ## if no inputs provided, use the one inferred
+    kws_set_label['loc']=kws_set_label.get('loc',0)
+        
+    if verbose:
+        logging.info(kws_set_label)
+    
+    _ = set_label(
+        ax=ax,
+        s=label,
+        **kws_set_label,
     )
     ax.stats=res   
     return ax    
 
+def show_dists_stats(
+    stats: dict,
+    axlims: dict,
+    ticklabel2position: dict,
+    axis_desc: str = "y",
+    axis_cont: str = "x",
+    offs_pval: dict = None,
+    show_p: bool = True,
+    alternative: str = "two-sided",
+    fmt_pval: str = "{:.2e}",
+    hue: str = None,
+
+    show_lines=True,
+    show_brackets=False, ## TODO: caps should be constants
+
+    # color='k',
+
+    test: bool = False,
+    ax=None,
+):
+    """
+    Annotates categorical plots with offset p-values and brackets.
+    """
+    if ax is None:
+        ax = plt.gca()
+
+    if show_p != False:
+        # g: renamed d1 to stats
+        stats = {
+            k: pval2annot(
+                stats[k],
+                alternative=alternative,
+                fmt=fmt_pval,
+                linebreak=False,
+            )
+            for k in stats
+        }
+    else:
+        stats = {}
+        
+    if offs_pval is None:
+        offs_pval = {}
+    offs_pval = {**{"x": 0, "y": 0}, **offs_pval}
+
+    if show_lines:
+        offs_lines=offs_pval.copy()
+        offs_pval[axis_cont] += (-0.01*(axlims[axis_cont]['len']))
+
+    # g: renamed d1 to stats
+    if hue is None and (len(stats) == 1 or show_p == 'paired'):
+        offs_pval[axis_desc] += -0.5            
+        
+    if test:
+        logging.info(offs_pval)
+
+    # g: renamed d1 to stats
+    if isinstance(stats, dict):
+        if test:
+            # g: logging.info typically expects a single message string; 
+            # left as-is to preserve your exact snippet structure.
+            logging.info(stats, ticklabel2position, axlims)
+            
+        # g: 1. Identify the Reference Category
+        ref_cats = list(set(ticklabel2position.keys()) - set(stats.keys()))
+        ref_pos = ticklabel2position[ref_cats[0]] if ref_cats else 0
+        
+        # g: sort stats by distance from reference position to draw shorter (inner) brackets first
+        stats_sorted = sorted(
+            stats.items(), 
+            key=lambda item: abs(ticklabel2position[item[0]] - ref_pos)
+        )
+        show_lines=show_lines and len(ticklabel2position)>2
+
+        for i, (k, s) in enumerate(stats_sorted):
+            # g: 2. Determine Staggered Offsets
+            # g: Use 5% of the continuous axis length as a staggered step to prevent overlapping lines
+            offset = i * (axlims[axis_cont]['len'] * 0.02)
+            
+            # g: 3. Calculate Line Coordinates
+            target_pos = ticklabel2position[k]
+            current_max = axlims[axis_cont]["max"] + offs_lines[axis_cont] + offset
+            
+            if axis_cont == 'x':
+                x_coords = [current_max, current_max]
+                y_coords = [ref_pos, target_pos]
+            else:
+                x_coords = [ref_pos, target_pos]
+                y_coords = [current_max, current_max]
+
+            if show_lines:            
+                # g: 4. Draw the Bracket (Main Line + Caps)
+                # g: define cap length as 2% of the continuous axis length
+                cap_len = axlims[axis_cont]['len'] * 0.02
+                
+                # g: main line
+                ax.plot(x_coords, y_coords, color="k", lw=1.0,clip_on=False)
+
+                if show_brackets:          
+                    # g: draw inward pointing caps and define text alignment based on orientation
+                    if axis_cont == 'x':
+                        ax.plot([current_max, current_max - cap_len], [ref_pos, ref_pos], color="k", lw=1.0)
+                        ax.plot([current_max, current_max - cap_len], [target_pos, target_pos], color="k", lw=1.0)
+                        text_va = "center"
+                        text_ha = "left" # g: outside the bracket to the right
+                        text_pad = axlims[axis_cont]['len'] * 0.01
+                    else:
+                        ax.plot([ref_pos, ref_pos], [current_max, current_max - cap_len], color="k", lw=1.0)
+                        ax.plot([target_pos, target_pos], [current_max, current_max - cap_len], color="k", lw=1.0)
+                        text_va = "bottom" # g: outside the bracket on top
+                        text_ha = "center"
+                        text_pad = axlims[axis_cont]['len'] * 0.01
+                sns.despine()
+            # g: 5. Align Text to Midpoint
+            mid_pos = (ref_pos + target_pos) / 2.0
+                
+            ax.text(
+                **{
+                    # axis_cont: current_max + text_pad, 
+                    # axis_desc: mid_pos + offs_pval[axis_desc],
+                    axis_cont: axlims[axis_cont]["max"]
+                    + offs_pval[
+                        axis_cont
+                    ],  # +((axlims[axis_cont]['len']*offx_pval) if axis_desc=='y' else 0),
+                    axis_desc: ticklabel2position[k] + offs_pval[axis_desc],                    
+                },
+                s=s,
+                # va=text_va,
+                # ha=text_ha,
+                va="center" if axis_desc == "y" else "top",
+                ha="right" if axis_desc == "y" else "center",
+
+                zorder=5,
+            )
+            
+    return ax
+
+def show_stats_by_sides(
+    df_stats, ## contains column with ticklabel
+    col_mid, ## [left,mid,rt],
+    col_left, ## [left,mid,rt],
+    col_right, ## [left,mid,rt],
+    ax=None,
+    ):
+    """
+    #TODO
+    """
+    if ax is None:
+        ax=plt.gca()
+    from roux.viz.ax_ import get_ticklabel_position
+    df_stats=(
+        pd.Series(get_ticklabel_position(ax,axis='y'))
+        .to_frame('y')
+        .reset_index()
+        .assign(
+            label=lambda df: df['index'].str.split('\\n',expand=True)[0],
+        )
+        .merge(
+            df_stats,
+            # pd.DataFrame(kws_plot['stats']).T,
+            left_on='label',
+            # right_index=True,
+            # validate='1:1',
+        )
+    )
+    if col_mid is not None:
+        if x_center is None:
+            x_center=np.mean(ax.get_xlim())
+        ## center e.g. pvals
+        (
+            df_stats
+            .apply(
+                lambda x: ax.text(
+                    x_center,
+                    x['y'],
+                    x[col_mid],
+                    va='top',
+                    ha='center'
+                ),
+                axis=1,
+            )
+        )
+    ## left counts
+    if col_left is not None:
+        (
+            df_stats
+            .apply(
+                lambda x: ax.text(
+                    ax.get_xlim()[0]+0.01,
+                    x['y']+0.2,
+                    x[col_left],
+                    va='top',
+                    ha='left'
+                ),
+                axis=1,
+            )
+        )
+    ## rght counts
+    if col_right is not None:
+        (
+            df_stats
+            .apply(
+                lambda x: ax.text(
+                    ax.get_xlim()[1]-0.01,
+                    x['y']+0.2,
+                    x[col_right],
+                    va='top',
+                    ha='right'
+                ),
+                axis=1,
+            )
+        )
+    return ax
+    
 def show_crosstab_stats(
-    data: pd.DataFrame,
+    stat=None,
+    pval=None,
+    
+    data: pd.DataFrame=None,
     cols: list=None,
+    
+    order_x=None,
+    order_y=None,
     
     method: str = None,
 
@@ -765,12 +1078,13 @@ def show_crosstab_stats(
     show_stat=True,
     show_pval=True,
     linebreak: bool = False,
-    
+
     loc: str = None,
     xoff: float = 0,
     yoff: float = 0,
         
     ax: plt.Axes = None,
+    kws_stats={},
     **kws_set_label,
 ) -> plt.Axes:
     """Annotate a confusion matrix.
@@ -791,60 +1105,89 @@ def show_crosstab_stats(
     Returns:
         plt.Axes: `plt.Axes` object.
     """
-    if cols is not None:
-        from roux.stat.diff import compare_classes
-    
-        stat, pval = compare_classes(data[cols[0]], data[cols[1]], method=method)
-        ## get the label for the stat method
-        data_ = pd.crosstab(data[cols[0]], data[cols[1]])
-    else:
-        from scipy.stats import fisher_exact
-        stat, pval = fisher_exact(data.values)
-        data_=data.copy()
+    if ax is None:
+        ax=plt.gca()
         
-    logging.info(f"stat={stat},pval={pval}")
+    if stat is None and pval is None:
+        from roux.stat.diff import compare_classes
+        res = compare_classes(
+            x=data[cols[0]] if cols is not None else None,
+            y=data[cols[1]] if cols is not None else None,
+            
+            order_x=order_x,
+            order_y=order_y,
+            
+            method=method,
+            data=data,
+                    
+            **kws_stats
+        )        
 
-    if data_.shape != (2, 2) or method == "chi2":
+        stat=res.get('stat')
+        pval=res.get('P')
+        logging.info(f"stat={stat},pval={pval}")
+
+    if res.get('table').shape != (2, 2) or method == "chi2":
         stat_label = r"${\chi}^2$"
     else:
         stat_label = "OR"
-
-    if loc == "bottom":
-        kws_set_label = dict(
-            x=0.5 + xoff,
-            y=-0.2 + yoff,
-            ha="center",
-            va="center",
-        )
-    elif loc == "right":
-        kws_set_label = dict(
-            x=1 + xoff,
-            y=0 + yoff,
-            ha="left",
-            va="bottom",
-        )
-    elif loc == "center":
-        kws_set_label = dict(
-            x=0.5 + xoff,
-            y=0.5 + yoff,
-            ha="center",
-            va="center",
-        )
-
+        
+    if 'x' not in kws_set_label and 'y' not in kws_set_label:
+        if loc == "bottom":
+            kws_set_label = {
+                **dict(
+                    x=0.5 + xoff,
+                    y=-0.2 + yoff,
+                    ha="center",
+                    va="center",
+                ),
+                **kws_set_label,
+            }
+        elif loc == "right":
+            kws_set_label = {
+                **dict(
+                    x=1 + xoff,
+                    y=0 + yoff,
+                    ha="left",
+                    va="bottom",
+                ),
+                **kws_set_label,
+            }
+        elif loc == "center":
+            kws_set_label = {
+                **dict(
+                    x=0.5 + xoff,
+                    y=0.5 + yoff,
+                    ha="center",
+                    va="center",
+                ),
+                **kws_set_label,
+            }
+        else:
+            raise ValueError(loc)
+            
     from roux.viz.ax_ import set_label
     set_label(
         s=(f"{stat_label}={stat:.1f}" if show_stat else '')
         + (", " if show_stat and not linebreak else "\n")
         + (
             pval2annot(
-                pval, alternative="two-sided", alpha=alpha, fmt="<", linebreak=False
+                pval, alternative="two-sided", alpha=alpha, fmt=None, linebreak=False
             ) if show_pval else ''
         ),
         ax=ax,
         **kws_set_label,
     )
-    return ax
-
+    if hasattr(ax,'stats') and ax.stat is not None:
+        logging.warning('overwritten ax.stats')
+    ax.stats=res
+    
+    return {
+        **res,
+        **dict(
+                ax=ax,
+            ),
+        }
 
 def show_confusion_matrix_stats(
     df_: pd.DataFrame, ax: plt.Axes = None, off: float = 0.5
@@ -907,6 +1250,85 @@ def show_confusion_matrix_stats(
         axis=1,
     )
     return ax
+
+def show_means(  
+    ax=None,   
+    meanprops=None,   
+    orient=None,  
+    data=None,  
+    x=None,  
+    y=None,  
+    alpha=0.5,
+):  
+    """  
+    Overlays a diamond marker with a mu symbol on top of barplot patches.  
+    Matches the behavior of showmeans=True in plot_dists.  
+    """  
+      
+    if ax is None:  
+        ax = plt.gca()  
+    if meanprops is None:  
+        meanprops = {}  
+      
+    # Infer orient from dtypes if orient is None  
+    if orient is None:  
+        if data is not None and x is not None and y is not None:  
+            if data[y].dtype not in [int, float]:  
+                # y is categorical, values on x-axis → horizontal  
+                orient = "h"  
+            else:  
+                # y is numeric, values on y-axis → vertical  
+                orient = "v"  
+        else:  
+            # fallback to vertical if no dataframe info provided  
+            orient = "v"  
+          
+    for p in ax.patches:  
+        if orient == "h":  
+            val = p.get_width()  
+            pos = p.get_y() + p.get_height() / 2  
+            x_, y_ = val, pos  
+        else:  
+            val = p.get_height()  
+            pos = p.get_x() + p.get_width() / 2  
+            x_, y_ = pos, val  
+              
+        # if np.isnan(val) or val == 0:  
+        #     continue  
+        # if val == 0:
+        # print(p,x_, y_)
+        # if y_ ==0:
+            # middle
+            # continue
+              
+        # Diamond marker (matches sns.pointplot in plot_dists)  
+        ax.plot(  
+            x_, y_,  
+            marker='D',  
+            markerfacecolor=meanprops.get("markerfacecolor", 
+                                          # get_colors_default()[0]
+                                         p.get_facecolor(),
+                                         ),  
+            markeredgecolor=meanprops.get("markeredgecolor", "none"),  
+            markersize=float(meanprops.get("markersize", 15)),  
+            alpha=alpha,  
+            markeredgewidth=0,  
+            clip_on=False,  
+            linestyle="None"  
+        )  
+          
+        # Mu marker on top (matches meanprops in plot_dists box plot)  
+        ax.plot(  
+            x_, y_,  
+            marker=r"$\mu$",  
+            markerfacecolor=meanprops.get("mu_color", "black"),  
+            markeredgecolor="none",  
+            markersize=10,  
+            clip_on=False,  
+            linestyle="None"  
+        )  
+        # break
+    return ax 
 
 
 # # logo

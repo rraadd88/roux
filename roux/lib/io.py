@@ -201,12 +201,18 @@ def to_arxv(
     com=''
     if not wait:
         com+="nice -n 10 ionice -c2 -n7 "
-    com+=f" tar --remove-files -czf {outp} {'' if not exclude else '--exclude '+exclude} {ind} &"
 
+    arg_exclude=''
+    if isinstance(exclude,str):
+        exclude=[exclude]
+    if isinstance(exclude,list):
+        arg_exclude=' --exclude '.join(exclude)
+    
+    com+=f" tar --remove-files -czf {outp} {arg_exclude} {ind} &"
     if verbose:
         logging.info(com)
 
-    if not simulate:
+    if not simulate:   
         if not Path(outp).exists() or force:
             from roux.lib.sys import run_com
             run_com(
@@ -230,7 +236,7 @@ def read_arxv(
     
     read_func=None, ## without savng the extracted file
     
-    verbose=True,
+    verbose=False,
     force=False,
     **kws_extract,
     ):
@@ -245,6 +251,7 @@ def read_arxv(
     """
     if p.startswith('../'):
         assert p.count('../')==1, p
+        
     p=Path(p).as_posix()
     if Path(p).exists() and not force:
         return p
@@ -263,11 +270,41 @@ def read_arxv(
         if verbose:
             logging.info(ps if len(ps)<10 else len(ps))
 
-        assert p.split('../')[-1] in ps, (p,ps)
+        p_inside=Path(p.split('../')[-1]).as_posix()
+        # logging.warning(p_inside)
+
+        aps_inside=sorted([p_ for p_ in ps if p_.endswith('.tar.gz')])
+        if p_inside not in ps:
+            
+            logging.warning(f"searching among the {len(aps_inside)} arxives found inside ..")
+            if verbose:
+                logging.info(aps_inside)
+                
+            for ap_inside in aps_inside:
+                ap_inside_=ap_inside.rstrip('.tar.gz')
+                # print(ap_inside_)
+                if p_inside.startswith(ap_inside_):
+                    logging.warning(
+                        f"found in {ap_inside}",
+                    )
+                    # return
+                    ## extract ap_inside from ap
+                    read_arxv(
+                        p=f"{'../' if p.startswith('../') else ''}{ap_inside}",
+                        ap=ap,
+                    )
+                    ## extract p_inside from ap_inside, by recursing
+                    return read_arxv(
+                        p=p,
+                        ap=f"{'../' if p.startswith('../') else ''}{ap_inside}",
+                    )
+                    
+        assert p_inside in ps, (p,ps)
+        
         if not read_func:
             outp=tar.extractall(
                 path=outd if outd is not None else '../' if p.startswith('../') else '.',
-                members=[p.split('../')[-1]],
+                members=[p_inside],
                 **kws_extract
                 )
             assert Path(p).exists(), p
@@ -292,6 +329,15 @@ def to_copy(
     simulate=False,
     **kws_replace_many,
     ):
+    """
+    Copy with the dir. structure
+
+    Notes:
+        Similar to:
+        
+            rsync -a --remove-source-files --prune-empty-dirs --info=progress2  --include=$ind --include='*/'   --include=$pattern  --exclude='*'   $ind $outd
+    """
+    
     if isinstance(paths,str):
         assert replaces is not None, replaces
         paths={p: replace_many(p,replaces, **kws_replace_many) for p in read_ps(paths)}
@@ -559,6 +605,14 @@ def is_table(p):
 def is_data(p):
     return is_dict(p) or is_table(p)     
 def read_data(p,**kws):
+    if isinstance(p,dict):
+        ## recurse
+        ## placed here for uniformity
+        datas={}
+        for k,p_ in p.items():
+            datas[k]=read_data(p_,**kws)
+        return datas 
+        
     if is_dict(p):
         return read_dict(p,**kws)
     elif is_table(p):
@@ -633,6 +687,15 @@ def read_dict(
         with open(p, "r") as p:
             return json.load(p, **kws)
 
+    ## custom ext.s for formats that can be opened in a fail-safe manner, meaning a plain text editor e.g yaml
+    elif (
+        p.endswith(".cfg") or fmt == "cfg" ## conf.s
+        # or 
+        # p.endswith(".pms") or fmt == "pms" ## params
+        ):
+        from roux.workflow.cfgs import read_config
+        return read_config(p,**kws)
+
     elif p.startswith("https"):
         from urllib.request import urlopen
 
@@ -658,7 +721,12 @@ def read_dict(
         logging.error("supported extensions: .yml .yaml .json .pickle .joblib")
 
 
-def to_dict(d, p, **kws):
+def to_dict(
+    d, 
+    p,
+    compress=False,
+    **kws
+    ):
     """Save dictionary file.
 
     Parameters:
@@ -679,10 +747,25 @@ def to_dict(d, p, **kws):
         logging.warning("probably working on google drive; space/s left in the path.")
     makedirs(p)
     if p.endswith(".yml") or p.endswith(".yaml"):
+        
         import yaml
-
+        if not compress:
+            import json
+            d=json.loads(
+                json.dumps(d)
+            )
         with open(p, "w") as f:
-            yaml.safe_dump(d, f, **{**dict(sort_keys=False),**kws})
+            yaml.safe_dump(
+                ## no aliases
+                d, 
+                f,
+                **{
+                    **dict(
+                        sort_keys=False
+                    ),
+                    **kws
+                }
+                )
         return p
     elif p.endswith(".json"):
         import json
@@ -736,22 +819,28 @@ from roux.lib.text import get_header
 def read_table(
     p: str,
     ext: str = None,
-    clean: bool = True,
-    filterby_time=None,
-    params: dict = None,
-    kws_clean: dict = {},
-    kws_cloud: dict = {},
+
     use_paths: bool = False,  # read files in the path column even if not available in the sub-dir
     use_dir_paths: bool = False,  # =use_paths, will be deprec.d
-    tables: int = 1,
+    filterby_time=None,
+
+    params: dict = None,
+
     post=True,
+    clean: bool = True,
+    kws_clean: dict = {},
+
+    kws_cloud: dict = {},
+
+    ## internal
+    engine: str = "pyarrow",
+    tables: int = 1,     
     test: bool = False,
     verbose: bool = True,
-    engine: str = "pyarrow",
     **kws_read_tables: dict,
 ):
     """
-    Table/s reader.
+    Unified table/s reader.
 
     Parameters:
         p (str): path of the file. It could be an input for `read_ps`, which would include strings with wildcards, list etc.
@@ -789,6 +878,21 @@ def read_table(
                            sep='\t',comment='#',header=None,
                            names=replace_many(get_header(path,comment='#',lineno=-1),['#','\n'],'').split('\t'))
                            )
+    TODOs:
+        params -> kws_reader
+            with back-compatibility
+            kws_reader=params
+
+        Standardised arg.s to be preferred
+            kws_read_table=dict(
+                path=
+                cols= # query cols
+                expr= # query rows
+                )
+            with back-compatibility
+                path=p
+                cols=kws_reader['columns] 
+                expr=
     """
     if params is None:
         params={}
@@ -797,13 +901,24 @@ def read_table(
     # params={}
     if tables==1:
         ## check for read_tables
-        if isinstance(p, list) or (isinstance(p, str) and ("*" in p)):
+        if isinstance(p, (dict,list)) or ((isinstance(p, str) and ("*" in p))):
             if isinstance(p, str) and ("*" in p):
                 _ps = read_ps(p, verbose=False)
                 if exists(p.replace("/*", "")):
                     logging.warning(f"exists: {p.replace('/*','')}")
-            elif isinstance(p, list):
+            elif isinstance(p, (list)):
                 _ps = p
+            elif isinstance(p, dict):
+                _ps = p
+                kws_read_tables={
+                    **kws_read_tables,
+                    **dict(
+                        to_dict=True
+                    ),
+                }
+            else:
+                raise ValueError(p)
+                
             return read_tables(
                 p,
                 params=params,
@@ -817,7 +932,7 @@ def read_table(
                 #     #     verbose=False,
                 #     # ),
                 # },  # is kws_apply_on_paths,
-            )
+            )            
         elif isinstance(p, str):
             ## read paths
             if use_paths or use_dir_paths:
@@ -1200,7 +1315,7 @@ def apply_on_paths(
     if drop_index:
         df2 = df2.rd.clean().reset_index(drop=drop_index).rd.clean()
     else:
-        df2 = df2.reset_index(drop=drop_index).rd.clean()
+        df2 = df2.rd.clean().reset_index(drop=drop_index).rd.clean()
         if colindex != "path":
             if colindex in df2:
                 logging.warning(f"{colindex} found in the dataframe; hence dropped.")
@@ -1302,13 +1417,11 @@ def read_tables(
                 clean=clean,
                 verbose=verbose,
                 # **kws_clean,
-            )        
+            )
     else:
         if not isinstance(ps,dict):
             ps=read_ps(ps,verbose=False)
             ps=dict(zip(ps,ps))
-        else:
-            raise ValueError(ps)
         return {k: read_table(p, params=params,verbose=False) for k,p in ps.items()}
 
 ## save table
@@ -1476,19 +1589,29 @@ def to_tables(
     dfs,
     outp,
     ):
-    mdata_raw={k:dict(shape=df.shape,cols=df.columns.tolist()) for k,df in dfs.items()}
-    logging.info({k:d['shape'] for k,d in mdata_raw.items()})
-    
-    p=to_dict(
+    mdata_raw={}
+    ps={}
+    for k,df in dfs.items():
+        if isinstance(df,dict):
+            ## recurse
+            outp_=f"{Path(outp).with_suffix('').as_posix()}/{k}.yaml"
+            ps[k]=to_tables(
+                df,
+                outp_,
+            )
+            mdata_raw[k]=read_dict(outp_)
+        else:      
+            mdata_raw[k]=dict(shape=df.shape,cols=df.columns.tolist())
+            ps[k]=to_table(
+                df,
+                f"{Path(outp).with_suffix('').as_posix()}/{k}.pqt"
+            )
+        
+    logging.info({k:d if 'shape' in d else {k_:d_['shape'] for k_,d_ in d.items()} for k,d in mdata_raw.items()})
+    to_dict(
         mdata_raw,
         outp,
     )
-    ps={}
-    for k,df in dfs.items():
-        ps[k]=to_table(
-            df,
-            f"{Path(p).with_suffix('').as_posix()}/{k}.pqt"
-        )
     return ps
 
 # import pandas as pd
