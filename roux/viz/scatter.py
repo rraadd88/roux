@@ -575,7 +575,7 @@ def plot_volcano(
     """
     if ax is None:
         fig, ax = plt.subplots(figsize=[4, 3])
-    if collabel is None:
+    if show_labels and collabel is None:
         collabel = colindex
         if isinstance(collabel,list):
             assert len(collabel)==1, "if show_labels, collabel (colindex) should be one"
