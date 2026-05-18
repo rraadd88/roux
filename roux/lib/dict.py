@@ -116,8 +116,25 @@ def flatten_keys(
     sep=':',
     clean=False,
     ): 
-    from roux.lib.sys import to_path
-    stats={to_path(k) if not isinstance(k,tuple) else sep.join([to_path(str(s)) for s in k]) :v for k,v in stats.items()}
+    def prep_key(s):
+        from roux.lib.sys import to_path
+        from roux.lib.str import replace_many
+        return to_path(
+            replace_many(
+                s,
+                {
+                    '>=': 'ge',
+                    '<=': 'le',
+                    '=>': 'ge',
+                    '=<': 'le',
+                    '<': 'lt',
+                    '>': 'gt',
+                },
+                errors=None,
+            )
+        )
+        
+    stats={prep_key(k) if not isinstance(k,tuple) else sep.join([prep_key(str(s)) for s in k]) :v for k,v in stats.items()}
     if clean:
         ## remove _s
         stats={k.replace(f'_{sep}',sep).replace(f'{sep}_',sep):v for k,v in stats.items()}

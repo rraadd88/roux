@@ -861,7 +861,7 @@ def show_dists_stats(
     hue: str = None,
 
     show_lines=True,
-    show_brackets=False, ## TODO: caps should be constants
+    show_brackets=False, ## TODO: caps should be constants not scaled by figsize, ref: https://matplotlib.org/stable/gallery/text_labels_and_annotations/angles_on_bracket_arrows.html
 
     # color='k',
 
