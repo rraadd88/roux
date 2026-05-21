@@ -17,7 +17,7 @@
   <img src="https://github.com/rraadd88/roux/assets/9945034/c2a84fca-0cc5-4ecc-8c9a-d83833fd920d" alt="logo" />
   <h1 align="center">roux</h1>
   <p align="center">
-    Convenience functions in Python.
+    Streamlined scientific compute and workflow management toolkit.
     <br />
     <a href="https://github.com/rraadd88/roux#examples">Examples</a>
     ·
@@ -27,7 +27,9 @@
 
 ![image](./examples/image.png)   
 
-# Examples  
+# Usage  
+
+## Examples
 
 [⌗ Dataframes.](https://github.com/rraadd88/roux/blob/master/examples/roux_lib_df.ipynb)  
 [⌗⌗ Paired Dataframes.](https://github.com/rraadd88/roux/blob/master/examples/roux_lib_dfs.ipynb)  
@@ -57,6 +59,22 @@
 [⚙️⏩ Running multiple tasks.](https://github.com/rraadd88/roux/blob/master/examples/dev_roux_workflow_task.ipynb)  
 [⚙️⏩ Workflow using notebooks](https://github.com/rraadd88/roux/blob/master/examples/dev_workflow.ipynb)  
   
+## CLI 
+
+ℹ️ Available command line tools and their usage.  
+`roux --help`
+
+🗺️ Read configuration.  
+`roux read-config path/to/file`  
+
+🗺️ Read metadata.  
+`roux read-metadata path/to/file`  
+
+⭐ Remove *'s from a jupyter notebook'.  
+`roux removestar path/to/notebook`  
+
+💾 Backup a directory with a timestamp (ISO).  
+`roux backup path/to/directory`  
 
 # Installation  
 ```
@@ -72,29 +90,8 @@ pip install roux[fast]        # for faster processing e.g. parallelization etc.
 pip install roux[workflow]    # for workflow operations e.g. omegaconf etc.
 pip install roux[interactive] # for interactive operations in jupyter notebook e.g. watermark, icecream etc.
 ```
-
-# Command-line usage 
-
-ℹ️ Available command line tools and their usage.  
-`roux --help`
-
-⭐ Remove *'s from a jupyter notebook'.  
-`roux removestar path/to/notebook`  
-
-🗺️ Read configuration.  
-`roux read-config path/to/file`  
-
-🗺️ Read metadata.  
-`roux read-metadata path/to/file`  
-
-📁 Find the latest and the oldest file in a list.  
-`roux read-ps list_of_paths`  
-
-💾 Backup a directory with a timestamp (ISO).  
-`roux backup path/to/directory`  
   
 # How to cite?  
-1. Using BibTeX:   
 ```
 @software{Dandage_roux,
   title   = {roux: Streamlined and Versatile Data Processing Toolkit},
@@ -105,17 +102,14 @@ pip install roux[interactive] # for interactive operations in jupyter notebook e
   note    = {The URL is a DOI link to the permanent archive of the software.},
 }
 ```
-2. DOI link: [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.2682670.svg)](https://zenodo.org/doi/10.5281/zenodo.2682670), or  
-
-3. Using citation information from [CITATION.CFF file](https://github.com/rraadd88/roux/blob/master/CITATION.cff).  
-  
+<!--   
 
 # Future directions, for which contributions are welcome  
 - [ ] Addition of visualization function as attributes to `rd` dataframes.  
-- [ ] Refactoring of the workflow functions.  
+- [ ] Refactoring of the workflow functions.   -->
   
-# Similar projects  
+# Similar packages
 - https://github.com/v-popov/helper_funcs  
 - https://github.com/nficano/yakutils  
 
-# [API](https://github.com/rraadd88/roux/blob/master/README_API.md)
+<!-- # [API](https://github.com/rraadd88/roux/blob/master/README_API.md) -->
