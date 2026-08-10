@@ -13,6 +13,7 @@ import pandas as pd
 from roux.lib.sys import (
     exists,
     makedirs,
+    read_ps,
 )
 
 ## for backcompatibility
@@ -399,7 +400,7 @@ def replacestar_ruff(
     p: str,
     outp: str,
     replace: str = "from roux.global_imports import *",
-    clean=False,
+    clean=True,
     indent=None,
     verbose=True,
 ) -> str:
@@ -448,7 +449,7 @@ def replacestar_ruff(
             s = s.strip()
             if s.startswith("## setting states"):
                 break
-            if s_.startswith("#") and s.startswith("#"):
+            if s_.startswith("#") and (s.startswith("#") or s==''):
                 drop_lines.append(i - 1)
             # if s == "":
             #     drop_lines.append(i)
@@ -494,6 +495,20 @@ def replacestar(
         roux replacestar -i notebook.ipynb
         roux replacestar -i notebooks/*.ipynb
     """
+    if len(read_ps(input_path))>1:
+        assert output_path is None, "only replacing allowed .."
+        for p in read_ps(input_path):
+            # recurse
+            replacestar(
+                p,
+                replace_from=replace_from,
+                method=method, # select
+                method_kws=method_kws,
+                errors=errors,
+                verbose = verbose,
+            )
+        return 
+
     from roux.workflow.function import get_global_imports
     if output_path is None:
         output_path=input_path

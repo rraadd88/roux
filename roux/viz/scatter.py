@@ -828,6 +828,22 @@ def plot_volcano(
     ## formatting
     ax.spines.top.set(visible=False)
     ax.spines.right.set(visible=False)
+
+    ## stats
+    counts=data.groupby('significance direction bin').size().to_dict()
+    from scipy import stats
+    res=stats.binomtest(
+            counts['increase'],
+            counts['increase']+counts['decrease'],
+            p=0.5,
+            alternative='two-sided'
+        )
+    ax.stats=dict(
+        P=res.pvalue,
+        stat=res.statistic,
+        counts=counts,
+        )
+
     if not outmore:
         return ax
     else:

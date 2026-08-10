@@ -66,7 +66,7 @@ from roux.lib.dict import flatten_dict  #noqa
 ## dataframe attribute from roux
 # attributes
 import roux.lib.dfs as rd # attribute #keep #noqa
-import roux.viz.ds as rs # attribute #keep #noqa
+# import roux.viz.ds as rs # attribute #keep #noqa #TODO: rarely used
 
 ## stats functions from roux
 from roux.stat.binary import perc #noqa

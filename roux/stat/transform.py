@@ -1,8 +1,9 @@
 """For transformations."""
 
-import pandas as pd
-import numpy as np
 import logging
+
+import numpy as np
+import pandas as pd
 
 
 def plog(x, p: float, base: int):
@@ -69,12 +70,64 @@ def log_pval(
                 logging.warning(f"zeros found, replaced with min {replace_zero_with}")
     return -1 * (np.log10(x))
 
+def get_q_storey(
+    pvalues,
+    pi0_lambda=0.5, errors='raise',  
+    ):
+    """
+    Calculates Storey's q-values from a list of p-values.
+
+    Args:
+        pvalues (array-like): 1D array of raw p-values.
+        pi0_lambda (float): Lambda threshold for pi0 estimation. Default 0.5.
+        errors (str): 'raise' to raise on invalid input, else warn.
+
+    Returns:
+        tuple: qvalues, pi0
+    """
+    pvals = np.asarray(pvalues, dtype=float)
+
+    # g: check NaN separately; NaN silently bypasses range checks
+    if np.any(np.isnan(pvals)):
+        msg = "p-values contain NaN."
+        if errors == 'raise': raise ValueError(msg)
+        else: logging.warning(msg)
+
+    if np.any((pvals < 0) | (pvals > 1)):
+        msg = "All p-values must be between 0 and 1."
+        if errors == 'raise':
+            raise ValueError(msg)
+        else:
+            logging.warning(msg)
+
+    m = len(pvals)
+
+    # g: Storey (2002): strictly > lambda, not >=
+    pi0 = np.sum(pvals > pi0_lambda) / (m * (1.0 - pi0_lambda))
+    pi0 = min(pi0, 1.0)
+
+    sort_idx = np.argsort(pvals)
+    sorted_pvals = pvals[sort_idx]
+
+    ranks = np.arange(1, m + 1)
+    qvals_sorted = (pi0 * m * sorted_pvals) / ranks
+
+    # g: vectorized backward monotonicity enforcement
+    qvals_sorted = np.minimum.accumulate(qvals_sorted[::-1])[::-1]
+    qvals_sorted = np.clip(qvals_sorted, 0, 1)
+
+    qvals = np.empty_like(qvals_sorted)
+    qvals[sort_idx] = qvals_sorted
+
+    return qvals,pi0
 
 def get_q(
     ds1: pd.Series,
     col: str = None,
+    method='BH',
     verb: bool = True,
     test_coff: float = 0.1,
+    errors=None,
 ):
     """
     To FDR corrected P-value.
@@ -82,17 +135,33 @@ def get_q(
     if col is not None:
         df1 = ds1.copy()
         ds1 = ds1[col]
-    ds2 = ds1.dropna()
-    from statsmodels.stats.multitest import fdrcorrection
+    
+    if errors=='raise':
+        assert not ds1.isnull().any(), ds1.isnull().sum()
+        ds2 = ds1.copy()
+    else: 
+        ## fail-safe: nans ignored
+        ds2 = ds1.dropna()
 
-    ds3 = fdrcorrection(pvals=ds2, alpha=0.05, method="indep", is_sorted=False)[1]
+    if method=='storey':
+        ## q-values
+        ds3=get_q_storey(
+            ds2.values
+        )[0]
+    elif method=='BH':
+        ## FDR
+        from statsmodels.stats.multitest import fdrcorrection
+        ds3 = fdrcorrection(pvals=ds2, alpha=0.05, method="indep", is_sorted=False)[1]
+    else:
+        raise ValueError(method)
+
     ds4 = ds1.map(
-        pd.DataFrame({"P": ds2, "Q": ds3}).drop_duplicates().set_index("P")["Q"]
+        pd.DataFrame({"P": ds1, "Q": ds3}).drop_duplicates().set_index("P")["Q"]
     )
     if verb:
         from roux.stat.io import perc_label  # noqa
-
         logging.info(f"significant at Q<{test_coff}: {perc_label(ds4<test_coff)}")
+
     if col is None:
         return ds4
     else:
