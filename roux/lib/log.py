@@ -1,9 +1,10 @@
-import logging as logging_base  
-from datetime import datetime
-from logging import LogRecord
+import logging as logging_base
 
 ## setup
 import sys
+from datetime import datetime
+from logging import LogRecord
+
 if hasattr(sys.stdout, "reconfigure"):
     sys.stdout.reconfigure(errors="backslashreplace")
 
@@ -144,6 +145,8 @@ def {level_name}(self, msg: str="", **kwargs) -> datetime:
 
 
 import logging
+
+
 def log_dict(
     d: dict,
     sort_keys=False,
@@ -182,8 +185,8 @@ def to_diff(
     file2,
     outp=None,
     ):
-    from pathlib import Path
     import difflib
+    from pathlib import Path
     if isinstance(file1,str) and Path(file1).is_file():# and Path(file2).is_file():  
         with open(file1) as f1, open(file2) as f2:
             lines1 = f1.readlines()
@@ -207,7 +210,7 @@ def to_diff(
     )
     # return diff
     if outp is None:
-        from IPython.display import display, HTML
+        from IPython.display import HTML, display
         # diff_html = f"<div style='text-align: left; margin-left: 0;'>{diff_html}</div>"
         # diff_html = diff_html.replace(
         #     '<table class="diff" id="difflib_chg_to0__top">',
@@ -222,6 +225,8 @@ def to_diff(
         return outp
 
 from contextlib import contextmanager
+
+
 @contextmanager
 def no_logging(
     level=logging.CRITICAL,

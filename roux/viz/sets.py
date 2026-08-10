@@ -1,10 +1,12 @@
 """For plotting sets."""
 
 import logging
+
+import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-import matplotlib.pyplot as plt
 import seaborn as sns
+
 import roux.lib.dfs as rd  # noqa
 from roux.lib.df import to_map_binary
 from roux.viz.ax_ import set_axlims, set_ylabel
@@ -626,17 +628,13 @@ def _to_data_plot_pie(
         logging.warning(f"inferred `order`={order}")
     if rename is not None:
         data_ = data_.assign(
-            **{
-                "name": lambda df: df["name"].map(rename),
-            }
+            name=lambda df: df["name"].map(rename)
         ).rd.sort_valuesby_list(by="name", cats=order)
     if colors is not None:
         if isinstance(colors, list):
             colors = dict(zip(order, colors))
         data_ = data_.assign(
-            **{
-                "color": lambda df: df["name"].map(colors),
-            }
+            color=lambda df: df["name"].map(colors)
         )
     if explode is not None:
         if explode == "first":
@@ -646,22 +644,18 @@ def _to_data_plot_pie(
         else:
             raise ValueError(explode)
         data_ = data_.assign(
-            **{
-                "explode": lambda df: df["name"].apply(
+            explode=lambda df: df["name"].apply(
                     lambda x: 0.1 if explode == x else 0
-                ),
-            }
+                )
         )
     if show_n:
         data_["perc"] = 100.0 * data_["count"] / data_["count"].sum()
         data_ = (
             data_.assign(
-                **{
-                    "name": lambda df: df.apply(
+                name=lambda df: df.apply(
                         lambda x: f"{x['name']}\n{x['perc']:.0f}% ({x['count']})",
                         axis=1,
-                    ),
-                }
+                    )
             )
         ).drop(["perc"], axis=1)
 

@@ -1,17 +1,19 @@
 """For workflow management."""
 
 import logging
-from pathlib import Path
-from roux.lib.sys import exists, dirname, basename, makedirs, basenamenoext, abspath
-from roux.lib.io import read_ps, read_dict
-import pandas as pd
 import subprocess
+from pathlib import Path
+
+import pandas as pd
+
+from roux.lib.io import read_dict, read_ps
+from roux.lib.sys import abspath, basename, basenamenoext, dirname, exists, makedirs
 
 
 def get_scripts(
     ps: list,
-    notebook_prefix: str = "\d{2}",
-    notebook_suffix: str = "_v\d{2}",
+    notebook_prefix: str = r"\d{2}",
+    notebook_suffix: str = r"_v\d{2}",
     test: bool = False,
     fast: bool = True,
     cores: int = 6,
@@ -79,8 +81,9 @@ def get_scripts(
             axis=1,
         )
     else:
-        from roux.lib.df import get_name
         from pandarallel import pandarallel
+
+        from roux.lib.df import get_name
 
         pandarallel.initialize(nb_workers=cores, progress_bar=True)
         df2 = df1.groupby(["notebook path", "task name"]).parallel_apply(
@@ -123,8 +126,8 @@ def to_scripts(
     notebooksdp: str,
     validate: bool = False,
     ps: list = None,
-    notebook_prefix: str = "\d{2}",
-    notebook_suffix: str = "_v\d{2}",
+    notebook_prefix: str = r"\d{2}",
+    notebook_suffix: str = r"_v\d{2}",
     scripts: bool = True,
     workflow: bool = True,
     sep_step: str = "## step",

@@ -1,5 +1,6 @@
 """For diagrams e.g. flowcharts"""
-import logging 
+import logging
+
 
 def diagram_nb(
     graph: str,
@@ -101,6 +102,7 @@ def diagram_nb(
 
     ## diagram
     import base64
+
     from IPython.display import Image, display
 
     graphbytes = graph.encode("ascii")

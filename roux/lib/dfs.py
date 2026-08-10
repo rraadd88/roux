@@ -5,8 +5,9 @@ import logging
 import numpy as np
 import pandas as pd
 
-import roux.lib.df as rd #noqa
+import roux.lib.df as rd  #noqa
 from roux.lib import to_rd
+
 
 ## ids
 @to_rd
@@ -135,9 +136,9 @@ def filter_dfs(
         from roux.lib.set import list2intersection, list2union
 
         if how == "inner":
-            l = list(list2intersection([df[col].tolist() for df in dfs]))  # noqa
+            l = list(list2intersection([df[col].tolist() for df in dfs]))
         elif how == "outer":
-            l = list(list2union([df[col].tolist() for df in dfs]))  # noqa
+            l = list(list2union([df[col].tolist() for df in dfs]))
         else:
             raise ValueError("how")
         logging.info(f"len({col})={len(l)}")
@@ -195,11 +196,9 @@ def merge_with_many_columns(
     def log_overlap(df2):
         ## overlap per column
         df3 = df2.assign(
-            **{
-                "overlap": lambda df: df.groupby("variable")[left_on].transform(
+            overlap=lambda df: df.groupby("variable")[left_on].transform(
                     lambda x: len(set(x.tolist()) & set(df1[left_on].tolist()))
-                ),
-            }
+                )
         ).sort_values("overlap", ascending=False)
         logging.info(
             df3.loc[:, ["variable", "overlap"]]

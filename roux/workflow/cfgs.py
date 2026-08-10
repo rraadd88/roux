@@ -1,17 +1,16 @@
 import logging
-
+from glob import glob
 from pathlib import Path
-from glob import glob 
 
+from omegaconf import OmegaConf
+
+from roux.lib.io import is_dict, read_dict, to_dict
+from roux.lib.log import log_dict
 from roux.lib.sys import (
     isdir,
     read_ps,
 )
 
-from roux.lib.io import read_dict, to_dict, is_dict
-from roux.lib.log import log_dict
-
-from omegaconf import OmegaConf
 
 ## mod.s
 def get_cfgs(
@@ -102,7 +101,7 @@ def resolve_cfg(cfg: dict, resolves: dict):
         resolved = OmegaConf.to_container(merged, resolve=True)
         
         # g: filter out the injected inputs to retain only the original dictionary's keys
-        filtered_resolved = {k: resolved[k] for k in cfg.keys()}
+        filtered_resolved = {k: resolved[k] for k in cfg}
         
         if is_sweep:
             configs[name] = filtered_resolved
@@ -356,10 +355,12 @@ def read_metadata(
         )
     # if verbose and 
     if 'version' in d1:
-        logging.info(f"version: {str(d1['version'])}")        
+        logging.info(f"version: {d1['version']!s}")        
     return d1
 
 from collections import OrderedDict
+
+
 def get_cfg_run(d, keys=("pms_run", "kws_run")):
     groups = OrderedDict()
 
@@ -428,8 +429,9 @@ def to_cfg_run_arc(
     import logging
     logging.basicConfig(level='INFO',force=True)
     from pathlib import Path
+
+    from roux.lib.io import read_dict, to_dict
     from roux.lib.log import log_dict
-    from roux.lib.io import read_dict,to_dict
     from roux.workflow.task import run_tasks
 
     if validate:
@@ -508,13 +510,13 @@ def to_cfg_run_arc(
         ## output_path
         ### frame 
         ins[arc_name][step_name]={
-            **{
+            
                 'main':{
                     'pms_run':{
                         
                     }
                 }
-            },
+            ,
             **ins[arc_name][step_name]
         }
         # print(ins)

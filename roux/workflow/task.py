@@ -1,41 +1,44 @@
 """For task management."""
 
 import sys
+
 sys.tracebacklimit = 0 # needs to be at the very top
 
 import os
 import time
-from tqdm import tqdm
 from datetime import datetime, timedelta
+
+from tqdm import tqdm
 
 ## logging
 # try:
 from roux.lib.log import Logger
+
 logging = Logger() # level='INFO'
 # except:
-    # import logging #noqa
+    # import logging
     # logging.basicConfig(level='INFO', force=True)
 
 from pathlib import Path
 
+import pandas as pd
+
+## parallel-processing
+import roux.lib.df_apply as rd  #noqa
+from roux.lib.io import read_dict, read_ps, to_dict
+
 ## internal
-from roux.lib.sys import run_com
-from roux.lib.io import read_dict, to_dict, read_ps
-
-from roux.workflow.log import test_params
-from roux.workflow.pms import pre_params
-
 from roux.lib.sys import (
     exists,
     get_datetime,
+    run_com,
 )
-
-import pandas as pd
-## parallel-processing
-import roux.lib.df_apply as rd #noqa
+from roux.workflow.log import test_params
+from roux.workflow.pms import pre_params
 
 try:
     from tqdm import tqdm
+
     from roux.lib.sys import is_interactive_notebook
 
     if not is_interactive_notebook():
@@ -51,6 +54,7 @@ except ImportError:
     )
 
 import papermill as pm
+
 
 def pre_task(
     pms,
@@ -386,7 +390,7 @@ def run_tasks_nb(
             logging.info(f"running in parallel (cpus={cpus})..")
             
             # disable logging
-            import logging as logging_base 
+            import logging as logging_base
             sorted(list(logging_base.root.manager.loggerDict.keys()))
             for k in [
                 'papermill',
@@ -412,7 +416,7 @@ def run_tasks_nb(
         # return ds2
         
         if post and not fast:        
-            from roux.workflow.nb import valid_post_task_deps, to_html
+            from roux.workflow.nb import to_html, valid_post_task_deps
             if valid_post_task_deps:
                 df1['html path']=(
                     df1
@@ -661,8 +665,7 @@ set -e
 exec > >(tee '{self.log_path}/stdout') 2>&1; 
 
 """)
-            for command in self.commands:
-                f.write(f"{command}\n")
+            f.writelines(f"{command}\n" for command in self.commands)
             f.write(
 f"""
 ## archive the subdir (if job completed)

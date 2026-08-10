@@ -4,8 +4,6 @@
 ## for file paths
 import logging
 import shutil
-
-#
 import subprocess
 import sys
 from glob import glob

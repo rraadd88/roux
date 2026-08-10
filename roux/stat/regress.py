@@ -1,5 +1,6 @@
 import numpy as np
 
+
 def regress_out(a, b, jitter=False):
     """
     Regresses b from a using the pseudo-inverse, preserving the original mean.

@@ -9,6 +9,8 @@ __all__ = ['set_text_multicolored']
 import matplotlib.pyplot as plt
 from matplotlib.colors import to_rgba
 from matplotlib.text import Text
+
+
 def set_text_multicolored(
     x: float = None,
     y: float = None,
@@ -58,7 +60,7 @@ def set_text_multicolored(
             }
         kwargs={
             **text_props,
-            **{
+            
                 **dict(
                     sep=sep, #: str = None,    
                     rsplit=rsplit, #=False,
@@ -68,8 +70,8 @@ def set_text_multicolored(
                     
                     ha=ha, #='center',
                     ),
-                **kwargs,
-            },
+                **kwargs
+            ,
         }
         # # Update with any new kwargs the user provides
         # text_props.update(kwargs)

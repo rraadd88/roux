@@ -6,6 +6,7 @@ import logging
 ## data
 import numpy as np
 import pandas as pd
+
 ## internal
 
 
@@ -174,19 +175,18 @@ def compare_strings(
     TODOs:
         1. Add option for semantic similarity.
     """
-    from roux.lib.set import get_pairs
     from difflib import SequenceMatcher
+
+    from roux.lib.set import get_pairs
 
     return (
         get_pairs(l0, l1)
         .add_prefix("string")
         .assign(
-            **{
-                "similarity": lambda df: df.apply(
+            similarity=lambda df: df.apply(
                     lambda x: SequenceMatcher(None, x["string1"], x["string2"]).ratio(),
                     axis=1,
                 )
-            }
         )
         .log.query(expr=f"`similarity` > {cutoff}")
         .sort_values("similarity", ascending=False)

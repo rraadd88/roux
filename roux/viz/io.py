@@ -437,9 +437,7 @@ def to_script(
         return
     # make def
     for linei, line in enumerate(lines):
-        if "plt.subplot(" in line:
-            lines[linei] = f"if ax is None:{line} #noqa"
-        elif "plt.subplots(" in line:
+        if "plt.subplot(" in line or "plt.subplots(" in line:
             lines[linei] = f"if ax is None:{line} #noqa"
     lines = [f"    {l}" for l in lines]
     lines = "\n".join(lines)

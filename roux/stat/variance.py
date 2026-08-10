@@ -4,6 +4,7 @@ import numpy as np
 import pandas as pd
 import scipy.stats as sc
 
+
 def confidence_interval_95(x: np.array) -> float:
     """95% confidence interval.
 
@@ -32,7 +33,7 @@ def get_ci(rs, ci_type, outstr=False):
     if not outstr:
         return ci
     else:
-        return "$\pm${ci:.2f}{ci_type if ci_type!='max' else ''}"
+        return r"$\pm${ci:.2f}{ci_type if ci_type!='max' else ''}"
 
 
 def get_variance_inflation(
@@ -56,8 +57,8 @@ def get_variance_inflation(
 
     if cols_x is None:
         cols_x = list(set(data.columns) - set([coly]))
-    from roux.lib.str import replace_many, to_formula
     from roux.lib.df import renameby_replace
+    from roux.lib.str import replace_many, to_formula
 
     df1 = renameby_replace(data, to_formula())
     # print(df1.columns)
@@ -75,13 +76,11 @@ def get_variance_inflation(
         .rename_axis(["variable"], axis=0)
         .reset_index()
         .assign(
-            **{
-                "variable": lambda df: df["variable"].apply(
+            variable=lambda df: df["variable"].apply(
                     lambda x: replace_many(x, to_formula(reverse=True), ignore=True)
                     if x != "Intercept"
                     else "Intercept"
                 ),
-            },
         )
     )
 

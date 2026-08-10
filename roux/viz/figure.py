@@ -1,14 +1,15 @@
 """For setting up figures."""
 
 import logging
-
-import numpy as np
+from typing import Tuple
 
 import matplotlib.pyplot as plt
-from matplotlib.gridspec import GridSpec
+import numpy as np
+
 ## types
 from matplotlib.axes import Axes
-from typing import Tuple
+from matplotlib.gridspec import GridSpec
+
 
 def to_pos_in_ax2(
     ax: Axes,

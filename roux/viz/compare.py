@@ -1,9 +1,11 @@
 """For comparative plots."""
 
+from pathlib import Path
+
 import matplotlib.pyplot as plt
+
 from roux.viz.colors import get_colors_default
 from roux.viz.io import to_plot
-from pathlib import Path
 
 
 def plot_comparisons(

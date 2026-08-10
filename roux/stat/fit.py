@@ -1,11 +1,11 @@
 """For fitting data."""
 
+import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-import roux.lib.dfs as rd  # noqa
-import matplotlib.pyplot as plt
-
 import scipy as sc
+
+import roux.lib.dfs as rd  # noqa
 
 
 def fit_curve_fit(
@@ -176,7 +176,7 @@ def fit_gaussian2d(
         xg, yg, zg = get_grid(x, y, z, grids=grids, method=method)
     else:
         xg, yg, zg = x, y, z
-    from astropy.modeling import models, fitting
+    from astropy.modeling import fitting, models
 
     if rescalez:
         from roux.stat.transform import rescale
@@ -287,11 +287,7 @@ def fit_2d_distribution_kde(
         pc = ax.pcolormesh(xx, yy, zz, cmap="Reds")
         fig.colorbar(pc)
         ax.set(
-            **{
-                "xlim": [xmin, xmax],
-                "ylim": [ymin, ymax],
-                "title": f"bandwidth{bandwidth}_bins{xbins}",
-            }
+            xlim=[xmin, xmax], ylim=[ymin, ymax], title=f"bandwidth{bandwidth}_bins{xbins}"
         )
     return xx, yy, zz
 
@@ -353,8 +349,8 @@ def mlr_2(df: pd.DataFrame, coly: str, colxs: list) -> tuple:
     Returns:
         tuple: output.
     """
-    from sklearn.preprocessing import PolynomialFeatures
     from sklearn.linear_model import LinearRegression
+    from sklearn.preprocessing import PolynomialFeatures
 
     poly = PolynomialFeatures(interaction_only=True, include_bias=False)
     X = poly.fit_transform(df.loc[:, colxs])

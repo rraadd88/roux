@@ -1,11 +1,11 @@
 """For processing list-like sets."""
 
 import itertools
+import logging
+from functools import reduce
+
 import numpy as np
 import pandas as pd
-import logging
-
-from functools import reduce
 
 
 def union(l):

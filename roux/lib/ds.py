@@ -5,6 +5,7 @@
 ## data
 import pandas as pd
 
+
 def to_cat(
     ds1: pd.Series,
     cats: list,

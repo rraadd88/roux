@@ -4,9 +4,9 @@ import logging
 
 import numpy as np
 import pandas as pd
-
 import scipy as sc
 from scipy import stats
+
 
 ## vector
 ## dist shape change, (ranks preserved)
@@ -224,9 +224,9 @@ def norm_covariance_PCA(
     else:
         cov = np.cov(X_centered.T)
         eigen_values, eigen_vectors = np.linalg.eig(cov)
-        if rescale_centered == True:  # noqa
+        if rescale_centered == True:
             X_decorrelated = X_centered.dot(eigen_vectors)
-        elif rescale_centered == False:  # noqa
+        elif rescale_centered == False:
             X_decorrelated = X.dot(eigen_vectors)
         X_transformed = X_decorrelated / np.sqrt(eigen_values + 1e-5)
         if verbose:

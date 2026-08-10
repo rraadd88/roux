@@ -3,15 +3,16 @@
 ## logging
 import logging
 
+## viz
+import matplotlib.pyplot as plt
+
 ## data
 import numpy as np
 import pandas as pd
 
-## viz
-import matplotlib.pyplot as plt
-
 ## stats
 import scipy as sc
+
 ## internal
 
 
@@ -184,7 +185,6 @@ def get_clusters_optimum(
     )
     # TODO identify saturation point in the intertia plot for n_clusters_optimum
     n_clusters_optimum = get_n_clusters_optimum(df1, test=test)
-    #
     dn2df = {
         dn: pd.concat(
             {k: dn2d[k][dn] for k in dn2d}, axis=0, names=["total clusters"]

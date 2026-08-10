@@ -1,7 +1,9 @@
 """For operations on jupyter notebooks."""
 
 import logging
+
 import nbformat
+
 
 ## nbs
 def to_nb_cells(
@@ -40,8 +42,9 @@ def get_lines(p: str, keep_comments: bool = True) -> list:
     Returns:
         list: lines.
     """
-    from nbconvert import PythonExporter
     import os
+
+    from nbconvert import PythonExporter
 
     if os.path.islink(p):
         p = os.readlink(p)
@@ -96,6 +99,7 @@ def to_info(
         str: path of the output file.
     """
     from os.path import basename
+
     from roux.lib.sys import read_ps
 
     ps = read_ps(p)
@@ -340,10 +344,7 @@ def to_filtered_outputs(
                         if "output_type" in o:
                             if o["output_type"] == "execute_result" and (
                                 "text/html" in o["data"] or "image/png" in o["data"]
-                            ):
-                                # table/image/plot
-                                continue
-                            elif o["output_type"] == "display_data" and (
+                            ) or o["output_type"] == "display_data" and (
                                 "text/html" in o["data"] or "image/png" in o["data"]
                             ):
                                 # table/image/plot
@@ -445,17 +446,17 @@ def to_clean_nb(
             )
         return
 
+    # makedirs(outp)
+    from pathlib import Path
+
+    from roux.lib.sys import grep
     from roux.workflow.nb import (
-        to_clear_unused_cells,
         to_clear_outputs,
+        to_clear_unused_cells,
         to_filtered_outputs,
         # to_filter_nbby_patterns,
         to_replaced_nb,
     )
-    from roux.lib.sys import grep
-
-    # makedirs(outp)
-    from pathlib import Path
     Path(outp).parent.mkdir(parents=True, exist_ok=True)
 
     # Remove the code blocks that have all commented code and empty lines
@@ -526,6 +527,8 @@ def to_clean_nb(
 
 ## post tasks
 from roux.lib.sys import run_com
+
+
 def valid_post_task_deps(
     ):
     return run_com('which quarto',returncodes=[0,1])!=''

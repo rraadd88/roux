@@ -17,6 +17,7 @@ def git_commit(
         suffix_message (str, optional): add suffix to the version (commit) message. Defaults to ''.
     """
     from git import Repo
+
     from roux.lib.sys import input_binary
 
     repo = Repo(repop, search_parent_directories=True)
@@ -55,9 +56,9 @@ def git_commit(
         repo.index.commit("manual-update" + suffix_message)
     commit(repo)
     push(repo)
-    return
 
 import subprocess
+
 
 def get_tag():
     """Get the current version tag.
@@ -66,7 +67,7 @@ def get_tag():
         # Execute the git describe command to get the current tag
         result = subprocess.run(
             # ['git', 'tag', '-l'],
-            "git describe --abbrev=0 --tags".split(" "),
+            ["git", "describe", "--abbrev=0", "--tags"],
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
             text=True,
@@ -79,10 +80,10 @@ def get_tag():
             current_tag = result.stdout.strip()
             # return current_tag#.split('\n')[-1]
         else:
-            print("Error getting current Git tag:", result.stderr.strip())  # noqa
+            print("Error getting current Git tag:", result.stderr.strip())
             current_tag = None
     except Exception as e:
-        print("An error occurred:", str(e))  # noqa
+        print("An error occurred:", str(e))
         current_tag = None
 
     if current_tag is None:

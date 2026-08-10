@@ -1,6 +1,7 @@
 """For management of tables."""
 
 import logging
+
 import pandas as pd
 
 

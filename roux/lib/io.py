@@ -1,8 +1,14 @@
 """For input/output of data files."""
 
-import pandas as pd
 import logging
+from pathlib import Path
+
+import pandas as pd
 from tqdm import tqdm
+
+# import path: df -> dfs -> io
+import roux.lib.dfs as rd  # noqa
+from roux.lib.str import replace_many
 
 # paths
 from roux.lib.sys import (
@@ -19,11 +25,6 @@ from roux.lib.sys import (
     splitext,
     to_path,
 )  # is_interactive_notebook,basenamenoext,makedirs,get_all_subpaths
-from pathlib import Path
-from roux.lib.str import replace_many
-
-# import path: df -> dfs -> io
-import roux.lib.dfs as rd  # noqa
 
 
 ## operate
@@ -54,8 +55,8 @@ def read_zip(
             fun_read=lambda x: pd.read_table(BytesIO(x)),
     """
     from io import BytesIO
-    from zipfile import ZipFile, ZipExtFile
     from urllib.request import urlopen
+    from zipfile import ZipExtFile, ZipFile
 
     if isinstance(p, ZipExtFile):
         file = p
@@ -512,8 +513,8 @@ def download(
     """
 
     def get_download_date(path):
-        import os
         import datetime
+        import os
 
         t = os.path.getctime(path)
         return str(datetime.datetime.fromtimestamp(t))
@@ -816,6 +817,7 @@ def post_read_table(
 
 from roux.lib.text import get_header
 
+
 def read_table(
     p: str,
     ext: str = None,
@@ -901,7 +903,7 @@ def read_table(
     # params={}
     if tables==1:
         ## check for read_tables
-        if isinstance(p, (dict,list)) or ((isinstance(p, str) and ("*" in p))):
+        if isinstance(p, (dict,list)) or (isinstance(p, str) and ("*" in p)):
             if isinstance(p, str) and ("*" in p):
                 _ps = read_ps(p, verbose=False)
                 if exists(p.replace("/*", "")):
@@ -1512,7 +1514,6 @@ def to_manytables(
                 logging.error(f"can not overwrite existing chunks: {outd}/")
             assert not exists(outd), outd
         df = get_chunks(df1=df, **kws_get_chunks)
-    #
     if (df.loc[:, colgroupby].dtypes == "float").any():
         logging.error("columns can not be float")
         logging.info(df.loc[:, colgroupby].dtypes)
@@ -1529,7 +1530,7 @@ def to_manytables(
             names = [names]
         d1 = dict(zip(colgroupby, names))
         s1 = "/".join(
-            [(f"{k}{fmt}" if fmt != "" else fmt) + f"{str(v)}" for k, v in d1.items()]
+            [(f"{k}{fmt}" if fmt != "" else fmt) + f"{v!s}" for k, v in d1.items()]
         )
         return to_path(f"{outd}/{s1}{ext}")
 
@@ -1777,9 +1778,10 @@ def to_excel_commented(
     if outp is None:
         outp = p
         logging.warning("overwritting the input file")
+    from string import ascii_uppercase
+
     from openpyxl import load_workbook
     from openpyxl.comments import Comment
-    from string import ascii_uppercase
 
     wb = load_workbook(filename=outp)
     for sh in wb:

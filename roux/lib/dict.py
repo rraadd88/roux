@@ -23,7 +23,7 @@ def sort_dict(d1, by=1, ascending=True):
 
 
 def merge_dicts(
-    l: list,  # noqa
+    l: list,
 ) -> dict:
     """Merge dictionaries.
 
@@ -66,7 +66,7 @@ def merge_dicts_deep(left: dict, right: dict) -> dict:
 
 
 def merge_dict_values(
-    l,  # noqa
+    l,
     test=False,
 ):
     """Merge dictionary values.
@@ -117,8 +117,8 @@ def flatten_keys(
     clean=False,
     ): 
     def prep_key(s):
-        from roux.lib.sys import to_path
         from roux.lib.str import replace_many
+        from roux.lib.sys import to_path
         return to_path(
             replace_many(
                 s,

@@ -1,7 +1,8 @@
 """For visualization of images."""
 
-import matplotlib.pyplot as plt
 from os.path import splitext
+
+import matplotlib.pyplot as plt
 
 
 ## subplot
@@ -51,7 +52,7 @@ def plot_image(
             **kws_imshow,
         },
     )
-    ax.set(**{"xticks": [], "yticks": [], "xlabel": "", "ylabel": ""})
+    ax.set(xticks=[], yticks=[], xlabel="", ylabel="")
     ax.margins(margin)
     if not axes:
         ax.axis("off")

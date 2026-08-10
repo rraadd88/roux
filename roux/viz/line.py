@@ -1,8 +1,9 @@
 """For line plots."""
 
 import matplotlib.pyplot as plt
-import pandas as pd
 import numpy as np
+import pandas as pd
+
 from roux.viz.ax_ import get_axlims, logging
 
 
@@ -92,14 +93,14 @@ def plot_bezier(
     test=False,
     **kws_line,
 ):
+    from matplotlib import patches
     from matplotlib.path import Path
-    import matplotlib.patches as patches
     
     if ax is None:
         ax = plt.gca()
 
     if ax2 is not None:
-        from roux.viz.figure import to_pos_in_ax2 
+        from roux.viz.figure import to_pos_in_ax2
         pt2=to_pos_in_ax2(
             ax=ax2,
             ax2=ax,

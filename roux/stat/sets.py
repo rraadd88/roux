@@ -1,8 +1,9 @@
 """For set related stats."""
 
 import logging
-import pandas as pd
+
 import numpy as np
+import pandas as pd
 
 # attributes
 import roux.lib.dfs as rd  # noqa
@@ -51,7 +52,7 @@ def get_overlap_size(
     Returns:
         float: overlap size.
     """
-    if perc or by != None:  # noqa
+    if perc or by != None:
         fraction = True
     overlap_size = len(
         get_overlap(

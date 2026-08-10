@@ -1,6 +1,7 @@
 """For processing binary data."""
 
 import logging
+
 import numpy as np
 import pandas as pd
 
@@ -216,10 +217,10 @@ def get_cutoff(
     df1["count TP"] = df1["threshold"].map(
         {i: sum(y_score > i) for i in df1["threshold"].unique()}
     )
-    if show_cutoff != False:  # noqa
+    if show_cutoff != False:
         df1 = df1.reset_index(drop=True)
         if method == "roc_curve":
-            show_cutoff = {} if show_cutoff == True else show_cutoff  ##noqa
+            show_cutoff = {} if show_cutoff == True else show_cutoff
 
             ratios = df1[columns_value[1]] / (df1[columns_value[0]] + 0.01)
             if show_cutoff["maximize"].lower() in ["specificity", "tpr"]:
@@ -252,7 +253,7 @@ def get_cutoff(
             clip_on=False,
         )
         ## area for ROC-AUC
-        if show_area != False and xaxis == columns_value[0] and method == "roc_curve":  # noqa
+        if show_area != False and xaxis == columns_value[0] and method == "roc_curve":
             ax.fill_between(
                 df1[xaxis],
                 df1[columns_value[1]],
@@ -264,7 +265,7 @@ def get_cutoff(
                 y_score=y_score,
             )
             ax.text(x=1, y=0, s="AUC=" + f"{auc:.2f}", ha="right", va="bottom")
-            if show_diagonal != False and xaxis == columns_value[0]:  # noqa
+            if show_diagonal != False and xaxis == columns_value[0]:
                 ax.plot(
                     [0, 1],
                     [0, 1],
@@ -277,7 +278,7 @@ def get_cutoff(
                     yticks=[0, 1],
                 )
         ## mark threshold
-        if show_cutoff != False:  # noqa
+        if show_cutoff != False:
             ax.scatter(
                 [cutoff[xaxis]],
                 [cutoff[columns_value[1]]],
@@ -301,7 +302,7 @@ def get_cutoff(
                 textcoords="axes fraction",
             )
         ax.set(
-            xlabel=xaxis,  #
+            xlabel=xaxis,
             ylabel=columns_value[1],
         )
     d_ = {}

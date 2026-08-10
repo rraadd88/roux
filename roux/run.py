@@ -1,17 +1,16 @@
 """For access to a few functions from the terminal."""
 import warnings
+
 warnings.simplefilter("ignore", SyntaxWarning)
 
 import logging
+
 logging.getLogger().setLevel(logging.INFO)
 
 # from roux.lib.log import Logger
 # logging=Logger()
 
 import argh
-
-from roux.lib.sys import read_ps, mv_ln_s
-from roux.lib.log import to_diff
 
 from roux.lib.io import (
     pqt2tsv,
@@ -20,19 +19,26 @@ from roux.lib.io import (
     # to_zip,
     read_arxv,
     to_arxv,
-    )
-
-from roux.workflow.log import test_params
-from roux.workflow.pms import pre_params, to_params
-from roux.workflow.io import replacestar, to_src
-from roux.workflow.nb import to_nb_kernel, to_clean_nb, to_html
-from roux.workflow.task import (
-    # run_task, 
-    run_tasks ## preferred because it infers setup for the outputs
 )
-from roux.workflow.task import check_tasks, post_tasks
-from roux.workflow.nb import to_clear_unused_cells, to_clear_outputs
+from roux.lib.log import to_diff
+from roux.lib.sys import mv_ln_s, read_ps
 from roux.workflow.cfgs import read_config, read_metadata, to_cfg_run_arc
+from roux.workflow.io import replacestar, to_src
+from roux.workflow.log import test_params
+from roux.workflow.nb import (
+    to_clean_nb,
+    to_clear_outputs,
+    to_clear_unused_cells,
+    to_html,
+    to_nb_kernel,
+)
+from roux.workflow.pms import pre_params, to_params
+from roux.workflow.task import (
+    check_tasks,
+    post_tasks,
+    # run_task, 
+    run_tasks,  ## preferred because it infers setup for the outputs
+)
 
 # ~gui
 # --- Generic launcher script content, embedded as a string ---
@@ -121,9 +127,9 @@ def gui(
         name (str): The name for the context menu item (e.g., "Roux Tools").
         command (str): The base CLI command to execute (e.g., "roux").
     """
+    import stat
     import textwrap
     from pathlib import Path
-    import stat
 
     home = Path.home()
     bin_dir = home / ".local" / "bin"
@@ -222,7 +228,7 @@ def query_table(
     # not_use_paths : bool = False,
     **kws,
     ):
-    """
+    r"""
     Examples: 
         "\`col\` == value"
     """

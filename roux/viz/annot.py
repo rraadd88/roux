@@ -600,7 +600,7 @@ def show_confidence_ellipse(x, y, ax, n_std=3.0, facecolor="none", **kwargs):
     ----------
     https://matplotlib.org/3.5.0/gallery/statistics/confidence_ellipse.html
     """
-    import matplotlib.transforms as transforms
+    from matplotlib import transforms
     from matplotlib.patches import Ellipse
 
     if x.size != y.size:
@@ -801,7 +801,7 @@ def show_scatter_stats(
                 method_suffix=False, ## change x|y label instead
             )
             if wrap:
-                label=label.replace('$\pm$','\n$\pm$')
+                label=label.replace(r'$\pm$','\n$\\pm$')
             if loc is None and kws_set_label.get('x') is None and kws_set_label.get('y') is None:
                 ## infer
                 if res["r"] >= 0:
@@ -890,7 +890,7 @@ def show_dists_stats(
         
     if offs_pval is None:
         offs_pval = {}
-    offs_pval = {**{"x": 0, "y": 0}, **offs_pval}
+    offs_pval = {"x": 0, "y": 0, **offs_pval}
 
     if show_lines:
         offs_lines=offs_pval.copy()
@@ -1434,7 +1434,7 @@ def set_suptitle(
     Combined title for a list of subplots.
 
     """
-    a1 = np.vstack((np.array(ax.get_position()) for ax in axs))
+    a1 = np.vstack(np.array(ax.get_position()) for ax in axs)
     return plt.text(
         x=np.mean([np.min(a1[:, 0]), np.max(a1[:, 0])]),
         # y=np.mean([np.min(a1[:,1]),np.max(a1[:,1])]),

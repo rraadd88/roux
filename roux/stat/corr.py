@@ -354,7 +354,7 @@ def _to_string(
         + (f"={res['rr' if 'rr' in res else 'r']:.2f}")  ##prefer the resampled r value
     )
     if "ci" in res:
-        s0 += f"$\pm${res['ci']:.2f}{res['ci_type'] if res['ci_type']!='max' else ''}"
+        s0 += rf"$\pm${res['ci']:.2f}{res['ci_type'] if res['ci_type']!='max' else ''}"
     if show_p:
         _pval_str=pval2annot(
             res['P'],
@@ -447,7 +447,7 @@ def get_corrs(
         )(
             lambda x: pd.Series(
                 {
-                    **{"variable1": x["variable1"], "variable2": x["variable2"]},
+                    "variable1": x["variable1"], "variable2": x["variable2"],
                     **get_corr(
                         data[x["variable1"]],
                         data[x["variable2"]],
@@ -491,9 +491,7 @@ def get_corrs(
     if out_q and "P" in df1:
         ## FDR
         return df1.assign(
-            **{
-                "Q": lambda df: get_q(df["P"]),
-            },
+            Q=lambda df: get_q(df["P"]),
         ).sort_values("Q", ascending=[True])
     else:
         return df1

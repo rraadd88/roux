@@ -1,7 +1,7 @@
 """Processing files form google-cloud services."""
 import logging
-
 from pathlib import Path
+
 import pandas as pd
 
 """
@@ -77,7 +77,7 @@ def list_files_in_folder(service, folderid, filetype=None, fileext=None, test=Fa
     :return: list of files in the folder
     """
     filetype2mimetype = {
-        "audio": "application/vnd.google-apps.audio",  #
+        "audio": "application/vnd.google-apps.audio",
         "document": "application/vnd.google-apps.document",  # Google Docs
         "drive": "application/vnd.google-apps.drive-sdk",  # 3rd party shortcut
         "drawing": "application/vnd.google-apps.drawing",  # Google Drawing
@@ -86,13 +86,13 @@ def list_files_in_folder(service, folderid, filetype=None, fileext=None, test=Fa
         "form": "application/vnd.google-apps.form",  # Google Forms
         "fusiontable": "application/vnd.google-apps.fusiontable",  # Google Fusion Tables
         "map": "application/vnd.google-apps.map",  # Google My Maps
-        "photo": "application/vnd.google-apps.photo",  #
+        "photo": "application/vnd.google-apps.photo",
         "presentation": "application/vnd.google-apps.presentation",  # Google Slides
         "script": "application/vnd.google-apps.script",  # Google Apps Scripts
         "shortcut": "application/vnd.google-apps.shortcut",  # Shortcut
         "site": "application/vnd.google-apps.site",  # Google Sites
         "spreadsheet": "application/vnd.google-apps.spreadsheet",  # Google Sheets
-        "unknown": "application/vnd.google-apps.unknown",  #
+        "unknown": "application/vnd.google-apps.unknown",
         "video": "application/vnd.google-apps.video",
     }
 
@@ -156,8 +156,9 @@ def download_file(
     if Path(outp).exists() and not force:
         return outp
             
-    from googleapiclient.http import MediaIoBaseDownload
     import io
+
+    from googleapiclient.http import MediaIoBaseDownload
 
     if service is None:
         logging.info("getting service ..")
@@ -207,8 +208,9 @@ def upload_file(service, filep, folder_id, test=False):
     ...
     :return: id of the uploaded file
     """
-    from googleapiclient.http import MediaFileUpload
     from os.path import basename
+
+    from googleapiclient.http import MediaFileUpload
 
     file_metadata = {"name": basename(filep), "parents": [folder_id]}
     media = MediaFileUpload(filep, mimetype=f"image/{filep.split('.')[1]}")

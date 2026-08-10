@@ -1,13 +1,12 @@
 """For setting up colors."""
 
 import matplotlib.pyplot as plt
-from matplotlib import colors, cm
 import numpy as np
 import pandas as pd
+from matplotlib import cm, colors
 
 # colors
-from matplotlib.colors import to_hex
-from matplotlib.colors import ColorConverter
+from matplotlib.colors import ColorConverter, to_hex
 
 to_rgb = ColorConverter.to_rgb
 
@@ -127,6 +126,7 @@ def saturate_color(color, alpha: float) -> object:
         https://stackoverflow.com/a/60562502/3521099
     """
     import colorsys
+
     from roux.stat.transform import rescale
 
     alpha = rescale(alpha, [0, 2], [1.6, 0.4])
@@ -158,7 +158,7 @@ def mix_colors(d: dict) -> str:
     red = int(sum([int(k[:2], 16) * v for k, v in d_items]) / tot_weight)
     green = int(sum([int(k[2:4], 16) * v for k, v in d_items]) / tot_weight)
     blue = int(sum([int(k[4:6], 16) * v for k, v in d_items]) / tot_weight)
-    zpad = lambda x: x if len(x) == 2 else "0" + x  # noqa
+    zpad = lambda x: x if len(x) == 2 else "0" + x
     c = zpad(hex(red)[2:]) + zpad(hex(green)[2:]) + zpad(hex(blue)[2:])
     return f"#{c}"
 
@@ -196,7 +196,7 @@ def get_cmap_section(
     if isinstance(cmap, str):
         cmap = plt.get_cmap(cmap)
     new_cmap = colors.LinearSegmentedColormap.from_list(
-        "trunc({n},{a:.2f},{b:.2f})".format(n=cmap.name, a=vmin, b=vmax),
+        f"trunc({cmap.name},{vmin:.2f},{vmax:.2f})",
         cmap(np.linspace(vmin, vmax, n)),
     )
     return new_cmap

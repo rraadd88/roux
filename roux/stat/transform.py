@@ -159,7 +159,7 @@ def get_q(
         pd.DataFrame({"P": ds1, "Q": ds3}).drop_duplicates().set_index("P")["Q"]
     )
     if verb:
-        from roux.stat.io import perc_label  # noqa
+        from roux.stat.io import perc_label
         logging.info(f"significant at Q<{test_coff}: {perc_label(ds4<test_coff)}")
 
     if col is None:

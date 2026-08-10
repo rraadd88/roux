@@ -7,6 +7,8 @@ __all__ = ['get_patch_centroids']
 """shapes of plotting functions."""
 
 import numpy as np
+
+
 def get_patch_centroids(
     patch_collection
     ):

@@ -6,9 +6,9 @@ import logging
 ## viz basic
 import matplotlib
 import matplotlib.pyplot as plt
-import matplotlib.transforms as transforms
 import numpy as np
 import pandas as pd
+from matplotlib import transforms
 
 from roux.lib.str import capitalize_first, replace_many
 
@@ -461,7 +461,7 @@ def set_ticklabels_color(
     """
     if ticklabel2color is not None:
         for tick in getattr(ax, f"get_{axis}ticklabels")():
-            if tick.get_text() in ticklabel2color.keys():
+            if tick.get_text() in ticklabel2color:
                 tick.set_color(ticklabel2color[tick.get_text()])
     else:
         from roux.viz.text import set_text_multicolored
@@ -570,7 +570,7 @@ def format_ticklabels(
                 else:
                     interval = 1000
 
-                import matplotlib.ticker as ticker
+                from matplotlib import ticker
 
                 locator = ticker.MultipleLocator(interval)
                 # locator
@@ -749,7 +749,7 @@ def split_ticklabels(
                     color=None if group_colors is None else group_colors[x.name],
                     edgecolor="none",
                     alpha=group_alpha,
-                    **{**group_span_kws},
+                    **group_span_kws,
                 ),
                 axis=1,
             )

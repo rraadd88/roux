@@ -2,7 +2,7 @@
 
 ## logging
 import logging
-from tqdm import tqdm 
+
 ## os
 import os
 
@@ -10,11 +10,12 @@ import os
 from pathlib import Path
 
 import pandas as pd
+from tqdm import tqdm
 
-import roux.lib.dfs as rd #noqa
+import roux.lib.dfs as rd  #noqa
 from roux.lib import to_rd
-
 from roux.lib.io import read_table, to_table
+
 
 @to_rd
 def apply_async(
@@ -22,7 +23,7 @@ def apply_async(
     func, # lambda x: 
     cpus: int,
     unstack: bool=True, ## to cols
-    axis=1, #noqa ## unused, for swappability with .apply
+    axis=1, ## unused, for swappability with .apply
     by=None, ## groupby
     verbose=False,
     **kws, ## to by
@@ -292,7 +293,7 @@ def apply(
     func, # lambda x: 
     cpus: int,
     unstack: bool=True, ## to cols
-    axis=1, #noqa ## unused, for swappability with .apply
+    axis=1, ## unused, for swappability with .apply
     by=None, ## groupby
     verbose=False,
     ## chunks
@@ -308,7 +309,7 @@ def apply(
             func=func,  #, # lambda x: 
             cpus=cpus,  #: int,
             unstack=unstack,  #: bool=True, ## to cols
-            axis=axis,  #=1, #noqa ## unused, for swappability with .apply
+            axis=axis,  #=1, ## unused, for swappability with .apply
             by=by,  #=None, ## groupby
             verbose=verbose,  #=False,
             **kws, ## to by
@@ -319,7 +320,7 @@ def apply(
             func=func,  #, # lambda x: 
             cpus=cpus,  #: int,
             unstack=unstack,  #: bool=True, ## to cols
-            axis=axis,  #=1, #noqa ## unused, for swappability with .apply
+            axis=axis,  #=1, ## unused, for swappability with .apply
             by=by,  #=None, ## groupby
             verbose=verbose,  #=False,
             **kws, ## to by

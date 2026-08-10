@@ -5,8 +5,10 @@ __all__ = ['plotsi_image']
 
 # %% ../../examples/roux_vizi_select.ipynb 3
 import logging
+
 import altair as alt
-    
+
+
 def plotsi_image(
     data,
     x : str,

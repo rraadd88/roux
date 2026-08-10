@@ -1,8 +1,10 @@
 """For paired stats."""
 
 import logging
+
 import numpy as np
 import pandas as pd
+
 import roux.lib.dfs as rd  # noqa
 
 

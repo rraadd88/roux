@@ -1,8 +1,8 @@
 """For heatmaps."""
 
+import matplotlib.pyplot as plt
 import pandas as pd
 import seaborn as sns
-import matplotlib.pyplot as plt
 
 ## internal
 import roux.lib.dfs as rd  # noqa

@@ -242,7 +242,7 @@ def to_scr(
     pre_clean=read_cli_pm(pre_clean) 
 
     if pre_clean:
-        if pre_clean==True: #noqa
+        if pre_clean==True:
             pre_clean={}
         assert isinstance(pre_clean,dict), pre_clean
 
@@ -407,7 +407,7 @@ def replacestar_ruff(
     from roux.workflow.function import get_global_imports
 
     lines=get_global_imports(out_fmt='lines')
-    ## remove #noqa
+    ## remove
     replace_with='\n'.join(
         [s.replace("#noqa", "") if '#keep' not in s else s for s in lines]
         # lines

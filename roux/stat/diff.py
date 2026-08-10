@@ -1,16 +1,17 @@
 """For difference related stats."""
 
 ## logging
+import itertools
 import logging
 from argparse import ArgumentError
 
+import numpy as np
+
 ## data
 import pandas as pd
-import numpy as np
 
 ## stats
 import scipy as sc
-import itertools
 
 ## viz
 ## internal
@@ -299,7 +300,7 @@ def get_stat(
     if func in [None,'mannwhitneyu']:
         logging.info("mannwhitneyu used")
     else:
-        logging.info(f"custom function used: {str(func)}")
+        logging.info(f"custom function used: {func!s}")
 
     df2 = (
         df2.groupby(cols_subsets)
@@ -860,7 +861,8 @@ def binby_pvalue_coffs(
             assert df1["c"].isnull().sum() == 0
     if color:
         import itertools
-        from roux.stat.transform import rescale, log_pval
+
+        from roux.stat.transform import log_pval, rescale
 
         d3 = {}
         for i, (k, coff) in enumerate(

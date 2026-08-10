@@ -420,7 +420,7 @@ def plot_dists(
                 **dict(
                     showmeans=True,
                     meanprops=dict(
-                        marker= "$\mu$", 
+                        marker= r"$\mu$", 
                         markerfacecolor= "black", 
                         markeredgecolor= "none", 
                         markersize= "10"
@@ -584,7 +584,7 @@ def plot_dists(
                 ax=ax, axis=axis_desc, rename=df1_.rd.to_dict([y_stat, "label"])
             )
         else:
-            import matplotlib.transforms as transforms
+            from matplotlib import transforms
 
             df1_.apply(
                 lambda x: ax.text(

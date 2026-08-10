@@ -6,6 +6,7 @@ import pandas as pd
 # ## internal
 from roux.lib import to_rs
 
+
 @to_rs
 def hist(
     ds: pd.Series,

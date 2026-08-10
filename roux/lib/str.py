@@ -727,7 +727,6 @@ def type_str(
                         # logging.warning
                         # logging.warning(f"{str(e)} for {s}")
                         logging.warning(f"not type converted: {s}")
-                        pass
     return result
     
 ## ids
@@ -858,7 +857,7 @@ def get_bin_labels_min(bins: list[float]) -> list[str]:
 
     # 2. Get the first cutoff (bins[1])
     cutoff = bins[1]
-    bin_labels = [f'$\leqslant${_format_bin(cutoff)}']
+    bin_labels = [rf'$\leqslant${_format_bin(cutoff)}']
     
     # 3. Iterate for subsequent labels (from bins[1] to bins[-2])
     # g: This loop generates the correct number of remaining labels.

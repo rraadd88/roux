@@ -51,7 +51,7 @@ import numpy as np #noqa
 import pandas as pd #noqa
 
 ## system functions
-import sys #noqa
+import sys
 from pathlib import Path #noqa
 from os.path import exists,dirname,basename,abspath,isdir,splitext #noqa # pathlib to be preferred in the future
 ## system functions from roux
@@ -66,7 +66,7 @@ from roux.lib.dict import flatten_dict  #noqa
 ## dataframe attribute from roux
 # attributes
 import roux.lib.dfs as rd # attribute #keep #noqa
-# import roux.viz.ds as rs # attribute #keep #noqa #TODO: rarely used
+# import roux.viz.ds as rs # attribute #keep #TODO: rarely used
 
 ## stats functions from roux
 from roux.stat.binary import perc #noqa
@@ -84,13 +84,13 @@ from roux.viz.diagram import diagram_nb #noqa
 from roux.viz.io import begin_plot,to_plot,read_plot #noqa
 
 ## workflow functions from roux
-# from roux.workflow.pms import infer_parameters #noqa #, read_config, to_diff_notebooks
+# from roux.workflow.pms import infer_parameters #, read_config, to_diff_notebooks
 from roux.workflow.cfgs import read_config, read_metadata #noqa
 from roux.workflow.log import test_params #noqa
 from roux.workflow.task import run_tasks #noqa
 
 ## logging functions
-import logging #noqa
+import logging
 
 # root logger level for the imported functions
 root_logger = logging.getLogger()
@@ -118,10 +118,10 @@ else:
 ## notebook related
 try:    
     from roux.lib.log import Logger #ignore #noqa
-    logging = Logger() #ignore #noqa
+    logging = Logger() #ignore
 except:
     import logging #ignore #noqa
-    logging.basicConfig(level='INFO', force=True) #ignore #noqa
+    logging.basicConfig(level='INFO', force=True) #ignore
 
 from tqdm import tqdm #noqa
 
@@ -130,7 +130,7 @@ from roux.workflow.io import set_outputs #noqa
 ## end replacestar
 
 ## system functions from roux
-from roux.lib.sys import is_interactive_notebook #noqa
+from roux.lib.sys import is_interactive_notebook
 if not is_interactive_notebook():
     # progress bar
     tqdm.pandas()
@@ -144,7 +144,7 @@ else:
         
 ## extra
 
-    # from IPython.display import Markdown as info_nb #noqa    
+    # from IPython.display import Markdown as info_nb
     # try:
     #     import watermark.watermark as watermark # session info
     #     logging.info(watermark(python=True)+watermark(iversions=True,globals_=globals()))

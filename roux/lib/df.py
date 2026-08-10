@@ -695,7 +695,7 @@ def check_dups(
     if subset is None:
         subset = df.columns.tolist()
     df1 = df.loc[df.duplicated(subset=subset, keep=False), :].sort_values(by=subset)
-    from roux.stat.io import perc_label  # noqa
+    from roux.stat.io import perc_label
 
     logging.info("duplicate rows: " + perc_label(len(df1), len(df)))
     if not out:
@@ -1401,7 +1401,7 @@ def filter_rows(
                 for col, val in rule.items():
                     if pd.notna(val):
                         # repr(val) correctly handles strings vs. numbers
-                        conditions.append(f"`{col}` == {repr(val)}")
+                        conditions.append(f"`{col}` == {val!r}")
                 
                 if conditions:
                     # Join conditions for a single rule with ' & '
@@ -2154,10 +2154,10 @@ def to_ranges(
         .groupby(col_group)
         .agg(
             **{
-                **{
+                
                     f"{colindex} min": (colindex, 'min'),
-                    f"{colindex} max": (colindex, 'max'),
-                },
+                    f"{colindex} max": (colindex, 'max')
+                ,
                 **agg
             }
         )
@@ -2281,9 +2281,7 @@ def assign_bool(
         )
     if '_False' not in df1:
         df1=df1.assign(
-            **{
-                '_False': lambda df: ~(df['_True']),
-            }
+            _False=lambda df: ~(df['_True'])
         )
     ## combine the True and False
     df1=(

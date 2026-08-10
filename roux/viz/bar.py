@@ -214,7 +214,7 @@ def plot_barh_btob(
 
     # 4. Add titles, labels, and final touches   
     # from roux.viz.annot import set_label
-    import matplotlib.transforms as transforms
+    from matplotlib import transforms
     ax.text(
         x=0,
         y=1.15,
@@ -348,7 +348,7 @@ def plot_bar_serial(
         ax=None,
     )
 
-    import matplotlib.patches as patches
+    from matplotlib import patches
 
     l1 = [
         patches.Rectangle(
@@ -967,10 +967,7 @@ def to_input_data_sankey(
                 how="left",
             )
             .assign(
-                **{
-                    "substract": lambda x: x["substract"].fillna(0),
-                    "count": lambda x: x["total"] - x["substract"],
-                }
+                substract=lambda x: x["substract"].fillna(0), count=lambda x: x["total"] - x["substract"]
             ),
             df1,
         ],

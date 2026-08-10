@@ -7,12 +7,12 @@ import logging
 import numpy as np
 import pandas as pd
 
+## attach functions as attributes of dataframes
+from roux.lib import to_rd
+
 ## internal
 from roux.stat.corr import check_collinearity
 from roux.stat.variance import get_variance_inflation
-
-## attach functions as attributes of dataframes
-from roux.lib import to_rd
 
 
 # matrix data
@@ -272,11 +272,9 @@ def get_cols_x_for_comparison(
                 logging.info(ds2_)
 
     df1 = df1.log.drop(labels=cols_drop, axis=1)
-    columns["cols_x"]["cont"] = list(
-        sorted(
+    columns["cols_x"]["cont"] = sorted(
             set(columns["cols_x"]["cont"]) - set(cols_drop) - set(columns["cols_index"])
         )
-    )
 
     ## get descrete x columns
     ## bools
@@ -335,14 +333,14 @@ def to_preprocessed_data(
                 )
 
     ## Fill missing values
-    if fill_missing_cont_value != False:  # noqa
+    if fill_missing_cont_value != False:
         for c in columns["cols_x"]["cont"]:
             if df1[c].isnull().any():
                 if verbose:
                     logging.info(df1[c].isnull().sum())
                 df1[c] = df1[c].fillna(fill_missing_cont_value)
 
-    if fill_missing_desc_value != False:  # noqa
+    if fill_missing_desc_value != False:
         for c in columns["cols_x"]["desc"]:
             if df1[c].isnull().any():
                 if verbose:

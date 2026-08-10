@@ -3,6 +3,7 @@
 import matplotlib.pyplot as plt
 from cycler import cycler
 
+
 def set_theme(
     font: str = "Myriad Pro",
     # settings
