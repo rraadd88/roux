@@ -233,14 +233,14 @@ def plot_scatter(
             kws_parcorr['y_covar']=kws['y_partial']
 
     kws_={
-            **{
+            
                 **dict(
                     method=stat_method[0],
                     resample=stat_resample,
                 ),
                 **stat_kws,
-                **kws_parcorr,
-            },
+                **kws_parcorr
+            ,
             **annot_kws,
             **dict(
                 show_p=show_p,
@@ -328,9 +328,7 @@ def plot_ranks(
         )
 
     df2 = df1.assign(
-        **{
-            "rank": lambda df: df[col].rank(ascending=ascending),
-        }
+        rank=lambda df: df[col].rank(ascending=ascending)
     ).sort_values("rank", ascending=ascending)
 
     if ax is None:
@@ -783,8 +781,8 @@ def plot_volcano(
             
     ## setting ylim before setting the labels
     ax.set(
-        xlabel="Log$_\mathrm{2}$ Fold Change (LFC)",
-        ylabel="Significance\n(-Log$_\mathrm{10}$($q$))",
+        xlabel=r"Log$_\mathrm{2}$ Fold Change (LFC)",
+        ylabel="Significance\n(-Log$_\\mathrm{10}$($q$))",
         xlim=xlim,
         ylim=ylim,
     )
@@ -831,19 +829,21 @@ def plot_volcano(
 
     ## stats
     counts=data.groupby('significance direction bin').size().to_dict()
-    from scipy import stats
-    res=stats.binomtest(
-            counts['increase'],
-            counts['increase']+counts['decrease'],
-            p=0.5,
-            alternative='two-sided'
-        )
-    ax.stats=dict(
-        P=res.pvalue,
-        stat=res.statistic,
-        counts=counts,
-        )
-
+    if 'increase' in counts and 'decrease' in counts:
+        from scipy import stats
+        res=stats.binomtest(
+                counts['increase'],
+                counts['increase']+counts['decrease'],
+                p=0.5,
+                alternative='two-sided'
+            )
+        ax.stats=dict(
+            P=res.pvalue,
+            stat=res.statistic,
+            counts=counts,
+            )
+    else:
+        logging.warning("skipped binomtest because insufficient input {counts}")
     if not outmore:
         return ax
     else:
@@ -992,7 +992,7 @@ def plot_volcano_split(
         )
         format_ax(
             ax=ax,
-            xlabel='Enrichment (Log$_\mathrm{2}$(OR))',
+            xlabel=r'Enrichment (Log$_\mathrm{2}$(OR))',
             # rotate_ylabel=True,
             title=title,
             # xticks=list(sorted(set([0]+list(ax.get_xticks())))),
