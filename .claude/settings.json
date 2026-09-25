@@ -1,0 +1,29 @@
+{
+  // ── Layer 1: permission rules ─────────────────────────────
+  "permissions": {
+    // Ask before every edit and command. Never use
+    // --dangerously-skip-permissions with this setup.
+    "defaultMode": "default",
+
+    // Deny rules always win over allow rules. So you can't deny
+    // all of ~ and then allow the project back in. Deny the
+    // sensitive paths by name instead.
+    "deny": [
+      "Read(~/.ssh/**)",     // SSH keys
+      "Read(~/.gnupg/**)",   // GPG keys
+      "Read(~/.config/**)",  // app configs, tokens, credentials
+      "Read(**/.env)",       // project secrets
+      "Bash(curl:*)",        // no downloads or uploads from the shell
+      "Bash(wget:*)"
+    ]
+
+    // Leave out "additionalDirectories": it would grant access
+    // to folders outside the project.
+  },
+
+  // ── Layer 2: built-in sandbox (OS-enforced) ───────────────
+  // Limits writes to the project folder and filters network for
+  // every command Claude runs. Can also be turned on with
+  // /sandbox inside a session.
+  "sandbox": { "enabled": true }
+}
