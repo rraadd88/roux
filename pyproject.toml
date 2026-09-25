@@ -19,7 +19,7 @@ classifiers = [
 license = "GPL-3.0-or-later"
 
 ## requires
-requires-python = '>=3.8, <4'
+requires-python = ">=3.10, <4"
 dependencies = [
     "numpy>=1.17.3",
     "pandas>=0.25.3,<=2.3.3",
@@ -30,122 +30,72 @@ dependencies = [
     # "regex>=2018.7.11",
 ]
 
-# [project.optional-dependencies]
-# interactive = [
-#     "ipywidgets",
-#     "ipykernel",
-#     # "watermark", # session info
-# ]
-# data = [
-#     "pyarrow", # fast
-#     "openpyxl", # special io
-#     "numexpr", # faster querying
-# ]
-# stat = [
-#     "scipy>=1.1.0",
-#     "statsmodels>=0.13.5",
-#     "networkx",
-#     "scikit-learn",
-#     "pingouin>=0.5.5",
-#     ]
-# viz = [
-#     "altair",
-#       ]
-# workflow = [
-#     "omegaconf",
-#     "papermill",
-#     "argh",
-#     "ruff",
-#     "nbconvert",
-#     "removestar",
-# ]
-# # An 'all' group that includes all other groups
-# all = [
-#     {include-group = "interactive"},
-#     {include-group = "data"},
-#     {include-group = "stat"},
-#     {include-group = "viz"},
-#     {include-group = "workflow"},
-# ]
-
-# ## development and maintenance
-# dev = [
-#     "pytest",
-#     "tox",
-#     "tox-gh-actions",
-#     "jupyter","ipywidgets","ipykernel",
-#     # "sphinx","recommonmark",
-#     "black",
-#     "coveralls == 3.*",
-#     "flake8",
-#     "isort",
-#     "pytest-cov >= 2,< 7",
-#     "papermill",
-#     "lazydocs",
-#     "regex", ## docs
-#     {include-group = "all"},    
-# ]
-
-## for uv
-[dependency-groups]
-interactive = [
-    "ipywidgets",
-    "ipykernel",
-    # "watermark", # session info
-]
+## optional dependencies, installed as extras e.g. `uv add "roux[all]"`
+[project.optional-dependencies]
 data = [
     "pyarrow", # fast
     "openpyxl", # special io
     "numexpr", # faster querying
+    "chardet", # encoding detection
 ]
 stat = [
     "scipy>=1.1.0",
-    "statsmodels",
+    "statsmodels>=0.13.5",
     "networkx",
     "scikit-learn",
     "pingouin>=0.5.5",
-        ]
+    "patsy",
+    "kneed",
+]
 viz = [
     "altair",
-      ]
+    "adjustText",
+    "matplotlib-venn",
+    "upsetplot",
+    "plotly",
+]
+fast = [
+    "pandarallel",
+    "joblib",
+]
 workflow = [
     "omegaconf",
     "papermill",
     "argh",
     "ruff",
     "nbconvert",
+    "nbformat",
     "removestar",
+    "gitpython",
 ]
-# An 'all' group that includes all other groups
 all = [
-    {include-group = "interactive"},
-    {include-group = "data"}, # This effectively includes all, as 'docs' includes 'test' etc.
-    {include-group = "stat"}, # This effectively includes all, as 'docs' includes 'test' etc.
-    {include-group = "viz"}, # This effectively includes all, as 'docs' includes 'test' etc.
-    {include-group = "workflow"}, # This effectively includes all, as 'docs' includes 'test' etc.
+    "roux[data,stat,viz,fast,workflow]",
 ]
 
-## development and maintenance
+## development and maintenance (not published)
+[dependency-groups]
 dev = [
     "pytest",
+    "pytest-cov >= 2,< 7",
+    "coveralls == 3.*",
     "tox",
+    "tox-uv",
     "tox-gh-actions",
     "jupyter","ipywidgets","ipykernel",
     # "sphinx","recommonmark",
     "black",
-    "coveralls == 3.*",
     "flake8",
     "isort",
-    "pytest-cov >= 2,< 7",
     "papermill",
     "lazydocs",
     "regex", ## docs
-    {include-group = "all"},    
 ]
 
 [tool.uv]
-default-groups = ["all"]
 package = true
+
+[tool.setuptools.packages.find]
+include = ["roux*"]
 
 [tool.black]
 experimental-string-processing = true
@@ -159,5 +109,5 @@ profile = "black"
 roux = "roux.run:parser.dispatch"
 
 [build-system]
-requires = ["setuptools", "wheel"]
+requires = ["setuptools>=77"] # for SPDX license string
 build-backend = "setuptools.build_meta"

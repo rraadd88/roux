@@ -4,12 +4,12 @@
 <!-- [![Contributors][contributors-shield]][contributors-url]
 [![Forks][forks-shield]][forks-url]
 [![Stargazers][stars-shield]][stars-url] -->
-<a href="">[![PyPI](https://img.shields.io/pypi/v/roux?style=for-the-badge)![Python](https://img.shields.io/pypi/pyversions/roux?style=for-the-badge)](https://pypi.org/project/roux)</a>
-<a href="">[![build](https://img.shields.io/github/actions/workflow/status/rraadd88/roux/build.yml?style=for-the-badge)](https://github.com/rraadd88/roux/actions/workflows/build.yml)</a>
-<a href="">[![Issues](https://img.shields.io/github/issues/rraadd88/roux.svg?style=for-the-badge)](https://github.com/rraadd88/roux/issues)</a>
+[![PyPI](https://img.shields.io/pypi/v/roux?style=for-the-badge)![Python](https://img.shields.io/pypi/pyversions/roux?style=for-the-badge)](https://pypi.org/project/roux)
+[![build](https://img.shields.io/github/actions/workflow/status/rraadd88/roux/build.yml?style=for-the-badge)](https://github.com/rraadd88/roux/actions/workflows/build.yml)
+[![Issues](https://img.shields.io/github/issues/rraadd88/roux.svg?style=for-the-badge)](https://github.com/rraadd88/roux/issues)
 <br />
-<a href="">[![Downloads](https://img.shields.io/pypi/dm/roux?style=for-the-badge)](https://pepy.tech/project/roux)</a>
-<a href="">[![GNU License](https://img.shields.io/github/license/rraadd88/roux.svg?style=for-the-badge)](https://github.com/rraadd88/roux/blob/master/LICENSE)</a>
+[![Downloads](https://img.shields.io/pypi/dm/roux?style=for-the-badge)](https://pepy.tech/project/roux)
+[![GNU License](https://img.shields.io/github/license/rraadd88/roux.svg?style=for-the-badge)](https://github.com/rraadd88/roux/blob/master/LICENSE)
 </div>
   
 <!-- PROJECT LOGO -->
@@ -20,8 +20,6 @@
     Streamlined scientific compute and workflow management toolkit.
     <br />
     <a href="https://github.com/rraadd88/roux#examples">Examples</a>
-    ·
-    <a href="https://github.com/rraadd88/roux#api">Explore the API</a>
   </p>
 </div>  
 
@@ -55,11 +53,13 @@
 [📈 Scatter plots.](https://github.com/rraadd88/roux/blob/master/examples/roux_viz_scatter.ipynb)  
 [📈⬤⬤ Plots of sets.](https://github.com/rraadd88/roux/blob/master/examples/roux_viz_sets.ipynb)  
 [📈🎨✨ Visualizations theming.](https://github.com/rraadd88/roux/blob/master/examples/roux_viz_theme.ipynb)  
-[⚙️🗺️ Reading multiple configs.](https://github.com/rraadd88/roux/blob/master/examples/roux_workflow_io.ipynb)  
-[⚙️⏩ Running multiple tasks.](https://github.com/rraadd88/roux/blob/master/examples/dev_roux_workflow_task.ipynb)  
+[⚙️🗺️ Reading multiple configs.](https://github.com/rraadd88/roux/blob/master/examples/roux_workflow_cfgs.ipynb)  
+[⚙️⏩ Running multiple tasks.](https://github.com/rraadd88/roux/blob/master/examples/roux_workflow_task.ipynb)  
 [⚙️⏩ Workflow using notebooks](https://github.com/rraadd88/roux/blob/master/examples/dev_workflow.ipynb)  
   
 ## CLI 
+
+Requires the `workflow` extra (see [Installation](#installation)).
 
 ℹ️ Available command line tools and their usage.  
 `roux --help`
@@ -70,25 +70,32 @@
 🗺️ Read metadata.  
 `roux read-metadata path/to/file`  
 
-⭐ Remove *'s from a jupyter notebook'.  
-`roux removestar path/to/notebook`  
+⭐ Replace `*` imports in a jupyter notebook with explicit imports.  
+`roux replacestar path/to/notebook`  
 
-💾 Backup a directory with a timestamp (ISO).  
-`roux backup path/to/directory`  
+💾 Archive a directory to a `.tar.gz` (⚠️ removes the original files).  
+`roux to-arxv path/to/directory`  
 
 # Installation  
+Using [uv](https://docs.astral.sh/uv/) (recommended):
 ```
-pip install roux              # with basic dependencies  
-pip install roux[all]         # with all the additional dependencies (recommended). 
+uv add roux                  # with basic dependencies
+uv add "roux[all]"           # with all the additional dependencies (recommended).
 ```
 With additional dependencies as required:
 ```
-pip install roux[viz]         # for visualizations e.g. seaborn etc.
-pip install roux[data]        # for data operations e.g. reading excel files etc.
-pip install roux[stat]        # for statistics e.g. statsmodels etc.
-pip install roux[fast]        # for faster processing e.g. parallelization etc.
-pip install roux[workflow]    # for workflow operations e.g. omegaconf etc.
-pip install roux[interactive] # for interactive operations in jupyter notebook e.g. watermark, icecream etc.
+uv add "roux[viz]"           # for visualizations e.g. altair, upsetplot etc.
+uv add "roux[data]"          # for data operations e.g. reading excel files etc.
+uv add "roux[stat]"          # for statistics e.g. statsmodels etc.
+uv add "roux[fast]"          # for faster processing e.g. parallelization etc.
+uv add "roux[workflow]"      # for workflow operations and the `roux` CLI e.g. omegaconf etc.
+```
+Outside a uv project, use `uv pip install "roux[all]"`, or `uv tool install "roux[workflow]"` for only the CLI.  
+Plain pip works too: `pip install "roux[all]"`.
+
+For development:
+```
+uv sync --all-extras         # all extras + the dev group
 ```
   
 # How to cite?  

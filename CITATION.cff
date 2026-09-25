@@ -8,7 +8,7 @@ authors:
   orcid: https://orcid.org/0000-0002-6421-2067
 identifiers:
 - type: doi
-  value: doi/10.5281/zenodo.2682670
+  value: 10.5281/zenodo.2682670
 repository-code: https://github.com/rraadd88/roux
 version: 0.1.2
 date-released: '2024-10-11'

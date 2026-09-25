@@ -1,6 +1,4 @@
 include MANIFEST.in
-include setup.py
-prune README.md
 prune examples/*
 prune tests
 prune test 

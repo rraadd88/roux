@@ -7,14 +7,9 @@ echo "--- Installing uv with pipx ---"
 pipx install uv
 
 echo "--- Installing project dependencies ---"
-# This single command replicates the `uv sync` and `uv pip install` steps
-# by installing all dependencies from your pyproject.toml and locking them.
-uv sync --all-extras --dev
-
-echo "--- Ensuring testing and notebook tools are installed ---"
-# While `uv sync` should handle this, we explicitly install them
-# to perfectly match the CI pipeline and add ipykernel.
-uv pip install tox pytest pytest-cov papermill ipykernel
+# Installs all extras plus the `dev` group (tox, pytest, papermill, ipykernel etc.),
+# matching the CI pipeline.
+uv sync --all-extras
 
 echo "--- Installing Jupyter kernel for notebooks ---"
 # This creates a kernel named 'roux' that will be available in VS Code
