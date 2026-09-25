@@ -50,3 +50,6 @@ examples/test.ipynb
 cufile.log
 .roux/
 examples/*.tar.gz
+
+## claude code (local settings)
+.claude/
