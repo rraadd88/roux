@@ -89,6 +89,10 @@ dev = [
     "papermill",
     "lazydocs",
     "regex", ## docs
+    # pinned: same version as RUFF in .github/workflows/format.yaml and [tool.ruff] required-version.
+    # Upgrade risk: newer versions can change default rules/fixes (e.g. >=0.16 enables RUF100, stripping
+    # `# noqa`); test `ruff check --fix` + `ruff format` for removed lines before bumping all three pins.
+    "ruff==0.15.10",
 ]
 
 [tool.uv]
@@ -108,11 +112,20 @@ profile = "black"
 [project.scripts]
 roux = "roux.run:parser.dispatch"
 
+[tool.ruff]
+# ruff refuses to run with any other version (local and CI alike); keep in sync with
+# `ruff==` in [dependency-groups] dev and RUFF in .github/workflows/format.yaml.
+# Upgrade risk: new defaults/fixes may strip `# noqa` or delete lines; test before bumping.
+required-version = "==0.15.10"
+
 [tool.ruff.lint]
 # roux is a library: imports unused within the package (re-exports, global_imports)
 # are marked `# noqa`; ruff only honours that on the name's line, and `ruff format`
 # moves it onto the closing `)` of wrapped imports, so F401 would then delete them.
-ignore = ["E402", "E722", "E741", "F401"]
+# RUF100: keep `# noqa` even if "unused" (F401 is ignored, so all of them would be).
+ignore = ["E402", "E722", "E741", "F401", "RUF100"]
+# never auto-delete imports/assignments, even when wrapping moved their `# noqa`
+unfixable = ["F401", "F811", "F841"]
 
 [build-system]
 requires = ["setuptools>=77"] # for SPDX license string
