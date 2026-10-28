@@ -18,34 +18,30 @@ def annot_side_curved(
     data,
     colx: str,
     coly: str,
-        
     col_label: str,
-    
     ## fixed text pos
     text_x=None,
     text_y=None,
-    
-    off: float=0.5,
-    lim: tuple=None,
-    limf: tuple=None, ## limits as fractions
-    loc: str='right',
+    off: float = 0.5,
+    lim: tuple = None,
+    limf: tuple = None,  ## limits as fractions
+    loc: str = "right",
     # x: float=None, ## todo: deprecate
     # ylim: tuple=None, ## todo: deprecate
     ax=None,
     test: bool = False,
     kws_text={},
-    
     text_multicolored=False,
     **kws_line,
 ):
     """Annot elements of the plots on the of the side plot using bezier lines.
-    
-    Usage: 
+
+    Usage:
         1. Allows m:1 mappings between points and labels
     """
     if ax is None:
-        ax = plt.gca()        
-    
+        ax = plt.gca()
+
     ## for resettings at the end
     lims = dict(
         xlim=ax.get_xlim(),
@@ -55,93 +51,108 @@ def annot_side_curved(
     if limf is not None:
         ## fraction to limits
         from roux.stat.transform import rescale
-        lim=rescale(
+
+        lim = rescale(
             limf,
-            range1=[0,1],
-            range2=lims['ylim'] if loc=='right' else lims['xlim'],
-        )        
+            range1=[0, 1],
+            range2=lims["ylim"] if loc == "right" else lims["xlim"],
+        )
     if lim is None:
-        lim=lims['ylim'] if loc=='right' else lims['xlim']
+        lim = lims["ylim"] if loc == "right" else lims["xlim"]
 
     from roux.stat.paired import get_diff_sorted
-    lim_=(lims['xlim'] if loc=='right' else lims['ylim'])
-    size=get_diff_sorted(*lim_)
-    if loc in ['right','top']:
-        off=max(lim_)+(size*off)
+
+    lim_ = lims["xlim"] if loc == "right" else lims["ylim"]
+    size = get_diff_sorted(*lim_)
+    if loc in ["right", "top"]:
+        off = max(lim_) + (size * off)
     else:
-        off=min(lim_)-(size*off)        
+        off = min(lim_) - (size * off)
     # print(off)
-    
-    if loc=='right':
-        kws_text_loc=dict(
+
+    if loc == "right":
+        kws_text_loc = dict(
             va="center",
-            ha="right",    
+            ha="right",
         )
-    elif loc=='left':
-        kws_text_loc=dict(
+    elif loc == "left":
+        kws_text_loc = dict(
             va="center",
-            ha="left",    
+            ha="left",
         )
     else:
         ## top
-        kws_text_loc=dict(
+        kws_text_loc = dict(
             ha="center",
             va="top",
             rotation=90,
         )
     ## sorted labels
-    
+
     data1 = (
-        data
-        .sort_values(
-            coly if loc in ['right','left'] else colx,
-            ascending=lims['ylim'][0]<lims['ylim'][1] if loc in ['right','left'] else lims['xlim'][0]<lims['xlim'][1],
+        data.sort_values(
+            coly if loc in ["right", "left"] else colx,
+            ascending=lims["ylim"][0] < lims["ylim"][1]
+            if loc in ["right", "left"]
+            else lims["xlim"][0] < lims["xlim"][1],
             # ascending=True,
         )
         .loc[:, [col_label]]
         .drop_duplicates()
         .assign(
             **{
-                'x' if loc in ['left','right'] else 'y':lambda df: np.repeat(off, len(df)),
-                'y' if loc in ['left','right'] else 'x':lambda df: np.linspace(
+                "x" if loc in ["left", "right"] else "y": lambda df: np.repeat(
+                    off, len(df)
+                ),
+                "y" if loc in ["left", "right"] else "x": lambda df: np.linspace(
                     *lim,
                     len(df),
                 ),
-                ('x' if loc in ['left','right'] else 'y')+'_text':lambda df: df.apply(
-                    lambda x: getattr(
-                        (
-                            ax.text(
-                                x=x["x"],
-                                y=x["y"],
-                                s=x[col_label],
-                                **{
-                                    **kws_text_loc,
-                                    **kws_text, ## override by the inputs
-                                },
-                            )
-                            .get_window_extent(renderer=plt.gcf().canvas.get_renderer())
-                            .transformed(ax.transData.inverted())
+                ("x" if loc in ["left", "right"] else "y") + "_text": lambda df: (
+                    df.apply(
+                        lambda x: getattr(
+                            (
+                                ax.text(
+                                    x=x["x"],
+                                    y=x["y"],
+                                    s=x[col_label],
+                                    **{
+                                        **kws_text_loc,
+                                        **kws_text,  ## override by the inputs
+                                    },
+                                )
+                                .get_window_extent(
+                                    renderer=plt.gcf().canvas.get_renderer()
+                                )
+                                .transformed(ax.transData.inverted())
+                            ),
+                            "xmin"
+                            if loc == "right"
+                            else "xmax"
+                            if loc == "left"
+                            else "ymin",
                         ),
-                        'xmin' if  loc=='right' else 'xmax' if  loc=='left' else 'ymin'
-                    ),
-                    axis=1,
+                        axis=1,
+                    )
                 ),
             }
         )
     )
 
     if text_multicolored not in [False, None]:
-        if isinstance(text_multicolored,dict):
-            kws_text_multicolored=text_multicolored
+        if isinstance(text_multicolored, dict):
+            kws_text_multicolored = text_multicolored
         else:
-            kws_text_multicolored={}
+            kws_text_multicolored = {}
         for s in data1[col_label].unique():
             try:
                 from roux.viz.text import set_text_multicolored
-                text_func=set_text_multicolored  
-        
+
+                text_func = set_text_multicolored
+
                 from roux.viz.figure import get_text
-                ts=get_text(
+
+                ts = get_text(
                     s,
                     # fig=fig,
                     ax=ax,
@@ -149,13 +160,14 @@ def annot_side_curved(
                 # assert len(t)==1, t
                 for t in ts:
                     from roux.viz.text import set_text_multicolored
+
                     set_text_multicolored(
                         s=t,
                         **kws_text_multicolored,
                     )
             except Exception as e:
                 logging.error(str(e))
-    
+
     # print(data1)
     # return data1
     ## lines
@@ -164,29 +176,50 @@ def annot_side_curved(
         how="inner",
         on=col_label,
         # validate="1:1"
-        suffixes=["",' inferred'],
+        suffixes=["", " inferred"],
     )
 
     # print(data2.columns)
-    
+
     from roux.viz.line import plot_bezier
+
     data2.apply(
         lambda x: plot_bezier(
             ## A point
             [x[colx], x[coly]],
-            ## B text            
+            ## B text
             (
                 [
-                    (x["x_text"] if text_x is None else text_x if not (isinstance(text_x,str) or text_x in x) else x[text_x]), 
-                    (x["y"] if not (isinstance(text_y,str) or text_y in x) else x[text_y])
+                    (
+                        x["x_text"]
+                        if text_x is None
+                        else text_x
+                        if not (isinstance(text_x, str) or text_x in x)
+                        else x[text_x]
+                    ),
+                    (
+                        x["y"]
+                        if not (isinstance(text_y, str) or text_y in x)
+                        else x[text_y]
+                    ),
                 ]
-                    if loc in ['left','right'] else
-                [
-                    (x["x"] if not (isinstance(text_x,str) or text_x in x) else x[text_x]), 
-                    (x["y_text"] if text_y is None else text_y if not (isinstance(text_y,str) or text_y in x) else x[text_y])
+                if loc in ["left", "right"]
+                else [
+                    (
+                        x["x"]
+                        if not (isinstance(text_x, str) or text_x in x)
+                        else x[text_x]
+                    ),
+                    (
+                        x["y_text"]
+                        if text_y is None
+                        else text_y
+                        if not (isinstance(text_y, str) or text_y in x)
+                        else x[text_y]
+                    ),
                 ]
             ),
-            direction='h' if loc in ['left','right'] else 'v',
+            direction="h" if loc in ["left", "right"] else "v",
             ax=ax,
             **{
                 **dict(
@@ -203,27 +236,22 @@ def annot_side_curved(
     if test:
         print(data2)
     return ax
-    
+
+
 def annot_side(
     df1: pd.DataFrame,
     colx: str,
     coly: str,
-
-    kind='straight',
-    
+    kind="straight",
     ## comp. with curved
     col_label: str = None,
-
     ## fixed text pos
     text_x=None,
     text_y=None,
-    
-    off: float=0.5,
-    lim: tuple=None,
-    limf: tuple=None, ## limits as fractions
-    
+    off: float = 0.5,
+    lim: tuple = None,
+    limf: tuple = None,  ## limits as fractions
     loc: str = "right",
-    
     hue: str = None,
     scatter=False,
     scatter_marker="|",
@@ -233,25 +261,20 @@ def annot_side(
     offymin: float = 0.1,
     offymax: float = 0.9,
     length_axhline: float = 3,
-    
     text=True,
     text_offx: float = 0,
     text_offy: float = 0,
     text_multicolored=False,
-    
     invert_xaxis: bool = False,
     break_pt: int = 25,
     va: str = "bottom",
     zorder: int = 2,
-    
-    color: str = "gray",    
+    color: str = "gray",
     kws_line: dict = {},
     kws_scatter: dict = {},  #'zorder':2,'alpha':0.75,'marker':'|','s':100},
-    
     ## deprecated
     cols: str = None,
-    
-    ax: plt.Axes=None,
+    ax: plt.Axes = None,
     test=False,
     **kws_text,
 ) -> plt.Axes:
@@ -281,60 +304,50 @@ def annot_side(
     Returns:
         plt.Axes: `plt.Axes` object.
     """
-    if kind=='curved':
+    if kind == "curved":
         return annot_side_curved(
             df1,
-            colx = colx, #: str,
-            coly = coly, #: str,
-            col_label = col_label, #: str,
-
+            colx=colx,  #: str,
+            coly=coly,  #: str,
+            col_label=col_label,  #: str,
             ## fixed text pos
             text_x=text_x,
             text_y=text_y,
-            
-            off = off, #: float=0.5,
-            lim = lim, #: tuple=None,
-            limf = limf, #: tuple=None, ## limits as fractions
-            loc = loc, #: str='right',
+            off=off,  #: float=0.5,
+            lim=lim,  #: tuple=None,
+            limf=limf,  #: tuple=None, ## limits as fractions
+            loc=loc,  #: str='right',
             # x: float=None, ## todo: deprecate
             # ylim: tuple=None, ## todo: deprecate
-            ax = ax, #=None,
-            test = test, #: bool = False,
-            kws_text = kws_text, #={},
-            
+            ax=ax,  # =None,
+            test=test,  #: bool = False,
+            kws_text=kws_text,  # ={},
             text_multicolored=text_multicolored,
-            
             **kws_line,
         )
-    
+
     if ax is None:
-        ax = plt.gca()        
+        ax = plt.gca()
     if len(df1) == 0:
         logging.warning("annot_side: no data found")
         return
     if cols is not None and col_label is None:
-        logging.warning(
-            'cols arg. is deprecated over col_label'
-        )
-        col_label=cols
-        del cols    
-    
+        logging.warning("cols arg. is deprecated over col_label")
+        col_label = cols
+        del cols
+
     ## straight
     if lim is not None:
-        logging.warning(
-            'over-riding offymin,offymax with lim'
-        )
-        offymin,offymax=lim
-        
-    logging.warning(
-        'over-riding offx3 with off'
-    )
-    offx3=off
-        
+        logging.warning("over-riding offymin,offymax with lim")
+        offymin, offymax = lim
+
+    logging.warning("over-riding offx3 with off")
+    offx3 = off
+
     assert colx != "x", colx
     assert coly != "y", coly
     assert col_label != "s", col_label
-    
+
     if isinstance(colx, float):
         df1["colx"] = colx
         colx = "colx"
@@ -486,19 +499,21 @@ def show_outlines(
     """
     if outline_colors is None:
         from roux.viz.colors import get_ncolors
-        outline_colors=get_ncolors(  
+
+        outline_colors = get_ncolors(
             data[column_outlines].nunique(),
             cmap=cmap,
         )
     # print(outline_colors)
     if isinstance(outline_colors, list):
-        outline_colors = dict(zip(data[column_outlines].dropna().unique(), outline_colors))
+        outline_colors = dict(
+            zip(data[column_outlines].dropna().unique(), outline_colors)
+        )
         logging.info(
             f"Mapping between the categories and the colors of the outlines: {outline_colors}."
         )
     # print(outline_colors)
     for cat, df_ in data.groupby(column_outlines):
-
         ax = sns.scatterplot(
             data=df_,
             x=colx,
@@ -523,32 +538,34 @@ def show_outlines(
             )
     return ax
 
+
 def outline_scatter(
     data,
     x,
     y,
-    color='lightgray',
-    linestyle=':',
+    color="lightgray",
+    linestyle=":",
     ax=None,
     test=False,
     return_data=False,
     plot=True,
     **kws_line,
-    ):
+):
     if ax is None:
-        ax=plt.gca()
-    points=data.loc[:,[x,y]].values
-    
+        ax = plt.gca()
+    points = data.loc[:, [x, y]].values
+
     from scipy.spatial import ConvexHull
+
     # Compute the convex hull
     hull = ConvexHull(points)
-    out_pts=np.vstack([points[hull.vertices, 0],points[hull.vertices, 1]]).T
-    
-    # Plot the convex hull    
+    out_pts = np.vstack([points[hull.vertices, 0], points[hull.vertices, 1]]).T
+
+    # Plot the convex hull
     if plot:
         ax.plot(
-            list(out_pts[:, 0])+[out_pts[0, 0]],
-            list(out_pts[:, 1])+[out_pts[0, 1]],
+            list(out_pts[:, 0]) + [out_pts[0, 0]],
+            list(out_pts[:, 1]) + [out_pts[0, 1]],
             **{
                 **dict(
                     color=color,
@@ -556,22 +573,29 @@ def outline_scatter(
                     clip_on=False,
                 ),
                 **kws_line,
-            }
-           )
-        
+            },
+        )
+
         # Plot the points
         if test:
             ax.scatter(points[:, 0], points[:, 1], label="Points")
             # Optional: Fill the convex hull
-            ax.fill(points[hull.vertices, 0], points[hull.vertices, 1], color='red', alpha=0.2, label="Hull Area")
-    
+            ax.fill(
+                points[hull.vertices, 0],
+                points[hull.vertices, 1],
+                color="red",
+                alpha=0.2,
+                label="Hull Area",
+            )
+
     if not return_data:
         return ax
     else:
         return pd.DataFrame(
             out_pts,
-            columns=[x,y],
+            columns=[x, y],
         )
+
 
 ## variance
 def show_confidence_ellipse(x, y, ax, n_std=3.0, facecolor="none", **kwargs):
@@ -740,13 +764,11 @@ def show_scatter_stats(
     x,
     y,
     z,
-    
     method: str,
     x_covar=None,
     y_covar=None,
     covar=None,
     n_min=10,
-    
     resample: bool = False,
     show_p: bool = True,
     show_n: bool = True,
@@ -754,7 +776,6 @@ def show_scatter_stats(
     prefix: str = "",
     loc=None,
     wrap=False,
-    
     zorder: int = 5,
     verbose: bool = True,
     kws_stat={},
@@ -798,11 +819,15 @@ def show_scatter_stats(
                 show_p=show_p,
                 show_n=show_n,
                 show_n_prefix=show_n_prefix,
-                method_suffix=False, ## change x|y label instead
+                method_suffix=False,  ## change x|y label instead
             )
             if wrap:
-                label=label.replace(r'$\pm$','\n$\\pm$')
-            if loc is None and kws_set_label.get('x') is None and kws_set_label.get('y') is None:
+                label = label.replace(r"$\pm$", "\n$\\pm$")
+            if (
+                loc is None
+                and kws_set_label.get("x") is None
+                and kws_set_label.get("y") is None
+            ):
                 ## infer
                 if res["r"] >= 0:
                     loc = 2
@@ -825,28 +850,29 @@ def show_scatter_stats(
             [x, y],
             **kws_stat,
         )
-    kws_set_label={
-            **dict(
-                zorder=zorder,
-                loc=loc,
-            ),
-            **kws,
-            **kws_set_label,
-        }
-    
+    kws_set_label = {
+        **dict(
+            zorder=zorder,
+            loc=loc,
+        ),
+        **kws,
+        **kws_set_label,
+    }
+
     ## if no inputs provided, use the one inferred
-    kws_set_label['loc']=kws_set_label.get('loc',0)
-        
+    kws_set_label["loc"] = kws_set_label.get("loc", 0)
+
     if verbose:
         logging.info(kws_set_label)
-    
+
     _ = set_label(
         ax=ax,
         s=label,
         **kws_set_label,
     )
-    ax.stats=res   
-    return ax    
+    ax.stats = res
+    return ax
+
 
 def show_dists_stats(
     stats: dict,
@@ -859,12 +885,9 @@ def show_dists_stats(
     alternative: str = "two-sided",
     fmt_pval: str = "{:.2e}",
     hue: str = None,
-
     show_lines=True,
-    show_brackets=False, ## TODO: caps should be constants not scaled by figsize, ref: https://matplotlib.org/stable/gallery/text_labels_and_annotations/angles_on_bracket_arrows.html
-
+    show_brackets=False,  ## TODO: caps should be constants not scaled by figsize, ref: https://matplotlib.org/stable/gallery/text_labels_and_annotations/angles_on_bracket_arrows.html
     # color='k',
-
     test: bool = False,
     ax=None,
 ):
@@ -887,159 +910,171 @@ def show_dists_stats(
         }
     else:
         stats = {}
-        
+
     if offs_pval is None:
         offs_pval = {}
     offs_pval = {"x": 0, "y": 0, **offs_pval}
 
     if show_lines:
-        offs_lines=offs_pval.copy()
-        offs_pval[axis_cont] += (-0.01*(axlims[axis_cont]['len']))
+        offs_lines = offs_pval.copy()
+        offs_pval[axis_cont] += -0.01 * (axlims[axis_cont]["len"])
 
     # g: renamed d1 to stats
-    if hue is None and (len(stats) == 1 or show_p == 'paired'):
-        offs_pval[axis_desc] += -0.5            
-        
+    if hue is None and (len(stats) == 1 or show_p == "paired"):
+        offs_pval[axis_desc] += -0.5
+
     if test:
         logging.info(offs_pval)
 
     # g: renamed d1 to stats
     if isinstance(stats, dict):
         if test:
-            # g: logging.info typically expects a single message string; 
+            # g: logging.info typically expects a single message string;
             # left as-is to preserve your exact snippet structure.
             logging.info(stats, ticklabel2position, axlims)
-            
+
         # g: 1. Identify the Reference Category
         ref_cats = list(set(ticklabel2position.keys()) - set(stats.keys()))
         ref_pos = ticklabel2position[ref_cats[0]] if ref_cats else 0
-        
+
         # g: sort stats by distance from reference position to draw shorter (inner) brackets first
         stats_sorted = sorted(
-            stats.items(), 
-            key=lambda item: abs(ticklabel2position[item[0]] - ref_pos)
+            stats.items(), key=lambda item: abs(ticklabel2position[item[0]] - ref_pos)
         )
-        show_lines=show_lines and len(ticklabel2position)>2
+        show_lines = show_lines and len(ticklabel2position) > 2
 
         for i, (k, s) in enumerate(stats_sorted):
             # g: 2. Determine Staggered Offsets
             # g: Use 5% of the continuous axis length as a staggered step to prevent overlapping lines
-            offset = i * (axlims[axis_cont]['len'] * 0.02)
-            
+            offset = i * (axlims[axis_cont]["len"] * 0.02)
+
             # g: 3. Calculate Line Coordinates
             target_pos = ticklabel2position[k]
             current_max = axlims[axis_cont]["max"] + offs_lines[axis_cont] + offset
-            
-            if axis_cont == 'x':
+
+            if axis_cont == "x":
                 x_coords = [current_max, current_max]
                 y_coords = [ref_pos, target_pos]
             else:
                 x_coords = [ref_pos, target_pos]
                 y_coords = [current_max, current_max]
 
-            if show_lines:            
+            if show_lines:
                 # g: 4. Draw the Bracket (Main Line + Caps)
                 # g: define cap length as 2% of the continuous axis length
-                cap_len = axlims[axis_cont]['len'] * 0.02
-                
-                # g: main line
-                ax.plot(x_coords, y_coords, color="k", lw=1.0,clip_on=False)
+                cap_len = axlims[axis_cont]["len"] * 0.02
 
-                if show_brackets:          
+                # g: main line
+                ax.plot(x_coords, y_coords, color="k", lw=1.0, clip_on=False)
+
+                if show_brackets:
                     # g: draw inward pointing caps and define text alignment based on orientation
-                    if axis_cont == 'x':
-                        ax.plot([current_max, current_max - cap_len], [ref_pos, ref_pos], color="k", lw=1.0)
-                        ax.plot([current_max, current_max - cap_len], [target_pos, target_pos], color="k", lw=1.0)
+                    if axis_cont == "x":
+                        ax.plot(
+                            [current_max, current_max - cap_len],
+                            [ref_pos, ref_pos],
+                            color="k",
+                            lw=1.0,
+                        )
+                        ax.plot(
+                            [current_max, current_max - cap_len],
+                            [target_pos, target_pos],
+                            color="k",
+                            lw=1.0,
+                        )
                         text_va = "center"
-                        text_ha = "left" # g: outside the bracket to the right
-                        text_pad = axlims[axis_cont]['len'] * 0.01
+                        text_ha = "left"  # g: outside the bracket to the right
+                        text_pad = axlims[axis_cont]["len"] * 0.01
                     else:
-                        ax.plot([ref_pos, ref_pos], [current_max, current_max - cap_len], color="k", lw=1.0)
-                        ax.plot([target_pos, target_pos], [current_max, current_max - cap_len], color="k", lw=1.0)
-                        text_va = "bottom" # g: outside the bracket on top
+                        ax.plot(
+                            [ref_pos, ref_pos],
+                            [current_max, current_max - cap_len],
+                            color="k",
+                            lw=1.0,
+                        )
+                        ax.plot(
+                            [target_pos, target_pos],
+                            [current_max, current_max - cap_len],
+                            color="k",
+                            lw=1.0,
+                        )
+                        text_va = "bottom"  # g: outside the bracket on top
                         text_ha = "center"
-                        text_pad = axlims[axis_cont]['len'] * 0.01
+                        text_pad = axlims[axis_cont]["len"] * 0.01
                 sns.despine()
             # g: 5. Align Text to Midpoint
             mid_pos = (ref_pos + target_pos) / 2.0
-                
+
             ax.text(
                 **{
-                    # axis_cont: current_max + text_pad, 
+                    # axis_cont: current_max + text_pad,
                     # axis_desc: mid_pos + offs_pval[axis_desc],
                     axis_cont: axlims[axis_cont]["max"]
                     + offs_pval[
                         axis_cont
                     ],  # +((axlims[axis_cont]['len']*offx_pval) if axis_desc=='y' else 0),
-                    axis_desc: ticklabel2position[k] + offs_pval[axis_desc],                    
+                    axis_desc: ticklabel2position[k] + offs_pval[axis_desc],
                 },
                 s=s,
                 # va=text_va,
                 # ha=text_ha,
                 va="center" if axis_desc == "y" else "top",
                 ha="right" if axis_desc == "y" else "center",
-
                 zorder=5,
             )
-            
+
     return ax
 
+
 def show_stats_by_sides(
-    df_stats, ## contains column with ticklabel
-    col_mid, ## [left,mid,rt],
-    col_left, ## [left,mid,rt],
-    col_right, ## [left,mid,rt],
+    df_stats,  ## contains column with ticklabel
+    col_mid,  ## [left,mid,rt],
+    col_left,  ## [left,mid,rt],
+    col_right,  ## [left,mid,rt],
     ax=None,
-    ):
+):
     """
     #TODO
     """
     if ax is None:
-        ax=plt.gca()
+        ax = plt.gca()
     from roux.viz.ax_ import get_ticklabel_position
-    df_stats=(
-        pd.Series(get_ticklabel_position(ax,axis='y'))
-        .to_frame('y')
+
+    df_stats = (
+        pd.Series(get_ticklabel_position(ax, axis="y"))
+        .to_frame("y")
         .reset_index()
         .assign(
-            label=lambda df: df['index'].str.split('\\n',expand=True)[0],
+            label=lambda df: df["index"].str.split("\\n", expand=True)[0],
         )
         .merge(
             df_stats,
             # pd.DataFrame(kws_plot['stats']).T,
-            left_on='label',
+            left_on="label",
             # right_index=True,
             # validate='1:1',
         )
     )
     if col_mid is not None:
         if x_center is None:
-            x_center=np.mean(ax.get_xlim())
+            x_center = np.mean(ax.get_xlim())
         ## center e.g. pvals
         (
-            df_stats
-            .apply(
-                lambda x: ax.text(
-                    x_center,
-                    x['y'],
-                    x[col_mid],
-                    va='top',
-                    ha='center'
-                ),
+            df_stats.apply(
+                lambda x: ax.text(x_center, x["y"], x[col_mid], va="top", ha="center"),
                 axis=1,
             )
         )
     ## left counts
     if col_left is not None:
         (
-            df_stats
-            .apply(
+            df_stats.apply(
                 lambda x: ax.text(
-                    ax.get_xlim()[0]+0.01,
-                    x['y']+0.2,
+                    ax.get_xlim()[0] + 0.01,
+                    x["y"] + 0.2,
                     x[col_left],
-                    va='top',
-                    ha='left'
+                    va="top",
+                    ha="left",
                 ),
                 axis=1,
             )
@@ -1047,42 +1082,35 @@ def show_stats_by_sides(
     ## rght counts
     if col_right is not None:
         (
-            df_stats
-            .apply(
+            df_stats.apply(
                 lambda x: ax.text(
-                    ax.get_xlim()[1]-0.01,
-                    x['y']+0.2,
+                    ax.get_xlim()[1] - 0.01,
+                    x["y"] + 0.2,
                     x[col_right],
-                    va='top',
-                    ha='right'
+                    va="top",
+                    ha="right",
                 ),
                 axis=1,
             )
         )
     return ax
-    
+
+
 def show_crosstab_stats(
     stat=None,
     pval=None,
-    
-    data: pd.DataFrame=None,
-    cols: list=None,
-    
+    data: pd.DataFrame = None,
+    cols: list = None,
     order_x=None,
     order_y=None,
-    
     method: str = None,
-
     alpha: float = 0.05,
-
     show_stat=True,
     show_pval=True,
     linebreak: bool = False,
-
     loc: str = None,
     xoff: float = 0,
     yoff: float = 0,
-        
     ax: plt.Axes = None,
     kws_stats={},
     **kws_set_label,
@@ -1106,33 +1134,31 @@ def show_crosstab_stats(
         plt.Axes: `plt.Axes` object.
     """
     if ax is None:
-        ax=plt.gca()
-        
+        ax = plt.gca()
+
     if stat is None and pval is None:
         from roux.stat.diff import compare_classes
+
         res = compare_classes(
             x=data[cols[0]] if cols is not None else None,
             y=data[cols[1]] if cols is not None else None,
-            
             order_x=order_x,
             order_y=order_y,
-            
             method=method,
             data=data,
-                    
-            **kws_stats
-        )        
+            **kws_stats,
+        )
 
-        stat=res.get('stat')
-        pval=res.get('P')
+        stat = res.get("stat")
+        pval = res.get("P")
         logging.info(f"stat={stat},pval={pval}")
 
-    if res.get('table').shape != (2, 2) or method == "chi2":
+    if res.get("table").shape != (2, 2) or method == "chi2":
         stat_label = r"${\chi}^2$"
     else:
         stat_label = "OR"
-        
-    if 'x' not in kws_set_label and 'y' not in kws_set_label:
+
+    if "x" not in kws_set_label and "y" not in kws_set_label:
         if loc == "bottom":
             kws_set_label = {
                 **dict(
@@ -1165,29 +1191,33 @@ def show_crosstab_stats(
             }
         else:
             raise ValueError(loc)
-            
+
     from roux.viz.ax_ import set_label
+
     set_label(
-        s=(f"{stat_label}={stat:.1f}" if show_stat else '')
+        s=(f"{stat_label}={stat:.1f}" if show_stat else "")
         + (", " if show_stat and not linebreak else "\n")
         + (
             pval2annot(
                 pval, alternative="two-sided", alpha=alpha, fmt=None, linebreak=False
-            ) if show_pval else ''
+            )
+            if show_pval
+            else ""
         ),
         ax=ax,
         **kws_set_label,
     )
-    if hasattr(ax,'stats') and ax.stat is not None:
-        logging.warning('overwritten ax.stats')
-    ax.stats=res
-    
+    if hasattr(ax, "stats") and ax.stat is not None:
+        logging.warning("overwritten ax.stats")
+    ax.stats = res
+
     return {
         **res,
         **dict(
-                ax=ax,
-            ),
-        }
+            ax=ax,
+        ),
+    }
+
 
 def show_confusion_matrix_stats(
     df_: pd.DataFrame, ax: plt.Axes = None, off: float = 0.5
@@ -1251,84 +1281,88 @@ def show_confusion_matrix_stats(
     )
     return ax
 
-def show_means(  
-    ax=None,   
-    meanprops=None,   
-    orient=None,  
-    data=None,  
-    x=None,  
-    y=None,  
+
+def show_means(
+    ax=None,
+    meanprops=None,
+    orient=None,
+    data=None,
+    x=None,
+    y=None,
     alpha=0.5,
-):  
-    """  
-    Overlays a diamond marker with a mu symbol on top of barplot patches.  
-    Matches the behavior of showmeans=True in plot_dists.  
-    """  
-      
-    if ax is None:  
-        ax = plt.gca()  
-    if meanprops is None:  
-        meanprops = {}  
-      
-    # Infer orient from dtypes if orient is None  
-    if orient is None:  
-        if data is not None and x is not None and y is not None:  
-            if data[y].dtype not in [int, float]:  
-                # y is categorical, values on x-axis → horizontal  
-                orient = "h"  
-            else:  
-                # y is numeric, values on y-axis → vertical  
-                orient = "v"  
-        else:  
-            # fallback to vertical if no dataframe info provided  
-            orient = "v"  
-          
-    for p in ax.patches:  
-        if orient == "h":  
-            val = p.get_width()  
-            pos = p.get_y() + p.get_height() / 2  
-            x_, y_ = val, pos  
-        else:  
-            val = p.get_height()  
-            pos = p.get_x() + p.get_width() / 2  
-            x_, y_ = pos, val  
-              
-        # if np.isnan(val) or val == 0:  
-        #     continue  
+):
+    """
+    Overlays a diamond marker with a mu symbol on top of barplot patches.
+    Matches the behavior of showmeans=True in plot_dists.
+    """
+
+    if ax is None:
+        ax = plt.gca()
+    if meanprops is None:
+        meanprops = {}
+
+    # Infer orient from dtypes if orient is None
+    if orient is None:
+        if data is not None and x is not None and y is not None:
+            if data[y].dtype not in [int, float]:
+                # y is categorical, values on x-axis → horizontal
+                orient = "h"
+            else:
+                # y is numeric, values on y-axis → vertical
+                orient = "v"
+        else:
+            # fallback to vertical if no dataframe info provided
+            orient = "v"
+
+    for p in ax.patches:
+        if orient == "h":
+            val = p.get_width()
+            pos = p.get_y() + p.get_height() / 2
+            x_, y_ = val, pos
+        else:
+            val = p.get_height()
+            pos = p.get_x() + p.get_width() / 2
+            x_, y_ = pos, val
+
+        # if np.isnan(val) or val == 0:
+        #     continue
         # if val == 0:
         # print(p,x_, y_)
         # if y_ ==0:
-            # middle
-            # continue
-              
-        # Diamond marker (matches sns.pointplot in plot_dists)  
-        ax.plot(  
-            x_, y_,  
-            marker='D',  
-            markerfacecolor=meanprops.get("markerfacecolor", 
-                                          # get_colors_default()[0]
-                                         p.get_facecolor(),
-                                         ),  
-            markeredgecolor=meanprops.get("markeredgecolor", "none"),  
-            markersize=float(meanprops.get("markersize", 15)),  
-            alpha=alpha,  
-            markeredgewidth=0,  
-            clip_on=False,  
-            linestyle="None"  
-        )  
-          
-        # Mu marker on top (matches meanprops in plot_dists box plot)  
-        ax.plot(  
-            x_, y_,  
-            marker=r"$\mu$",  
-            markerfacecolor=meanprops.get("mu_color", "black"),  
-            markeredgecolor="none",  
-            markersize=10,  
-            clip_on=False,  
-            linestyle="None"  
-        )  
+        # middle
+        # continue
+
+        # Diamond marker (matches sns.pointplot in plot_dists)
+        ax.plot(
+            x_,
+            y_,
+            marker="D",
+            markerfacecolor=meanprops.get(
+                "markerfacecolor",
+                # get_colors_default()[0]
+                p.get_facecolor(),
+            ),
+            markeredgecolor=meanprops.get("markeredgecolor", "none"),
+            markersize=float(meanprops.get("markersize", 15)),
+            alpha=alpha,
+            markeredgewidth=0,
+            clip_on=False,
+            linestyle="None",
+        )
+
+        # Mu marker on top (matches meanprops in plot_dists box plot)
+        ax.plot(
+            x_,
+            y_,
+            marker=r"$\mu$",
+            markerfacecolor=meanprops.get("mu_color", "black"),
+            markeredgecolor="none",
+            markersize=10,
+            clip_on=False,
+            linestyle="None",
+        )
         # break
-    return ax 
+    return ax
 
 
 # # logo

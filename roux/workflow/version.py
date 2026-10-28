@@ -57,12 +57,12 @@ def git_commit(
     commit(repo)
     push(repo)
 
+
 import subprocess
 
 
 def get_tag():
-    """Get the current version tag.
-    """
+    """Get the current version tag."""
     try:
         # Execute the git describe command to get the current tag
         result = subprocess.run(
@@ -93,10 +93,11 @@ def get_tag():
         logging.info(f"Current Git tag: {current_tag}")
     return current_tag
 
+
 # get_current_git_tag=get_tag
+
 
 def get_commit_message():
     return subprocess.check_output(
-        ['git', 'log', '-1', '--pretty=%B'],
-        text=True
+        ["git", "log", "-1", "--pretty=%B"], text=True
     ).strip()

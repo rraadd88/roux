@@ -229,21 +229,21 @@ def get_gmm_params(
     # logging.info(f'weights {weights}')
     f = x.reshape(-1, 1)
     x.sort()
-    two_pdfs = sc.stats.norm.pdf(np.array([x]*n_clusters), means, stds)
+    two_pdfs = sc.stats.norm.pdf(np.array([x] * n_clusters), means, stds)
     mix_pdf = np.matmul(weights.reshape(1, n_clusters), two_pdfs)
     return mix_pdf, two_pdfs, means, weights
 
 
 def get_gmm_intersection(
-    x, 
-    two_pdfs, 
-    means, 
-    weights, 
-    # method=None, # middle. 
-    method='mean low', # 1st intersection towards low mean dist. 
+    x,
+    two_pdfs,
+    means,
+    weights,
+    # method=None, # middle.
+    method="mean low",  # 1st intersection towards low mean dist.
     # method='weight high', # high weight
-    test=False
-    ):
+    test=False,
+):
     from roux.stat.solve import get_intersection_locations
 
     idxs = get_intersection_locations(
@@ -258,21 +258,23 @@ def get_gmm_intersection(
             logging.info(x_intersections)
             logging.info(ms)
             logging.info([i for i in x_intersections if i > ms[0] and i < ms[1]])
-            
-        if method=='mean low':
-            coff = x_intersections[list(ms).index(min(ms))]            
-        elif method=='mean high':
-            coff = x_intersections[list(ms).index(max(ms))]            
-        elif method=='weight low':
-            coff = x_intersections[list(weights).index(min(weights))]            
-        elif method=='weight high':
-            coff = x_intersections[list(weights).index(max(weights))]            
+
+        if method == "mean low":
+            coff = x_intersections[list(ms).index(min(ms))]
+        elif method == "mean high":
+            coff = x_intersections[list(ms).index(max(ms))]
+        elif method == "weight low":
+            coff = x_intersections[list(weights).index(min(weights))]
+        elif method == "weight high":
+            coff = x_intersections[list(weights).index(max(weights))]
         else:
             coffs_ = [i for i in x_intersections if i > ms[0] and i < ms[1]]
             if len(coffs_) != 0:
                 coff = coffs_[0]
             else:
-                raise ValueError(f"method={method}, coffs_={coffs_} (x_intersections={x_intersections}, ms={ms}, weights={weights})")
+                raise ValueError(
+                    f"method={method}, coffs_={coffs_} (x_intersections={x_intersections}, ms={ms}, weights={weights})"
+                )
         if test:
             logging.info(coff)
     else:

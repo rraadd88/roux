@@ -49,9 +49,9 @@ def get_scripts(
     # print(d1)
     if test:
         logging.info(d1)
-    assert (
-        len(d1) != 0
-    ), f"no notebooks with the {notebook_prefix} prefix and {notebook_suffix} suffix found"
+    assert len(d1) != 0, (
+        f"no notebooks with the {notebook_prefix} prefix and {notebook_suffix} suffix found"
+    )
     if notebook_suffix != "":
         ## remove suffix
         # d1={p.split(notebook_suffix)[0]:v for p,v in d1.items()}

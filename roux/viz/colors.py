@@ -53,7 +53,7 @@ def get_ncolors(
         list: colors.
     """
     if cmap is None:
-        cmap="Spectral"
+        cmap = "Spectral"
     if isinstance(cmap, str):
         cmap = get_cmap_section(cmap, **kws_get_cmap_section)
     elif isinstance(cmap, list):
@@ -89,7 +89,7 @@ def get_val2color(
         vmin = min(ds)
     if vmax is None:
         vmax = max(ds)
-        
+
     # categories
     colors = [
         (plt.get_cmap(cmap) if isinstance(cmap, str) else cmap)(
@@ -97,8 +97,8 @@ def get_val2color(
         )
         for i in ds
     ]
-    cats=dict(zip(ds, colors))
-    
+    cats = dict(zip(ds, colors))
+
     # not-categories
     vals = {
         i: (plt.get_cmap(cmap) if isinstance(cmap, str) else cmap)(

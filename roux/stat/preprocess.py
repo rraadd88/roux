@@ -65,7 +65,7 @@ def dropna_matrix(
         for k in l1:
             from roux.stat.binary import perc
 
-            logging.info(f"min. percent of '{k}'s to be dropped={perc(d1[k]>=d4[k])}")
+            logging.info(f"min. percent of '{k}'s to be dropped={perc(d1[k] >= d4[k])}")
 
     return (
         df1.log.drop(
@@ -273,18 +273,18 @@ def get_cols_x_for_comparison(
 
     df1 = df1.log.drop(labels=cols_drop, axis=1)
     columns["cols_x"]["cont"] = sorted(
-            set(columns["cols_x"]["cont"]) - set(cols_drop) - set(columns["cols_index"])
-        )
+        set(columns["cols_x"]["cont"]) - set(cols_drop) - set(columns["cols_index"])
+    )
 
     ## get descrete x columns
     ## bools
     ds2_ = df1.nunique().sort_values()
-    l1 = ds2_.loc[lambda x: (x == 2)].index.tolist()
+    l1 = ds2_.loc[lambda x: x == 2].index.tolist()
     if test:
         print("l1", l1)
 
     ds2_ = df1.select_dtypes((int, float)).nunique().sort_values()
-    l2 = ds2_.loc[lambda x: (x == 2)].index.tolist()
+    l2 = ds2_.loc[lambda x: x == 2].index.tolist()
     if test:
         print("l2", l2)
 

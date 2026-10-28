@@ -1,29 +1,58 @@
 name: format
+
 on:
   push:
-    branches: [ '**' ]      # triggers on all branches
+    branches: [ master ]
     paths:
-      - "roux/**"           # triggers on any file change in roux/ or its subfolders
+      - "roux/**"
+  pull_request:
+    paths:
+      - "roux/**"
+      - ".github/workflows/format.yaml"
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 permissions:
-  contents: write
+  contents: read
 
 jobs:
-  ruff:
+  # pull requests: report only, never push (forks have a read-only token)
+  lint:
+    if: github.event_name == 'pull_request'
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-        
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6.3.1
+
+      # syntax errors and undefined names only: the codebase still has many other findings
+      - name: ruff (errors)
+        run: uvx ruff check roux --select E9,F63,F7,F82 --output-format github
+        continue-on-error: true  # TODO: make blocking once existing F821 findings are fixed
+
+      - name: ruff (format check)
+        run: uvx ruff format --check roux
+        continue-on-error: true  # informational
+
+  # pushes to master: apply the fixes and commit them
+  autofix:
+    if: github.event_name == 'push'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6.3.1
+
       - name: ruff
-        continue-on-error: true
         run: |
-          pip install --user ruff
-          ruff check roux --fix --ignore E402,E722,E741
-          ruff format roux
+          uvx ruff check roux --fix --ignore E402,E722,E741 || true
+          uvx ruff format roux
+
       - name: ruff commit
-        continue-on-error: true
-        uses: stefanzweifel/git-auto-commit-action@v4
+        uses: stefanzweifel/git-auto-commit-action@v5
         with:
-          # github_token: ${{ secrets.GITHUB_TOKEN }}          
           commit_message: '[CI bot] linting and formating (ruff)'

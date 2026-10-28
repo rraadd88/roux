@@ -2,10 +2,7 @@ import logging
 from pathlib import Path
 
 
-def print_parameters(
-    d: dict,
-    logger=None
-):
+def print_parameters(d: dict, logger=None):
     """
     Print a directory with parameters as lines of code
 
@@ -15,13 +12,14 @@ def print_parameters(
     assert isinstance(d, dict)
     if logger is None:
         if logging.root.level <= logging.INFO:
-            logger=logging.info
+            logger = logging.info
         else:
-            logger=print
-    elif isinstance(logger,str):
-        logger=getattr(logging,logger.lower())
+            logger = print
+    elif isinstance(logger, str):
+        logger = getattr(logging, logger.lower())
     logger(
-        f"## for testing\nimport os\nos.chdir('{Path.cwd().as_posix()}')\n\n## parameters\n"+(
+        f"## for testing\nimport os\nos.chdir('{Path.cwd().as_posix()}')\n\n## parameters\n"
+        + (
             "\n".join(
                 [
                     k + "=" + ('"' + v + '"' if isinstance(v, str) else str(v))
@@ -31,43 +29,43 @@ def print_parameters(
         )
     )
 
+
 def test_params(
     params,
-    i=0, #index
-    logger='INFO',
-    ):
+    i=0,  # index
+    logger="INFO",
+):
     if isinstance(params, str):
         from roux.lib.io import read_dict
-        params=read_dict(params)
-        
+
+        params = read_dict(params)
+
     if isinstance(params, dict):
         from roux.workflow.pms import validate_pms
-        if validate_pms(
-            params[
-                list(params.keys())[0]
-            ]
-            ):
+
+        if validate_pms(params[list(params.keys())[0]]):
             params = list(params.values())
-        else:  
-            params=[params]
-        
+        else:
+            params = [params]
+
     logging.info(f"total params: {len(params)}")
 
     ## all
-    available=range(len(params))
+    available = range(len(params))
     if i is not None:
-        selected=i
-        if isinstance(selected,int):
-            selected=[selected]
-        assert isinstance(selected,list), selected
-        available=list(set(available) & set(selected))
+        selected = i
+        if isinstance(selected, int):
+            selected = [selected]
+        assert isinstance(selected, list), selected
+        available = list(set(available) & set(selected))
     for i in available:
-        print_parameters(
-            params[i],
-            logger=logger
-            )
+        print_parameters(params[i], logger=logger)
 
         ## tests
-        if 'input_path' in params[i] and isinstance(params[i]['input_path'],str) and Path(params[i]['input_path']).is_file():
-            if not Path(params[i]['input_path']).exists():
+        if (
+            "input_path" in params[i]
+            and isinstance(params[i]["input_path"], str)
+            and Path(params[i]["input_path"]).is_file()
+        ):
+            if not Path(params[i]["input_path"]).exists():
                 logging.warning(f"not found: {params[i]['input_path']}")

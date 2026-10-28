@@ -77,23 +77,19 @@ def read_zip(
             return fun_read(file.open(file_open).read())
 
 
-def to_zip_dir(
-    source,
-    destination=None,
-    fmt="zip"
-    ):
+def to_zip_dir(source, destination=None, fmt="zip"):
     """
     Zip a folder.
     Ref:
     https://stackoverflow.com/a/50381250/3521099
     """
-    if isinstance(source,str):
+    if isinstance(source, str):
         if destination is None:
             destination = source.rsplit("/") + "." + fmt
-        paths={source:destination}
-    elif isinstance(source,dict):
-        paths=source
-        
+        paths = {source: destination}
+    elif isinstance(source, dict):
+        paths = source
+
     base = basename(destination)
     fmt = base.split(".")[-1]
     name = base.replace("." + fmt, "")
@@ -133,7 +129,7 @@ def to_zip(
     if isinstance(p, str):
         if isdir(p):
             return to_zip_dir(p, destination=outp, fmt=fmt)
-            
+
     ps = read_ps(p)
     import tempfile
 
@@ -151,6 +147,7 @@ def to_zip(
         ]
         return to_zip_dir(outd + "/", destination=outp, fmt=fmt)
 
+
 def to_arxv(
     ind,
     outp=None,
@@ -159,7 +156,7 @@ def to_arxv(
     wait=True,
     simulate=False,
     exclude=None,
-    ):
+):
     """
     Notes:
         # test reversibility
@@ -167,82 +164,79 @@ def to_arxv(
         tar --remove-files -czf tests/input/roux_workflow_cfgs.tar.gz tests/input/roux_workflow_cfgs
         tree tests/input/
         tar -xzf tests/input/roux_workflow_cfgs.tar.gz && rm tests/input/roux_workflow_cfgs.tar.gz
-        tree tests/input/    
+        tree tests/input/
     """
     if simulate:
-        verbose=True
+        verbose = True
 
-    if len(read_ps(ind,verbose=verbose))>1:
+    if len(read_ps(ind, verbose=verbose)) > 1:
         logging.warning("running recursively ..")
-        
-        outps={}
-        for p_ in tqdm(read_ps(ind,verbose=False)):
-            outps[p_]=to_arxv(
+
+        outps = {}
+        for p_ in tqdm(read_ps(ind, verbose=False)):
+            outps[p_] = to_arxv(
                 p_,
-                
                 verbose=verbose,
                 force=force,
                 wait=wait,
-                simulate=simulate,   
-                exclude=exclude,             
-                )
-        return pd.Series(outps) # to truncate the print
+                simulate=simulate,
+                exclude=exclude,
+            )
+        return pd.Series(outps)  # to truncate the print
 
     if Path(ind).is_file() and Path(ind).exists():
-        ind=Path(ind).with_suffix('').as_posix()
+        ind = Path(ind).with_suffix("").as_posix()
         if verbose:
-            logging.warning(f"archiving sub.dir. instead: {ind}")        
+            logging.warning(f"archiving sub.dir. instead: {ind}")
     if not Path(ind).exists():
         logging.error(f"not found: {ind}")
-        return 
+        return
 
     if outp is None:
-        outp=f"{ind}.tar.gz"
+        outp = f"{ind}.tar.gz"
     ## low priority
-    com=''
+    com = ""
     if not wait:
-        com+="nice -n 10 ionice -c2 -n7 "
+        com += "nice -n 10 ionice -c2 -n7 "
 
-    arg_exclude=''
-    if isinstance(exclude,str):
-        exclude=[exclude]
-    if isinstance(exclude,list):
-        arg_exclude=' --exclude '.join(exclude)
-    
-    com+=f" tar --remove-files -czf {outp} {arg_exclude} {ind} &"
+    arg_exclude = ""
+    if isinstance(exclude, str):
+        exclude = [exclude]
+    if isinstance(exclude, list):
+        arg_exclude = " --exclude ".join(exclude)
+
+    com += f" tar --remove-files -czf {outp} {arg_exclude} {ind} &"
     if verbose:
         logging.info(com)
 
-    if not simulate:   
+    if not simulate:
         if not Path(outp).exists() or force:
             from roux.lib.sys import run_com
+
             run_com(
                 com,
                 verbose=verbose,
-                wait=wait, # do not wait for the process to finish
-                )
+                wait=wait,  # do not wait for the process to finish
+            )
         else:
             logging.warning(f"exists: {outp}")
         if wait:
             assert Path(outp).exists(), outp
     return outp
 
+
 def read_arxv(
-    p, # path to the file in arxv
-    tree_depth=3, ## search the root arxv upto
-
+    p,  # path to the file in arxv
+    tree_depth=3,  ## search the root arxv upto
     ap=None,
-
-    outd=None, ## base of output dir. path
-    
-    read_func=None, ## without savng the extracted file
-    
+    outd=None,  ## base of output dir. path
+    read_func=None,  ## without savng the extracted file
     verbose=False,
     force=False,
     **kws_extract,
-    ):
+):
     """
-    Read (from) archive. 
+    Read (from) archive.
 
     Examples:
         read_func=lambda f: pd.read_csv(
@@ -250,39 +244,41 @@ def read_arxv(
             sep='\t',
         )
     """
-    if p.startswith('../'):
-        assert p.count('../')==1, p
-        
-    p=Path(p).as_posix()
+    if p.startswith("../"):
+        assert p.count("../") == 1, p
+
+    p = Path(p).as_posix()
     if Path(p).exists() and not force:
         return p
     if ap is None:
         # find root arxv
-        for i in range(1,tree_depth+1):
-            ap=f"{p.rsplit('/',i)[0]}.tar.gz"
+        for i in range(1, tree_depth + 1):
+            ap = f"{p.rsplit('/', i)[0]}.tar.gz"
             if Path(ap).exists():
                 if verbose:
                     logging.info(f"root arxv: {ap}")
                 break
-    # read from the arxv    
+    # read from the arxv
     import tarfile
-    with tarfile.open(ap,'r') as tar:
-        ps=tar.getnames()
-        if verbose:
-            logging.info(ps if len(ps)<10 else len(ps))
 
-        p_inside=Path(p.split('../')[-1]).as_posix()
+    with tarfile.open(ap, "r") as tar:
+        ps = tar.getnames()
+        if verbose:
+            logging.info(ps if len(ps) < 10 else len(ps))
+
+        p_inside = Path(p.split("../")[-1]).as_posix()
         # logging.warning(p_inside)
 
-        aps_inside=sorted([p_ for p_ in ps if p_.endswith('.tar.gz')])
+        aps_inside = sorted([p_ for p_ in ps if p_.endswith(".tar.gz")])
         if p_inside not in ps:
-            
-            logging.warning(f"searching among the {len(aps_inside)} arxives found inside ..")
+            logging.warning(
+                f"searching among the {len(aps_inside)} arxives found inside .."
+            )
             if verbose:
                 logging.info(aps_inside)
-                
+
             for ap_inside in aps_inside:
-                ap_inside_=ap_inside.rstrip('.tar.gz')
+                ap_inside_ = ap_inside.rstrip(".tar.gz")
                 # print(ap_inside_)
                 if p_inside.startswith(ap_inside_):
                     logging.warning(
@@ -299,55 +295,60 @@ def read_arxv(
                         p=p,
                         ap=f"{'../' if p.startswith('../') else ''}{ap_inside}",
                     )
-                    
-        assert p_inside in ps, (p,ps)
-        
+
+        assert p_inside in ps, (p, ps)
+
         if not read_func:
-            outp=tar.extractall(
-                path=outd if outd is not None else '../' if p.startswith('../') else '.',
+            outp = tar.extractall(
+                path=outd
+                if outd is not None
+                else "../"
+                if p.startswith("../")
+                else ".",
                 members=[p_inside],
-                **kws_extract
-                )
+                **kws_extract,
+            )
             assert Path(p).exists(), p
             return p
-        else: 
+        else:
             return read_func(tar.extractfile(p))
             # Read the file-like object into a pandas DataFrame
             # Use io.BytesIO to wrap the file object for pandas if needed
             # if f:
-            #     df = pd.read_csv(io.BytesIO(f.read()))     
-            
+            #     df = pd.read_csv(io.BytesIO(f.read()))
+
+
 def to_copy(
     paths: dict,
-    
     replaces=None,
-    
     flatten=False,
     flatten_rename_basename=None,
-    flatten_outd: str=None,
-    
+    flatten_outd: str = None,
     force=False,
     simulate=False,
     **kws_replace_many,
-    ):
+):
     """
     Copy with the dir. structure
 
     Notes:
         Similar to:
-        
+
             rsync -a --remove-source-files --prune-empty-dirs --info=progress2  --include=$ind --include='*/'   --include=$pattern  --exclude='*'   $ind $outd
     """
-    
-    if isinstance(paths,str):
+
+    if isinstance(paths, str):
         assert replaces is not None, replaces
-        paths={p: replace_many(p,replaces, **kws_replace_many) for p in read_ps(paths)}
-        
+        paths = {
+            p: replace_many(p, replaces, **kws_replace_many) for p in read_ps(paths)
+        }
+
     paths = {k: v for k, v in paths.items()}
 
     import shutil
+
     if not flatten:
-        copy_paths=paths
+        copy_paths = paths
     else:
         makedirs(flatten_outd)
         copy_paths = {}
@@ -358,14 +359,14 @@ def to_copy(
                 else:
                     outb = basename(p)
                 copy_paths[p] = f"{flatten_outd}/{d}/{outb}"
-                
-    assert len(list(set(copy_paths.keys()))) == len(
-        list(set(copy_paths.values()))
-    ), copy_paths
-    
+
+    assert len(list(set(copy_paths.keys()))) == len(list(set(copy_paths.values()))), (
+        copy_paths
+    )
+
     if simulate:
         return copy_paths
-        
+
     logging.info("copying ..")
     for p, outp in copy_paths.items():
         if not Path(outp).exists() or force:
@@ -415,13 +416,11 @@ def to_version(
     """
     p = p.rstrip("/")
     if outd is None:
-        outd = f"{dirname(p)}{'/' if dirname(p)!='' else ''}"
+        outd = f"{dirname(p)}{'/' if dirname(p) != '' else ''}"
     if isdir(p):
-        outp = f"{outd}/.{get_version(basename(p)+' '+label,**kws)}"
+        outp = f"{outd}/.{get_version(basename(p) + ' ' + label, **kws)}"
     else:
-        outp = (
-            f"{outd}/.{get_version(basenamenoext(p)+' '+label,**kws)}{splitext(p)[1]}"
-        )
+        outp = f"{outd}/.{get_version(basenamenoext(p) + ' ' + label, **kws)}{splitext(p)[1]}"
     outp = to_path(outp)
     logging.info(f"-->{outp}")
     if not test:
@@ -437,6 +436,7 @@ def to_version(
     else:
         logging.warning("test mode.")
     return outp
+
 
 def backup(
     p: str,
@@ -599,37 +599,54 @@ read_lines = read_list
 
 def is_dict(p):
     return p.endswith((".yml", ".yaml", ".json", ".joblib", ".pickle"))
+
+
 def is_table(p):
-    return p.endswith((".tsv", ".csv", ".pqt", ".parquet",))
+    return p.endswith(
+        (
+            ".tsv",
+            ".csv",
+            ".pqt",
+            ".parquet",
+        )
+    )
+
 
 ## meta
 def is_data(p):
-    return is_dict(p) or is_table(p)     
-def read_data(p,**kws):
-    if isinstance(p,dict):
+    return is_dict(p) or is_table(p)
+
+
+def read_data(p, **kws):
+    if isinstance(p, dict):
         ## recurse
         ## placed here for uniformity
-        datas={}
-        for k,p_ in p.items():
-            datas[k]=read_data(p_,**kws)
-        return datas 
-        
+        datas = {}
+        for k, p_ in p.items():
+            datas[k] = read_data(p_, **kws)
+        return datas
+
     if is_dict(p):
-        return read_dict(p,**kws)
+        return read_dict(p, **kws)
     elif is_table(p):
-        return read_table(p,**kws)
+        return read_table(p, **kws)
     else:
         logging.error(f"not detected as data {p}")
-        return 
-def to_data(data,p,**kws):
+        return
+
+
+def to_data(data, p, **kws):
     if is_dict(p):
-        return to_dict(data,p,**kws)
+        return to_dict(data, p, **kws)
     elif is_table(p):
-        return to_table(data,p,**kws)
+        return to_table(data, p, **kws)
     else:
         logging.error(f"not detected as data {p}")
-        return 
+        return
+
+
 ## dict
+
 
 def read_dict(
     p,
@@ -655,9 +672,9 @@ def read_dict(
     assert isinstance(p, (str, list)), p
     if "*" in p or isinstance(p, list):
         if sort_ps:
-            p=read_ps(p,verbose=verbose)
+            p = read_ps(p, verbose=verbose)
         else:
-            assert isinstance(p,list)
+            assert isinstance(p, list)
         d1 = {p: read_dict(p) for p in p}
         if apply_on_keys is not None:
             assert len(
@@ -690,12 +707,13 @@ def read_dict(
 
     ## custom ext.s for formats that can be opened in a fail-safe manner, meaning a plain text editor e.g yaml
     elif (
-        p.endswith(".cfg") or fmt == "cfg" ## conf.s
-        # or 
+        p.endswith(".cfg") or fmt == "cfg"  ## conf.s
+        # or
         # p.endswith(".pms") or fmt == "pms" ## params
-        ):
+    ):
         from roux.workflow.cfgs import read_config
-        return read_config(p,**kws)
+
+        return read_config(p, **kws)
 
     elif p.startswith("https"):
         from urllib.request import urlopen
@@ -722,12 +740,7 @@ def read_dict(
         logging.error("supported extensions: .yml .yaml .json .pickle .joblib")
 
 
-def to_dict(
-    d, 
-    p,
-    compress=False,
-    **kws
-    ):
+def to_dict(d, p, compress=False, **kws):
     """Save dictionary file.
 
     Parameters:
@@ -748,25 +761,19 @@ def to_dict(
         logging.warning("probably working on google drive; space/s left in the path.")
     makedirs(p)
     if p.endswith(".yml") or p.endswith(".yaml"):
-        
         import yaml
+
         if not compress:
             import json
-            d=json.loads(
-                json.dumps(d)
-            )
+
+            d = json.loads(json.dumps(d))
         with open(p, "w") as f:
             yaml.safe_dump(
                 ## no aliases
-                d, 
+                d,
                 f,
-                **{
-                    **dict(
-                        sort_keys=False
-                    ),
-                    **kws
-                }
-                )
+                **{**dict(sort_keys=False), **kws},
+            )
         return p
     elif p.endswith(".json"):
         import json
@@ -821,22 +828,17 @@ from roux.lib.text import get_header
 def read_table(
     p: str,
     ext: str = None,
-
     use_paths: bool = False,  # read files in the path column even if not available in the sub-dir
     use_dir_paths: bool = False,  # =use_paths, will be deprec.d
     filterby_time=None,
-
     params: dict = None,
-
     post=True,
     clean: bool = True,
     kws_clean: dict = {},
-
     kws_cloud: dict = {},
-
     ## internal
     engine: str = "pyarrow",
-    tables: int = 1,     
+    tables: int = 1,
     test: bool = False,
     verbose: bool = True,
     **kws_read_tables: dict,
@@ -893,34 +895,32 @@ def read_table(
                 )
             with back-compatibility
                 path=p
-                cols=kws_reader['columns] 
+                cols=kws_reader['columns]
                 expr=
     """
     if params is None:
-        params={}
+        params = {}
     # print(params,ext)
-    
+
     # params={}
-    if tables==1:
+    if tables == 1:
         ## check for read_tables
-        if isinstance(p, (dict,list)) or (isinstance(p, str) and ("*" in p)):
+        if isinstance(p, (dict, list)) or (isinstance(p, str) and ("*" in p)):
             if isinstance(p, str) and ("*" in p):
                 _ps = read_ps(p, verbose=False)
                 if exists(p.replace("/*", "")):
-                    logging.warning(f"exists: {p.replace('/*','')}")
+                    logging.warning(f"exists: {p.replace('/*', '')}")
             elif isinstance(p, (list)):
                 _ps = p
             elif isinstance(p, dict):
                 _ps = p
-                kws_read_tables={
+                kws_read_tables = {
                     **kws_read_tables,
-                    **dict(
-                        to_dict=True
-                    ),
+                    **dict(to_dict=True),
                 }
             else:
                 raise ValueError(p)
-                
+
             return read_tables(
                 p,
                 params=params,
@@ -934,12 +934,12 @@ def read_table(
                 #     #     verbose=False,
                 #     # ),
                 # },  # is kws_apply_on_paths,
-            )            
+            )
         elif isinstance(p, str):
             ## read paths
             if use_paths or use_dir_paths:
                 ## if tables in the subdir (common)
-                ## 
+                ##
                 # if len(read_ps(f"{splitext(p)[0]}/*{splitext(p)[1]}",test=False))>0:
                 df_ = read_table(
                     p,
@@ -970,7 +970,7 @@ def read_table(
         else:
             raise ValueError(p)
     # else:
-        # running through read_tables
+    # running through read_tables
 
     ## 1 table
     # if p.startswith("https://docs.google.com/file/"):
@@ -983,17 +983,13 @@ def read_table(
     assert exists(p), f"not found: {p}"
     if ext is None:
         # ext = basename(p).rsplit(".", 1)[1]
-        ext=Path(p).suffix[1:]
-        
+        ext = Path(p).suffix[1:]
+
     if ext in ["pqt", "parquet"]:  # p.endswith('.pqt') or p.endswith('.parquet'):
         # print(params,ext)
-        df0=pd.read_parquet(
-                p,
-                engine=engine,
-                **params
-            )
-    elif len(params.keys()) != 0 and "columns" not in params:        
-        df0=pd.read_csv(p, **params)
+        df0 = pd.read_parquet(p, engine=engine, **params)
+    elif len(params.keys()) != 0 and "columns" not in params:
+        df0 = pd.read_csv(p, **params)
 
     else:
         params["compression"] = (
@@ -1045,14 +1041,14 @@ def read_table(
             raise ValueError(f"unknown extension {ext} in {p}")
         if test:
             print(params)
-        df0=pd.read_table(
-                p,
-                **params,
-            )
+        df0 = pd.read_table(
+            p,
+            **params,
+        )
         del params
-    if verbose and 'path' in df0:        
+    if verbose and "path" in df0:
         logging.info("use_paths=True to read the paths in the col 'path'.")
-        
+
     if not post:
         return df0
     else:
@@ -1061,8 +1057,9 @@ def read_table(
             clean=clean,
             verbose=verbose,
             **kws_clean,
-        )      
-        
+        )
+
+
 def get_logp(
     ps: list,
 ) -> str:
@@ -1093,10 +1090,8 @@ def apply_on_paths(
     filter_rows: dict = None,
     # progress_bar: bool = True,
     params: dict = {},
-
     cpus: int = 1,
-    fast: bool = False, # to be deprecated
-
+    fast: bool = False,  # to be deprecated
     dbug: bool = False,
     test1: bool = False,
     verbose: bool = True,
@@ -1143,8 +1138,8 @@ def apply_on_paths(
     TODOs:
         Move out of io.
     """
-    if isinstance(fast,int):
-        cpus=fast
+    if isinstance(fast, int):
+        cpus = fast
         del fast
 
     def read_table_(
@@ -1158,7 +1153,7 @@ def apply_on_paths(
         verbose=True,
         **kws_read_table,
     ):
-        if isinstance(p,pd.DataFrame):
+        if isinstance(p, pd.DataFrame):
             p = p.iloc[0, :]["path"]
         if read_path:
             if save_table:
@@ -1172,19 +1167,14 @@ def apply_on_paths(
                 return (p,)
         else:
             try:
-                df = read_table(
-                    p,
-                    params=params,
-                    verbose=verbose,
-                    **kws_read_table
-                )
+                df = read_table(p, params=params, verbose=verbose, **kws_read_table)
             except Exception as e:
                 raise ValueError(f"An error occurred for {p}: {e}.")
-                
+
             if filter_rows is not None:
                 df = df.rd.filter_rows(filter_rows)
             return (df,)
-    
+
     import inspect
 
     read_path = inspect.getfullargspec(func).args[0] == "p"
@@ -1198,31 +1188,31 @@ def apply_on_paths(
 
     if replaces_index is not None:
         drop_index = False
-        
-        if replaces_index=='ids':
+
+        if replaces_index == "ids":
             # print(ps)
             from roux.lib.dict import flip_dict
-            to_ids=flip_dict(
-                    read_ps(
+
+            to_ids = flip_dict(
+                read_ps(
                     ps,
                     fmt=replaces_index,
                     verbose=verbose,
                 )
             )
             # print(to_ids)
-            replaces_index=lambda x: to_ids[x]
+            replaces_index = lambda x: to_ids[x]
 
     ps = read_ps(ps, verbose=verbose)
 
     if len(ps) == 0:
         logging.error("no paths found")
         return
-        
+
     if test1:
         ps = ps[:1]
         logging.warning(f"test1=True, {ps[0]}")
-        
-        
+
     if (replaces_outp is not None) and ("force" in kws):
         if not kws["force"]:
             # p2outp
@@ -1239,23 +1229,23 @@ def apply_on_paths(
             if d_["from"] != d_["  to"]:
                 logging.info(f"force=False, so paths reduced from: {d_['from']}")
                 logging.info(f"                                to: {d_['  to']}")
-    
+
     if dbug:
         logging.info(ps)
-        
+
     df1 = pd.DataFrame({"path": ps})
-    
+
     if len(df1) == 0:
         logging.info("no paths remained to be processed.")
         return df1
 
-    
-    if cpus>1 and drop_index:
+    if cpus > 1 and drop_index:
         logging.info(f"using {cpus} cpus ..")
-        import roux.lib.df_apply as rd #noqa
+        import roux.lib.df_apply as rd  # noqa
+
         return df1.rd.apply_async(
             lambda x: read_table(
-                x['path'],
+                x["path"],
                 **{
                     **kws_read_table,
                     **dict(
@@ -1266,8 +1256,8 @@ def apply_on_paths(
             cpus=cpus,
             unstack=False,
         )
-        
-    _groupby = df1.groupby("path", as_index=True,sort=False)
+
+    _groupby = df1.groupby("path", as_index=True, sort=False)
 
     df2 = getattr(
         _groupby,
@@ -1292,7 +1282,7 @@ def apply_on_paths(
                         **kws_read_table,
                         ## only last
                         **dict(
-                            post=False,#(df.name==next(iter(_groupby.groups), None)),
+                            post=False,  # (df.name==next(iter(_groupby.groups), None)),
                         ),
                     },
                 )
@@ -1303,7 +1293,7 @@ def apply_on_paths(
 
     if isinstance(df2, pd.Series):
         return df2
-        
+
     if save_table:
         if len(df2) != 0 and not test1:
             # save log file
@@ -1313,7 +1303,7 @@ def apply_on_paths(
             to_list(df2.tolist(), logp)
             logging.info(logp)
         return df2
-        
+
     if drop_index:
         df2 = df2.rd.clean().reset_index(drop=drop_index).rd.clean()
     else:
@@ -1321,35 +1311,21 @@ def apply_on_paths(
         if colindex != "path":
             if colindex in df2:
                 logging.warning(f"{colindex} found in the dataframe; hence dropped.")
-                df2=df2.drop(
-                    [colindex],
-                    axis=1
-                )
+                df2 = df2.drop([colindex], axis=1)
             df2 = df2.rename(columns={"path": colindex}, errors="raise")
     if replaces_index is not None:
         logging.debug(f"setting {colindex} column from the paths ..")
         # print(replaces_index)
         # print(df2[colindex].head())
         if isinstance(replaces_index, str):
-            if replaces_index in ['stem',"basenamenoext"]:
+            if replaces_index in ["stem", "basenamenoext"]:
                 replaces_index = basenamenoext
         ## update: faster renaming
-        to_value={
-            x: replace_many(
-                    x,
-                    replaces=replaces_index,
-                    replacewith="",
-                    ignore=False
-                    )  for x in df2[colindex].unique()
+        to_value = {
+            x: replace_many(x, replaces=replaces_index, replacewith="", ignore=False)
+            for x in df2[colindex].unique()
         }
-        df2 = (
-            df2
-            .assign(
-                **{
-                    colindex:lambda df: df[colindex].map(to_value)
-                   }
-                )
-            )
+        df2 = df2.assign(**{colindex: lambda df: df[colindex].map(to_value)})
     return df2
 
 
@@ -1359,12 +1335,10 @@ def read_tables(
     to_dict: bool = False,
     params: dict = {},
     tables: int = None,
-
     post=True,
     clean=True,
-    
     verbose=True,
-    **kws_apply_on_paths: dict, # cpus
+    **kws_apply_on_paths: dict,  # cpus
 ):
     """Read multiple tables.
 
@@ -1385,21 +1359,22 @@ def read_tables(
 
     TODOs:
         Parameter to report the creation dates of the newest and the oldest files.
-    """        
+    """
     if filterby_time is not None:
         if isinstance(ps, str) and ("*" in p):
             ps = read_ps(ps, verbose=False)
             if exists(ps.replace("/*", "")):
-                logging.warning(f"exists: {p.replace('/*','')}")
+                logging.warning(f"exists: {p.replace('/*', '')}")
         elif isinstance(p, list):
             ps = ps
-            
+
         from roux.lib.sys import ps2time
+
         df_ = ps2time(ps)
         ps = df_.loc[df_["time"].str.contains(filterby_time), "p"].unique().tolist()
         kws_apply_on_paths["drop_index"] = False  # see which files are read
 
-    if not to_dict and not isinstance(ps,dict):
+    if not to_dict and not isinstance(ps, dict):
         df0 = apply_on_paths(
             ps,
             func=lambda df: df,
@@ -1421,16 +1396,20 @@ def read_tables(
                 # **kws_clean,
             )
     else:
-        if not isinstance(ps,dict):
-            ps=read_ps(ps,verbose=False)
-            ps=dict(zip(ps,ps))
-        return {k: read_table(p, params=params,verbose=False) for k,p in ps.items()}
+        if not isinstance(ps, dict):
+            ps = read_ps(ps, verbose=False)
+            ps = dict(zip(ps, ps))
+        return {k: read_table(p, params=params, verbose=False) for k, p in ps.items()}
+
 
 ## save table
 def to_table(
-    df: pd.DataFrame, p: str, colgroupby: str = None, test: bool = False,
+    df: pd.DataFrame,
+    p: str,
+    colgroupby: str = None,
+    test: bool = False,
     # cpus = 1, #TODO
-    **kws
+    **kws,
 ):
     """Save table.
 
@@ -1538,7 +1517,9 @@ def to_manytables(
     df2 = (
         getattr(
             _groupby,
-            "progress_apply" if hasattr(_groupby, "progress_apply") else "apply", #TODO rd.apply(cpus=cpus)
+            "progress_apply"
+            if hasattr(_groupby, "progress_apply")
+            else "apply",  # TODO rd.apply(cpus=cpus)
         )(
             lambda x: to_table(
                 x,
@@ -1586,34 +1567,38 @@ def to_table_pqt(
     df.to_parquet(p, engine=engine, compression=compression, **kws_pqt)
     return p
 
+
 def to_tables(
     dfs,
     outp,
-    ):
-    mdata_raw={}
-    ps={}
-    for k,df in dfs.items():
-        if isinstance(df,dict):
+):
+    mdata_raw = {}
+    ps = {}
+    for k, df in dfs.items():
+        if isinstance(df, dict):
             ## recurse
-            outp_=f"{Path(outp).with_suffix('').as_posix()}/{k}.yaml"
-            ps[k]=to_tables(
+            outp_ = f"{Path(outp).with_suffix('').as_posix()}/{k}.yaml"
+            ps[k] = to_tables(
                 df,
                 outp_,
             )
-            mdata_raw[k]=read_dict(outp_)
-        else:      
-            mdata_raw[k]=dict(shape=df.shape,cols=df.columns.tolist())
-            ps[k]=to_table(
-                df,
-                f"{Path(outp).with_suffix('').as_posix()}/{k}.pqt"
-            )
-        
-    logging.info({k:d if 'shape' in d else {k_:d_['shape'] for k_,d_ in d.items()} for k,d in mdata_raw.items()})
+            mdata_raw[k] = read_dict(outp_)
+        else:
+            mdata_raw[k] = dict(shape=df.shape, cols=df.columns.tolist())
+            ps[k] = to_table(df, f"{Path(outp).with_suffix('').as_posix()}/{k}.pqt")
+
+    logging.info(
+        {
+            k: d if "shape" in d else {k_: d_["shape"] for k_, d_ in d.items()}
+            for k, d in mdata_raw.items()
+        }
+    )
     to_dict(
         mdata_raw,
         outp,
     )
     return ps
+
 
 # import pandas as pd
 # from roux.lib.io import to_table
@@ -1624,54 +1609,50 @@ def to_tables_flt(
     ids: list,
     force=False,
     test1=False,
-    check=False, # not save
-    ):
+    check=False,  # not save
+):
     """
     Links the file input file paths. Thereby avoids copying of files.
     """
     from roux.lib.set import flatten
-    if  isinstance(dir_path,dict): 
-        dir_paths=dir_path
+
+    if isinstance(dir_path, dict):
+        dir_paths = dir_path
         ## recursive
-        to_var={}
-        for var,dir_path in dir_paths.items():
-            to_var[var]=to_tables_flt(
+        to_var = {}
+        for var, dir_path in dir_paths.items():
+            to_var[var] = to_tables_flt(
                 dir_path=dir_path,
                 outp=f"{outp}/{var}.tsv",
                 ids=ids,
             )
-        return to_var    
+        return to_var
     if not Path(outp).exists() or force:
-        logging.info("writing: "+outp)
+        logging.info("writing: " + outp)
         # ps=[read_ps(f"{dir_path}/{k}.*",verbose=False) for k in tqdm(ids)]
         # if '*' in dir_path and exists()
-        ps=flatten(
-            [glob(f"{dir_path}/{k}.pqt") for k in ids]
-            )
+        ps = flatten([glob(f"{dir_path}/{k}.pqt") for k in ids])
         # ps=[f"{dir_path}/{k}.pqt" for k in ids]
         # logging.info(f"len(ps)={len(ps)}")
         # ps=[p for p in ps if Path(p).exists()]
-        if len(ps)==0:
+        if len(ps) == 0:
             logging.warning(f"not found  = {dir_path} ..")
             return
         logging.info(f"exist  = {len(ps)}")
-        assert len(ps)<=len(ids),(len(ps), len(ids))
-        if len(ps)<len(ids):
+        assert len(ps) <= len(ids), (len(ps), len(ids))
+        if len(ps) < len(ids):
             logging.warning(f"{len(ps), len(ids)}")
-        df_=pd.DataFrame(
-            {
-                'path':ps
-            }
-            ).drop_duplicates().log()
+        df_ = pd.DataFrame({"path": ps}).drop_duplicates().log()
         if not check:
             to_table(
                 df_,
                 outp,
             )
         if test1:
-            print(read_table(df_['path'].tolist()[0]).head(1))
+            print(read_table(df_["path"].tolist()[0]).head(1))
     return outp
-    
+
+
 def tsv2pqt(
     p: str,
 ) -> str:
@@ -1697,10 +1678,10 @@ def pqt2tsv(
     Returns:
         p (str): path of the output.
     """
-    ps=read_ps(p)
-    if len(ps)>1:
+    ps = read_ps(p)
+    if len(ps) > 1:
         ## recursive
-        logging.info("converting files recursively")    
+        logging.info("converting files recursively")
         for p_ in read_ps(p):
             pqt2tsv(
                 p_,
@@ -1708,7 +1689,7 @@ def pqt2tsv(
     to_table(
         read_table(p),
         Path(p).with_suffix(".tsv").as_posix(),
-        )
+    )
 
 
 ## tables: excel
@@ -1828,15 +1809,15 @@ def to_excel(
     # makedirs(outp)
     if comments is not None:
         ## order the columns
-        cols=[]
+        cols = []
         for k1 in sheetname2df:
             sheetname2df[k1] = sheetname2df[k1].loc[
                 :,
                 [k for k in comments if k in sheetname2df[k1]]
                 + [k for k in sheetname2df[k1] if k not in comments],
             ]
-            cols+=sheetname2df[k1].columns.tolist()
-        cols=list(set(cols))
+            cols += sheetname2df[k1].columns.tolist()
+        cols = list(set(cols))
         if not any([k.lower().startswith("descr") for k in sheetname2df]):
             ## insert a table with the description
             items = list(sheetname2df.items())
@@ -1846,7 +1827,11 @@ def to_excel(
                 0,
                 (
                     "description",
-                    dict2df({k:v for k,v in comments.items() if k in cols}, colkey="column name", colvalue="description"),
+                    dict2df(
+                        {k: v for k, v in comments.items() if k in cols},
+                        colkey="column name",
+                        colvalue="description",
+                    ),
                 ),
             )
             sheetname2df = dict(items)
@@ -1920,27 +1905,29 @@ def check_chunks(outd, col, plot=True):
         sns.swarmplot(df3)
     return df3
 
+
 def is_table_empty(
     p,
-    ):
+):
     """
     Check for empty table without opening the file.
-    
+
     Tests:
-    
+
         p=to_table(
         pd.DataFrame(
             ),
             # 'test/test.tsv'
             'test/test.pqt'
         )
-        
+
         Path(p).stat().st_size
     """
     if (
-        Path(p).suffix in ['.tsv'] and Path(p).stat().st_size<2
-        or 
-        Path(p).suffix in ['.pqt','.parquet'] and Path(p).stat().st_size<977
+        Path(p).suffix in [".tsv"]
+        and Path(p).stat().st_size < 2
+        or Path(p).suffix in [".pqt", ".parquet"]
+        and Path(p).stat().st_size < 977
     ):
         return True
     else:

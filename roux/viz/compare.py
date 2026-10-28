@@ -22,7 +22,7 @@ def plot_comparisons(
     Notes:
         `sample type`: different sample of the same data.
 
-    TODO: 
+    TODO:
         Sequencially iterative tests.
     """
     ## get the sample type

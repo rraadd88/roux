@@ -32,6 +32,7 @@ def to_nb_cells(
         nbformat.write(notebook, new_notebook_file)
     return outp
 
+
 def get_lines(p: str, keep_comments: bool = True) -> list:
     """Get lines of code from notebook.
 
@@ -325,6 +326,7 @@ def to_clear_outputs(
         # validate_diff=validate_diff,
     )
 
+
 def to_filtered_outputs(
     input_path,
     output_path,
@@ -342,10 +344,15 @@ def to_filtered_outputs(
                 elif "data" in o and strings:
                     if "text/plain" in o["data"]:
                         if "output_type" in o:
-                            if o["output_type"] == "execute_result" and (
-                                "text/html" in o["data"] or "image/png" in o["data"]
-                            ) or o["output_type"] == "display_data" and (
-                                "text/html" in o["data"] or "image/png" in o["data"]
+                            if (
+                                o["output_type"] == "execute_result"
+                                and (
+                                    "text/html" in o["data"] or "image/png" in o["data"]
+                                )
+                                or o["output_type"] == "display_data"
+                                and (
+                                    "text/html" in o["data"] or "image/png" in o["data"]
+                                )
                             ):
                                 # table/image/plot
                                 continue
@@ -388,6 +395,7 @@ def to_filtered_outputs(
 #         logging.info('\n'.join(urls_output))
 #     return urls_output
 
+
 ## meta
 def to_clean_nb(
     p,
@@ -395,14 +403,13 @@ def to_clean_nb(
     clear_outputs=False,
     drop_code_lines_containing=[],
     drop_headers_containing=[],
-
     ## TODO: update
-        temp_outp: str = None,
-        ## ruff
-        fix_stars=False,
-        lint=False,
-        format=False,
-        **kws_fix_code,    
+    temp_outp: str = None,
+    ## ruff
+    fix_stars=False,
+    lint=False,
+    format=False,
+    **kws_fix_code,
 ) -> str:
     """
     Wraper around the notebook post-processing functions.
@@ -457,6 +464,7 @@ def to_clean_nb(
         # to_filter_nbby_patterns,
         to_replaced_nb,
     )
+
     Path(outp).parent.mkdir(parents=True, exist_ok=True)
 
     # Remove the code blocks that have all commented code and empty lines
@@ -497,13 +505,13 @@ def to_clean_nb(
     assert len(_l) == 0, (p, _l)
 
     # if fix_stars:
-    #     try:    
+    #     try:
     #         __import__("removestar")
     #     except:
     #         raise ModuleNotFoundError(
     #             "Optional interactive-use dependencies missing, install by running: pip install removestar"
     #         )
-        
+
     #     res = replacestar(
     #         input_path=outp,
     #         output_path=outp,
@@ -529,34 +537,36 @@ def to_clean_nb(
 from roux.lib.sys import run_com
 
 
-def valid_post_task_deps(
-    ):
-    return run_com('which quarto',returncodes=[0,1])!=''
+def valid_post_task_deps():
+    return run_com("which quarto", returncodes=[0, 1]) != ""
+
+
 def to_html(
     p,
     # outp=None,
-    env='docs',
+    env="docs",
     kws="",
     verbose=False,
-    ):
+):
     """
     Args:
-        verbose: True: include stderr        
+        verbose: True: include stderr
     """
     if env is not None:
-        pre=f"micromamba run -n {env} "
+        pre = f"micromamba run -n {env} "
     else:
-        pre=""
+        pre = ""
     # if outp is None:
-    outp=Path(p).with_suffix(".html").as_posix()
+    outp = Path(p).with_suffix(".html").as_posix()
 
-    if isinstance(kws,list):
-        kws=" -M ".join(kws)
+    if isinstance(kws, list):
+        kws = " -M ".join(kws)
     if verbose:
-        kws+=" -M warning:false -M error:false" 
+        kws += " -M warning:false -M error:false"
     ## convert
     run_com(
-        f"{pre}quarto render {p} --to html --toc -M code-fold:true -M code-summary:'_' -M code-tools:true -M self-contained:true -M mermaid-theme=default "+kws,# --output-dir {Path(outp).parent.as_posix()} --output {Path(outp).name}",
+        f"{pre}quarto render {p} --to html --toc -M code-fold:true -M code-summary:'_' -M code-tools:true -M self-contained:true -M mermaid-theme=default "
+        + kws,  # --output-dir {Path(outp).parent.as_posix()} --output {Path(outp).name}",
         verbose=verbose,
     )
     ## clean
@@ -567,32 +577,34 @@ def to_html(
     # )
     return outp
 
+
 def to_nb_kernel(
-    p : str,
-    kernel : str = None,
-    outp : str = None,
-    ):
+    p: str,
+    kernel: str = None,
+    outp: str = None,
+):
     """
-    Because no-kernel means previous kernel. 
+    Because no-kernel means previous kernel.
     """
     from glob import glob
-    if len(glob(p))>1:
+
+    if len(glob(p)) > 1:
         # recursive
-        d={}
+        d = {}
         for p_ in glob(p):
-            d[p_]=to_nb_kernel(
+            d[p_] = to_nb_kernel(
                 p_,
-                kernel = kernel,# : str = None,
-                outp = outp,# : str = None,
+                kernel=kernel,  # : str = None,
+                outp=outp,  # : str = None,
             )
-            print(p_,d[p_])
-        return # d
-        
+            print(p_, d[p_])
+        return  # d
+
     import nbformat
-    
+
     # Load the notebook
     nb = nbformat.read(p, as_version=nbformat.NO_CONVERT)
-    
+
     # Update the kernelspec (or remove it)
     if "kernelspec" in nb.metadata:
         if kernel is None:

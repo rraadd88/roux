@@ -65,7 +65,7 @@ def get_variance_inflation(
     # print(f'{replace_many(coly,to_formula())} ~' + "+".join(cols_x))
     # design matrix
     y, X = dmatrices(
-        f"{replace_many(coly,to_formula(),ignore=True)} ~"
+        f"{replace_many(coly, to_formula(), ignore=True)} ~"
         + "+".join([replace_many(s, to_formula(), ignore=True) for s in cols_x]),
         df1,
         return_type="dataframe",
@@ -77,23 +77,26 @@ def get_variance_inflation(
         .reset_index()
         .assign(
             variable=lambda df: df["variable"].apply(
-                    lambda x: replace_many(x, to_formula(reverse=True), ignore=True)
+                lambda x: (
+                    replace_many(x, to_formula(reverse=True), ignore=True)
                     if x != "Intercept"
                     else "Intercept"
-                ),
+                )
+            ),
         )
     )
+
 
 def get_complexity(
     df: pd.DataFrame,
     method=[
         # 'entropy', ## not comparable across different ns
-        'norm-entropy', 
-        'gini',
+        "norm-entropy",
+        "gini",
         # 'perplexity', ## not comparable across different ns
     ],
-    pre=True, # to sum=1
-) -> pd.DataFrame: 
+    pre=True,  # to sum=1
+) -> pd.DataFrame:
     """
     Calculates complexity scores for a DataFrame of probability vectors.
 
@@ -108,48 +111,44 @@ def get_complexity(
     Notes:
         Specificity (Tau) ≈ 1 - Uncertainty (Entropy/Gini)
     """
-    if isinstance(method,str): 
-        method=[method]
-        
-    if len(df.shape)==1 or df.shape[1] == 0 or df.shape[0] == 0:
-        return 
-        
+    if isinstance(method, str):
+        method = [method]
+
+    if len(df.shape) == 1 or df.shape[1] == 0 or df.shape[0] == 0:
+        return
+
     assert df.min().min() >= 0, df.min().min()
-    
+
     if pre:
-        df=(
-            df
-            .dropna(how='all')
-            .pipe(
-                lambda df: df.loc[df.sum(axis=1)!=0,:]
-            )
+        df = (
+            df.dropna(how="all")
+            .pipe(lambda df: df.loc[df.sum(axis=1) != 0, :])
             .fillna(0)
-            .apply(lambda x: x/x.sum(),axis=1)
+            .apply(lambda x: x / x.sum(), axis=1)
         )
-        
+
     assert all(df.sum(axis=1).round(1) == 1.0), df.sum(axis=1).value_counts()
-    
+
     # 1. Extract the underlying NumPy array for calculation
     P = df.values
     m, n = P.shape
 
-    scores={}
-    if 'entropy' in method or 'norm-entropy' in method or 'perplexity' in method:
-        scores['entropy'] = sc.entropy(P, axis=1, base=2)
+    scores = {}
+    if "entropy" in method or "norm-entropy" in method or "perplexity" in method:
+        scores["entropy"] = sc.entropy(P, axis=1, base=2)
 
-    if 'norm-entropy' in method:
+    if "norm-entropy" in method:
         # The calculation logic is the same
         # 2. Normalize the entropy to a [0, 1] scale
         # Handle the edge case where n=1 to avoid division by zero (log2(1)=0)
         max_entropy = np.log2(n) if n > 1 else 1
-        scores['norm-entropy'] = scores['entropy'] / max_entropy
-    
-    if 'perplexity' in method:        
-        scores['perplexity'] = np.power(2, scores['entropy'])
+        scores["norm-entropy"] = scores["entropy"] / max_entropy
 
-    
-    if 'gini' in method:        
-        scores['gini'] = 1 - np.sum(np.power(P, 2), axis=1)
-    
+    if "perplexity" in method:
+        scores["perplexity"] = np.power(2, scores["entropy"])
+
+    if "gini" in method:
+        scores["gini"] = 1 - np.sum(np.power(P, 2), axis=1)
+
     # 2. Create an output DataFrame from the results
     return pd.DataFrame(scores)

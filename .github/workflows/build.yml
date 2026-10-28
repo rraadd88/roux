@@ -2,49 +2,59 @@ name: build
 
 on:
   push:
-    # triggers on all branches
-    branches: [ '**' ]
-    paths:
-    # triggers on any file change in subfolders
-      - "roux/**"           
-      - "tests/**"           
-      - ".github/**"           
+    branches: [ master ]
+    tags-ignore: [ '**' ]
   pull_request:
-    # triggers on all branches
-    branches: [ '**' ]
-    paths:
-      - "roux/**"           
+  workflow_dispatch:
+
+# cancel superseded runs of the same branch/PR
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
 
 jobs:
-  build-n-test-n-coverage:
-    name: Build and test
+  test:
+    name: Test (py${{ matrix.python-version }})
     runs-on: ubuntu-latest
+    timeout-minutes: 60
     strategy:
-      fail-fast: true
+      fail-fast: false
       matrix:
-        python-version:
-            # - "3.8"
-            # - "3.9"
-            - "3.10"
-            - "3.11"
-            - "3.12"
-    env:
-      OS: ubuntu-latest
-      PYTHON: "3.12.8"
-                
+        python-version: [ "3.10", "3.11", "3.12" ]
+
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-      - name: Set up Python ${{ matrix.python-version }}
+
+      - name: Set up uv and Python ${{ matrix.python-version }}
         uses: astral-sh/setup-uv@v6.3.1
         with:
           python-version: ${{ matrix.python-version }}
-          
+          enable-cache: true
+          cache-dependency-glob: |
+            pyproject.toml
+            uv.lock
+
       - name: Install dependencies
         run: uv sync --all-extras
 
       - name: Verify installed packages
         run: uv pip list
-        
+
       - name: Run the tests
         run: uv run tox
+
+  package:
+    name: Check package build
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6.3.1
+      - name: Build sdist and wheel
+        run: uv build
+      - name: Validate metadata
+        run: uvx twine check dist/*

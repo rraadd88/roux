@@ -76,19 +76,19 @@ def get_comparison(
     for k in ["x", "y"]:
         if (
             len(d1[f"cols_{k}"]["desc"]) != 0
-            and len(d1[f"cols_{get_alt(['x','y'],k)}"]["cont"]) != 0
+            and len(d1[f"cols_{get_alt(['x', 'y'], k)}"]["cont"]) != 0
         ):
-            d2[f"difference {k} vs {get_alt(['x','y'],k)}"] = get_diff(
+            d2[f"difference {k} vs {get_alt(['x', 'y'], k)}"] = get_diff(
                 df1,
                 cols_x=d1[f"cols_{k}"]["desc"],
-                cols_y=d1[f"cols_{get_alt(['x','y'],k)}"]["cont"],
+                cols_y=d1[f"cols_{get_alt(['x', 'y'], k)}"]["cont"],
                 cols_index=d1["cols_index"],
                 cols=["variable x", "variable y"],
                 coff_p=coff_p,
             )
         else:
             logging.warning(
-                f"not len(d1[f'cols_{k}']['desc'])!=0 and len(d1[f'cols_{get_alt(['x','y'],k)}']['cont'])!=0"
+                f"not len(d1[f'cols_{k}']['desc'])!=0 and len(d1[f'cols_{get_alt(['x', 'y'], k)}']['cont'])!=0"
             )
     ## 3. association
     if len(d1["cols_x"]["desc"]) != 0 and len(d1["cols_y"]["desc"]) != 0:
@@ -184,9 +184,9 @@ def compare_strings(
         .add_prefix("string")
         .assign(
             similarity=lambda df: df.apply(
-                    lambda x: SequenceMatcher(None, x["string1"], x["string2"]).ratio(),
-                    axis=1,
-                )
+                lambda x: SequenceMatcher(None, x["string1"], x["string2"]).ratio(),
+                axis=1,
+            )
         )
         .log.query(expr=f"`similarity` > {cutoff}")
         .sort_values("similarity", ascending=False)

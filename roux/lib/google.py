@@ -1,4 +1,5 @@
 """Processing files form google-cloud services."""
+
 import logging
 from pathlib import Path
 
@@ -46,20 +47,24 @@ def get_service(service_name="drive", access_limit=True, client_config=None):
     }
     if client_config is None:
         from getpass import getpass
+
         client_config = eval(getpass())
 
     # Define the required scopes
     SCOPES = [service_name2params[service_name]["scope"]]
-    
+
     # Authenticate with the Google API
     from google.oauth2 import service_account
+
     credentials = service_account.Credentials.from_service_account_info(
         client_config, scopes=SCOPES
     )
-    
+
     # Build the Drive API service
     from googleapiclient.discovery import build
-    return build('drive', 'v3', credentials=credentials)
+
+    return build("drive", "v3", credentials=credentials)
+
 
 get_service_drive = get_service
 
@@ -147,34 +152,32 @@ def download_file(
 
     Ref: https://developers.google.com/drive/api/v3/ref-export-formats
     """
-    if file_id.startswith('https'):
+    if file_id.startswith("https"):
         file_id = get_file_id(file_id)
         logging.info(f"inferred file id: {file_id}")
     else:
         raise ValueError("define p or file_id")
-            
+
     if Path(outp).exists() and not force:
         return outp
-            
+
     import io
 
     from googleapiclient.http import MediaIoBaseDownload
 
     if service is None:
         logging.info("getting service ..")
-        service = get_service_drive(
-            **kws_get_service
-        )
-        
+        service = get_service_drive(**kws_get_service)
+
     logging.info("getting file object ..")
     file = service.files().get(fileId=file_id).execute()
     logging.info(f"name: {file['name']}, mimeType: {file['mimeType']}")
     if dbug:
         print(file)
-        
-    Path(outp).parent.mkdir(parents=True,exist_ok=True)
-    
-    if convert==False:
+
+    Path(outp).parent.mkdir(parents=True, exist_ok=True)
+
+    if convert == False:
         logging.info("no conversion ..")
         request = service.files().get_media(fileId=file_id)
     else:
@@ -183,17 +186,17 @@ def download_file(
             request = service.files().export_media(
                 fileId=file_id,
                 # mimeType=file["mimeType"],
-                mimeType=f'application/{convert}',
+                mimeType=f"application/{convert}",
             )
-    fh = io.FileIO(outp, 'wb')
+    fh = io.FileIO(outp, "wb")
     downloader = MediaIoBaseDownload(fh, request)
 
     # Download the file
     done = False
     while not done:
         status, done = downloader.next_chunk()
-        print(f"Download progress: {int(status.progress() * 100)}%")  
-        
+        print(f"Download progress: {int(status.progress() * 100)}%")
+
     return outp
 
 
@@ -230,7 +233,7 @@ def upload_file(service, filep, folder_id, test=False):
             print(f"replacing {basename(filep)} in the folder")
         file = service.files().get(fileId=file_name2id[basename(filep)]).execute()
         del file["id"]
-        response = ( #noqa
+        response = (  # noqa
             service.files()
             .update(
                 fileId=file_id,

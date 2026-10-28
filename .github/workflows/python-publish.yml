@@ -11,7 +11,7 @@ name: release
 on:
   push:
     tags:
-      - "*"
+      - "v*"
 
 permissions:
   contents: read
@@ -19,9 +19,18 @@ permissions:
 jobs:
   release-build:
     runs-on: ubuntu-latest
+    timeout-minutes: 15
 
     steps:
       - uses: actions/checkout@v4
+
+      - name: Check tag matches package version
+        run: |
+          version=$(grep -m1 '^version' pyproject.toml | cut -d'"' -f2)
+          if [ "v$version" != "$GITHUB_REF_NAME" ]; then
+            echo "Tag $GITHUB_REF_NAME does not match pyproject version v$version"
+            exit 1
+          fi
 
       - uses: actions/setup-python@v5
         with:
@@ -29,9 +38,9 @@ jobs:
 
       - name: Build release distributions
         run: |
-          # NOTE: put your own distribution build steps here.
-          python -m pip install build
+          python -m pip install build twine
           python -m build
+          twine check dist/*
 
       - name: Upload distributions
         uses: actions/upload-artifact@v4
@@ -41,6 +50,7 @@ jobs:
 
   pypi-publish:
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     needs:
       - release-build
     permissions:
@@ -51,12 +61,7 @@ jobs:
     # For more information, see: https://docs.github.com/en/actions/deployment/targeting-different-environments/using-environments-for-deployment#deployment-protection-rules
     environment:
       name: pypi
-      # OPTIONAL: uncomment and update to include your PyPI project URL in the deployment status:
-      # url: https://pypi.org/p/YOURPROJECT
-      #
-      # ALTERNATIVE: if your GitHub Release name is the PyPI project version string
-      # ALTERNATIVE: exactly, uncomment the following line instead:
-      # url: https://pypi.org/project/YOURPROJECT/${{ github.event.release.name }}
+      url: https://pypi.org/p/roux
 
     steps:
       - name: Retrieve release distributions

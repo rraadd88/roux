@@ -57,6 +57,7 @@ def remove_exts(
         p = Path(p).with_suffix("").as_posix()
     return p
 
+
 def get_ps_with_prefix(file_path):
     file = Path(file_path)
     directory = file.parent
@@ -66,31 +67,27 @@ def get_ps_with_prefix(file_path):
     matches = []
     for other_file in directory.iterdir():
         if (
-            other_file.is_file() and
-            other_file.suffix == extension and
-            other_file.stem != basename and
-            basename.startswith(other_file.stem)
+            other_file.is_file()
+            and other_file.suffix == extension
+            and other_file.stem != basename
+            and basename.startswith(other_file.stem)
         ):
             matches.append(other_file.as_posix())
 
     return sorted(matches)
 
+
 def read_ps(
     ps,
     use_arxv=False,
-    
     ## tree-related
     tree_depth=1,
-    
     ## filtering
-    with_prefix: bool= False,
-    
+    with_prefix: bool = False,
     ## post
-    func_post=None, # e.g. absolute     
-
+    func_post=None,  # e.g. absolute
     ## out
-    fmt=None, ## dict
-    
+    fmt=None,  ## dict
     errors=None,
     test: bool = False,
     verbose: bool = True,
@@ -105,67 +102,78 @@ def read_ps(
     Returns:
         ps (list): list of paths.
     """
-    
+
     if isinstance(ps, str):
         # g: Check for any glob magic characters (*, ?, [)
-        _glob_chars = ['*', '?', '['] # g: added
-        if any(c in ps for c in _glob_chars): # g: modified
+        _glob_chars = ["*", "?", "["]  # g: added
+        if any(c in ps for c in _glob_chars):  # g: modified
             if fmt is None:
                 ps = glob(ps)
-            elif fmt in ['ids','id']:
+            elif fmt in ["ids", "id"]:
                 # g: Identify the path component containing glob characters
                 # g: This determines the key for the output dictionary
-                _parts = list(Path(ps).parts) # g: added
-                id_parti = [i for i, part in enumerate(_parts) if any(c in part for c in _glob_chars)] # g: modified
-                
-                assert len(id_parti)==1, f"Glob pattern must be in exactly one path component. Found in: {id_parti}" # g: modified
-                id_parti=id_parti[0] # g: modified
-                
-                to_ids={Path(p).parts[id_parti]:p for p in glob(ps)}
-                
+                _parts = list(Path(ps).parts)  # g: added
+                id_parti = [
+                    i
+                    for i, part in enumerate(_parts)
+                    if any(c in part for c in _glob_chars)
+                ]  # g: modified
+
+                assert len(id_parti) == 1, (
+                    f"Glob pattern must be in exactly one path component. Found in: {id_parti}"
+                )  # g: modified
+                id_parti = id_parti[0]  # g: modified
+
+                to_ids = {Path(p).parts[id_parti]: p for p in glob(ps)}
+
                 # g: If pattern is in the filename (last part), remove extension from ID
-                if id_parti==len(_parts)-1:
-                    to_ids={Path(k).with_suffix('').as_posix():p for k,p in to_ids.items()}
-                
+                if id_parti == len(_parts) - 1:
+                    to_ids = {
+                        Path(k).with_suffix("").as_posix(): p for k, p in to_ids.items()
+                    }
+
                 # TODO:
                 # path/to/*_file.suf -> ids without _file
                 # else:
-                #      # key=substr between *s or []s 
+                #      # key=substr between *s or []s
                 #      prefix, suffix = ps.split('*')
                 #      to_ids={Path(p_).name.removeprefix(prefix).removesuffix(suffix):p_ for p_ in glob(ps)}
-                # if '/*' in ps and 
-                
+                # if '/*' in ps and
+
                 ## qc
-                assert len(set(to_ids.keys()))==len(set(to_ids.values())), f"{len(set(to_ids.keys()))}!={len(set(to_ids.values()))}" 
-                logging.info(f"fmt: {len(to_ids)} {fmt}")                        
-                return to_ids         
+                assert len(set(to_ids.keys())) == len(set(to_ids.values())), (
+                    f"{len(set(to_ids.keys()))}!={len(set(to_ids.values()))}"
+                )
+                logging.info(f"fmt: {len(to_ids)} {fmt}")
+                return to_ids
             else:
                 raise ValueError(fmt)
         else:
             if Path(ps).is_dir() and verbose:
-                tree(ps,tree_depth=tree_depth)
+                tree(ps, tree_depth=tree_depth)
             ps = [ps]
 
-    if isinstance(ps,list):
+    if isinstance(ps, list):
         if use_arxv:
             from roux.lib.io import read_arxv
+
             ps = [read_arxv(p) if not Path(p).exists() else p for p in ps]
-            
-        if len(ps)==0:
+
+        if len(ps) == 0:
             return ps
-        assert isinstance(ps[0],str), ps[0]
+        assert isinstance(ps[0], str), ps[0]
 
     ## filtering
     if with_prefix:
-        assert len(ps)==1, ps
-        ps=get_ps_with_prefix(ps[0])+ps
+        assert len(ps) == 1, ps
+        ps = get_ps_with_prefix(ps[0]) + ps
 
     ## post
     if func_post is not None:
-        ps=list(map(func_post,ps))
-        
+        ps = list(map(func_post, ps))
+
     ps = sorted(ps)
-        
+
     if test or verbose:
         import pandas as pd
 
@@ -178,19 +186,20 @@ def read_ps(
             from roux.lib.str import get_suffix
 
             d0 = ds1.iloc[[0, -1]].to_dict()
-            log_str=f"total {len(ds1)}:"
+            log_str = f"total {len(ds1)}:"
             for k_, k, v in zip(
                 ["oldest", "latest"], get_suffix(*d0.keys(), common=False), d0.values()
             ):
-                log_str+=f"\t {k_}: {k}\t{v}"
+                log_str += f"\t {k_}: {k}\t{v}"
             logging.info(log_str)
-                
+
         elif len(ds1) == 0:
-            if errors in ['raise', True]:
+            if errors in ["raise", True]:
                 logging.error("paths do not exist.")
                 return
             logging.warning("paths do not exist.")
     return ps
+
 
 def to_path(
     s,
@@ -206,12 +215,13 @@ def to_path(
 
     Returns:
         s (string): output string.
-    """    
+    """
     import re
 
     ## pre.
     from roux.lib.str import remove_brackets
-    s=remove_brackets(s)
+
+    s = remove_brackets(s)
 
     s = re.sub(r"(/)\1+", r"\1", s)  # remove multiple /'s
     if max([len(s_) for s_ in s.split("/")]) < coff_len_escape_replacement:
@@ -224,8 +234,9 @@ def to_path(
     else:
         if verbose:
             logging.info("replacements not done; possible long IDs in the path.")
-    
+
     return s.replace(f"/My{replacewith}Drive/", "/My Drive/")  # google drive
+
 
 #     return re.sub('\W+',replacewith, s.lower() )
 
@@ -233,18 +244,17 @@ def to_path(
 make_pathable_string = to_path
 # get_path=to_path
 
-def get_glob(
-    paths,
-    star_only=True
-    ):
+
+def get_glob(paths, star_only=True):
     from pathlib import PurePath
-    windows = any('\\' in p or ':' in p for p in paths)
-    sep = '\\' if windows else '/'
+
+    windows = any("\\" in p or ":" in p for p in paths)
+    sep = "\\" if windows else "/"
 
     parts_list = [list(PurePath(p).parts) for p in paths]
     max_len = max(len(p) for p in parts_list)
     for p in parts_list:
-        p += [''] * (max_len - len(p))
+        p += [""] * (max_len - len(p))
 
     pattern_parts = []
     for col in range(max_len):
@@ -258,9 +268,9 @@ def get_glob(
         # find common prefix/suffix
         shortest, longest = min(strs), max(strs)
         # prefix
-        pre = ''.join(a for a, b in zip(shortest, longest) if a == b)
+        pre = "".join(a for a, b in zip(shortest, longest) if a == b)
         # suffix
-        suf = ''.join(a for a, b in zip(shortest[::-1], longest[::-1]) if a == b)[::-1]
+        suf = "".join(a for a, b in zip(shortest[::-1], longest[::-1]) if a == b)[::-1]
         if star_only:
             # always use one '*' to cover differences
             pattern_parts.append(f"{pre}*{suf}" if pre or suf else "*")
@@ -281,19 +291,25 @@ def get_glob(
 
     return sep.join(pattern_parts)
 
+
 def to_label(p):
     """Path to label e.g. dataset name."""
     import re
-    cleaned = re.sub(r'[^a-zA-Z0-9/]', '', Path(p).with_suffix('').as_posix()).replace('/', '_')
-    return re.sub(r'^[^a-zA-Z0-9]+|[^a-zA-Z0-9]+$', '', cleaned)
+
+    cleaned = re.sub(r"[^a-zA-Z0-9/]", "", Path(p).with_suffix("").as_posix()).replace(
+        "/", "_"
+    )
+    return re.sub(r"^[^a-zA-Z0-9]+|[^a-zA-Z0-9]+$", "", cleaned)
+
 
 def with_stem_suffix(
     p,
     s,
-    sep='_',
-    ):
+    sep="_",
+):
     return f"{Path(p).parent}/{Path(p).stem}{sep}{to_path(s)}{Path(p).suffix}"
-    
+
+
 def makedirs(p: str, exist_ok=True, **kws):
     """Make directories recursively.
 
@@ -396,9 +412,9 @@ def to_output_paths(
     if isinstance(inputs, list):
         ## infer output_path
         assert "*" not in output_path_base, output_path_base
-        assert (
-            "{KEY}" in output_path_base
-        ), f"placeholder i.e. '{{KEY}}' not found in output_path_base: '{output_path_base}'"
+        assert "{KEY}" in output_path_base, (
+            f"placeholder i.e. '{{KEY}}' not found in output_path_base: '{output_path_base}'"
+        )
         l2 = {
             output_path_base.format(KEY=encode(d.copy(), short=encode_short)): d.copy()
             for d in inputs
@@ -406,9 +422,9 @@ def to_output_paths(
         # if verbose:
         #     logging.info(l2.keys())
         ## test collisions
-        assert len(l2) == len(
-            inputs
-        ), "possible duplicated inputs or collisions of the hashes"
+        assert len(l2) == len(inputs), (
+            "possible duplicated inputs or collisions of the hashes"
+        )
         ## check existing output paths
         output_paths.update(l2)
         output_paths_exist = glob(output_path_base.replace("{KEY}", "*"))
@@ -429,7 +445,7 @@ def to_output_paths(
             logging.info(f"output_paths_not_exist: {output_paths_not_exist}")
         if len(output_paths_not_exist) < len(output_paths):
             logging.info(
-                f"size of output paths changed: {len(output_paths)}->{len(output_paths_not_exist)}, because {len(output_paths)-len(output_paths_not_exist)}/{len(output_paths)} paths exist. Use force=True to overwrite."
+                f"size of output paths changed: {len(output_paths)}->{len(output_paths_not_exist)}, because {len(output_paths) - len(output_paths_not_exist)}/{len(output_paths)} paths exist. Use force=True to overwrite."
             )
         return {k: output_paths[k] for k in output_paths_not_exist}
 
@@ -511,20 +527,16 @@ def get_env(
 
 
 def run_com(
-    com: str, 
-    
-    env=None, 
-    
+    com: str,
+    env=None,
     template=None,
-
     wait=True,
-    
-    test: bool = False, 
-    verbose: bool = True, 
+    test: bool = False,
+    verbose: bool = True,
     simulate: bool = False,
     returncodes: list = [0],
     **kws,
-    ):
+):
     """Run a bash command.
 
     Args:
@@ -544,21 +556,25 @@ def run_com(
         2. error ignoring
     """
     if simulate:
-        verbose=True
+        verbose = True
     if verbose:
         logging.info(com)
     if simulate:
-        return 
-        
+        return
+
     if template is not None:
-        com=template.safe_substitute(com=com)
-        
+        com = template.safe_substitute(com=com)
+
     if env is not None:
         # logging.warning("env is not set.")
         response = subprocess.call(
             com,
             shell=True,
-            env=get_env(env) if isinstance(env, str) else env if env is not None else env,
+            env=get_env(env)
+            if isinstance(env, str)
+            else env
+            if env is not None
+            else env,
             stderr=subprocess.DEVNULL if not test else None,
             stdout=subprocess.DEVNULL if not test else None,
             **kws,
@@ -576,20 +592,22 @@ def run_com(
                 stderr=subprocess.PIPE,
                 text=True,
                 # check=True, #ensures an exception is raised on failure
-                )
+            )
             # except subprocess.CalledProcessError as response:
             #     response=response
             #     # g: handle the error here
             #     logging.error(f"response.returncode={response.returncode}")
-            #     logging.error(f"response.stderr={response.stderr}")         
+            #     logging.error(f"response.stderr={response.stderr}")
             #     pass
             assert response.returncode in returncodes, response
             return response.stdout
         else:
-            return subprocess.Popen(com.split(' '))            
+            return subprocess.Popen(com.split(" "))
+
 
 # alias to be deprecated in the future
-runbash=run_com
+runbash = run_com
+
 
 def runbash_tmp(
     s1: str,
@@ -760,14 +778,13 @@ def get_excecution_location(depth=1):
     return caller.filename, caller.lineno
 
 
-def get_source_path(
-    env_globals=None
-):
+def get_source_path(env_globals=None):
     """
     Robustly attempts to find the current file path (from where get_source_path() is exec.d).
     Prioritizes explicit globals, then VS Code/Jupyter hooks, then inspection.
     """
     import inspect
+
     if env_globals is None:
         # g: Default to the caller's globals if not provided
         # env_globals = inspect.stack()[1].frame.f_globals
@@ -775,8 +792,8 @@ def get_source_path(
 
     # g: 1. Check standard and environment-specific global keys
     # g: '__vsc_ipynb_file__' is injected by VS Code's Jupyter extension
-    # g: '__file__' is standard for scripts        
-    target_keys = ['__file__', '__vsc_ipynb_file__',  '__session__']
+    # g: '__file__' is standard for scripts
+    target_keys = ["__file__", "__vsc_ipynb_file__", "__session__"]
     for k in target_keys:
         if env_globals.get(k):
             return str(Path(env_globals[k]).resolve())
@@ -785,19 +802,20 @@ def get_source_path(
     # g: Note: In Jupyter, this might return the kernel JSON, so valid extension check is needed
     if sys.argv and sys.argv[0]:
         _candidate = sys.argv[0]
-        if _candidate.endswith('.py') or _candidate.endswith('.ipynb'):
-             return str(Path(_candidate).resolve())
+        if _candidate.endswith(".py") or _candidate.endswith(".ipynb"):
+            return str(Path(_candidate).resolve())
 
     # g: 3. Inspect the caller's frame (Fallback for imported modules)
     try:
         _caller_file = inspect.stack()[1].filename
         # g: Filter out irrelevant internal shells
-        if _caller_file and not _caller_file.startswith('<'): 
+        if _caller_file and not _caller_file.startswith("<"):
             return str(Path(_caller_file).resolve())
     except Exception:
         pass
-        
+
     raise NotImplementedError("Could not determine source path from current context.")
+
 
 ## time
 ## logging system
@@ -868,15 +886,18 @@ def ps2time(ps: list, **kws_p2time):
         .rename(columns={"index": "p", 0: "time"})
     )
 
+
 def tree(
     folder_path: str,
-    tree_depth: int=1,
+    tree_depth: int = 1,
     log=True,
 ):
     # Run the tree command and capture the output
     result = subprocess.run(
-        f"tree {folder_path}"+(f' -L {tree_depth}' if tree_depth is not None else ''),
-        shell=True, capture_output=True, text=True
+        f"tree {folder_path}" + (f" -L {tree_depth}" if tree_depth is not None else ""),
+        shell=True,
+        capture_output=True,
+        text=True,
     )
     ## clean
     out = result.stdout.replace("\n\n", "\n").strip("\n")
@@ -884,6 +905,7 @@ def tree(
         logging.info(out)
     else:
         return out
+
 
 def grep(
     p: str,
@@ -936,81 +958,80 @@ def grep(
             l2 += lines  # [f"{s}: {lines}"]
     return l2
 
+
 def resolve_paths(
-    key_path, #with "PLACE_HOLDER"
-    keys, #"PLACE_HOLDER"s'
+    key_path,  # with "PLACE_HOLDER"
+    keys,  # "PLACE_HOLDER"s'
     paths=None,
-    ):
-    if isinstance(keys,list):
-        #recursive
-        d={}
-        paths=glob(replace_many(key_path,{k:'*' for k in keys}))
-        assert len(paths)>0, key_path.replace(key,'*') 
-        
+):
+    if isinstance(keys, list):
+        # recursive
+        d = {}
+        paths = glob(replace_many(key_path, {k: "*" for k in keys}))
+        assert len(paths) > 0, key_path.replace(key, "*")
+
         for k in keys:
-            d[k]=resolve_paths(
-                key_path, #with "PLACE_HOLDER"
-                keys=k, #"PLACE_HOLDER"s
+            d[k] = resolve_paths(
+                key_path,  # with "PLACE_HOLDER"
+                keys=k,  # "PLACE_HOLDER"s
                 paths=paths,
-                )
+            )
         ## combine
         import pandas as pd
-        return (
-            pd.DataFrame(d)
-            .T.to_dict(orient='list')
-        )
-            
-    elif isinstance(keys,str):
-        key=keys
-    
+
+        return pd.DataFrame(d).T.to_dict(orient="list")
+
+    elif isinstance(keys, str):
+        key = keys
+
     if paths is None:
-        paths=glob(key_path.replace(key,'*'))
-        assert len(paths)>0, key_path.replace(key,'*') 
-    
+        paths = glob(key_path.replace(key, "*"))
+        assert len(paths) > 0, key_path.replace(key, "*")
+
     before_placeholder, after_placeholder = key_path.split(key)
     ## alt. by slashes
-    spliti=before_placeholder.count('/')
-    
+    spliti = before_placeholder.count("/")
+
     extracted_segments = {}
     for path in paths:
-    #     # Remove prefix and suffix to isolate the PLACE_HOLDER part
-    #     if before_placeholder in path and after_placeholder in path:
-    #         start = path.find(before_placeholder) + len(before_placeholder)
-    #         end = path.find(after_placeholder)
-    #         extracted_segments[path[start:end]]=path
-        value=path.split('/')[spliti]
+        #     # Remove prefix and suffix to isolate the PLACE_HOLDER part
+        #     if before_placeholder in path and after_placeholder in path:
+        #         start = path.find(before_placeholder) + len(before_placeholder)
+        #         end = path.find(after_placeholder)
+        #         extracted_segments[path[start:end]]=path
+        value = path.split("/")[spliti]
         # extracted_segments[value]=path
-        extracted_segments[path]=value
-        
+        extracted_segments[path] = value
+
     return extracted_segments
 
 
 def mv_ln_s(
     p,
     outp,
-    ):
+):
     """
     ~ Copy link.
     """
-    ps=read_ps(p)
-    if isinstance(p,list):
+    ps = read_ps(p)
+    if isinstance(p, list):
         ## recurse
         assert outp.is_dir(), outp
-        d={}
+        d = {}
         for p_ in ps:
-            d[p_]=mv_ln_s(
+            d[p_] = mv_ln_s(
                 p,
                 f"{Path(outp).parent}/{Path(p).name}",
-                )
+            )
         return d
-        
+
     p = Path(p).absolute()
     outp = Path(outp).absolute()
 
-    if outp.suffix=='':
-        outp=Path(f"{Path(outp)}/{Path(p).name}")
-    
-    assert p.suffix!='', p
+    if outp.suffix == "":
+        outp = Path(f"{Path(outp)}/{Path(p).name}")
+
+    assert p.suffix != "", p
     # assert outp.is_file(), outp
     if not Path(outp).exists():
         outp.parent.mkdir(parents=True, exist_ok=True)
@@ -1019,8 +1040,9 @@ def mv_ln_s(
         #     p.rename(outp)
         # except:
         import shutil
+
         shutil.move(p.as_posix(), outp.as_posix())
-    
+
     if not Path(p).exists():
         p.symlink_to(outp)
     return outp.as_posix()

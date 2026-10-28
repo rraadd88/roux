@@ -5,11 +5,12 @@ import re
 
 
 def capitalize_first(s):
-    """ Capitalize the first letter and append the rest of the string"""
+    """Capitalize the first letter and append the rest of the string"""
     if not s:
         return s
     return s[0].upper() + s[1:]
-    
+
+
 # convert
 def substitution(s, i, replaceby):
     """Substitute character in a string.
@@ -33,9 +34,9 @@ replacebyposition = substitution
 
 def replace_many(
     s: str,
-    replaces: dict=None,
+    replaces: dict = None,
     replacewith: str = "",
-    errors='raise',
+    errors="raise",
     ignore: bool = False,
     use_template=True,
     **kws_subs,
@@ -51,42 +52,38 @@ def replace_many(
     Returns:
         s (DataFrame): output dataframe.
     """
-    if ignore==True:
-        errors=None
+    if ignore == True:
+        errors = None
         logging.warning("use errors=None instead")
-        
+
     s_ = s
     if "${" in s and use_template:
         from string import Template
-        s=(
-            getattr(
-                Template(s),
-                ('' if errors=='raise' else 'safe_')+'substitute',
-            )
-            (
-                **kws_subs
-            )
-          )
-        if errors=='raise':
-            assert "${" not in s, (s)
+
+        s = getattr(
+            Template(s),
+            ("" if errors == "raise" else "safe_") + "substitute",
+        )(**kws_subs)
+        if errors == "raise":
+            assert "${" not in s, s
     else:
         assert replaces is not None
-        
+
         if isinstance(replaces, list):
             replaces = {k: replacewith for k in replaces}
         if isinstance(replaces, dict):
-            if len(replaces)==0:
+            if len(replaces) == 0:
                 return s
             for k in replaces:
                 s = s.replace(k, replaces[k])
         else:
             import inspect
-    
+
             if inspect.isfunction(replaces):
                 s = replaces(s_)
             else:
                 raise ValueError(replaces)
-    if errors=='raise':
+    if errors == "raise":
         assert s != s_, (s, s_)
     return s
 
@@ -94,18 +91,14 @@ def replace_many(
 # alias
 replacemany = replace_many
 
-def to_norm_str(
-    s,
-    replacewith='_'
-    ):
+
+def to_norm_str(s, replacewith="_"):
     import re
-    s = (
-            re.sub(r"[^\w]", replacewith, s)
-            .replace("+", replacewith)
-            .strip(replacewith)
-        )
+
+    s = re.sub(r"[^\w]", replacewith, s).replace("+", replacewith).strip(replacewith)
     s = re.sub(r"(_)\1+", r"\1", s)  # remove multiple _'s
-    return s 
+    return s
+
 
 def filter_list(
     l: list,
@@ -252,13 +245,10 @@ def findall(s, ss, outends=False, outstrs=False, suffixlen=0):
 def get_fills(
     s,
     marks=None,
-    
     leftoff=0,
     rightoff=0,
-    
-    leftmarker=None, # 2bd
-    rightmarker=None, # 2bd
-    
+    leftmarker=None,  # 2bd
+    rightmarker=None,  # 2bd
 ) -> list:
     """Get the substrings flanked with markers from a string.
 
@@ -273,27 +263,28 @@ def get_fills(
         l (list): list of substrings.
     """
     if leftmarker and rightmarker:
-        marks=[leftmarker,rightmarker]
-    
-    if isinstance(marks,str):
-        marks=[marks,marks]
-        
-    if leftoff==0 and rightoff==0:
+        marks = [leftmarker, rightmarker]
+
+    if isinstance(marks, str):
+        marks = [marks, marks]
+
+    if leftoff == 0 and rightoff == 0:
         # This regex pattern finds all substrings that start with ` and end with `.
         # The parentheses `()` create a capturing group for the content inside.
-        # The `+?` makes the match non-greedy, ensuring it stops at the first closing backtick.    
+        # The `+?` makes the match non-greedy, ensuring it stops at the first closing backtick.
         # re.findall returns a list of all non-overlapping matches
         return re.findall(
-            re.escape(marks[0]) + r'(.+?)' + re.escape(marks[1]),
+            re.escape(marks[0]) + r"(.+?)" + re.escape(marks[1]),
             s,
-            )
-    else:    
+        )
+    else:
         filers = []
         for ini, end in zip(
             findall(s, marks[0], outends=False), findall(s, marks[1], outends=False)
         ):
             filers.append(s[ini + 1 + leftoff : end + rightoff])
         return filers
+
 
 ###
 def mark_substrings(
@@ -314,7 +305,7 @@ def mark_substrings(
         s (str): string.
     """
     pos = s.find(ss)
-    return f"{s[:pos]}{leftmarker}{s[pos:pos+len(ss)]}{rightmarker}"
+    return f"{s[:pos]}{leftmarker}{s[pos : pos + len(ss)]}{rightmarker}"
 
 
 def get_bracket(
@@ -338,38 +329,40 @@ def get_bracket(
     #     import re
     #     re.search(r'{l}(.*?){r}', s).group(1)
     if leftmarker in s and righttmarker in s:
-        if leftmarker!=righttmarker:
+        if leftmarker != righttmarker:
             return s[s.find(leftmarker) + 1 : s.find(righttmarker)]
         else:
             import re
+
             pattern = re.escape(leftmarker) + r"(.*?)" + re.escape(righttmarker)
             match = re.search(pattern, s)
-            return match.group(1) if match else None        
+            return match.group(1) if match else None
     else:
         return ""
 
 
-def remove_brackets(text: str,verbose=False) -> str:
+def remove_brackets(text: str, verbose=False) -> str:
     """
     Removes all substrings enclosed in (), [], or {} from a string.
     """
     # g: count the total number of bracket characters in the string
     bracket_count = sum(text.count(b) for b in "()[]{}")
-    
+
     # g: skip removal if more than 2 bracket characters are observed
     if bracket_count > 2:
         if verbose:
-            logging.warning(f'bracket_count > 2 in: {text}')
+            logging.warning(f"bracket_count > 2 in: {text}")
         return text
-        
+
     # g: match parentheses, square brackets, and curly braces along with their internal contents
-    pattern = r'\([^)]*\)|\[[^\]]*\]|\{[^}]*\}'
-    
+    pattern = r"\([^)]*\)|\[[^\]]*\]|\{[^}]*\}"
+
     # g: substitute matches with an empty string
-    cleaned = re.sub(pattern, '', text)
-    
+    cleaned = re.sub(pattern, "", text)
+
     # g: collapse multiple spaces into a single space and strip edges
-    return re.sub(r'\s+', ' ', cleaned).strip()
+    return re.sub(r"\s+", " ", cleaned).strip()
+
 
 ## split
 def align(
@@ -680,55 +673,54 @@ def num2str(
             )
 
 
-def type_str(
-    s
-    ):
+def type_str(s):
     """
-    Usage: 
+    Usage:
         CLI
     Examples:
-        Numbers as strings e.g. '1.2' to 1.2 
+        Numbers as strings e.g. '1.2' to 1.2
     """
 
-    if not isinstance(s,str):
-        return s       
+    if not isinstance(s, str):
+        return s
     try:
         # Try converting to an integer
-        result=int(s)
+        result = int(s)
     except ValueError:
         try:
             # Try converting to a float
-            result=float(s)
+            result = float(s)
         except ValueError:
             # If it cannot be converted to a number, keep it as is
-            if s=='True':
-                result=True
-            elif s=='False':
-                result=False
+            if s == "True":
+                result = True
+            elif s == "False":
+                result = False
             else:
-                result=s
-                if s.startswith('['):
+                result = s
+                if s.startswith("["):
                     try:
                         # Try converting to a list
-                        result=eval(s)
-                    except ValueError:            
+                        result = eval(s)
+                    except ValueError:
                         pass
-                elif s.startswith('{'):
+                elif s.startswith("{"):
                     try:
                         # Try converting to a dict
-                        result=eval(s)
+                        result = eval(s)
                     except ValueError:
                         pass
                 elif s[0].isalnum():
                     try:
                         # last Try
-                        result=eval(s)
-                    except NameError:                    
+                        result = eval(s)
+                    except NameError:
                         # logging.warning
                         # logging.warning(f"{str(e)} for {s}")
                         logging.warning(f"not type converted: {s}")
     return result
-    
+
+
 ## ids
 
 
@@ -832,15 +824,16 @@ def to_formula(
         replaces = {v: k for k, v in replaces.items()}
     return replaces
 
+
 ## labels
 def get_bin_labels_min(bins: list[float]) -> list[str]:
     """
-    Example:
-    bins=[0.0, 1.0, 2.0] -> ['<=1.0', '>1.0']
-    bins=[0.5, 1.0, 2.0, 3.0] -> ['<=1.0', '>1.0', '>2.0']
-    bins=[0.5, 1.0, 2.0, 3.0, 5] -> ['<=1.0', '>1.0', '>2.0', '>3.0']
+    Example:
+    bins=[0.0, 1.0, 2.0] -> ['<=1.0', '>1.0']
+    bins=[0.5, 1.0, 2.0, 3.0] -> ['<=1.0', '>1.0', '>2.0']
+    bins=[0.5, 1.0, 2.0, 3.0, 5] -> ['<=1.0', '>1.0', '>2.0', '>3.0']
     """
-    
+
     # 1. Quality Check: Ensure input bins are unique and ascending
     if bins != sorted(list(set(bins))):
         raise ValueError("Input 'bins' list must be unique and in ascending order.")
@@ -857,101 +850,109 @@ def get_bin_labels_min(bins: list[float]) -> list[str]:
 
     # 2. Get the first cutoff (bins[1])
     cutoff = bins[1]
-    bin_labels = [rf'$\leqslant${_format_bin(cutoff)}']
-    
+    bin_labels = [rf"$\leqslant${_format_bin(cutoff)}"]
+
     # 3. Iterate for subsequent labels (from bins[1] to bins[-2])
     # g: This loop generates the correct number of remaining labels.
     for i in range(1, len(bins) - 1):
-        label = f'$>${_format_bin(bins[i])}'
+        label = f"$>${_format_bin(bins[i])}"
         bin_labels.append(label)
-        
+
     return bin_labels
+
 
 def get_bin_labels(
     bins: list,
-    fmt: str=None,
-    errors: str = 'raise', # g: Added 'errors' argument    
+    fmt: str = None,
+    errors: str = "raise",  # g: Added 'errors' argument
 ):
     # If the specialized max-logic is requested, use the custom function immediately.
-    if fmt == 'min':    
-        bin_labels=get_bin_labels_min(bins)
+    if fmt == "min":
+        bin_labels = get_bin_labels_min(bins)
     else:
-        
         # g: Check if all bin values are effectively integers
         all_bins_are_int = all(float(b).is_integer() for b in bins)
 
         if fmt is None:
-            fmt = 'int' if all_bins_are_int else 'float'
-        elif fmt == 'int' and not all_bins_are_int:
-            if errors == 'raise':
-                raise TypeError("fmt='int' specified, but 'bins' contains non-integer values.")
-            else: # g: errors='correct'
-                logging.warning("fmt='int' specified, but 'bins' contains non-integer values. Correcting fmt to 'float'.")
-                fmt = 'float' # g: Correct the format internally        
-                
-        import pandas as pd
-        # g: Create the DataFrame with intervals
-        df_ = (
-            pd.DataFrame(
-                dict(
-                    start=bins[:-1], # g: Use all but the last
-                    end=bins[1:],   # g: Use all but the first
+            fmt = "int" if all_bins_are_int else "float"
+        elif fmt == "int" and not all_bins_are_int:
+            if errors == "raise":
+                raise TypeError(
+                    "fmt='int' specified, but 'bins' contains non-integer values."
                 )
+            else:  # g: errors='correct'
+                logging.warning(
+                    "fmt='int' specified, but 'bins' contains non-integer values. Correcting fmt to 'float'."
+                )
+                fmt = "float"  # g: Correct the format internally
+
+        import pandas as pd
+
+        # g: Create the DataFrame with intervals
+        df_ = pd.DataFrame(
+            dict(
+                start=bins[:-1],  # g: Use all but the last
+                end=bins[1:],  # g: Use all but the first
             )
         )
 
         # g: Define formatting functions
         def _format_int(val):
             return f"{int(round(val))}"
-        
+
         def _format_float(val):
             if float(val).is_integer():
                 return f"{int(val)}"
             return f"{val:.3g}"
 
         # g: Apply formatting based on 'fmt'
-        if fmt == 'int':
-            df_['start_label'] = df_['start'].apply(_format_int)
-            df_['end_label'] = df_['end'].apply(_format_int)
+        if fmt == "int":
+            df_["start_label"] = df_["start"].apply(_format_int)
+            df_["end_label"] = df_["end"].apply(_format_int)
             # g: Check for single-integer steps
-            df_['is_step_1'] = (df_['end'].round().astype(int) - df_['start'].round().astype(int)) == 1
-        else: # g: 'float' or other
-            df_['start_label'] = df_['start'].apply(_format_float)
-            df_['end_label'] = df_['end'].apply(_format_float)
-            df_['is_step_1'] = False # g: Don't simplify float ranges by default
+            df_["is_step_1"] = (
+                df_["end"].round().astype(int) - df_["start"].round().astype(int)
+            ) == 1
+        else:  # g: 'float' or other
+            df_["start_label"] = df_["start"].apply(_format_float)
+            df_["end_label"] = df_["end"].apply(_format_float)
+            df_["is_step_1"] = False  # g: Don't simplify float ranges by default
 
         # g: Create labels
-        df_['label'] = df_.apply(
-            lambda x: x["end_label"]
-            if x["is_step_1"]
-            else f"({x['start_label']},{x['end_label']}]",
+        df_["label"] = df_.apply(
+            lambda x: (
+                x["end_label"]
+                if x["is_step_1"]
+                else f"({x['start_label']},{x['end_label']}]"
+            ),
             axis=1,
         )
 
         # g: Handle first and last bin labels as in the original logic
         if not df_.iloc[0]["is_step_1"]:
             df_.loc[df_.index[0], "label"] = r"$\leqslant$" + df_.iloc[0]["end_label"]
-        
+
         if len(df_) > 1 and not df_.iloc[-1]["is_step_1"]:
             df_.loc[df_.index[-1], "label"] = f"$>${df_.iloc[-1]['start_label']}"
-    
-        bin_labels=df_["label"].tolist()
-        
+
+        bin_labels = df_["label"].tolist()
+
     ## qc
-    assert len(set(bins))-1==len(set(bin_labels)), (bins,bin_labels)
-    
-    logging.info(dict(zip(bins[1:],bin_labels)))
+    assert len(set(bins)) - 1 == len(set(bin_labels)), (bins, bin_labels)
+
+    logging.info(dict(zip(bins[1:], bin_labels)))
     return bin_labels
+
 
 def to_expr(
     d1,
-    mode='keep',
-    logic='&', 
-    ):
-    if mode=='keep':
-        sign=" == "
+    mode="keep",
+    logic="&",
+):
+    if mode == "keep":
+        sign = " == "
     else:
-        sign=" != "            
+        sign = " != "
     assert all([isinstance(d1[k], (str, list)) for k in d1])
     return f" {logic} ".join(
         [

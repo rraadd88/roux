@@ -289,50 +289,50 @@ def get_enrichment(
     df3 = (
         df1.groupby(by=coltest)
         .apply(  # iterate over the groups of items to test
-            lambda df1_: (
-                df2.groupby(colset).apply(  # iterate over the groups of item sets
-                    lambda df2_: pd.Series(
-                        {
-                            "overlap size": get_overlap_size(
-                                items_test=df1_[colid].tolist(),
-                                items_set=df2_[colid].tolist(),
-                            ),
-                            "overlap %": get_overlap_size(
-                                items_test=df1_[colid].tolist(),
-                                items_set=df2_[colid].tolist(),
-                                perc=True,
-                            ),
-                            "overlap items": get_overlap(
-                                items_test=df1_[colid].tolist(),
-                                items_set=df2_[colid].tolist(),
-                            ),
-                            "contingency table": get_contigency_table(
-                                items_test=df1_[colid].tolist(),
-                                items_set=df2_[colid].tolist(),
-                                background=background_fisher_test,
-                            ),
-                            "Odds ratio": get_odds_ratio(
-                                items_test=df1_[colid].tolist(),
-                                items_set=df2_[colid].tolist(),
-                                background=background_fisher_test,
-                            )[0],
-                            "fold change": get_fold_change(
-                                items_test=df1_[colid].tolist(),
-                                items_set=df2_[colid].tolist(),
-                                background=background,
-                            ),
-                            "overlap/test %": get_overlap_size(
-                                items_test=df1_[colid].tolist(),
-                                items_set=df2_[colid].tolist(),
-                                by="test",
-                                perc=True,
-                            ),
-                            "set/background": get_item_set_size_by_background(
-                                items_set=df2_[colid].tolist(),
-                                background=background,
-                            ),
-                        },
-                    )
+            lambda df1_: df2.groupby(
+                colset
+            ).apply(  # iterate over the groups of item sets
+                lambda df2_: pd.Series(
+                    {
+                        "overlap size": get_overlap_size(
+                            items_test=df1_[colid].tolist(),
+                            items_set=df2_[colid].tolist(),
+                        ),
+                        "overlap %": get_overlap_size(
+                            items_test=df1_[colid].tolist(),
+                            items_set=df2_[colid].tolist(),
+                            perc=True,
+                        ),
+                        "overlap items": get_overlap(
+                            items_test=df1_[colid].tolist(),
+                            items_set=df2_[colid].tolist(),
+                        ),
+                        "contingency table": get_contigency_table(
+                            items_test=df1_[colid].tolist(),
+                            items_set=df2_[colid].tolist(),
+                            background=background_fisher_test,
+                        ),
+                        "Odds ratio": get_odds_ratio(
+                            items_test=df1_[colid].tolist(),
+                            items_set=df2_[colid].tolist(),
+                            background=background_fisher_test,
+                        )[0],
+                        "fold change": get_fold_change(
+                            items_test=df1_[colid].tolist(),
+                            items_set=df2_[colid].tolist(),
+                            background=background,
+                        ),
+                        "overlap/test %": get_overlap_size(
+                            items_test=df1_[colid].tolist(),
+                            items_set=df2_[colid].tolist(),
+                            by="test",
+                            perc=True,
+                        ),
+                        "set/background": get_item_set_size_by_background(
+                            items_set=df2_[colid].tolist(),
+                            background=background,
+                        ),
+                    },
                 )
             )
         )
@@ -341,19 +341,20 @@ def get_enrichment(
     if "hypergeom" in test_type:
         df_ = (
             (
-                df1.groupby(by=coltest)
-                .apply(  # iterate over the groups of items to test
-                    lambda df1_: (
-                        df2.groupby(colset).apply(  # iterate over the groups of item sets
-                            lambda df2_: pd.Series(
-                                {
-                                    "P (hypergeom. test)": get_hypergeom_pval(
-                                        items_test=df1_[colid].tolist(),
-                                        items_set=df2_[colid].tolist(),
-                                        background=background,
-                                    ),
-                                },
-                            )
+                df1.groupby(
+                    by=coltest
+                ).apply(  # iterate over the groups of items to test
+                    lambda df1_: df2.groupby(
+                        colset
+                    ).apply(  # iterate over the groups of item sets
+                        lambda df2_: pd.Series(
+                            {
+                                "P (hypergeom. test)": get_hypergeom_pval(
+                                    items_test=df1_[colid].tolist(),
+                                    items_set=df2_[colid].tolist(),
+                                    background=background,
+                                ),
+                            },
                         )
                     )
                 )
@@ -372,19 +373,20 @@ def get_enrichment(
     if "Fisher" in test_type:
         df_ = (
             (
-                df1.groupby(by=coltest)
-                .apply(  # iterate over the groups of items to test
-                    lambda df1_: (
-                        df2.groupby(colset).apply(  # iterate over the groups of item sets
-                            lambda df2_: pd.Series(
-                                {
-                                    "P (Fisher's exact)": get_odds_ratio(
-                                        items_test=df1_[colid].tolist(),
-                                        items_set=df2_[colid].tolist(),
-                                        background=background_fisher_test,
-                                    )[1],
-                                },
-                            )
+                df1.groupby(
+                    by=coltest
+                ).apply(  # iterate over the groups of items to test
+                    lambda df1_: df2.groupby(
+                        colset
+                    ).apply(  # iterate over the groups of item sets
+                        lambda df2_: pd.Series(
+                            {
+                                "P (Fisher's exact)": get_odds_ratio(
+                                    items_test=df1_[colid].tolist(),
+                                    items_set=df2_[colid].tolist(),
+                                    background=background_fisher_test,
+                                )[1],
+                            },
                         )
                     )
                 )
@@ -402,9 +404,7 @@ def get_enrichment(
         )
     if "logistic" in test_type:
         if df_covars is None:
-            raise ValueError(
-                "df_covars must be provided for logistic regression test."
-            )
+            raise ValueError("df_covars must be provided for logistic regression test.")
         try:
             import statsmodels.api as sm
         except ImportError:
@@ -420,7 +420,7 @@ def get_enrichment(
             # 1. Construct the model DataFrame from covariates
             model_df = df_covars.copy()
             if colid in model_df:
-                model_df=model_df.set_index(colid)
+                model_df = model_df.set_index(colid)
             if model_df.index.name != colid:
                 model_df.index.name = colid
 
@@ -495,4 +495,3 @@ def get_enrichment(
     if "tmp" in df4:
         df4 = df4.drop(["tmp"], axis=1)
     return df4.sort_values(df4.filter(regex="^Q.*").columns.tolist())
-
