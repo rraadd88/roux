@@ -1,4 +1,5 @@
 """For access to a few functions from the terminal."""
+
 import warnings
 
 warnings.simplefilter("ignore", SyntaxWarning)
@@ -36,7 +37,7 @@ from roux.workflow.pms import pre_params, to_params
 from roux.workflow.task import (
     check_tasks,
     post_tasks,
-    # run_task, 
+    # run_task,
     run_tasks,  ## preferred because it infers setup for the outputs
 )
 
@@ -114,6 +115,7 @@ Exec={exec_cmd}
 MimeType=all/allfiles;
 """
 
+
 def gui(
     mode: str = "install",
     command: str = "roux",
@@ -134,7 +136,7 @@ def gui(
     home = Path.home()
     bin_dir = home / ".local" / "bin"
     actions_dir = home / ".local" / "share" / "nautilus" / "actions"
-    
+
     launcher_path = bin_dir / "nautilus-cli-launcher.sh"
     action_filename = name.lower().replace(" ", "-") + ".desktop"
     action_path = actions_dir / action_filename
@@ -149,77 +151,80 @@ def gui(
         # 2. Create the .desktop action file
         actions_dir.mkdir(parents=True, exist_ok=True)
         exec_command = f'gnome-terminal -- "{launcher_path}" "%f" "{command}"'
-        
-        desktop_content = textwrap.dedent(DESKTOP_TEMPLATE).strip().format(
-            name=name,
-            command=command,
-            exec_cmd=exec_command
+
+        desktop_content = (
+            textwrap.dedent(DESKTOP_TEMPLATE)
+            .strip()
+            .format(name=name, command=command, exec_cmd=exec_command)
         )
         action_path.write_text(desktop_content)
         print(f"✓ Nautilus action created at: {action_path}")
 
         # 3. Print success message
-        print("\n" + "="*40)
+        print("\n" + "=" * 40)
         print("      SUCCESS: Action has been registered!      ")
-        print("="*40)
+        print("=" * 40)
         print("To apply the changes, you must restart Nautilus.")
         print("Run this command in your terminal:")
         print("  nautilus -q")
-        print("="*40)
-        
+        print("=" * 40)
+
     elif mode == "uninstall":
-        print("\n" + "="*40)
+        print("\n" + "=" * 40)
         print("      Manual Uninstallation Instructions      ")
-        print("="*40)
-        print("To complete the uninstallation, run the following commands in your terminal:")
+        print("=" * 40)
+        print(
+            "To complete the uninstallation, run the following commands in your terminal:"
+        )
         print("\n1. Remove the launcher script:")
         print(f"   rm {launcher_path}")
         print("\n2. Remove the Nautilus action file:")
         print(f"   rm {action_path}")
         print("\n3. Restart Nautilus to apply the changes:")
         print("   nautilus -q")
-        print("\n" + "="*40)
+        print("\n" + "=" * 40)
         print("Note: This command did not delete any files.")
 
     else:
         raise ValueError(f"Invalid mode '{mode}'. Choose 'install' or 'uninstall'.")
 
+
 def peek_table(
-    p : str,
-    n : int = 5,
-    use_dir_paths : bool = True,
-    not_use_dir_paths : bool = False,
-    use_paths : bool = True,
-    not_use_paths : bool = False,
-    
+    p: str,
+    n: int = 5,
+    use_dir_paths: bool = True,
+    not_use_dir_paths: bool = False,
+    use_paths: bool = True,
+    not_use_paths: bool = False,
     cols_desc=None,
     **kws,
-    ):
-    if not_use_dir_paths: 
-        use_dir_paths=False
-    if not_use_paths: 
-        use_paths=False
-    
+):
+    if not_use_dir_paths:
+        use_dir_paths = False
+    if not_use_paths:
+        use_paths = False
+
     from roux.lib.io import read_table
-    df_=read_table(
+
+    df_ = read_table(
         p,
         use_dir_paths=use_dir_paths,
         use_paths=use_paths,
         **kws,
     )
-    
+
     logging.info(df_.shape)
     from roux.lib.df import _get_preview_log_str
-    logging.info(
-        _get_preview_log_str(df_.head(1))
-    )
+
+    logging.info(_get_preview_log_str(df_.head(1)))
     if cols_desc:
         return df_[cols_desc].describe()
-    else:        
+    else:
         return df_.head(n)
 
+
 def query_table(
-    p : str,
+    p: str,
     expr: str,
     # n : int = 5,
     # use_dir_paths : bool = True,
@@ -227,98 +232,97 @@ def query_table(
     # use_paths : bool = True,
     # not_use_paths : bool = False,
     **kws,
-    ):
+):
     r"""
-    Examples: 
+    Examples:
         "\`col\` == value"
     """
-    # if not_use_dir_paths: 
+    # if not_use_dir_paths:
     #     use_dir_paths=False
-    # if not_use_paths: 
+    # if not_use_paths:
     #     use_paths=False
-    ps=read_ps(p)
+    ps = read_ps(p)
     # print(ps)
     # return
-    
-    if len(ps)>1:
+
+    if len(ps) > 1:
         ## recurse
         for p_ in ps:
             logging.info("\n")
             logging.info(p_)
             try:
-                _=query_table(
+                _ = query_table(
                     p_,
                     expr=expr,
                     **kws,
-                    )
+                )
                 print(_)
             except Exception as e:
                 logging.error(e)
-        return 
-        
+        return
+
     from roux.lib.io import read_table
-    return (
-        read_table(
-            p,
-            # use_dir_paths=use_dir_paths,
-            # use_paths=use_paths,
-            **kws,
-        )
-        .query(
-            expr=expr,    
-        )
+
+    return read_table(
+        p,
+        # use_dir_paths=use_dir_paths,
+        # use_paths=use_paths,
+        **kws,
+    ).query(
+        expr=expr,
     )
-    
+
+
 ## begin
 parser = argh.ArghParser()
 parser.add_commands(
     [
         ## io
-            read_ps,
-            mv_ln_s,
+        read_ps,
+        mv_ln_s,
         ## checks
-            peek_table,
-            query_table,
+        peek_table,
+        query_table,
         ### logs
-            to_diff,
+        to_diff,
         ## backup
-            read_arxv,
-            to_arxv,
-            # backup,
-            # to_version,
-            # to_zip,
-            pqt2tsv,
+        read_arxv,
+        to_arxv,
+        # backup,
+        # to_version,
+        # to_zip,
+        pqt2tsv,
         ## workflow io
-            ## cfgs
-            read_config,
-            read_metadata,
-            to_cfg_run_arc,
+        ## cfgs
+        read_config,
+        read_metadata,
+        to_cfg_run_arc,
         ## workflow execution
-          ## pms
-            test_params,
-            pre_params,
-            to_params,
-          ## tasks
-            run_tasks,
-            ## slurm
-            check_tasks,
-            post_tasks,
+        ## pms
+        test_params,
+        pre_params,
+        to_params,
+        ## tasks
+        run_tasks,
+        ## slurm
+        check_tasks,
+        post_tasks,
         ## notebook
-        ### pre-processing        
-            to_nb_kernel,
-            ### post-processing
-            replacestar,
-            to_clear_unused_cells,
-            to_clear_outputs,
-            to_clean_nb,  ## wrapper for above
-            ### convert
-            to_html,
-            ### rendering
-            to_src,
-            ### notebooks repository to a package
-            to_pkg,
-        ## ui 
-            gui,
+        ### pre-processing
+        to_nb_kernel,
+        ### post-processing
+        replacestar,
+        to_clear_unused_cells,
+        to_clear_outputs,
+        to_clean_nb,  ## wrapper for above
+        ### convert
+        to_html,
+        ### rendering
+        to_src,
+        ### notebooks repository to a package
+        to_pkg,
+        ## ui
+        gui,
     ]
 )
 

@@ -10,22 +10,20 @@ from roux.lib import to_rs
 @to_rs
 def hist(
     ds: pd.Series,
-    ax: plt.Axes=None,
+    ax: plt.Axes = None,
     kws_set_label_n={},
     **kws,
 ):
     if ax is None:
-        ax=plt.gca()
-    ax=ds.hist(
-        **kws,
-        ax=ax
-    )
-    if hasattr(ds,'name'):
+        ax = plt.gca()
+    ax = ds.hist(**kws, ax=ax)
+    if hasattr(ds, "name"):
         ax.set(
             xlabel=ds.name,
-            ylabel='Count',
+            ylabel="Count",
         )
     from roux.viz.ax_ import set_label
+
     set_label(
         **{
             **dict(
@@ -33,10 +31,10 @@ def hist(
                 x=1,
                 y=0,
                 s=f"n={len(ds)}",
-                ha='right',
-                va='bottom',
+                ha="right",
+                va="bottom",
             ),
-            **kws_set_label_n
+            **kws_set_label_n,
         }
     )
     return ax

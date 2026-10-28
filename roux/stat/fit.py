@@ -287,7 +287,9 @@ def fit_2d_distribution_kde(
         pc = ax.pcolormesh(xx, yy, zz, cmap="Reds")
         fig.colorbar(pc)
         ax.set(
-            xlim=[xmin, xmax], ylim=[ymin, ymax], title=f"bandwidth{bandwidth}_bins{xbins}"
+            xlim=[xmin, xmax],
+            ylim=[ymin, ymax],
+            title=f"bandwidth{bandwidth}_bins{xbins}",
         )
     return xx, yy, zz
 

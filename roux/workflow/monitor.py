@@ -39,9 +39,9 @@ def plot_workflow_log(dplot: pd.DataFrame) -> plt.Axes:
     for elementi, element in enumerate(elements):
         _ = dplot.apply(
             lambda x: ax.text(
-                x[f"{element} x{''  if element!='parameter' else ' input'}"],
-                x[f"{element} y{''  if element!='parameter' else ' input'}"],
-                x[f"{element} name{''  if element!='parameter' else ' input'}"],
+                x[f"{element} x{'' if element != 'parameter' else ' input'}"],
+                x[f"{element} y{'' if element != 'parameter' else ' input'}"],
+                x[f"{element} name{'' if element != 'parameter' else ' input'}"],
             ),
             axis=1,
         )

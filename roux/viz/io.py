@@ -46,7 +46,7 @@ def to_plotp(
     ax: plt.Axes = None,
     prefix: str = "plot/plot_",
     suffix: str = "",
-    fmts: list = ['pdf','png'],
+    fmts: list = ["pdf", "png"],
 ) -> str:
     """Infer output path for a plot.
 
@@ -77,19 +77,18 @@ def to_plotp(
     # print(prefix)
     # print('_' if not prefix.endswith('_') else '')
     # print(to_path('_'.join([s for s in labels if not (s.replace(' ','')=='')])))
-    fn=to_path('_'.join([s for s in labels if not (s.replace(' ','')=='')])).lower()
-    fn=replace_many(
+    fn = to_path(
+        "_".join([s for s in labels if not (s.replace(" ", "") == "")])
+    ).lower()
+    fn = replace_many(
         fn,
         {
-            '.':'',
-            '/':'',
+            ".": "",
+            "/": "",
         },
         errors=None,
     )
-    plotp = (
-        f"{prefix}{fn}{suffix}"
-        + (f".{fmts[0]}" if len(fmts) == 1 else "")
-    )
+    plotp = f"{prefix}{fn}{suffix}" + (f".{fmts[0]}" if len(fmts) == 1 else "")
     logging.info(f"Inferred path of the plot (plotp): '{plotp}'")
     return plotp
 
@@ -98,7 +97,7 @@ def savefig(
     plotp: str,
     tight_layout: bool = True,
     bbox_inches: list = None,  # overrides tight_layout
-    fmts: list = ['pdf',"png"],
+    fmts: list = ["pdf", "png"],
     savepdf: bool = False,
     normalise_path: bool = True,
     replaces_plotp: dict = None,
@@ -131,7 +130,7 @@ def savefig(
         str: output path.
     """
     ## for restoring
-    fmts_=fmts
+    fmts_ = fmts
 
     #         from roux.viz.ax_ import to_plotp
     plotp = to_plotp(
@@ -145,40 +144,36 @@ def savefig(
             plotp,
             replaces=replaces_plotp,
         )
-        
+
     # print(plotp)
     if exists(plotp):
         logging.warning(f"overwritting: {plotp}")
-        
+
     # print(plotp)
     assert Path(plotp).name.count(".") <= 1
-        # plotp = abspath(plotp)
-        # if plotp.count(".") > 1:
-        # logging.error(f"more than one '.' not allowed in the path {plotp}")
-        # return
-            
+    # plotp = abspath(plotp)
+    # if plotp.count(".") > 1:
+    # logging.error(f"more than one '.' not allowed in the path {plotp}")
+    # return
+
     # print(plotp)
     if normalise_path:
-        plotp = abspath(
-            to_path(
-                plotp
-            )
-        )
+        plotp = abspath(to_path(plotp))
     # print(plotp)
     plotp = (
-        f"{dirname(plotp)}/{basenamenoext(plotp).replace('.','_')}{splitext(plotp)[1]}"
+        f"{dirname(plotp)}/{basenamenoext(plotp).replace('.', '_')}{splitext(plotp)[1]}"
     )
     # print(plotp)
     makedirs(plotp, exist_ok=True)
 
     if len(fmts) == 0:
         if "." in Path(plotp).name:
-            fmts=[Path(plotp).suffix]
+            fmts = [Path(plotp).suffix]
         else:
-        # restore default
+            # restore default
             fmts = fmts_
     # clean
-    fmts=[fmt[1:] if fmt.startswith('.') else fmt for fmt in fmts]
+    fmts = [fmt.removeprefix(".") for fmt in fmts]
 
     ## warnings
     # if verbose:
@@ -193,10 +188,10 @@ def savefig(
         pass
     # logging.basicConfig(level=logging.INFO)
     # plt.set_loglevel("info")
-    
+
     for fmt in fmts:
         # plotp_ = f"{plotp}.{fmt}"
-        plotp_=Path(plotp).with_suffix(f".{fmt}")
+        plotp_ = Path(plotp).with_suffix(f".{fmt}")
         if exists(plotp) and not force:
             logging.info("fig exists")
             return
@@ -213,12 +208,14 @@ def savefig(
             else None,
             **kws_savefig,
         )
-            
+
     from roux.lib.sys import is_interactive_notebook
+
     if not is_interactive_notebook():
         plt.clf()
         plt.close()
     return plotp
+
 
 def savelegend(
     plotp: str, legend: object, expand: list = [-5, -5, 5, 5], **kws_savefig
@@ -276,7 +273,7 @@ def get_plot_inputs(
     df1: pd.DataFrame = None,
     kws_plot: dict = {},
     outd: str = None,
-    out_fmt=None, #tuple
+    out_fmt=None,  # tuple
 ) -> tuple:
     """Get plot inputs.
 
@@ -292,7 +289,7 @@ def get_plot_inputs(
     if Path(plotp).exists():
         plotp = abspath(plotp)
     elif Path(plotp).parent.exists():
-        plotp = abspath(read_ps(Path(plotp).parent.as_posix()+'/*.*')[0])        
+        plotp = abspath(read_ps(Path(plotp).parent.as_posix() + "/*.*")[0])
     else:
         if outd is not None:
             plotp = f"{outd}/{plotp}"
@@ -306,9 +303,9 @@ def get_plot_inputs(
         ## remove suffixes
         outd = remove_exts(plotp) + "/"
     if df1 is None:
-        data_path=read_ps(f"{outd}/data.*")
-        assert len(data_path)==1, data_path
-        data_path=data_path[0]
+        data_path = read_ps(f"{outd}/data.*")
+        assert len(data_path) == 1, data_path
+        data_path = data_path[0]
         df1 = read_table(data_path)
     kws_plot = update_kws_plot(kws_plot, kws_plotp=f"{outd}/config.yaml")
 
@@ -320,6 +317,7 @@ def get_plot_inputs(
             data=df1,
             kws_plot=kws_plot,
         )
+
 
 def log_code():
     """Log the code."""
@@ -461,9 +459,9 @@ def to_script(
             srcp,
             srcp,
             verbose=test,
-            method='filter',
+            method="filter",
             # method_kws=dict(indent=''),
-            errors='raise',
+            errors="raise",
         )
     return srcp
 
@@ -511,9 +509,9 @@ def to_plot(
             log_notebookp=f'log_notebook.log';open(log_notebookp, 'w').close();get_ipython().run_line_magic('logstart','{log_notebookp} over')
 
     """
-    if stats is not None and isinstance(plotp,plt.Axes):
-        if hasattr(plotp,'stats'):
-            stats=plotp.stats
+    if stats is not None and isinstance(plotp, plt.Axes):
+        if hasattr(plotp, "stats"):
+            stats = plotp.stats
 
     # save plot
     plotp = savefig(
@@ -540,25 +538,26 @@ def to_plot(
     outd = remove_exts(outd)
     if test:
         logging.info(outd)
-    outps=dict(
-        data=f'{outd}/data.pqt',
-        code=f'{outd}/plot.py',
-        config=f'{outd}/config.yaml',
-        stats=f'{outd}/stats.yaml',
-    )    
+    outps = dict(
+        data=f"{outd}/data.pqt",
+        code=f"{outd}/plot.py",
+        config=f"{outd}/config.yaml",
+        stats=f"{outd}/stats.yaml",
+    )
     # save data
-    to_table(df1, outps['data'])
+    to_table(df1, outps["data"])
     if stats is not None:
-        try: 
+        try:
             from roux.lib.dict import flatten_dict
-            stats=flatten_dict(stats)
-            to_dict(stats, outps['stats'])
+
+            stats = flatten_dict(stats)
+            to_dict(stats, outps["stats"])
         except Exception as e:
             logging.warning("stats could not be saved because ..")
             logging.error(str(e))
 
     srcp = to_script(
-        srcp=outps['code'],
+        srcp=outps["code"],
         plotp=plotp,
         logp=logp,
         sep=sep,
@@ -567,7 +566,7 @@ def to_plot(
     )
     if srcp is None:
         return plotp
-    to_dict(kws_plot, outps['config'])
+    to_dict(kws_plot, outps["config"])
     if test:
         print(outps)
     if validate:
@@ -595,16 +594,13 @@ def read_plot(p: str, safe: bool = False, test: bool = False, **kws_plot) -> plt
                 logging.info(p)
         from roux.workflow.function import import_from_file
 
-        ax = (
-            import_from_file(p)
-                .plot_(
-                    **{
-                        **kws_plot,
-                        ## override
-                        **dict(plotp=Path(p).parent.as_posix()),
-                    },
-                )
-            )
+        ax = import_from_file(p).plot_(
+            **{
+                **kws_plot,
+                ## override
+                **dict(plotp=Path(p).parent.as_posix()),
+            },
+        )
         return ax
     else:
         from roux.viz.image import plot_image
@@ -618,22 +614,22 @@ def read_plot(p: str, safe: bool = False, test: bool = False, **kws_plot) -> plt
 def label_pdf(
     p,
     output_writer,
-    label='fn', # stem
-
+    label="fn",  # stem
     ## bottom
-    x=-36,y=-72,
-
+    x=-36,
+    y=-72,
     ## aes
     size=5,
-    color=[0.5,0.5,0.5],
+    color=[0.5, 0.5, 0.5],
     font="Helvetica",
-    ):
+):
     from io import BytesIO
 
     from pypdf import PdfReader
     from reportlab.lib.pagesizes import letter
     from reportlab.lib.units import inch
     from reportlab.pdfgen import canvas
+
     # Create a PDF reader
     reader = PdfReader(p)
 
@@ -644,14 +640,14 @@ def label_pdf(
         # Create a new PDF in memory with the filename at the top
         packet = BytesIO()
         can = canvas.Canvas(packet, pagesize=letter)
-        can.translate(inch,inch)
-        if label =='fn':
+        can.translate(inch, inch)
+        if label == "fn":
             label = Path(p).stem
         elif callable(label):
             label = label(p)
         else:
             ## disable
-            label = ''
+            label = ""
         # can.drawString(100, 750, filename)  # Position at the top of the page
         can.setFont(font, size)
         can.setFillColorRGB(*color)
@@ -670,12 +666,14 @@ def label_pdf(
         # Add the modified page to the output PDF
         output_writer.add_page(page)
 
+
 def to_concat_pdfs(
     ps,
     outp,
     **kws_label_pdf,
-    ):
+):
     from pypdf import PdfWriter
+
     output_writer = PdfWriter()
 
     # Add each PDF file with filenames at the top
@@ -684,14 +682,15 @@ def to_concat_pdfs(
             p,
             output_writer,
             **kws_label_pdf,
-            )
+        )
 
     Path(outp).parent.mkdir(parents=True, exist_ok=True)
     # Write the combined PDF to a file
-    with open(outp, 'wb') as output_pdf:
+    with open(outp, "wb") as output_pdf:
         output_writer.write(output_pdf)
     return outp
-        
+
+
 def to_concat_images(
     ps: list,
     how: str = "h",
@@ -715,7 +714,7 @@ def to_concat_images(
         outp = to_output_path(ps, **kws_outp)
         logging.info(f"inferred out paht: {outp}")
     if use_imagemagick:
-        com = f"convert {'+' if how=='h' else '-'}append {' '.join(ps)} {outp}"
+        com = f"convert {'+' if how == 'h' else '-'}append {' '.join(ps)} {outp}"
         if use_conda_env:
             env = get_env("imagemagick")
             runbash(
@@ -742,12 +741,10 @@ def to_concat_images(
         # el
         # if how == "v":
         min_shape = sorted([(np.sum(i.size), i.size) for i in images])[0][1]
-        imgs_stacked=getattr(np,f"{how}stack")(
+        imgs_stacked = getattr(np, f"{how}stack")(
             [np.asarray(i.resize(min_shape)) for i in images]
-            )
-        imgs_comb = Image.fromarray(
-            imgs_stacked
         )
+        imgs_comb = Image.fromarray(imgs_stacked)
         # else:
         #     raise ValueError(how)
         imgs_comb.save(outp)

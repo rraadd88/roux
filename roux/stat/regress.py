@@ -4,7 +4,7 @@ import numpy as np
 def regress_out(a, b, jitter=False):
     """
     Regresses b from a using the pseudo-inverse, preserving the original mean.
-    
+
     This method is robust to perfect multicollinearity and can handle near-constant
     input arrays by adding optional jitter.
 
@@ -40,22 +40,24 @@ def regress_out(a, b, jitter=False):
 
     # Check for near-zero variance in 'b' and raise an explicit error
     if np.any(np.std(b, axis=0) < 1e-10):
-        raise ValueError("Input data for regression has near-zero variance. "
-                         "Cannot perform a stable regression. Try setting jitter=True.")
+        raise ValueError(
+            "Input data for regression has near-zero variance. "
+            "Cannot perform a stable regression. Try setting jitter=True."
+        )
 
     # Preserve the original mean
     a_mean = a.mean()
     a_centered = a - a_mean
     b_centered = b - b.mean(axis=0)
-    
+
     # Calculate the regression coefficients using the pseudo-inverse
     coeffs = np.linalg.pinv(b_centered).dot(a_centered)
-    
+
     # Get the predicted values
     a_predicted_centered = b_centered.dot(coeffs)
-    
+
     # The residuals are the difference between actual and predicted
     residuals = a_centered - a_predicted_centered
-    
+
     # Add the original mean back to the residuals
     return residuals + a_mean

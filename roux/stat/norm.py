@@ -12,29 +12,30 @@ from scipy import stats
 ## dist shape change, (ranks preserved)
 def to_norm(
     x,
-    off=1e-5, ## for 0 and 1 values, to prevent inf/-inf in the output
-    ):
+    off=1e-5,  ## for 0 and 1 values, to prevent inf/-inf in the output
+):
     """
     Normalise a vector bounded between 0 and 1.
     """
     import numpy as np
     from scipy.stats import norm
-        
-    assert x.min()>=0, 'values < 0 found'
-    if x.min()==0:
-        assert not any((x > 0) & (x < off)), 'need to decrease the off and retry'
+
+    assert x.min() >= 0, "values < 0 found"
+    if x.min() == 0:
+        assert not any((x > 0) & (x < off)), "need to decrease the off and retry"
         x[x == 0] = off
-    assert x.max()<=1, 'values > 1 found'
-    if x.max()==1:
-        assert not any((x > 1-off) & (x < 1)), 'need to decrease the off and retry'
-        x[x == 1] = 1-off
+    assert x.max() <= 1, "values > 1 found"
+    if x.max() == 1:
+        assert not any((x > 1 - off) & (x < 1)), "need to decrease the off and retry"
+        x[x == 1] = 1 - off
 
     # transformation
     xt = norm.ppf(x)
-    assert not any(np.isinf(x)), "inf values found in the output"    
-    
+    assert not any(np.isinf(x)), "inf values found in the output"
+
     return xt
-    
+
+
 ## array
 ## variance normalization
 def norm_by_quantile(X: np.array) -> np.array:

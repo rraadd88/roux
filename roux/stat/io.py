@@ -12,7 +12,9 @@ def perc_label(a, b=None, bracket=True):
         b = len(a)
         a = sum(a)
     ratio = a / b if b != 0 else np.nan
-    return f"{(ratio)*100:.1f}%" + (f" ({num2str(a)}/{num2str(b)})" if bracket else "")
+    return f"{(ratio) * 100:.1f}%" + (
+        f" ({num2str(a)}/{num2str(b)})" if bracket else ""
+    )
 
 
 def pval2annot(
@@ -29,7 +31,7 @@ def pval2annot(
     P/Q-value to annotation.
 
     Parameters:
-        fmt (str): 
+        fmt (str):
             None: values without decimals, upto pmin
             *:
             <:
@@ -41,50 +43,50 @@ def pval2annot(
     elif pval < pmin:
         annot = (
             "****"
-                if fmt == "*" else 
-            f"$p$<\n{pmin:.0e}"
-                if fmt == "<" else 
-            f"$p$=\n{pval:.1g}"
-                if len(f"$p$={pval:.1g}") >= 6 and linebreak else 
-            f"$p$<{pmin:.1g}"
+            if fmt == "*"
+            else f"$p$<\n{pmin:.0e}"
+            if fmt == "<"
+            else f"$p$=\n{pval:.1g}"
+            if len(f"$p$={pval:.1g}") >= 6 and linebreak
+            else f"$p$<{pmin:.1g}"
         )
     elif pval < 0.001:
         annot = (
             "***"
-                if fmt == "*" else 
-            f"$p$<\n{0.001:.0e}"
-                if fmt == "<" else 
-            f"$p$=\n{pval:.1g}"
-                if len(f"$p$={pval:.1g}") >= 6 and linebreak else 
-            f"$p$={pval:.1g}"
+            if fmt == "*"
+            else f"$p$<\n{0.001:.0e}"
+            if fmt == "<"
+            else f"$p$=\n{pval:.1g}"
+            if len(f"$p$={pval:.1g}") >= 6 and linebreak
+            else f"$p$={pval:.1g}"
         )
     elif pval < 0.01:
         annot = (
             "**"
-                if fmt == "*" else 
-            "$p$<\n0.01"
-                if fmt == "<" else 
-            f"$p$=\n{pval:.1g}"
-                if len(f"$p$={pval:.1g}") >= 6 and linebreak else 
-            f"$p$={pval:.1g}"
+            if fmt == "*"
+            else "$p$<\n0.01"
+            if fmt == "<"
+            else f"$p$=\n{pval:.1g}"
+            if len(f"$p$={pval:.1g}") >= 6 and linebreak
+            else f"$p$={pval:.1g}"
         )
     elif pval < alpha:
         annot = (
             "*"
-                if fmt == "*" else 
-            f"$p$<\n{alpha}"
-                if fmt == "<" else 
-            f"$p$=\n{pval:.1g}"
-                if len(f"$p$={pval:.1g}") >= 6 and linebreak else 
-            f"$p$={pval:.1g}"
+            if fmt == "*"
+            else f"$p$<\n{alpha}"
+            if fmt == "<"
+            else f"$p$=\n{pval:.1g}"
+            if len(f"$p$={pval:.1g}") >= 6 and linebreak
+            else f"$p$={pval:.1g}"
         )
     else:
         annot = (
             "ns"
-                if fmt == "*" else 
-            f"$p$=\n{pval:.1g}"
-                if len(f"$p$={pval:.1g}") >= 6 and linebreak else 
-            f"$p$={pval:.1g}"
+            if fmt == "*"
+            else f"$p$=\n{pval:.1g}"
+            if len(f"$p$={pval:.1g}") >= 6 and linebreak
+            else f"$p$={pval:.1g}"
         )
     annot = annot if linebreak else annot.replace("\n", "")
     if replace_prefix is not None:

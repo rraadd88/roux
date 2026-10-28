@@ -29,6 +29,7 @@ def import_from_file(pyp: str):
 
     return SourceFileLoader(abspath(pyp), abspath(pyp)).load_module()
 
+
 import inspect
 
 
@@ -39,19 +40,17 @@ def call_with_kws(func, kws, **kws_force):
     """
     # g: Extract valid parameter names from the target function
     valid_args = inspect.signature(func).parameters.keys()
-    
+
     # g: Retain only the arguments that exist in the function signature
-    kws={
-        **kws,
-        **kws_force
-        }
+    kws = {**kws, **kws_force}
     kws_filtered = {k: v for k, v in kws.items() if k in valid_args}
-    
+
     # g: Identify any keys in kws that are not accepted by the function
     excess_kws = set(kws.keys()) - set(valid_args)
     if len(excess_kws) > 0:
-        logging.warning(f"Excess arguments provided for {func.__name__}: {excess_kws}")        
+        logging.warning(f"Excess arguments provided for {func.__name__}: {excess_kws}")
     return func(**kws_filtered)
+
 
 def get_quoted_path(s1: str) -> str:
     """Quoted paths.
@@ -170,12 +169,12 @@ def get_ios(l: list, test=False) -> tuple:
     if test:
         logging.info(ios)
     inputs = [
-        f"{get_path(s,validate=False,test=test)}"
+        f"{get_path(s, validate=False, test=test)}"
         for s in ios
         if ("read_" in s) or (s.lstrip().startswith("p="))
     ]
     outputs = [
-        f"{get_path(s,validate=False,test=test)}"
+        f"{get_path(s, validate=False, test=test)}"
         for s in ios
         if (("to_" in s) or (s.lstrip().startswith("outp="))) and ("prefix" not in s)
     ]
@@ -276,13 +275,13 @@ def get_step(
         output_type = "figures"
     else:
         output_type = "data"
-    inputs_str = f",\n{tab*3}".join(inputs)
-    outputs_str = f",\n{tab*3}".join(outputs)
+    inputs_str = f",\n{tab * 3}".join(inputs)
+    outputs_str = f",\n{tab * 3}".join(outputs)
     if output_type != "data" and (
         not any([isdir(p.replace('"', "")) for p in outputs])
     ):
         outputs_str = (
-            f'report([\n{tab*3}{outputs_str}],\n{tab*3}category="{output_type}")'
+            f'report([\n{tab * 3}{outputs_str}],\n{tab * 3}category="{output_type}")'
         )
     #     elif output_type in ['plots','figures']:
     #         outputs_str=''
@@ -388,7 +387,7 @@ def to_task(
             k = s
         elif s.startswith(sep_step_end) and len(l2) != 0:
             get = False
-            stepn = f"{taskn}_{get_name(k,i=len(d0.keys())+1,sep_step=sep_step)}"
+            stepn = f"{taskn}_{get_name(k, i=len(d0.keys()) + 1, sep_step=sep_step)}"
             d0[stepn] = get_step(
                 l2,
                 name=stepn,
@@ -429,31 +428,33 @@ def to_task(
         "    rule", "rule"
     ), df0["outputs"].tolist()
 
-from functools import lru_cache
+
+from functools import cache
 
 
-@lru_cache(maxsize=None)
+@cache
 def get_global_imports(
     markers=[
-        '## start replacestar',
-        '## end replacestar',
-        ],
+        "## start replacestar",
+        "## end replacestar",
+    ],
     clear_cache=False,
-    out_fmt='df',
+    out_fmt="df",
 ) -> pd.DataFrame:
     """
     Get the metadata of the functions imported from `from roux import global_imports`.
     """
     from roux import global_imports
+
     text = open(global_imports.__file__, "r").read()
 
-    assert markers[0] in text, markers[0] 
+    assert markers[0] in text, markers[0]
     assert markers[1] in text, markers[1]
 
-    lines=text.split(markers[0])[1].split(markers[1])[0]
+    lines = text.split(markers[0])[1].split(markers[1])[0]
 
     ## start with '## '
-    lines = ('## '+lines.split('## ',1)[1]).split("\n")
+    lines = ("## " + lines.split("## ", 1)[1]).split("\n")
 
     def clean_(s):
         if ("import " in s or s.startswith("## ")) and not s.startswith("# "):
@@ -467,7 +468,7 @@ def get_global_imports(
     lines = [s.strip() for s in lines]
     lines = [s for s in lines if s != ""] + [""]
 
-    if out_fmt=='lines':
+    if out_fmt == "lines":
         return lines
 
     lines_grouped = {}
@@ -479,7 +480,7 @@ def get_global_imports(
             k = (i, f"{s[3:]}")
             lines_grouped[k] = []
             continue
-        else:            
+        else:
             lines_grouped[k].append(s)
 
     df1 = (
@@ -489,7 +490,9 @@ def get_global_imports(
         .rename_axis(["rank", "function comment"])
         .reset_index()
         .dropna(subset=["import statement"])
-        .query(expr="~(`import statement`.str.strip().str.startswith('#') | `import statement`.str.contains('#ignore'))")
+        .query(
+            expr="~(`import statement`.str.strip().str.startswith('#') | `import statement`.str.contains('#ignore'))"
+        )
     )
     # df1
 

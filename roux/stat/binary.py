@@ -59,7 +59,7 @@ def compare_bools_jaccard_df(df: pd.DataFrame) -> pd.DataFrame:
     # 4. Compute the Jaccard index.
     # We suppress division by zero warnings, as they are expected if two columns
     # are all False (resulting in a 0/0 division).
-    with np.errstate(divide='ignore', invalid='ignore'):
+    with np.errstate(divide="ignore", invalid="ignore"):
         jaccard_matrix = intersection / union
 
     # The 0/0 divisions result in NaN. We replace these with 0, as the Jaccard index
@@ -92,7 +92,7 @@ def frac(x: list) -> float:
     Returns:
         float: fraction of True values.
     """
-    if len(x)==0:
+    if len(x) == 0:
         return np.nan
     else:
         return sum(x) / len(x)

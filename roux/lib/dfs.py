@@ -5,7 +5,7 @@ import logging
 import numpy as np
 import pandas as pd
 
-import roux.lib.df as rd  #noqa
+import roux.lib.df as rd  # noqa
 from roux.lib import to_rd
 
 
@@ -57,8 +57,7 @@ def make_ids_sorted(
     ids_have_equal_length: bool,
     sep: str = "--",
     sort: bool = False,
-
-    col=None, # output col, for root pipe, to skip assign
+    col=None,  # output col, for root pipe, to skip assign
 ) -> pd.Series:
     """Make sorted ids by joining string ids in more than one columns.
 
@@ -71,7 +70,7 @@ def make_ids_sorted(
     Returns:
         ds (Series): output series.
     """
-    ids=make_ids(df, cols, ids_have_equal_length, sep=sep, sort=True)
+    ids = make_ids(df, cols, ids_have_equal_length, sep=sep, sort=True)
     if col is None:
         return ids
     else:
@@ -111,10 +110,11 @@ def split_ids(df1, col, sep="--", prefix=None):
     # assert not df1._is_view, "input series should be a copy not a view"
     df = df1[col].str.split(sep, expand=True)
     for i in range(len(df.columns)):
-        df1[f"{col} {i+1}"] = df[i].copy()
+        df1[f"{col} {i + 1}"] = df[i].copy()
     if prefix is not None:
         df1 = df1.rd.renameby_replace(replaces={f"{col} ": prefix})
     return df1
+
 
 def filter_dfs(
     dfs: list,
@@ -197,8 +197,8 @@ def merge_with_many_columns(
         ## overlap per column
         df3 = df2.assign(
             overlap=lambda df: df.groupby("variable")[left_on].transform(
-                    lambda x: len(set(x.tolist()) & set(df1[left_on].tolist()))
-                )
+                lambda x: len(set(x.tolist()) & set(df1[left_on].tolist()))
+            )
         ).sort_values("overlap", ascending=False)
         logging.info(
             df3.loc[:, ["variable", "overlap"]]
@@ -350,128 +350,102 @@ def merge_dfs(
             "Drop-outs may occur if on!='outer'. Make sure that the dataframes are ordered properly from left to right."
         )
 
-    if isinstance(dfs,list):
-        dfs=[(f" {i+1}",df) for i,df in enumerate(dfs)]
-    elif isinstance(dfs,dict):
-        dfs=[(f" {k}",v) for k,v in dfs.items()]
-        
-    logging.info(
-        f"dfs shape={[df.shape for k,df in dfs]}"
-    )
-    for i,(k2,df2) in enumerate(dfs):
-        if i==0:
-            df3=df2.copy()
+    if isinstance(dfs, list):
+        dfs = [(f" {i + 1}", df) for i, df in enumerate(dfs)]
+    elif isinstance(dfs, dict):
+        dfs = [(f" {k}", v) for k, v in dfs.items()]
+
+    logging.info(f"dfs shape={[df.shape for k, df in dfs]}")
+    for i, (k2, df2) in enumerate(dfs):
+        if i == 0:
+            df3 = df2.copy()
             if force_suffixes:
-                df3=(
-                    df3
-                    .set_index(kws['on'])
-                    .add_suffix(k2)
-                    .reset_index()
-                ) 
+                df3 = df3.set_index(kws["on"]).add_suffix(k2).reset_index()
         else:
-            df3=(
-                df3
-                .log.merge(
-                    right=df2,
-                    **{
-                        **kws,
-                        **dict(suffixes=[k1,k2]),
-                      },
-                )
+            df3 = df3.log.merge(
+                right=df2,
+                **{
+                    **kws,
+                    **dict(suffixes=[k1, k2]),
+                },
             )
-        k1=k2        
+        k1 = k2
     return df3
+
 
 @to_rd
 def merge_hi(
-    df_ids, ## contains groups
+    df_ids,  ## contains groups
     df_right,
-    
     col_id,
     col_group,
-    
-    cols_right, ## metadata
-    ):
+    cols_right,  ## metadata
+):
     """
     Hierarchical merge to propagate cols_right attributes to all members of those groups, preventing data loss or sparse results (NaNs).
     It enforces a dense association between groups and attributes, filling missing values
-    
-    Map ids in groups (left) with another dataframe (right), without na.     
-    
-    Notes: 
-        required when otherwise, inner merge -> drops, left merge -> nans 
+
+    Map ids in groups (left) with another dataframe (right), without na.
+
+    Notes:
+        required when otherwise, inner merge -> drops, left merge -> nans
     """
     ## reduce to groups
-    df_ids=(
-        df_ids
-            .groupby(col_group,as_index=False)
-                .filter(
-                    lambda df: df[col_id].isin(df_right[col_id].tolist()).any()
-                )
-            .log(col_group)
-            .log(col_id)
+    df_ids = (
+        df_ids.groupby(col_group, as_index=False)
+        .filter(lambda df: df[col_id].isin(df_right[col_id].tolist()).any())
+        .log(col_group)
+        .log(col_id)
     )
-    
+
     # reduce to ids in groups
     # inner merge
-    df_right=(
-        df_right
-            .log.merge(
-                right=df_ids.loc[:,[col_id]],
-                on=col_id,
-                how='inner',
-                validate="m:1",
-            )
-            .log(col_id)
-    )
+    df_right = df_right.log.merge(
+        right=df_ids.loc[:, [col_id]],
+        on=col_id,
+        how="inner",
+        validate="m:1",
+    ).log(col_id)
 
     ## propagate
     return (
-        df_right
-            .groupby(
-                cols_right,
-                as_index=False,
-            )
-                .apply(
-                    lambda df: (
-                        df
-                            .merge(
-                                right=df_ids,
-                                on=[
-                                    col_id,
-                                    # col_group
-                                   ],
-                                how='right',
-                                validate='1:1',
-                            )
-                            ## without na
-                            .assign(
-                                **dict(zip(cols_right,df.name))
-                            )                        
-                    )
-                )
-            .reset_index(drop=True)
-        .rd.assert_dense(
-            cols_right+[col_group,col_id]
+        df_right.groupby(
+            cols_right,
+            as_index=False,
         )
-)
+        .apply(
+            lambda df: (
+                df.merge(
+                    right=df_ids,
+                    on=[
+                        col_id,
+                        # col_group
+                    ],
+                    how="right",
+                    validate="1:1",
+                )
+                ## without na
+                .assign(**dict(zip(cols_right, df.name)))
+            )
+        )
+        .reset_index(drop=True)
+        .rd.assert_dense(cols_right + [col_group, col_id])
+    )
+
 
 @to_rd
 def merge_by_subset(
-    df1: pd.DataFrame, 
-    df2: pd.DataFrame, 
-    on,
-    **kws_merge
+    df1: pd.DataFrame, df2: pd.DataFrame, on, **kws_merge
 ) -> pd.DataFrame:
     """
     Merge two dataframes where the list in `on` column of df1 is a subset of the list in `on` column of df2.
     """
     # g: pre-compute sets to minimize overhead during the loop
     sets2 = [set(lst) for lst in df2[on]]
-    
+
     idx1 = []
     idx2 = []
-    
+
     # g: use nested python loops to map indices, completely avoiding memory-heavy pandas cross joins
     for i, lst1 in enumerate(df1[on]):
         s1 = set(lst1)
@@ -479,22 +453,26 @@ def merge_by_subset(
             if s1.issubset(s2):
                 idx1.append(i)
                 idx2.append(j)
-                
+
     if not idx1:
         # g: fallback to an empty merge just to generate the correct column schema
-        return df1.iloc[:0].merge(df2.iloc[:0], left_index=True, right_index=True, suffixes=suffixes)
-        
+        return df1.iloc[:0].merge(
+            df2.iloc[:0], left_index=True, right_index=True, suffixes=suffixes
+        )
+
     # g: subset the first dataframe and map corresponding rows from the second dataframe directly by index
     return (
-        df1.iloc[idx1].reset_index(drop=True)
+        df1.iloc[idx1]
+        .reset_index(drop=True)
         .merge(
-            df2.iloc[idx2].reset_index(drop=True), 
-            left_index=True, 
-            right_index=True, 
+            df2.iloc[idx2].reset_index(drop=True),
+            left_index=True,
+            right_index=True,
             # suffixes=suffixes
-            **kws_merge
+            **kws_merge,
         )
     )
+
 
 def compare_rows(
     df1,

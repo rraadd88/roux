@@ -14,11 +14,9 @@ def _pre(
     x: str,
     y: str,
     df: pd.DataFrame = None,
-    
     covar=None,
     x_covar=None,
     y_covar=None,
-    
     n_min: int = 10,
     drop_same_value=None,  # e.g. 0
     verbose: bool = False,
@@ -41,45 +39,37 @@ def _pre(
         print(x.name, y.name)
     if not (isinstance(x, str) and isinstance(y, str) and df is not None):
         ## get columns
-        df = pd.DataFrame({'x': x, 'y': y})
-        x, y = 'x', 'y'
+        df = pd.DataFrame({"x": x, "y": y})
+        x, y = "x", "y"
     else:
-        df = df.rename(columns={x: 'x', y: 'y'}, errors="raise")
+        df = df.rename(columns={x: "x", y: "y"}, errors="raise")
     if drop_same_value is not None:
         _before = len(df)
         df = df.query(f"~(`x` == {drop_same_value} & `y` == {drop_same_value})")
         if verbose:
             logging.info(
-                f"drop_same_value={drop_same_value}; {len(df)-_before} samples dropped"
+                f"drop_same_value={drop_same_value}; {len(df) - _before} samples dropped"
             )
-    assert pd.api.types.is_numeric_dtype(df['x']), df['x'].dtype
-    assert pd.api.types.is_numeric_dtype(df['y']), df['y'].dtype
+    assert pd.api.types.is_numeric_dtype(df["x"]), df["x"].dtype
+    assert pd.api.types.is_numeric_dtype(df["y"]), df["y"].dtype
     # clean
-    cols_covar=[]
+    cols_covar = []
     if covar or x_covar or y_covar:
         if covar is None:
-            covar=[]
-        if isinstance(covar,str):
-            covar=[covar]
-        cols_covar=[c for c in covar+[x_covar,y_covar] if c is not None]
-        cols_covar=list(set(cols_covar))
-    
+            covar = []
+        if isinstance(covar, str):
+            covar = [covar]
+        cols_covar = [c for c in covar + [x_covar, y_covar] if c is not None]
+        cols_covar = list(set(cols_covar))
+
     try:
-        df = (
-            df
-                .replace([np.inf, -np.inf], np.nan)
-            ) 
+        df = df.replace([np.inf, -np.inf], np.nan)
     except Exception as e:
         logging.warning(str(e))
-        logging.warning(df.loc[:,[x,y]].to_string())
-        
-    df = (
-        df
-            .dropna(
-                subset=['x','y']+cols_covar
-            )
-        )
-    
+        logging.warning(df.loc[:, [x, y]].to_string())
+
+    df = df.dropna(subset=["x", "y"] + cols_covar)
+
     if len(df) < n_min:
         if verbose:
             logging.error("low sample size")
@@ -164,23 +154,18 @@ def get_corr(
     y: str,
     method: str,
     df: pd.DataFrame = None,
-    
     method_kws: dict = {},
     covar=None,
     x_covar=None,
     y_covar=None,
-        
     preprocess: bool = True,
     n_min=10,
     preprocess_kws: dict = {},
-
     resample: bool = False,
     cv=5,
     resample_kws: dict = {},
-
     ## out
     pval: bool = True,
-    
     verbose: bool = False,
     test: bool = False,
 ) -> dict:
@@ -219,9 +204,9 @@ def get_corr(
     """
     ## check inputs
     if resample:
-        assert (
-            n_min > cv
-        ), f"n_min={n_min} !> cv={cv} (set resample=False to turn off resampling)"
+        assert n_min > cv, (
+            f"n_min={n_min} !> cv={cv} (set resample=False to turn off resampling)"
+        )
 
     if verbose:
         preprocess_kws["verbose"] = True
@@ -232,18 +217,16 @@ def get_corr(
             y,
             df,
             n_min=n_min,
-            
             covar=covar,
             x_covar=x_covar,
             y_covar=y_covar,
-            
             test=test,
             **preprocess_kws,
-         )
+        )
         if df is None:
             return {}
-        x, y, n = df['x'], df['y'], len(df)
-        
+        x, y, n = df["x"], df["y"], len(df)
+
     if not callable(method):
         if hasattr(stats, method + "r"):
             method_fun = getattr(stats, method + "r")
@@ -260,33 +243,35 @@ def get_corr(
 
     if pval:
         if covar or x_covar or y_covar:
-            method_kws={
+            method_kws = {
                 **method_kws,
                 **dict(
                     covar=covar,
                     x_covar=x_covar,
                     y_covar=y_covar,
-                    method=method,    
-                )
+                    method=method,
+                ),
             }
-            
+
             from pingouin import partial_corr
+
             res = (
                 partial_corr(
                     data=df,
-                    x='x',
-                    y='y',
+                    x="x",
+                    y="y",
                     **method_kws,
                 )
                 .rename(
                     columns={
-                        'p-val':'P',
+                        "p-val": "P",
                     }
                 )
-                .astype({'n':int})
-                .iloc[0,:].to_dict()
+                .astype({"n": int})
+                .iloc[0, :]
+                .to_dict()
             )
-            res={
+            res = {
                 **res,
                 **method_kws,
             }
@@ -339,25 +324,27 @@ def _to_string(
 
     method = res["method"]
     if method_suffix:
-        if res.get('covar',None):
-            method_suffix="($\\tilde{x},\\tilde{y}$)"
-        elif res.get('x_covar',None):
-            method_suffix="($\\tilde{x},y$)"
-        elif res.get('y_covar',None):
-            method_suffix="($x,\\tilde{y}$)"
+        if res.get("covar", None):
+            method_suffix = "($\\tilde{x},\\tilde{y}$)"
+        elif res.get("x_covar", None):
+            method_suffix = "($\\tilde{x},y$)"
+        elif res.get("y_covar", None):
+            method_suffix = "($x,\\tilde{y}$)"
         else:
-            method_suffix=''
-        
+            method_suffix = ""
+
     s0 = (
         (f"$r_{method[0]}$" if "tau" not in method else "$\\tau$")
-        + (method_suffix if method_suffix else '')
+        + (method_suffix if method_suffix else "")
         + (f"={res['rr' if 'rr' in res else 'r']:.2f}")  ##prefer the resampled r value
     )
     if "ci" in res:
-        s0 += rf"$\pm${res['ci']:.2f}{res['ci_type'] if res['ci_type']!='max' else ''}"
+        s0 += (
+            rf"$\pm${res['ci']:.2f}{res['ci_type'] if res['ci_type'] != 'max' else ''}"
+        )
     if show_p:
-        _pval_str=pval2annot(
-            res['P'],
+        _pval_str = pval2annot(
+            res["P"],
             **{
                 **dict(
                     fmt=None,
@@ -365,12 +352,12 @@ def _to_string(
                     alpha=0.05,
                 ),
                 **kws_pval2annot,
-                }
-            )
-            
+            },
+        )
+
         s0 += f"\n{_pval_str}"
     if show_n:
-        s0 += f"\n({show_n_prefix}{num2str(num=res['n'],magnitude=False)})"
+        s0 += f"\n({show_n_prefix}{num2str(num=res['n'], magnitude=False)})"
     return s0
 
 
@@ -380,12 +367,10 @@ def get_corrs(
     method: str,
     cols: list = None,
     cols_with: list = None,
-    coff_inflation_min: float = None, # fast
+    coff_inflation_min: float = None,  # fast
     get_pairs_kws={},
-
     cpus: bool = 1,
-    out_q=True, # False, # fast
-    
+    out_q=True,  # False, # fast
     test: bool = False,
     verbose: bool = False,
     kws_chunks={},
@@ -440,14 +425,15 @@ def get_corrs(
     # debug
     # return df0, data
     ## get correlations
-    if cpus==1:
+    if cpus == 1:
         df1 = getattr(
             df0,
             "apply" if not hasattr(df0, "progress_apply") else "progress_apply",
         )(
             lambda x: pd.Series(
                 {
-                    "variable1": x["variable1"], "variable2": x["variable2"],
+                    "variable1": x["variable1"],
+                    "variable2": x["variable2"],
                     **get_corr(
                         data[x["variable1"]],
                         data[x["variable2"]],
@@ -461,20 +447,19 @@ def get_corrs(
     else:
         ## paralel
         import roux.lib.df_apply as rd  # noqa
-        
+
         # return df0,data
         # logging.error('rd.apply_async not implemented.')
-        if 'out_df' in kws_chunks:
-            assert not kws_chunks['out_df'], kws_chunks
-            
-        df1=(
-            df0
-            .reset_index(drop=True) # for join later
+        if "out_df" in kws_chunks:
+            assert not kws_chunks["out_df"], kws_chunks
+
+        df1 = (
+            df0.reset_index(drop=True)  # for join later
             .assign(
                 res=lambda df: df.rd.apply(
                     func=lambda x: get_corr(
-                        data[x['variable1']],
-                        data[x['variable2']],
+                        data[x["variable1"]],
+                        data[x["variable2"]],
                         method=method,
                         **kws_get_corr,
                     ),
@@ -483,10 +468,8 @@ def get_corrs(
                     kws_chunks=kws_chunks,
                 )
             )
-            .rd.explode(
-                'res'
-            )
-        )        
+            .rd.explode("res")
+        )
 
     if out_q and "P" in df1:
         ## FDR
@@ -545,13 +528,15 @@ def check_collinearity(
         df3.groupby("subnetwork name")
         .apply(
             lambda df: df2.apply(
-                lambda x: x[colvalue]
-                if len(
-                    set([x[cols_variable[0]], x[cols_variable[1]]])
-                    - set(df["node name"].tolist()[0])
-                )
-                == 0
-                else np.nan,
+                lambda x: (
+                    x[colvalue]
+                    if len(
+                        set([x[cols_variable[0]], x[cols_variable[1]]])
+                        - set(df["node name"].tolist()[0])
+                    )
+                    == 0
+                    else np.nan
+                ),
                 axis=1,
             ).min()
         )

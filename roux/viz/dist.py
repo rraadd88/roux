@@ -175,19 +175,9 @@ def plot_gmm(
     if hist:
         pd.Series(x).hist(density=True, histtype="step", bins=bins, ax=ax, **kws)
     # plot fitted distributions
-    ax.plot(
-            x, 
-            mix_pdf.ravel(),
-            c=colors[-1],
-            **kws_lines
-           )
+    ax.plot(x, mix_pdf.ravel(), c=colors[-1], **kws_lines)
     for i in range(n_clusters):
-        ax.plot(
-            x, 
-            two_pdfs[i] * weights[i], 
-            c=colors[i],
-            **kws_lines
-            )
+        ax.plot(x, two_pdfs[i] * weights[i], c=colors[i], **kws_lines)
     #     ax.plot(x,two_pdfs[1]*weights[1], c='gray')
     if n_clusters == 2:
         if show_cutoff_line:
@@ -244,13 +234,22 @@ def get_jitter_positions(
     ## filtering
     df1 = df1.loc[df1[column_category].isin(order), :]
     ## pos
-    d1 = dict(zip(order, [c.get_offsets()[:, 0 if column_position =='x' else 1].data for c in ax.collections]))
+    d1 = dict(
+        zip(
+            order,
+            [
+                c.get_offsets()[:, 0 if column_position == "x" else 1].data
+                for c in ax.collections
+            ],
+        )
+    )
     ## mapping
     return (
         df1.groupby(column_category, as_index=False)
         .apply(lambda df: df.assign(**{column_position: (d1[df.name])}))
         .reset_index(drop=True)
     )
+
 
 ## paired distributions.
 def plot_dists(
@@ -268,7 +267,7 @@ def plot_dists(
     show_n_ha=None,
     show_n_ticklabels: bool = True,
     show_outlines: bool = False,
-    showmeans=True,   
+    showmeans=True,
     showfliers=False,
     kws_outlines: dict = {},
     alternative: str = "two-sided",
@@ -276,13 +275,13 @@ def plot_dists(
     axis_cont_lim: tuple = None,
     axis_cont_scale: str = "linear",
     offs_pval: dict = None,
-    col_pval='P',
+    col_pval="P",
     fmt_pval: str = None,
     alpha: float = 0.5,
     # saturate_color_alpha: float=1.5,
     ax: plt.Axes = None,
     verbose=True,
-    test: bool = False, ## more verbose
+    test: bool = False,  ## more verbose
     kws_stats: dict = {},
     **kws,
 ) -> plt.Axes:
@@ -320,38 +319,39 @@ def plot_dists(
 
     """
     from roux.stat.diff import get_diff_inferred
+
     df2, kws_plot = get_diff_inferred(
-        df1, 
-        x=x, 
-        y=y, 
-        colindex=colindex, 
-        hue=hue, 
-        order=order, 
-        hue_order=hue_order, 
-        show_p=show_p, 
+        df1,
+        x=x,
+        y=y,
+        colindex=colindex,
+        hue=hue,
+        order=order,
+        hue_order=hue_order,
+        show_p=show_p,
         kws_stats=kws_stats,
-        verbose=test, 
+        verbose=test,
     )
-    
-    verbose=True
+
+    verbose = True
     # if verbose:
     #     logging.info(kws_plot)
-    df1=kws_plot.get('df1',None)
-    x_stat=kws_plot.get('x_stat',None)
-    y_stat=kws_plot.get('y_stat',None)
-    axis_desc=kws_plot.get('axis_desc',None)
-    axis_cont=kws_plot.get('axis_cont',None)
-    order=kws_plot.get('order',None)
-    hue_order=kws_plot.get('hue_order',None)
-    colindex=kws_plot.get('colindex',None)
-        
+    df1 = kws_plot.get("df1", None)
+    x_stat = kws_plot.get("x_stat", None)
+    y_stat = kws_plot.get("y_stat", None)
+    axis_desc = kws_plot.get("axis_desc", None)
+    axis_cont = kws_plot.get("axis_cont", None)
+    order = kws_plot.get("order", None)
+    hue_order = kws_plot.get("hue_order", None)
+    colindex = kws_plot.get("colindex", None)
+
     ## get stats
-    stats={}
-    if show_p:            
+    stats = {}
+    if show_p:
         if df2 is not None:
             if hue is None:
                 df2 = df2.reset_index()
-                if show_p!='paired':
+                if show_p != "paired":
                     df2 = df2.loc[(df2["subset1"] == order[0]), :]
                 try:
                     stats = df2.rd.to_dict(["subset2", col_pval])
@@ -361,50 +361,51 @@ def plot_dists(
                 stats = df2.set_index(y)[col_pval].to_dict()
                 if test:
                     logging.info(stats)
-            
+
             if verbose:
                 try:
-                    logging.info('\n'+df2.to_string())
+                    logging.info("\n" + df2.to_string())
                 except Exception:
                     pass
         else:
-            show_p = False 
+            show_p = False
             logging.error("p-value could not be estimated.")
-                
+
     # print(stats) # {ticklabel: pval}
-    
+
     ## axes
     if ax is None:
         from roux.viz.figure import get_ax
+
         ax = get_ax(ax)
-        
+
     if show_p:
-        ax.stats=df2
+        ax.stats = df2
     ## distributions
     if isinstance(kind, str):
         kind = {kind: {}}
     elif isinstance(kind, list):
-        kind = {k: {} for k in kind}    
+        kind = {k: {} for k in kind}
     assert isinstance(kind, dict), kind
-    
-    kind_defaults={
-        'box':dict(
+
+    kind_defaults = {
+        "box": dict(
             showcaps=False,
             showfliers=False,
             boxprops=dict(
-                ec='none',
-            )
+                ec="none",
+            ),
         ),
-        'violin':dict(
-            density_norm='width',
+        "violin": dict(
+            density_norm="width",
             cut=0,
             fill=False,
         ),
-        'point':dict(
-            estimator='mean',  
-            linestyle='none',
+        "point": dict(
+            estimator="mean",
+            linestyle="none",
         ),
-        'bar':dict(
+        "bar": dict(
             alpha=alpha,
             dodge=True,
             gap=0.2,
@@ -414,33 +415,33 @@ def plot_dists(
         ),
     }
 
-    if 'box' in kind:
-        if kind['box'].get('showmeans')==True or showmeans:
-            kind['box']={
+    if "box" in kind:
+        if kind["box"].get("showmeans") == True or showmeans:
+            kind["box"] = {
                 **dict(
                     showmeans=True,
                     meanprops=dict(
-                        marker= r"$\mu$", 
-                        markerfacecolor= "black", 
-                        markeredgecolor= "none", 
-                        markersize= "10"
-                    )                    
+                        marker=r"$\mu$",
+                        markerfacecolor="black",
+                        markeredgecolor="none",
+                        markersize="10",
+                    ),
                 ),
-                **kind['box'],
+                **kind["box"],
             }
-            if 'point' not in kind:
-                kind['point']={}
-            kind['point']={
-                **kind_defaults['point'],
+            if "point" not in kind:
+                kind["point"] = {}
+            kind["point"] = {
+                **kind_defaults["point"],
                 **dict(
                     markers="D",
                     errorbar=None,
                     markersize=15,
                     markeredgewidth=0,
                     alpha=0.5,
-                    clip_on=False,                    
+                    clip_on=False,
                 ),
-                **kind['point'],
+                **kind["point"],
             }
     # logging.info(kind)
     for k in kind:
@@ -454,12 +455,12 @@ def plot_dists(
         # kws['palette']=[saturate_color(color=c, alpha=saturate_color_alpha+0.5) for c in kws['palette']]
 
         ## override defaults
-        if k=='box':
-            kws_={
-                **kind_defaults['box'],
+        if k == "box":
+            kws_ = {
+                **kind_defaults["box"],
                 **kws_,
             }
-        ## common            
+        ## common
         if hue is None:
             kws_["color"] = get_colors_default()[0]
 
@@ -473,7 +474,7 @@ def plot_dists(
                     alpha=alpha,
                 ),
             }
-            
+
         if k in ["swarm", "strip"] and ("box" in kind):
             kws_["alpha"] = alpha
         # print(
@@ -499,22 +500,23 @@ def plot_dists(
     ticklabel2position = get_ticklabel_position(ax, axis_desc)
     axlims = get_axlims(ax)
     ## show p-value
-    if isinstance(show_p, (bool, dict,str)):
+    if isinstance(show_p, (bool, dict, str)):
         from roux.viz.annot import show_dists_stats
+
         show_dists_stats(
             stats=stats,
             axlims=axlims,
             ticklabel2position=ticklabel2position,
-            axis_desc= axis_desc, #: str = "y",
-            axis_cont= axis_cont, #: str = "x",
-            offs_pval= offs_pval, #: dict = None,
-            show_p= show_p, #: bool = True,
-            alternative= alternative, #: str = "two-sided",
-            fmt_pval= fmt_pval, #: str = "{:.2e}",
-            hue= hue, #: str = None,
-            test= test, #: bool = False,
+            axis_desc=axis_desc,  #: str = "y",
+            axis_cont=axis_cont,  #: str = "x",
+            offs_pval=offs_pval,  #: dict = None,
+            show_p=show_p,  #: bool = True,
+            alternative=alternative,  #: str = "two-sided",
+            fmt_pval=fmt_pval,  #: str = "{:.2e}",
+            hue=hue,  #: str = None,
+            test=test,  #: bool = False,
             ax=ax,
-        )        
+        )
         # print(
         #     d1,
         #     offs_pval,
@@ -540,13 +542,13 @@ def plot_dists(
         # offs_pval = {**{"x": 0, "y": 0}, **offs_pval}
 
         # if hue is None and (len(d1) == 1 or show_p=='paired'):
-        #     offs_pval[axis_desc] += -0.5            
+        #     offs_pval[axis_desc] += -0.5
         # if test:
         #     logging.info(offs_pval)
 
         # # if isinstance(show_p,str): # e.g. paired
         # #     show_p=True
-            
+
         # if isinstance(d1, dict):
         #     if test:
         #         logging.info(d1, ticklabel2position, axlims)
@@ -621,46 +623,47 @@ def plot_dists(
         column_outlines = show_outlines
         ## get jitter positions and plot outlines
         from roux.viz.annot import show_outlines
-        df_jit=get_jitter_positions(
-                ax,
-                df1,
-                order=order,
-                column_category=x if axis_desc == "x" else y,
-                column_position=("x" if axis_desc == "x" else "y"),  # jitter is along the axis with decrete values
-            )
+
+        df_jit = get_jitter_positions(
+            ax,
+            df1,
+            order=order,
+            column_category=x if axis_desc == "x" else y,
+            column_position=(
+                "x" if axis_desc == "x" else "y"
+            ),  # jitter is along the axis with decrete values
+        )
         # df_jit=df_jit.dropna([column_outlines])
         show_outlines(
             df_jit,
             colx="x" if axis_desc == "x" else x,
-            coly=y if axis_desc == "x" else 'y',
+            coly=y if axis_desc == "x" else "y",
             column_outlines=column_outlines,
             **kws_outlines,
             ax=ax,
         )
     return ax
 
+
 def plot_many_dists(
     data,
     x,
     y,
     col_id,
-    
-    kind='box',
+    kind="box",
     hue=None,
-    order='median', # because of the boxplot
+    order="median",  # because of the boxplot
     ascending=True,
-    
     ref_data=None,
     ref_expr=None,
-    ref_agg='median', # because of the boxplot
-    ref_func_plot='plot',
+    ref_agg="median",  # because of the boxplot
+    ref_func_plot="plot",
     ref_kws_plot=dict(
-        linestyle=':',
+        linestyle=":",
         lw=1.5,
-        color='k',
+        color="k",
         zorder=5,
     ),
-    
     ax=None,
     **kws_plot_dists,
 ):
@@ -682,30 +685,28 @@ def plot_many_dists(
         kind (str, optional): The kind of plot to generate. Defaults to 'box'.
     """
     if ax is None:
-        ax=plt.gca()
-    
+        ax = plt.gca()
+
     if ref_expr is not None:
-        logging.info('ref_data filtering:')
-        ref_data=(
-            data
-                .log.query(expr=ref_expr)
-                .groupby(y)[x].agg(ref_agg)
-                .reset_index()
-            )
-        logging.info('data filtering:')
-        data=(
-            data
-                .log.query(expr=ref_expr.replace('==','!='))
-            .rd.assert_dense(
-                subset=[y,col_id]
-            )
+        logging.info("ref_data filtering:")
+        ref_data = (
+            data.log.query(expr=ref_expr).groupby(y)[x].agg(ref_agg).reset_index()
+        )
+        logging.info("data filtering:")
+        data = data.log.query(expr=ref_expr.replace("==", "!=")).rd.assert_dense(
+            subset=[y, col_id]
         )
 
     # Determine the order of the y-axis
-    if isinstance(order,str):
-        order = data.groupby(y)[x].agg(order).sort_values(ascending=ascending).index.tolist()
-    
-    ax=plot_dists(
+    if isinstance(order, str):
+        order = (
+            data.groupby(y)[x]
+            .agg(order)
+            .sort_values(ascending=ascending)
+            .index.tolist()
+        )
+
+    ax = plot_dists(
         data,
         x=x,
         y=y,
@@ -718,41 +719,36 @@ def plot_many_dists(
                 kind=kind,
                 show_n=False,
                 show_p=False,
-                fmt_pval='*',
+                fmt_pval="*",
                 offs_pval={"x": 0, "y": 0.2},
                 # width=0.7,
                 showfliers=False,
             ),
-            **kws_plot_dists
-        }
+            **kws_plot_dists,
+        },
     )
 
     # Add reference lines if specified
     if ref_data is not None:
         ylim = ax.get_ylim()
-        
-        _ = (
-            ref_data
-            .assign(y_pos=lambda df: df[y].map(get_ticklabel_position(ax, 'y')))
-            .apply(
-                lambda row: (
-                        ax.plot(
-                            [row[x], row[x]],
-                            [row['y_pos'] - 0.5, row['y_pos'] + 0.5],
-                            **ref_kws_plot
-                        ) 
-                    if ref_func_plot=='plot' else 
-                        ax.scatter(
-                            [row[x]],
-                            [row['y_pos']],
-                            **ref_kws_plot
-                        )
-                ),
-                axis=1
-            )
+
+        _ = ref_data.assign(
+            y_pos=lambda df: df[y].map(get_ticklabel_position(ax, "y"))
+        ).apply(
+            lambda row: (
+                ax.plot(
+                    [row[x], row[x]],
+                    [row["y_pos"] - 0.5, row["y_pos"] + 0.5],
+                    **ref_kws_plot,
+                )
+                if ref_func_plot == "plot"
+                else ax.scatter([row[x]], [row["y_pos"]], **ref_kws_plot)
+            ),
+            axis=1,
         )
         ax.set(ylim=ylim)
-    return ax    
+    return ax
+
 
 def pointplot_groupbyedgecolor(
     data: pd.DataFrame, ax: plt.Axes = None, **kws

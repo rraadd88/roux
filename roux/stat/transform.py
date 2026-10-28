@@ -56,9 +56,9 @@ def log_pval(
     if isinstance(x, pd.Series):
         if any(x == 0):
             if errors == "raise" and p_min is None:
-                raise ValueError(f"{sum(x==0)} zeros found in x")
+                raise ValueError(f"{sum(x == 0)} zeros found in x")
             else:
-                logging.info(f"{sum(x==0)} zeros will be replaced")
+                logging.info(f"{sum(x == 0)} zeros will be replaced")
                 ## for visualisation purpose e.g. volcano plot.
                 if replace_zero_with is None:
                     if p_min is None:
@@ -70,10 +70,12 @@ def log_pval(
                 logging.warning(f"zeros found, replaced with min {replace_zero_with}")
     return -1 * (np.log10(x))
 
+
 def get_q_storey(
     pvalues,
-    pi0_lambda=0.5, errors='raise',  
-    ):
+    pi0_lambda=0.5,
+    errors="raise",
+):
     """
     Calculates Storey's q-values from a list of p-values.
 
@@ -90,12 +92,14 @@ def get_q_storey(
     # g: check NaN separately; NaN silently bypasses range checks
     if np.any(np.isnan(pvals)):
         msg = "p-values contain NaN."
-        if errors == 'raise': raise ValueError(msg)
-        else: logging.warning(msg)
+        if errors == "raise":
+            raise ValueError(msg)
+        else:
+            logging.warning(msg)
 
     if np.any((pvals < 0) | (pvals > 1)):
         msg = "All p-values must be between 0 and 1."
-        if errors == 'raise':
+        if errors == "raise":
             raise ValueError(msg)
         else:
             logging.warning(msg)
@@ -119,12 +123,13 @@ def get_q_storey(
     qvals = np.empty_like(qvals_sorted)
     qvals[sort_idx] = qvals_sorted
 
-    return qvals,pi0
+    return qvals, pi0
+
 
 def get_q(
     ds1: pd.Series,
     col: str = None,
-    method='BH',
+    method="BH",
     verb: bool = True,
     test_coff: float = 0.1,
     errors=None,
@@ -135,22 +140,21 @@ def get_q(
     if col is not None:
         df1 = ds1.copy()
         ds1 = ds1[col]
-    
-    if errors=='raise':
+
+    if errors == "raise":
         assert not ds1.isnull().any(), ds1.isnull().sum()
         ds2 = ds1.copy()
-    else: 
+    else:
         ## fail-safe: nans ignored
         ds2 = ds1.dropna()
 
-    if method=='storey':
+    if method == "storey":
         ## q-values
-        ds3=get_q_storey(
-            ds2.values
-        )[0]
-    elif method=='BH':
+        ds3 = get_q_storey(ds2.values)[0]
+    elif method == "BH":
         ## FDR
         from statsmodels.stats.multitest import fdrcorrection
+
         ds3 = fdrcorrection(pvals=ds2, alpha=0.05, method="indep", is_sorted=False)[1]
     else:
         raise ValueError(method)
@@ -160,7 +164,8 @@ def get_q(
     )
     if verb:
         from roux.stat.io import perc_label
-        logging.info(f"significant at Q<{test_coff}: {perc_label(ds4<test_coff)}")
+
+        logging.info(f"significant at Q<{test_coff}: {perc_label(ds4 < test_coff)}")
 
     if col is None:
         return ds4

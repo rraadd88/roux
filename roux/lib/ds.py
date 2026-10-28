@@ -9,8 +9,8 @@ import pandas as pd
 def to_cat(
     ds1: pd.Series,
     cats: list,
-    ordered: bool=True,
-    ):
+    ordered: bool = True,
+):
     """To series containing categories.
 
     Parameters:
@@ -25,7 +25,8 @@ def to_cat(
     ds1 = ds1.cat.set_categories(new_categories=cats, ordered=ordered)
     assert not ds1.isnull().any(), ds1.isnull().sum()
     return ds1
-    
+
+
 def get_near_quantile(
     x: pd.Series,
     q: float,

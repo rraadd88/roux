@@ -70,8 +70,9 @@ def check_non_overlaps_with(
     l_ = set(l1) - set(l2)
     if verbose:
         from roux.stat.io import perc_label
+
         logging.info(
-            f"{perc_label(len(l_),len(set(l1)))} non overlapping items found in l1 {'' if len(l_)<=20 else 'e.g.'} : {list(l_)[:20]}"
+            f"{perc_label(len(l_), len(set(l1)))} non overlapping items found in l1 {'' if len(l_) <= 20 else 'e.g.'} : {list(l_)[:20]}"
         )
     if not out_count:
         return l_
@@ -79,17 +80,14 @@ def check_non_overlaps_with(
         return len(l_)
 
 
-def validate_overlaps_with(
-    l1,
-    l2,
-    verbose=True,
-    **kws_check
-    ):
+def validate_overlaps_with(l1, l2, verbose=True, **kws_check):
     # if verbose:
     #     print(check_non_overlaps_with(l1, l2, verbose=verbose,**kws_check))
     #     print(set(l1) & set(l2))
-        
-    return (len(check_non_overlaps_with(l1, l2, verbose=verbose,**kws_check)) == 0) and len(set(l1) & set(l2))>0
+
+    return (
+        len(check_non_overlaps_with(l1, l2, verbose=verbose, **kws_check)) == 0
+    ) and len(set(l1) & set(l2)) > 0
 
 
 def assert_overlaps_with(
@@ -97,12 +95,12 @@ def assert_overlaps_with(
     l2,
     out_count=False,
     verbose=True,
-    ):
+):
     assert validate_overlaps_with(
         l1,
         l2,
         verbose=False,
-    ), f"Non-ovelapping item/s: {check_non_overlaps_with(l1,l2,out_count=out_count)}"
+    ), f"Non-ovelapping item/s: {check_non_overlaps_with(l1, l2, out_count=out_count)}"
 
 
 def intersections(dn2list, jaccard=False, count=True, fast=False, test=False):
@@ -147,7 +145,8 @@ def intersections(dn2list, jaccard=False, count=True, fast=False, test=False):
             else:
                 df.loc[k1, k2] = l
     return df
-    
+
+
 def jaccard_index(l1, l2):
     # if len(l1)==0 or len(l2)==0:
     #     return 0,0,0
@@ -238,7 +237,7 @@ def list2str(
                 logging.warning("more than 1 str value encountered, returning list")
                 return x
         elif fmt == "id":
-            return ";".join(map(str,x))
+            return ";".join(map(str, x))
         # elif fmt.lower().startswith('count'):
         # elif fmt=='dict':
         else:

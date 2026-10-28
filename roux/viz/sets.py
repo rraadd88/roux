@@ -83,11 +83,8 @@ def plot_intersection_counts(
     df1: pd.DataFrame,
     cols: list = None,
     kind: str = "table",
-    
     method: str = None,  #'chi2'|fe
-
     pre_data=True,
-    
     show_counts: bool = True,
     show_pval: bool = True,
     confusion: bool = False,
@@ -152,22 +149,16 @@ def plot_intersection_counts(
                 dplot = dplot.loc[:, [s for s in dplot.columns if s != "not"] + ["not"]]
             if "not" in dplot.index:
                 dplot = dplot.loc[[s for s in dplot.index if s != "not"] + ["not"], :]
-                
-        if dplot.index.dtype == 'bool':
-            dplot.index=[str(s) for s in dplot.index]
-        if dplot.columns.dtype == 'bool':
-            dplot.columns=[str(s) for s in dplot.columns]
-        
-        dplot = (
-            dplot
-            .sort_index(
-                axis=0, ascending=sort_cols[0]
-            )
-            .sort_index(
-                axis=1, ascending=sort_cols[1]
-            )
-            )
-    
+
+        if dplot.index.dtype == "bool":
+            dplot.index = [str(s) for s in dplot.index]
+        if dplot.columns.dtype == "bool":
+            dplot.columns = [str(s) for s in dplot.columns]
+
+        dplot = dplot.sort_index(axis=0, ascending=sort_cols[0]).sort_index(
+            axis=1, ascending=sort_cols[1]
+        )
+
         # dplot=dplot.sort_index(ascending=False,axis=1).sort_index(ascending=False,axis=0)
         if order_y is None:
             order_y = dplot.index.tolist()
@@ -177,11 +168,11 @@ def plot_intersection_counts(
     else:
         dplot = df1.copy()
 
-    if dplot.index.dtype == 'bool':
-        dplot.index=[str(s) for s in dplot.index]
-    if dplot.columns.dtype == 'bool':
-        dplot.columns=[str(s) for s in dplot.columns]
-    
+    if dplot.index.dtype == "bool":
+        dplot.index = [str(s) for s in dplot.index]
+    if dplot.columns.dtype == "bool":
+        dplot.columns = [str(s) for s in dplot.columns]
+
     if kind == "table":
         from roux.viz.heatmap import plot_table
 
@@ -196,33 +187,33 @@ def plot_intersection_counts(
     elif kind == "bar":
         # print(dplot)
         if perc_counts:
-            dplot_=(dplot.div(dplot.sum(axis=1),axis=0))*100
+            dplot_ = (dplot.div(dplot.sum(axis=1), axis=0)) * 100
             print(dplot_)
         else:
-            dplot_=dplot.copy()
+            dplot_ = dplot.copy()
         ax = dplot_.plot.barh(stacked=True, ax=ax)
         ax.legend(
             title=ax.get_legend().get_title().get_text(),
             ncols=2,
             frameon=False,
-            handletextpad=0.2,# Space between handle and text
-            columnspacing=0.5,# Space between columns                
+            handletextpad=0.2,  # Space between handle and text
+            columnspacing=0.5,  # Space between columns
         )
         ax.set(
-            xlabel="count" if not perc_counts else '%',
+            xlabel="count" if not perc_counts else "%",
             # ylabel=None if not dplot_.index.name is None else dplot_.index.name,
             ylim=[
                 min(ax.get_ylim()),
-                max(ax.get_ylim())+(max(ax.get_ylim())-min(ax.get_ylim()))
-                ],
+                max(ax.get_ylim()) + (max(ax.get_ylim()) - min(ax.get_ylim())),
+            ],
         )
         # Hide the top, left, and right spines
-        ax.spines['top'].set_visible(False)
-        ax.spines['left'].set_visible(False)
-        ax.spines['right'].set_visible(False)
+        ax.spines["top"].set_visible(False)
+        ax.spines["left"].set_visible(False)
+        ax.spines["right"].set_visible(False)
 
         # Keep the bottom spine visible (it's visible by default)
-        ax.spines['bottom'].set_visible(True)        
+        ax.spines["bottom"].set_visible(True)
         if show_counts:
             if not pre_data:
                 logging.warning("can't show_counts because pre_data=False ..")
@@ -238,6 +229,7 @@ def plot_intersection_counts(
         raise ValueError(kind)
     if show_pval:
         from roux.viz.annot import show_crosstab_stats
+
         show_crosstab_stats(
             data=df1,
             cols=cols,
@@ -247,43 +239,44 @@ def plot_intersection_counts(
     # ax.legend(ncols=2)
     return ax
 
+
 def plot_sets(
     data,
     x,
     y,
     order_x=None,
-    order_y=None,    
+    order_y=None,
     kws_stats={},
-    kind='bar',
+    kind="bar",
     ax=None,
     **kws_plot_intersection_counts,
-    ):
+):
     if ax is None:
-        ax=plt.gca()
-        
+        ax = plt.gca()
+
     # if order_x is None and kws_stats.get(order_x) is not None:
     #     order_x=kws_stats['order_x']
     #     del kws_stats['order_x']
     # if order_y is None and kws_stats.get(order_y) is not None:
     #     order_y=kws_stats['order_y']
     #     del kws_stats['order_y']
-        
+
     from roux.viz.annot import show_crosstab_stats
     # %run ../../roux/roux/viz/annot.py
-    
-    res=show_crosstab_stats(
+
+    res = show_crosstab_stats(
         **{
             **dict(
                 data=data,
-                cols=[x,y],
+                cols=[x, y],
                 order_x=order_x,
-                order_y=order_y,        
-                loc='center' if kind=='bar' else 'bottom',
+                order_y=order_y,
+                loc="center" if kind == "bar" else "bottom",
             ),
-            **kws_stats
+            **kws_stats,
         },
     )
-    data1=res['table']
+    data1 = res["table"]
     # sns.heatmap(
     #     data1,
     #     ax=ax
@@ -302,14 +295,15 @@ def plot_sets(
             **kws_plot_intersection_counts,
         },
         kws_show_stats=dict(
-            pval=res['P'],
-            stat=res['stat'],
+            pval=res["P"],
+            stat=res["stat"],
         ),
         ax=ax,
     )
-    ax.stats=res
+    ax.stats = res
     return ax
-    
+
+
 def plot_intersections(
     ds1: pd.Series,
     item_name: str = None,
@@ -444,7 +438,8 @@ def plot_intersections(
     #     if intersections_ylabel
     #     if not post_fun is None: post_fun(ax['intersections'])
     return d
-    
+
+
 def plot_enrichment(
     data: pd.DataFrame,
     x: str,
@@ -501,7 +496,7 @@ def plot_enrichment(
         coff_fdr = 1
     if any(data[y] == 0):
         logging.warning(
-            f"found {sum(data[y]==0)} zeros in among y values; replaced them with the next minimum which is {data[y].replace(0,np.nan).min()}."
+            f"found {sum(data[y] == 0)} zeros in among y values; replaced them with the next minimum which is {data[y].replace(0, np.nan).min()}."
         )
         data[y] = data[y].replace(0, data[y].replace(0, np.nan).min())
     from roux.stat.transform import log_pval
@@ -633,9 +628,7 @@ def _to_data_plot_pie(
     if colors is not None:
         if isinstance(colors, list):
             colors = dict(zip(order, colors))
-        data_ = data_.assign(
-            color=lambda df: df["name"].map(colors)
-        )
+        data_ = data_.assign(color=lambda df: df["name"].map(colors))
     if explode is not None:
         if explode == "first":
             explode = order[0]
@@ -644,18 +637,16 @@ def _to_data_plot_pie(
         else:
             raise ValueError(explode)
         data_ = data_.assign(
-            explode=lambda df: df["name"].apply(
-                    lambda x: 0.1 if explode == x else 0
-                )
+            explode=lambda df: df["name"].apply(lambda x: 0.1 if explode == x else 0)
         )
     if show_n:
         data_["perc"] = 100.0 * data_["count"] / data_["count"].sum()
         data_ = (
             data_.assign(
                 name=lambda df: df.apply(
-                        lambda x: f"{x['name']}\n{x['perc']:.0f}% ({x['count']})",
-                        axis=1,
-                    )
+                    lambda x: f"{x['name']}\n{x['perc']:.0f}% ({x['count']})",
+                    axis=1,
+                )
             )
         ).drop(["perc"], axis=1)
 
@@ -713,9 +704,9 @@ def plot_pie(
         **kws_pie,
     )
     if annot:
-        wedges=t[0]
-        texts=t[1:]
-        
+        wedges = t[0]
+        texts = t[1:]
+
         # assert isinstance(t,tuple), t
         kws_annotate = dict(
             arrowprops=dict(arrowstyle="-", color=line_color, shrinkB=0),
@@ -742,7 +733,7 @@ def plot_pie(
                 # horizontalalignment = 'center'
                 connectionstyle = f"angle,angleA=0,angleB={ang}"
                 kws_annotate["arrowprops"].update({"connectionstyle": connectionstyle})
-    
+
                 ax.annotate(
                     labels[i],
                     xy=(x, y),
@@ -757,7 +748,7 @@ def plot_pie(
         if annot_side:
             df1 = pd.DataFrame(dict(labels=ks, xs=xs, ys=ys))
             from roux.viz.annot import annot_side
-    
+
             ## right
             df1_ = df1.query("`xs` >= 0")
             ax = annot_side(

@@ -20,50 +20,46 @@ def reset_index(
     """
     Named levels only.
     """
-    return df.reset_index(
-        [i for i in df.index.names if i],
-        **kws
-    )
+    return df.reset_index([i for i in df.index.names if i], **kws)
+
 
 @to_rd
 def loca(
     df,
     index=None,
     columns=None,
-    # errors='raise', 
+    # errors='raise',
     verbose=False,
-    ):
+):
     """
     loc_available
     """
-    if (index is None and columns is None):
+    if index is None and columns is None:
         if verbose:
-            logging.warning('(index is None and columns is None)')
+            logging.warning("(index is None and columns is None)")
         return df
-        
+
     if index is None:
-        index=df.index.tolist()
+        index = df.index.tolist()
     if columns is None:
-        columns=df.columns.tolist()
-        
+        columns = df.columns.tolist()
+
     d1 = {}
-    d1["from"] = (len(index),len(columns))
-    
-    df=df.loc[
-        (df.index.intersection(index),
-        df.columns.intersection(columns)) 
-    ]
-    
+    d1["from"] = (len(index), len(columns))
+
+    df = df.loc[(df.index.intersection(index), df.columns.intersection(columns))]
+
     d1["to"] = df.shape
     log_shape_change(
         d1,
-        fun='loca',
+        fun="loca",
         # label=label
-        )
-    if d1["to"]==(0,0):
-        logging.warning('loca: na')
+    )
+    if d1["to"] == (0, 0):
+        logging.warning("loca: na")
     return df
-   
+
+
 @to_rd
 def get_name(
     df1: pd.DataFrame,
@@ -182,7 +178,7 @@ def drop_levelcol(df):
 def drop_constants(
     df,
     verbose=True,
-    ):
+):
     """Deletes columns with a single unique value.
 
     Parameters:
@@ -286,7 +282,7 @@ def lower_columns(df):
 def renameby_replace(
     df: pd.DataFrame,
     replaces: dict,
-    errors: bool = 'raise',
+    errors: bool = "raise",
     **kws,
 ) -> pd.DataFrame:
     """Rename columns by replacing sub-strings.
@@ -303,6 +299,7 @@ def renameby_replace(
         kws (dict): parameters provided to `replacemany` function.
     """
     from roux.lib.str import replacemany
+
     df.columns = [replacemany(c, replaces, errors=errors, **kws) for c in df]
     return df
 
@@ -367,7 +364,7 @@ def clean(
         #         from roux.lib.set import unique
         if verb:
             logging.warning(
-                f"duplicate column/s dropped:{df.loc[:,df.columns.duplicated()].columns.tolist()}"
+                f"duplicate column/s dropped:{df.loc[:, df.columns.duplicated()].columns.tolist()}"
             )
         df = df.loc[:, ~(df.columns.duplicated())]
     if len(cols_del) != 0:
@@ -405,7 +402,9 @@ def compress(
         logging.info(f"compressing '{c}'")
         df1[c] = df1[c].astype("category")
     if verbose:
-        logging.info(f"compression={((ini-df1.memory_usage().sum())/ini)*100:.1f}%")
+        logging.info(
+            f"compression={((ini - df1.memory_usage().sum()) / ini) * 100:.1f}%"
+        )
     return df1
 
 
@@ -434,14 +433,15 @@ def clean_compress(
     """
     return df.rd.clean(**kws_clean).rd.compress(**kws_compress)
 
+
 @to_rd
 def to_sparse(
     df1,
     cols=None,
     dtypes=None,
-    ):
+):
     """
-    
+
     if dtype=='object':
         df=(
             df
@@ -450,36 +450,37 @@ def to_sparse(
                 np.nan,
             )
         )
-    
+
     """
-    to_fill_value={
-        'float': np.nan,
-        'int': 0,
-        'bool':False,
+    to_fill_value = {
+        "float": np.nan,
+        "int": 0,
+        "bool": False,
     }
     if cols:
         if not dtypes:
-            dtypes={c:v.name for c,v in df1[cols].dtypes.to_dict().items()}
+            dtypes = {c: v.name for c, v in df1[cols].dtypes.to_dict().items()}
             logging.info(dtypes)
-        sdtypes={c: pd.SparseDtype(v, fill_value=to_fill_value.get(dtype,np.nan)) for c,v in dtypes.items()}
+        sdtypes = {
+            c: pd.SparseDtype(v, fill_value=to_fill_value.get(dtype, np.nan))
+            for c, v in dtypes.items()
+        }
     else:
         if not dtypes:
-            dtypes=df1.dtypes.unique()
-            assert len(dtypes)==1,dtypes
-            dtypes=dtypes[0].name
+            dtypes = df1.dtypes.unique()
+            assert len(dtypes) == 1, dtypes
+            dtypes = dtypes[0].name
             logging.info(dtypes)
-        sdtypes=pd.SparseDtype(dtypes, fill_value=to_fill_value.get(dtypes,np.nan))
-        
-    df1=(
-        df1
-        .astype(
-              sdtypes
-        )
+        sdtypes = pd.SparseDtype(dtypes, fill_value=to_fill_value.get(dtypes, np.nan))
+
+    df1 = df1.astype(sdtypes)
+    sparse_density = df1.sparse.density
+    getattr(logging, "info" if sparse_density < 1 else "warning")(
+        f"sparse_density: {sparse_density}"
     )
-    sparse_density=df1.sparse.density
-    getattr(logging,'info' if sparse_density<1 else 'warning')(f"sparse_density: {sparse_density}")
     # assert sparse_density<1, (sparse_density,sdtypes)
     return df1
+
 
 ## nans:
 @to_rd
@@ -585,7 +586,7 @@ def check_nunique(
     out=True,
     log=True,
     plot=False,
-    errors='raise', # keyerror
+    errors="raise",  # keyerror
 ) -> pd.Series:
     """Number/percentage of unique values in columns.
 
@@ -597,7 +598,7 @@ def check_nunique(
     Returns:
         ds (Series): output stats.
     """
-    ## TODO: need disconnected copy 
+    ## TODO: need disconnected copy
     # if expr is not None:
     #     assert not out, f"for clarity, filter separately. expr={expr} .. "
     #     df=df.copy(deep=True).query(expr=expr)
@@ -606,12 +607,12 @@ def check_nunique(
         logging.warning(f"Auto-detected columns (subset): {subset}")
     if isinstance(subset, str):
         subset = [subset]
-    if errors=='raise':
-        assert len(set(subset) - set(df.columns.tolist())) == 0, 'else use errors=None'
+    if errors == "raise":
+        assert len(set(subset) - set(df.columns.tolist())) == 0, "else use errors=None"
     else:
-        subset=df.columns.intersection(subset).tolist()
-        assert len(subset)!=0
-        logging.warning(f'subset reduced to {subset}')
+        subset = df.columns.intersection(subset).tolist()
+        assert len(subset) != 0
+        logging.warning(f"subset reduced to {subset}")
     if groupby is None:
         if not perc:
             ds_ = df.loc[:, subset].nunique()
@@ -627,20 +628,18 @@ def check_nunique(
             ds_ = df.groupby(groupby).apply(
                 lambda df: len(df.loc[:, subset].drop_duplicates())
             )
-        
-    ds_=ds_.sort_values(ascending=False)
-    if plot!=False:
-        ds_.sort_values(ascending=True).plot.barh(
-            **({} if plot==True else plot)
-        )
+
+    ds_ = ds_.sort_values(ascending=False)
+    if plot != False:
+        ds_.sort_values(ascending=True).plot.barh(**({} if plot == True else plot))
     if out:
         ## no logging
         return ds_
     else:
         str_log = (
             # f"{expr if expr is not None else ' ':}: "
-            f"{'by '+to_str(groupby,log=True)+', nunique '+to_str(subset,log=True)+':' if groupby is not None else 'nunique:'} {to_str(ds_)}"
-            )
+            f"{'by ' + to_str(groupby, log=True) + ', nunique ' + to_str(subset, log=True) + ':' if groupby is not None else 'nunique:'} {to_str(ds_)}"
+        )
         if log:
             logging.info(str_log)
             return df  # input
@@ -719,7 +718,7 @@ def check_duplicated(
 def validate_no_dups(
     df,
     subset=None,
-    log: bool=True,
+    log: bool = True,
 ):
     """Validate that no duplicates.
 
@@ -753,43 +752,39 @@ def validate_no_duplicates(
 def assert_no_dups(df, subset=None):
     """Assert that no duplicates"""
     assert validate_no_dups(df, subset=subset), (
-        check_dups(
-            df, subset=subset, perc=False
-        )
-        .dropna(how='all',axis=1)
+        check_dups(df, subset=subset, perc=False)
+        .dropna(how="all", axis=1)
         .pipe(drop_constants)
     )
     return df
+
 
 @to_rd
 def drop_dups_by_agg(
     df1,
     subset,
     col_agg,
-    std_max=0.05, ## standard deviation
-    agg_func='mean',
+    std_max=0.05,  ## standard deviation
+    agg_func="mean",
     **kws_drop_duplicates,
-    ):
-    df2=df1.rd.check_dups(
-        subset=subset
-    )
-    if len(df2)==0:
+):
+    df2 = df1.rd.check_dups(subset=subset)
+    if len(df2) == 0:
         return df1
     else:
-        std_max_data=df2.groupby(subset)[col_agg].std().max()
-        assert std_max_data<=std_max, std_max_data
-        logging.info(f'std max found in data={std_max_data}')
+        std_max_data = df2.groupby(subset)[col_agg].std().max()
+        assert std_max_data <= std_max, std_max_data
+        logging.info(f"std max found in data={std_max_data}")
         return pd.concat(
             [
                 df1.log().drop_duplicates(
-                    subset=subset,
-                    keep=False,
-                    **kws_drop_duplicates
+                    subset=subset, keep=False, **kws_drop_duplicates
                 ),
                 df2.groupby(subset)[col_agg].agg(agg_func).reset_index(),
             ],
             axis=0,
-            ).log()
+        ).log()
+
 
 ## asserts
 @to_rd
@@ -815,13 +810,14 @@ def validate_dense(
         subset = df01.columns.tolist()
     valids = {}
     if duplicates:
-        valids['no_dups']=df01.rd.validate_no_dups(subset=subset)
+        valids["no_dups"] = df01.rd.validate_no_dups(subset=subset)
     if na:
-        valids['no_na']=df01.rd.validate_no_na(subset=subset)
-    if out_fmt==bool:
+        valids["no_na"] = df01.rd.validate_no_na(subset=subset)
+    if out_fmt == bool:
         return all(list(valids.values()))
     else:
         return valids
+
 
 @to_rd
 def assert_dense(
@@ -836,19 +832,19 @@ def assert_dense(
     Notes:
         to be deprecated in future releases.
     """
-    valids=validate_dense(
+    valids = validate_dense(
         df01,
         subset=subset,
         duplicates=duplicates,
         na=na,
         message=message,
         out_fmt=dict,
-        )
+    )
     if all(list(valids.values())):
         return df01
     else:
         ## diagnose
-        if valids.get('no_dups')==False:
+        if valids.get("no_dups") == False:
             logging.error(
                 check_dups(
                     df01,
@@ -856,7 +852,7 @@ def assert_dense(
                     out=False,
                 )
             )
-        if valids.get('no_na')==False:            
+        if valids.get("no_na") == False:
             logging.error(
                 check_na(
                     df01,
@@ -865,6 +861,7 @@ def assert_dense(
                 )
             )
         assert False, valids
+
 
 ## counts
 @to_rd
@@ -882,7 +879,8 @@ def assert_shape(
     """
     assert df.shape == shape, df.shape
     return df
-    
+
+
 @to_rd
 def assert_len(
     df: pd.DataFrame,
@@ -1001,10 +999,11 @@ def check_mappings(
         logging.info(f"mappings: {df1.to_string(index=False)}")
         return df
 
+
 @to_rd
 def assert_mappings(
     df: pd.DataFrame,
-    validate='1:1',
+    validate="1:1",
     subset: list = None,
 ) -> pd.DataFrame:
     """Validate that the papping between items in two columns is 1:1.
@@ -1043,6 +1042,7 @@ def assert_1_1_mappings(
         validate="1:1",
         **kws,
     )
+
 
 @to_rd
 def get_mappings(
@@ -1196,124 +1196,112 @@ def get_totals(ds1):
 # filter df
 @to_rd
 def query(
-    df : pd.DataFrame,
-    expr : str = None,  
+    df: pd.DataFrame,
+    expr: str = None,
     ## safety
-    errors='raise',    
+    errors="raise",
     ## log
     subset=None,
     groupby=None,
     kws_log={},
-    
     **kws,
-    ) -> pd.DataFrame:
+) -> pd.DataFrame:
     """
     Can query safely and log clause-wise
-    """    
-    if expr in [None,'']:
+    """
+    if expr in [None, ""]:
         # return safely (as opposed to base pandas)
         logging.warning(f"skipped because expr={expr}")
         return df
-        
-    assert ' and ' not in expr, expr 
-    assert ' or ' not in expr, expr 
-    assert not (expr.count('&')  > 0 and expr.count('|')  > 0), expr
+
+    assert " and " not in expr, expr
+    assert " or " not in expr, expr
+    assert not (expr.count("&") > 0 and expr.count("|") > 0), expr
 
     if subset is not None:
-        kws_log['subset']=subset
+        kws_log["subset"] = subset
     if groupby is not None:
-        kws_log['groupby']=groupby
-    
+        kws_log["groupby"] = groupby
+
     import re
 
     from roux.lib.str import get_fills
 
     # Pre-calculate once outside the loop
     df_columns_set = set(df.columns)
-    
+
     # Get all column names from the full expression
     expr_columns = set(get_fills(expr, "`"))
-    
+
     # Check if any columns are missing
     missing_columns = expr_columns - df_columns_set
-    
+
     if len(missing_columns) > 0:
-        if errors=='raise':
-            raise ValueError(f"expr '{expr}' contains missing columns: {list(missing_columns)}")
+        if errors == "raise":
+            raise ValueError(
+                f"expr '{expr}' contains missing columns: {list(missing_columns)}"
+            )
         # If there are missing columns, split and filter the expression
-        clauses_and_ops = re.split(r'\s*(&|\|)\s*', expr)
+        clauses_and_ops = re.split(r"\s*(&|\|)\s*", expr)
         clauses = clauses_and_ops[0::2]
-        operators = [''] + clauses_and_ops[1::2]
-        
+        operators = [""] + clauses_and_ops[1::2]
+
         valid_clauses = []
-        
+
         for op, clause in zip(operators, clauses):
             # Optimization: only check if a clause is valid if it contains a column
             # that is NOT in the missing_columns set.
             # This is a key simplification, as we don't need to get all columns for a clause again.
-            
+
             # The logic here is tricky. The simplest way to check for a missing column
             # within a clause is to get the columns for that clause again.
             # So, the original call `get_fills(clause, '`')` is necessary.
-            
-            clause_columns = set(get_fills(clause, '`'))
+
+            clause_columns = set(get_fills(clause, "`"))
             if clause_columns.isdisjoint(missing_columns):
-                valid_clauses.append(op + ' ' + clause.strip())
+                valid_clauses.append(op + " " + clause.strip())
             else:
                 missing_in_clause = clause_columns & missing_columns
-                logging.warning(f"Query clause '{clause.strip()}' was omitted due to missing columns: {list(missing_in_clause)}")
-    
+                logging.warning(
+                    f"Query clause '{clause.strip()}' was omitted due to missing columns: {list(missing_in_clause)}"
+                )
+
         if not valid_clauses:
             logging.warning("nothing to query, returning the input!")
             return df
-    
-        final_query_expr = ' '.join(valid_clauses).strip()
-        
-        if final_query_expr.startswith(('&', '|')):
-            final_query_expr = final_query_expr.split(' ', 1)[1]
+
+        final_query_expr = " ".join(valid_clauses).strip()
+
+        if final_query_expr.startswith(("&", "|")):
+            final_query_expr = final_query_expr.split(" ", 1)[1]
         logging.warning(f"expr = '{final_query_expr}'")
     else:
         final_query_expr = expr
-    
-    if len(kws_log)==0:
-        return df.log.query(
-            expr=final_query_expr,
-            **kws
-        )
+
+    if len(kws_log) == 0:
+        return df.log.query(expr=final_query_expr, **kws)
     else:
         # print(kws_log)
-        df.log(label='(init)')
-        for e in final_query_expr.split('&'):
-            df=(
-                df
-                .query(
-                    expr=e,
-                    **kws
-               )
-               .log(
-                   # label=f"(queried by: {get_bracket(e,'`','`')})",
-                   label=f"({e.strip()})",
-                   **kws_log,
-               ) 
-               )
+        df.log(label="(init)")
+        for e in final_query_expr.split("&"):
+            df = df.query(expr=e, **kws).log(
+                # label=f"(queried by: {get_bracket(e,'`','`')})",
+                label=f"({e.strip()})",
+                **kws_log,
+            )
         return df
+
 
 @to_rd
 def filter_rows(
     df,
-    
     expr,
-    mode='keep',
-    
+    mode="keep",
     ## by df
-    
     ## by dict
     logic="&",
-    
     drop_constants=False,
-    
     fast=False,
-    
     test=False,
     verbose=True,
 ):
@@ -1332,28 +1320,22 @@ def filter_rows(
         df (DataFrame): output dataframe.
     """
     # Quality check for the mode parameter
-    if mode not in ['drop', 'keep']:
+    if mode not in ["drop", "keep"]:
         raise ValueError(f"mode must be either 'drop' or 'keep', but got '{mode}'")
-    
-    if isinstance(expr,pd.DataFrame):
-        df=df.log().reset_index(drop=True)
+
+    if isinstance(expr, pd.DataFrame):
+        df = df.log().reset_index(drop=True)
         # This mask will identify all rows that match at least one rule
         combined_mask_of_matches = pd.Series(False, index=df.index)
-        
+
         # Identify the columns that define the hierarchy
-        expr=(
-            expr
-                .drop_duplicates()
-        )
-        cols_id = expr.columns.tolist()        
-        if len(set(cols_id) - set(df.columns.tolist()))>0:
-            expr=(
+        expr = expr.drop_duplicates()
+        cols_id = expr.columns.tolist()
+        if len(set(cols_id) - set(df.columns.tolist())) > 0:
+            expr = (
                 expr
-                    ## only the common columns
-                    .loc[
-                        :,
-                        list(set(cols_id) & set(df.columns.tolist()))
-                    ]
+                ## only the common columns
+                .loc[:, list(set(cols_id) & set(df.columns.tolist()))]
             )
             cols_id = expr.columns.tolist()
             logging.warning(f"using cols_id: {cols_id}")
@@ -1361,7 +1343,7 @@ def filter_rows(
         # --- Modification: Pre-filter expr to keep only relevant rules ---
         # 1. Get unique values from the data
         relevant_values_ = {col: set(df[col].unique()) for col in cols_id}
-    
+
         # 2. Build a boolean mask to identify relevant rules without iteration
         mask_relevant_rules_ = pd.Series(True, index=expr.index)
         for col, data_vals in relevant_values_.items():
@@ -1370,13 +1352,15 @@ def filter_rows(
             # Update the mask to exclude these irrelevant rules
             mask_relevant_rules_[is_irrelevant_] = False
 
-        _len=len(expr)
+        _len = len(expr)
         expr = expr[mask_relevant_rules_]
         if _len > len(expr):
-            logging.warning(f"expr reduced to remove irrelevant rules: {_len} -> {len(expr)}")
-        
+            logging.warning(
+                f"expr reduced to remove irrelevant rules: {_len} -> {len(expr)}"
+            )
+
         if expr.empty:
-            return df.copy() if mode == 'drop' else df.iloc[0:0]
+            return df.copy() if mode == "drop" else df.iloc[0:0]
         # --- End Modification ---
 
         if not fast:
@@ -1385,12 +1369,12 @@ def filter_rows(
             for _, rule in expr.iterrows():
                 # Start with a mask of all True for the current rule
                 current_rule_mask = pd.Series(True, index=df.index)
-                
+
                 # Sequentially apply filters for each non-NaN value in the rule
                 for col in cols_id:
                     if pd.notna(rule[col]):
-                        current_rule_mask &= (df[col] == rule[col])
-                
+                        current_rule_mask &= df[col] == rule[col]
+
                 # Add the rows matching this rule to the combined mask of matches
                 combined_mask_of_matches |= current_rule_mask
         else:
@@ -1402,36 +1386,36 @@ def filter_rows(
                     if pd.notna(val):
                         # repr(val) correctly handles strings vs. numbers
                         conditions.append(f"`{col}` == {val!r}")
-                
+
                 if conditions:
                     # Join conditions for a single rule with ' & '
                     rule_queries.append(f"({' & '.join(conditions)})")
-                    
+
             if not rule_queries:
-                return df.copy() if mode == 'drop' else df.iloc[0:0]
-        
+                return df.copy() if mode == "drop" else df.iloc[0:0]
+
             # 2. Combine all rule queries with ' | ' to find any match
-            full_query = ' | '.join(rule_queries)
-        
+            full_query = " | ".join(rule_queries)
+
             # 3. Use the high-performance `eval` engine to get a boolean mask in one pass
-            combined_mask_of_matches = df.eval(full_query, engine='numexpr')
-    
+            combined_mask_of_matches = df.eval(full_query, engine="numexpr")
+
         # Apply the final filter based on the selected mode
-        if mode == 'keep':
+        if mode == "keep":
             # Return only the rows that match at least one rule
             return df[combined_mask_of_matches].log()
-        else: # mode == 'keep'
+        else:  # mode == 'keep'
             # Return rows that do NOT match any rule
             return df[~combined_mask_of_matches].log()
-        
-    elif isinstance(expr,dict):
+
+    elif isinstance(expr, dict):
         if verbose:
             logging.info(df.shape)
 
         # if mode=='keep':
         #     sign=" == "
         # else:
-        #     sign=" != "            
+        #     sign=" != "
         # assert all([isinstance(expr[k], (str, list)) for k in expr])
         # qry = f" {logic} ".join(
         #     [
@@ -1439,14 +1423,15 @@ def filter_rows(
         #         for k, v in expr.items()
         #     ]
         # )
-        
+
         from roux.lib.str import to_expr
-        expr=to_expr(
+
+        expr = to_expr(
             expr,
             mode=mode,
-            logic=logic, 
+            logic=logic,
         )
-        
+
         df1 = df.query(expr=expr)
         if test:
             logging.info(df1.loc[:, list(expr.keys())].drop_duplicates())
@@ -1459,13 +1444,15 @@ def filter_rows(
         return df1
     else:
         raise ValueError(expr)
-        
+
+
 @to_rd
-def tri(df,k=-1,**kws_np_tri):
+def tri(df, k=-1, **kws_np_tri):
     """
     Get tringle of adjacency matrix.
     """
-    return df.where(np.tri(*(df.shape),k,**kws_np_tri).astype('bool'))
+    return df.where(np.tri(*(df.shape), k, **kws_np_tri).astype("bool"))
+
 
 ## conversion to type
 @to_rd
@@ -1547,18 +1534,17 @@ def agg_bools(df1, cols):
         df1.loc[df1[c], col] = c
     return df1[col]
 
+
 ## reshape
 @to_rd
-def explode(
-    df1,
-    col
-):
+def explode(df1, col):
     """
     Notes:
         -[x] dicts in a col.
     """
-    df1=df1.reset_index(drop=True)
+    df1 = df1.reset_index(drop=True)
     return df1.join(pd.DataFrame(df1[col].tolist())).drop(columns=col)
+
 
 ## paired dfs
 @to_rd
@@ -1586,24 +1572,24 @@ def melt_paired(
             suffixes=['gene1','gene2'],
     """
     if cols_value is None:
-        assert not (
-            cols_index is None and suffixes is None
-        ), "either cols_index or suffixes needed"
+        assert not (cols_index is None and suffixes is None), (
+            "either cols_index or suffixes needed"
+        )
         if suffixes is None and cols_index is not None:
             from roux.lib.str import get_suffix
 
             suffixes = get_suffix(*cols_index, common=False, clean=True)
 
         # both suffixes should not be in any column name
-        assert not any(
-            [all([s in c for s in suffixes]) for c in df]
-        ), "both suffixes should not be in a single column name"
-        assert not any(
-            [c == s for s in suffixes for c in df]
-        ), "suffix should not be the column name"
-        assert all(
-            [any([s in c for c in df]) for s in suffixes]
-        ), "both suffix should be in the column names"
+        assert not any([all([s in c for s in suffixes]) for c in df]), (
+            "both suffixes should not be in a single column name"
+        )
+        assert not any([c == s for s in suffixes for c in df]), (
+            "suffix should not be the column name"
+        )
+        assert all([any([s in c for c in df]) for s in suffixes]), (
+            "both suffix should be in the column names"
+        )
 
         cols_common = [c for c in df if not any([s in c for s in suffixes])]
         dn2df = {}
@@ -1615,8 +1601,7 @@ def melt_paired(
         df1 = pd.concat(dn2df, axis=0, names=["suffix"]).reset_index(0)
         df2 = df1.rename(
             columns={
-                c: c[:-1] if c.endswith(" ") else c[1:] if c.startswith(" ") else c
-                for c in df1
+                c: c[:-1] if c.endswith(" ") else c.removeprefix(" ") for c in df1
             },
             errors="raise",
         )
@@ -1647,36 +1632,39 @@ def melt_paired(
         assert len(df2) == len(df) * len(cols_value)
         return df2
 
+
 @to_rd
 def replace_inf(
     df,
     subset,
-    value=None, #np.nan
-    ):    
+    value=None,  # np.nan
+):
     """
     Replaces with the closest np.inf:max, -np.inf:min
-    
+
     if not pandas.options.mode.use_inf_as_na = True
     """
-    if isinstance(subset,str):
-        subset=[subset]    
-        
-    for c in subset:    
-        if df[c].max()==np.inf:
-            logging.info(f"{c} == inf count = {sum(df[c]==np.inf)}")            
-            df[c]=df[c].replace(
+    if isinstance(subset, str):
+        subset = [subset]
+
+    for c in subset:
+        if df[c].max() == np.inf:
+            logging.info(f"{c} == inf count = {sum(df[c] == np.inf)}")
+            df[c] = df[c].replace(
                 np.inf,
-                value if value is not None else df[c].replace([np.inf], np.nan).max()
+                value if value is not None else df[c].replace([np.inf], np.nan).max(),
             )
-        if df[c].min()== -np.inf:
-            logging.info(f"{c} == -inf count = {sum(df[c]== -np.inf)}")
-            df[c]=df[c].replace(
+        if df[c].min() == -np.inf:
+            logging.info(f"{c} == -inf count = {sum(df[c] == -np.inf)}")
+            df[c] = df[c].replace(
                 -np.inf,
-                value if value is not None else df[c].replace([-np.inf], np.nan).min()
+                value if value is not None else df[c].replace([-np.inf], np.nan).min(),
             )
     return df
-    
+
+
 ## helper to get_bins
+
 
 @to_rd
 def get_qbins(df: pd.DataFrame, col: str, bins: list, labels: list = None, **kws_qcut):
@@ -1687,19 +1675,17 @@ def get_qbins(df: pd.DataFrame, col: str, bins: list, labels: list = None, **kws
             ),
         },
     )
-    
+
+
 @to_rd
 def get_bins(
     df: pd.DataFrame,
     col: str,
     bins: list,
-    kind: str= '',
-    
+    kind: str = "",
     labels: list = None,
     labels_fmt: str = None,  # e.g. min
-
-    dtype=None, # =labels_fmt
-    
+    dtype=None,  # =labels_fmt
     **kws_cut,
 ):
     """
@@ -1707,41 +1693,42 @@ def get_bins(
     """
     if dtype is not None:
         if labels_fmt is not None:
-            raise ValueError(
-                'remove deprec.d arg: dtype'
-            )
+            raise ValueError("remove deprec.d arg: dtype")
         else:
             ## bc
-            labels_fmt=dtype
+            labels_fmt = dtype
             del dtype
-    
-    df=replace_inf(
+
+    df = replace_inf(
         df,
         subset=col,
     )
-    
-    if kind.startswith('q'):
+
+    if kind.startswith("q"):
         return get_qbins(
-            df,#: pd.DataFrame,
-            col=col,#: str,
-            bins=bins,#: list,
-            labels=labels,#: list = None,
-            **{k:v for k,v in kws_cut.items() if k not in ['include_lowest']}, ## **kws_qcut
+            df,  #: pd.DataFrame,
+            col=col,  #: str,
+            bins=bins,  #: list,
+            labels=labels,  #: list = None,
+            **{
+                k: v for k, v in kws_cut.items() if k not in ["include_lowest"]
+            },  ## **kws_qcut
         )
         ## label auto
     else:
-        if isinstance(bins,int):
+        if isinstance(bins, int):
             ## for labeling
-            bins=list(
-                    np.linspace(
-                        df[col].min(),
-                        df[col].max(),
-                        bins+1,
-                    )
+            bins = list(
+                np.linspace(
+                    df[col].min(),
+                    df[col].max(),
+                    bins + 1,
                 )
-            logging.info(f"bins={bins}" )
+            )
+            logging.info(f"bins={bins}")
         if labels is None:
             from roux.lib.str import get_bin_labels
+
             labels = get_bin_labels(
                 bins=bins,
                 fmt=labels_fmt,
@@ -1749,9 +1736,7 @@ def get_bins(
         return df.assign(
             **{
                 f"{col} bin": lambda df: pd.cut(
-                    df[col], bins=bins,
-                    labels=labels,
-                    **kws_cut
+                    df[col], bins=bins, labels=labels, **kws_cut
                 ),
             },
         )
@@ -1762,21 +1747,17 @@ def get_chunks(
     df,
     size=None,
     n=None,
-    ):
+):
     assert not (size is None and n is None)
-    assert (size is not None or n is not None)
+    assert size is not None or n is not None
     if n is None:
-        n=(len(df)//size)+1
+        n = (len(df) // size) + 1
     if size is None:
-        size=(len(df)//n)+1
-        
-    return (
-        df
-        .assign(
-            chunk=np.array([np.repeat(i,size) for i in range(n)]).ravel()[:len(df)],
-        )
-        .log('chunk')
-    )
+        size = (len(df) // n) + 1
+
+    return df.assign(
+        chunk=np.array([np.repeat(i, size) for i in range(n)]).ravel()[: len(df)],
+    ).log("chunk")
 
 
 @to_rd
@@ -1851,13 +1832,14 @@ def groupby_sample(
     """
     return get_group(df.groupby(by=groupby), **kws_get_group)
 
+
 @to_rd
 def groupby_sort_values(
     df: pd.DataFrame,
     groupby: str,
     col: str,
     func: str,
-    col_temp : str ='temp',
+    col_temp: str = "temp",
     ascending=True,
     **kws_sort_values,
 ) -> pd.DataFrame:
@@ -1875,22 +1857,19 @@ def groupby_sort_values(
         pd.DataFrame
     """
     return (
-        df
-        .assign(
+        df.assign(
             **{
-                col_temp:lambda df: df.groupby(groupby)[col].transform(func),
+                col_temp: lambda df: df.groupby(groupby)[col].transform(func),
             },
         )
         .sort_values(
             col_temp,
             ascending=ascending,
             **kws_sort_values,
-            )
-        .drop(
-            [col_temp],
-            axis=1
         )
+        .drop([col_temp], axis=1)
     )
+
 
 @to_rd
 def groupby_agg_nested(
@@ -2010,33 +1989,33 @@ def infer_index(
     Infer the index (id) of the table.
 
 
-    """    
-    df_=(
-        data
-        .drop(cols_drop, axis=1)
+    """
+    df_ = (
+        data.drop(cols_drop, axis=1)
         .select_dtypes(
-            include='object',
+            include="object",
             exclude=None,
         )
         .nunique()
         .sort_values(ascending=False)
-        .to_frame('nunique')
+        .to_frame("nunique")
         .reset_index()
         .query(expr="`nunique`>1")
     )
-    if 'index' not in df_:
+    if "index" not in df_:
         return []
 
-    cols=df_['index'].tolist()
-        
-    cols_id=[]
+    cols = df_["index"].tolist()
+
+    cols_id = []
     for c in cols:
-        cols_id+=[c]
+        cols_id += [c]
         if data.rd.validate_no_dups(
             subset=cols_id,
             log=False,
-            ):
+        ):
             return cols_id
+
 
 @to_rd
 def set_index(
@@ -2045,25 +2024,26 @@ def set_index(
     # kws_infer_index,
     cols_drop=[],
     include=object,
-    exclude=None,    
+    exclude=None,
     **kws_set_index,
 ) -> list:
     if keys is None:
-        keys= infer_index(
-            data=data,#: pd.DataFrame,
-            cols_drop=cols_drop,#=[],
-            include=include,#=object,
-            exclude=exclude,#=None,
+        keys = infer_index(
+            data=data,  #: pd.DataFrame,
+            cols_drop=cols_drop,  # =[],
+            include=include,  # =object,
+            exclude=exclude,  # =None,
         )
-        
-    if len(keys)==0:
+
+    if len(keys) == 0:
         return data
-        
+
     return data.set_index(
         keys=keys,
         **kws_set_index,
     )
-    
+
+
 ## multiindex
 @to_rd
 def to_multiindex_columns(df, suffixes, test=False):
@@ -2103,12 +2083,12 @@ def to_ranges(
     colindex,
     colbool=None,
     sort=True,
-    agg: dict={},
+    agg: dict = {},
     interval=1,
     return_ranges_only=False,
     clean=True,
     verbose=True,
-    ):
+):
     """Ranges from boolean columns.
 
     Parameters:
@@ -2123,7 +2103,7 @@ def to_ranges(
 
     TODO:
         compare with io_sets.bools2intervals.
-    """        
+    """
     # import scipy as sc
 
     if sort:
@@ -2132,70 +2112,69 @@ def to_ranges(
     if colbool is None:
         if verbose:
             logging.info("setting consecutive values as ranges ..")
-        colbool='_range'
-        df1=df1.assign(
+        colbool = "_range"
+        df1 = df1.assign(
             **{
-                colbool:lambda df : (df[colindex]+interval)==df[colindex].shift(-interval),
+                colbool: lambda df: (
+                    (df[colindex] + interval) == df[colindex].shift(-interval)
+                ),
             },
         )
-        
-    col_group='_group'  
-    
-    df1=df1.assign(
+
+    col_group = "_group"
+
+    df1 = df1.assign(
         **{
             # col_group: sc.ndimage.measurements.label(df1[colbool].astype(int))[0],
             col_group: lambda df: (df[colindex].diff() != interval).cumsum()
         },
     )
-    
-        
-    df2=(
-        df1
-        .groupby(col_group)
+
+    df2 = (
+        df1.groupby(col_group)
         .agg(
             **{
-                
-                    f"{colindex} min": (colindex, 'min'),
-                    f"{colindex} max": (colindex, 'max')
-                ,
-                **agg
+                f"{colindex} min": (colindex, "min"),
+                f"{colindex} max": (colindex, "max"),
+                **agg,
             }
         )
         .reset_index()
     )
-        
+
     if return_ranges_only:
         if verbose:
-            logging.info("returning ranges only ..")        
-        df2=df2.query(expr=f"`{colindex} min` !=0 `{colindex} max`")
-        
+            logging.info("returning ranges only ..")
+        df2 = df2.query(expr=f"`{colindex} min` !=0 `{colindex} max`")
+
     if clean:
-        df2=df2.drop([col_group],axis=1)
-        
+        df2 = df2.drop([col_group], axis=1)
+
     return df2
+
 
 ## Assign bools
 @to_rd
 def assignby_expr(
     df,
-    expr, # .query-style
+    expr,  # .query-style
     col=None,
     clean=True,
     verbose=False,
 ):
-    if isinstance(expr,dict):
+    if isinstance(expr, dict):
         ## recurse
         if col is not None and clean:
             ## -> one col
-            sep_temp='__'
+            sep_temp = "__"
         else:
-            sep_temp=''
-        cols_temp=[]
-        for c,e in expr.items():
-            col_temp=f"{sep_temp}{c}"
-            df=assignby_expr(
+            sep_temp = ""
+        cols_temp = []
+        for c, e in expr.items():
+            col_temp = f"{sep_temp}{c}"
+            df = assignby_expr(
                 df,
-                expr=e, # .query-style
+                expr=e,  # .query-style
                 col=col_temp,
                 verbose=verbose,
             )
@@ -2203,108 +2182,105 @@ def assignby_expr(
         if col is None:
             return df
         else:
-            df=df.reset_index(drop=True)
+            df = df.reset_index(drop=True)
             ## collapse dummies
-            df[col]=pd.from_dummies(df.loc[:,cols_temp])[''].str.replace(sep_temp,'')
+            df[col] = pd.from_dummies(df.loc[:, cols_temp])[""].str.replace(
+                sep_temp, ""
+            )
             if clean:
-                df=df.drop(cols_temp,axis=1)
+                df = df.drop(cols_temp, axis=1)
             return df
-            
+
     if col is None:
-        col=expr
-    df=df.reset_index(drop=True)
-    df_=df.query(expr=expr)
-    df[col]=False
-    df.loc[df_.index.tolist(),col]=True
+        col = expr
+    df = df.reset_index(drop=True)
+    df_ = df.query(expr=expr)
+    df[col] = False
+    df.loc[df_.index.tolist(), col] = True
     if verbose:
         df.log(groupby=col)
     return df
 
+
 @to_rd
 def assign_bool(
     df1,
-    expr, # {True: expr, False: expr}
-    col, #output
-    fillna=None, ## unassignd -> np.nan
+    expr,  # {True: expr, False: expr}
+    col,  # output
+    fillna=None,  ## unassignd -> np.nan
     clean=True,
     verbose=False,
     # validate=False,
-    ):
-    """
-    """ 
+):
+    """ """
     if fillna is None:
-       fillna=np.nan 
-    
-    if isinstance(expr,str):
+        fillna = np.nan
+
+    if isinstance(expr, str):
         ## for True
-        expr={
+        expr = {
             True: expr,
-        }        
-    assert isinstance(expr,dict), expr
-    
-    for k in [True,False]:
+        }
+    assert isinstance(expr, dict), expr
+
+    for k in [True, False]:
         if str(k) in expr and k not in expr:
-            expr[k]=expr[str(k)]
+            expr[k] = expr[str(k)]
             del expr[str(k)]
-            
+
     ## pre. to expr
     if True not in expr:
-        if len(expr)==1:
-            # col: [list -> True] 
-            expr_in=expr.copy() 
+        if len(expr) == 1:
+            # col: [list -> True]
+            expr_in = expr.copy()
             del expr
-            
-            col_in=list(expr_in.keys())[0]
-            
-            cats_in=list(expr_in.values())[0]
-            if isinstance(cats_in,str):
-                cats_in=[cats_in]
-            expr={
+
+            col_in = list(expr_in.keys())[0]
+
+            cats_in = list(expr_in.values())[0]
+            if isinstance(cats_in, str):
+                cats_in = [cats_in]
+            expr = {
                 True: f"`{col_in}` == {cats_in}",
-                # False: f"`{col_in}` == {list(set(df1[col_in].unique()) - set(cats_in))}",      
+                # False: f"`{col_in}` == {list(set(df1[col_in].unique()) - set(cats_in))}",
             }
-    assert len(expr)<=2, expr
-    if len(expr)==2:
-        assert len(set(expr.values()))==2, expr
-        
+    assert len(expr) <= 2, expr
+    if len(expr) == 2:
+        assert len(set(expr.values())) == 2, expr
+
     if verbose:
         logging.info(f"expr(s):{expr}")
-        
-    for b,e in expr.items():
-        df1=(
-            df1
-            .rd.assignby_expr(
-                expr=e,
-                col=f"_{b}",
-                verbose=verbose,
-            )
+
+    for b, e in expr.items():
+        df1 = df1.rd.assignby_expr(
+            expr=e,
+            col=f"_{b}",
+            verbose=verbose,
         )
-    if '_False' not in df1:
-        df1=df1.assign(
-            _False=lambda df: ~(df['_True'])
-        )
+    if "_False" not in df1:
+        df1 = df1.assign(_False=lambda df: ~(df["_True"]))
     ## combine the True and False
-    df1=(
-        df1
-        .assign(
-            **{
-                col: lambda df: df.apply(
-                    lambda x: (
-                        True if x['_True'] and not x['_False'] else 
-                        False if x['_False'] and not x['_True'] else 
-                        fillna
-                    ),
-                    axis=1,
-                )
-            }   
-        )
+    df1 = df1.assign(
+        **{
+            col: lambda df: df.apply(
+                lambda x: (
+                    True
+                    if x["_True"] and not x["_False"]
+                    else False
+                    if x["_False"] and not x["_True"]
+                    else fillna
+                ),
+                axis=1,
+            )
+        }
     )
     if clean:
-        df1=df1.drop(['_True','_False'],axis=1,errors='ignore')
+        df1 = df1.drop(["_True", "_False"], axis=1, errors="ignore")
     if verbose:
-        df1.log(groupby=col)        
+        df1.log(groupby=col)
     return df1
-    
+
+
 @to_rd
 def to_boolean(df1):
     """Boolean from ranges.
@@ -2322,6 +2298,7 @@ def to_boolean(df1):
     a = np.arange(high.max() + 1)
     return ((a >= low) & (a <= high)).any(axis=0)
 
+
 ## sorting
 @to_rd
 def sort_values(
@@ -2329,9 +2306,10 @@ def sort_values(
     by: dict,
     **kws,
 ):
-    if isinstance(by,dict): 
-        kws['by'],kws['ascending']=list(by.keys()),list(by.values())
+    if isinstance(by, dict):
+        kws["by"], kws["ascending"] = list(by.keys()), list(by.values())
     return df.sort_values(**kws)
+
 
 @to_rd
 def astype_cat(
@@ -2340,6 +2318,7 @@ def astype_cat(
     cats: list,
 ):
     from roux.lib.ds import to_cat
+
     return df1.assign(
         **{
             col: lambda df: to_cat(df[col], cats=cats, ordered=True),
@@ -2504,7 +2483,7 @@ def sort_columns_by_values(
 
     df1 = pd.concat(dn2df, names=["equal", "sorted"]).reset_index([0, 1])
     logging.info(
-        f"(equal, sorted) items: {df1.groupby(['equal','sorted']).size().to_dict()}"
+        f"(equal, sorted) items: {df1.groupby(['equal', 'sorted']).size().to_dict()}"
     )
     if clean:
         df1 = df1.drop(
@@ -2513,34 +2492,30 @@ def sort_columns_by_values(
         )
     return df1
 
+
 def _log_df_query(
     df1,
     expr,
 ):
     ## log relevant cols only
     from roux.lib.str import get_fills
-    cols=get_fills(expr,marks='`')
+
+    cols = get_fills(expr, marks="`")
     try:
-        df1=(
-            df1
-                .loc[:,cols]
-        )
+        df1 = df1.loc[:, cols]
     except:
         pass
-    return (
-        df1
-            .query(expr=expr)
-    )
-        
+    return df1.query(expr=expr)
+
+
 @to_rd
-def assert_expr(
-    df1,
-    expr,
-    **kws
-    ):
-    assert df1.query(expr=expr,**kws).shape[0]==df1.shape[0], _log_df_query(df1,f"~({expr})") 
+def assert_expr(df1, expr, **kws):
+    assert df1.query(expr=expr, **kws).shape[0] == df1.shape[0], _log_df_query(
+        df1, f"~({expr})"
+    )
     return df1
-    
+
+
 ## paired stats
 from roux.viz import apply_plot
 
@@ -2551,109 +2526,109 @@ def check_corr(
     x,
     y,
     cols_id=None,
-    method='spearman',
+    method="spearman",
     resample=False,
     verbose=True,
-
-    validate=None, 
-    
-    plot=False,    
-    
+    validate=None,
+    plot=False,
     ## to be deprecated
     kws_plot={},
     kws_plot_set={},
     ax=None,
-
     out=False,
     **kws_get_corr,
-    ):
-    if validate in [False,'']:
-        validate=None
+):
+    if validate in [False, ""]:
+        validate = None
     if cols_id is not None:
         logging.warning("cols_id is not implemented.")
-    kws_stat={
+    kws_stat = {
         **dict(
             method=method,
-            resample=resample,        
+            resample=resample,
         ),
         **kws_get_corr,
     }
     if plot in [False, None]:
         from roux.stat.corr import get_corr
+
         res = get_corr(
             data[x],
             data[y],
-            
             verbose=verbose,
             **kws_stat,
-        )    
-    else:    
+        )
+    else:
         try:
-            if not isinstance(plot,dict):
-                plot={}
-            
-            ## to be removed part
-            if len(kws_plot)>0 or len(kws_plot_set)>0 or ax is not None:
-                logging.warning('kws_plot,kws_plot_set and ax  will be deprecated, provide them in the plot arg. instead')
+            if not isinstance(plot, dict):
+                plot = {}
 
-                plot={
+            ## to be removed part
+            if len(kws_plot) > 0 or len(kws_plot_set) > 0 or ax is not None:
+                logging.warning(
+                    "kws_plot,kws_plot_set and ax  will be deprecated, provide them in the plot arg. instead"
+                )
+
+                plot = {
                     **dict(
                         set=kws_plot_set,
                         ax=ax,
-                        )
+                    )
                     ## override
-                    **{
+                    ** {
                         **kws_plot,
                         **plot,
                     }
-                    }
+                }
                 logging.warning(f"plot={plot}")
 
             from roux.viz.scatter import plot_scatter
-            ax=apply_plot(
+
+            ax = apply_plot(
                 plot_scatter,
                 data,
                 kws_plot={
-                        **dict(
-                            plot=dict(
-                                x=x,
-                                y=y,
-                                stat_kws=kws_stat,
-                            ),
+                    **dict(
+                        plot=dict(
+                            x=x,
+                            y=y,
+                            stat_kws=kws_stat,
                         ),
-                        **plot
-                    },
-                )
-            res=ax.stats
+                    ),
+                    **plot,
+                },
+            )
+            res = ax.stats
         except Exception as e:
-            logging.exception(str(e))            
+            logging.exception(str(e))
             ## return stats only
             return check_corr(
-                data=data, #,
-                x=x, #,
-                y=y, #,
-                method=method, #='spearman',
-                resample=resample, #=False,
-                verbose=verbose, #=True,
-
-                validate=validate, #=None, 
-                
-                plot=False,    
-                
-                out=out, #=False,
+                data=data,  # ,
+                x=x,  # ,
+                y=y,  # ,
+                method=method,  # ='spearman',
+                resample=resample,  # =False,
+                verbose=verbose,  # =True,
+                validate=validate,  # =None,
+                plot=False,
+                out=out,  # =False,
                 **kws_get_corr,
-                )
-    df1=pd.Series(res).to_frame().T
+            )
+    df1 = pd.Series(res).to_frame().T
     if verbose:
-        logging.info(f'{data.name if hasattr(data,"name") else ""}{x} - {y}\n'+df1.to_string(index=False))
+        logging.info(
+            f"{data.name if hasattr(data, 'name') else ''}{x} - {y}\n"
+            + df1.to_string(index=False)
+        )
     if validate is not None:
-        assert_expr(df1,validate)
+        assert_expr(df1, validate)
         # logging.info(df1)
     if out:
         return df1
     else:
-        #pipe
+        # pipe
         return data
+
 
 @to_rd
 def check_diff(
@@ -2661,118 +2636,116 @@ def check_diff(
     x,
     y,
     cols_id,
-    method=None, # mannwhitneyu
-
-    order: list = None, 
-    hue: str = None, ## subcategories compared
-    hue_order: list = None, 
-
-    out=False, # stats
-    
-    plot=False, 
-    
+    method=None,  # mannwhitneyu
+    order: list = None,
+    hue: str = None,  ## subcategories compared
+    hue_order: list = None,
+    out=False,  # stats
+    plot=False,
     ## to be deprecated
     kws_plot={},
     kws_plot_set={},
-    ax=None, 
-
-    validate=None, 
+    ax=None,
+    validate=None,
     verbose=True,
     **kws_stats,
-    ):
-    
-    kws_diff=dict(
+):
+
+    kws_diff = dict(
         x=x,
         y=y,
         colindex=cols_id,
-
-        order=order, 
-        hue=hue, ## subcategories compared
-        hue_order=hue_order, 
+        order=order,
+        hue=hue,  ## subcategories compared
+        hue_order=hue_order,
     )
-    kws_stats=dict(
-                func=method,
-            )
-    if validate in [False,'']:
-        validate=None
+    kws_stats = dict(
+        func=method,
+    )
+    if validate in [False, ""]:
+        validate = None
     if plot in [False, None]:
         from roux.stat.diff import get_diff_inferred
-        res,_=get_diff_inferred(
+
+        res, _ = get_diff_inferred(
             data,
             kws_stats=kws_stats,
             **kws_diff,
         )
     else:
         try:
-            if not isinstance(plot,dict):
-                plot={}
-            
-            ## to be removed part
-            if len(kws_plot)>0 or len(kws_plot_set)>0 or ax is not None:
-                logging.warning('kws_plot,kws_plot_set and ax  will be deprecated, provide them in the plot arg. instead')
+            if not isinstance(plot, dict):
+                plot = {}
 
-                plot={
+            ## to be removed part
+            if len(kws_plot) > 0 or len(kws_plot_set) > 0 or ax is not None:
+                logging.warning(
+                    "kws_plot,kws_plot_set and ax  will be deprecated, provide them in the plot arg. instead"
+                )
+
+                plot = {
                     **dict(
                         set=kws_plot_set,
                         ax=ax,
-                        )
+                    )
                     ## override
-                    **{
+                    ** {
                         **kws_plot,
                         **plot,
                     }
-                    }
+                }
                 logging.warning(f"plot={plot}")
 
             from roux.viz.dist import plot_dists
-            ax=apply_plot(
+
+            ax = apply_plot(
                 plot_dists,
                 data,
                 kws_plot={
-                        **dict(
-                            plot=kws_diff,
-                        ),
-                        **plot
-                    },
-                )
-            res=ax.stats
+                    **dict(
+                        plot=kws_diff,
+                    ),
+                    **plot,
+                },
+            )
+            res = ax.stats
         except Exception as e:
-            logging.exception(str(e))            
-            ## return stats only        
+            logging.exception(str(e))
+            ## return stats only
             return check_diff(
-                data=data, #,
-                x=x, #,
-                y=y, #,
-                cols_id=cols_id, #,
-                method=method, #=None, # mannwhitneyu
-
-                order=order, #: list = None, 
-                hue=hue, #: str = None, ## subcategories compared
-                hue_order=hue_order, #: list = None, 
-
-                out=out, #=False, # stats
-                
-                plot=False, 
-                
-                validate=validate, #=None, 
-                verbose=verbose, #=True,
+                data=data,  # ,
+                x=x,  # ,
+                y=y,  # ,
+                cols_id=cols_id,  # ,
+                method=method,  # =None, # mannwhitneyu
+                order=order,  #: list = None,
+                hue=hue,  #: str = None, ## subcategories compared
+                hue_order=hue_order,  #: list = None,
+                out=out,  # =False, # stats
+                plot=False,
+                validate=validate,  # =None,
+                verbose=verbose,  # =True,
                 **kws_stats,
-                )
-        res=ax.stats
+            )
+        res = ax.stats
     # df1=pd.Series(res).to_frame().T
-    df1=res
+    df1 = res
     if df1 is None:
         return None
     if verbose:
-        logging.info(f'{data.name if hasattr(data,"name") else ""}{x} - {y}\n'+df1.to_string(index=False))
+        logging.info(
+            f"{data.name if hasattr(data, 'name') else ''}{x} - {y}\n"
+            + df1.to_string(index=False)
+        )
     if validate is not None:
-        assert_expr(df1,validate)
+        assert_expr(df1, validate)
         # logging.info(df1)
     if out:
         return df1
     else:
-        #pipe
+        # pipe
         return data
+
 
 @to_rd
 def check_sass(
@@ -2781,30 +2754,25 @@ def check_sass(
     y,
     order_x=None,
     order_y=None,
-
-    method=None, 
-    cols_id=None, ## not implemented
+    method=None,
+    cols_id=None,  ## not implemented
     verbose=True,
-
-    validate=None, 
-    
-    plot=False, 
-    
+    validate=None,
+    plot=False,
     ## to be deprecated
     kws_plot={},
     kws_plot_set={},
-    ax=None, 
-
+    ax=None,
     out=False,
     **kws_stats,
-    ):
+):
 
-    if validate in [False,'']:
-        validate=None
+    if validate in [False, ""]:
+        validate = None
     if cols_id is not None:
         logging.warning("cols_id is not implemented.")
-        
-    kws_stats={
+
+    kws_stats = {
         **kws_stats,
         **dict(
             method=method,
@@ -2812,88 +2780,90 @@ def check_sass(
             order_y=order_y,
         ),
     }
-    
+
     if plot in [False, None]:
         from roux.stat.diff import compare_classes
+
         res = compare_classes(
             # data=data,
             x=data[x],
             y=data[y],
-            
-            **kws_stats
+            **kws_stats,
         )
     else:
         try:
-            if not isinstance(plot,dict):
-                plot={}
-            
-            ## to be removed part
-            if len(kws_plot)>0 or len(kws_plot_set)>0 or ax is not None:
-                logging.warning('kws_plot,kws_plot_set and ax  will be deprecated, provide them in the plot arg. instead')
+            if not isinstance(plot, dict):
+                plot = {}
 
-                plot={
+            ## to be removed part
+            if len(kws_plot) > 0 or len(kws_plot_set) > 0 or ax is not None:
+                logging.warning(
+                    "kws_plot,kws_plot_set and ax  will be deprecated, provide them in the plot arg. instead"
+                )
+
+                plot = {
                     **dict(
                         set=kws_plot_set,
                         ax=ax,
-                        )
+                    )
                     ## override
-                    **{
+                    ** {
                         **kws_plot,
                         **plot,
                     }
-                    }
+                }
                 logging.warning(f"plot={plot}")
 
             from roux.viz.sets import plot_sets
-            ax=apply_plot(
+
+            ax = apply_plot(
                 plot_sets,
                 data,
                 kws_plot={
-                        **dict(
-                            plot=dict(
-                                x=x,
-                                y=y,
-                                kws_stats=kws_stats,
-                            ),
+                    **dict(
+                        plot=dict(
+                            x=x,
+                            y=y,
+                            kws_stats=kws_stats,
                         ),
-                        **plot
-                    },
-                )
-            res=ax.stats
+                    ),
+                    **plot,
+                },
+            )
+            res = ax.stats
         except Exception as e:
             logging.exception(str(e))
             return check_sass(
                 data,
-                x=x, #,
-                y=y, #,
-
-                order_x=order_x, #=None,
-                order_y=order_y, #=None,
-
-                method=method, #=None, 
-                verbose=verbose, #=True,
-
-                validate=validate, #=None, 
-                
-                plot=False, 
-                
-                out=out, #=False,
+                x=x,  # ,
+                y=y,  # ,
+                order_x=order_x,  # =None,
+                order_y=order_y,  # =None,
+                method=method,  # =None,
+                verbose=verbose,  # =True,
+                validate=validate,  # =None,
+                plot=False,
+                out=out,  # =False,
                 **kws_stats,
-                )
+            )
 
-    df1=pd.Series(res).to_frame().T.drop(['ax','table'],axis=1,errors='ignore')
+    df1 = pd.Series(res).to_frame().T.drop(["ax", "table"], axis=1, errors="ignore")
     if df1 is None:
         return None
     if verbose:
-        logging.info(f'{data.name if hasattr(data,"name") else ""}{x} - {y}\n'+df1.to_string(index=False))
+        logging.info(
+            f"{data.name if hasattr(data, 'name') else ''}{x} - {y}\n"
+            + df1.to_string(index=False)
+        )
     if validate is not None:
-        assert_expr(df1,validate)
+        assert_expr(df1, validate)
         # logging.info(df1)
     if out:
         return df1
     else:
-        #pipe
+        # pipe
         return data
+
 
 @to_rd
 def check_links(
@@ -2901,119 +2871,111 @@ def check_links(
     x,
     y,
     cols_id,
-    
     xbins=2,
-    ybins=2,    
-
+    ybins=2,
     ## specific
     kws_stats={},
     # method={}, # mannwhitneyu
-    # validate={}, 
-    plot=False, ## or dict with get_ax kws
+    # validate={},
+    plot=False,  ## or dict with get_ax kws
     ## common
     verbose=True,
-    out=False,    
-    ):
-    kws_common=dict(
+    out=False,
+):
+    kws_common = dict(
         out=False,
         verbose=verbose,
     )
-    
-    df0=(
+
+    df0 = (
         data
-            ## pre
-            .rd.assert_dense(
-                subset=cols_id
-            )
-            .log.dropna(
-                subset=[x,y],
-            )    
+        ## pre
+        .rd.assert_dense(subset=cols_id).log.dropna(
+            subset=[x, y],
+        )
     )
-    if isinstance(xbins,int):
-        df0=df0.rd.get_qbins(
+    if isinstance(xbins, int):
+        df0 = df0.rd.get_qbins(
             x,
             xbins,
         )
-        col_xbin=f'{x} bin'
-        xbins=df0[col_xbin].sort_values().astype(str).unique().tolist()
-    if isinstance(ybins,int):
-        df0=df0.rd.get_qbins(
+        col_xbin = f"{x} bin"
+        xbins = df0[col_xbin].sort_values().astype(str).unique().tolist()
+    if isinstance(ybins, int):
+        df0 = df0.rd.get_qbins(
             y,
             ybins,
         )
-        col_ybin=f'{y} bin'
-        ybins=df0[col_ybin].sort_values().astype(str).unique().tolist()
-    df0=(
-        df0
-        .astype(
-            {
-                col_xbin: str,
-                col_ybin: str,
-            }
-        )
-    )    
+        col_ybin = f"{y} bin"
+        ybins = df0[col_ybin].sort_values().astype(str).unique().tolist()
+    df0 = df0.astype(
+        {
+            col_xbin: str,
+            col_ybin: str,
+        }
+    )
 
-    if plot==True and not isinstance(plot,dict):
-        plot={}
-    kws_checks={}
-    for k in ['corr','diffx','diffy','sass']:
-        kws_checks[k]={
+    if plot == True and not isinstance(plot, dict):
+        plot = {}
+    kws_checks = {}
+    for k in ["corr", "diffx", "diffy", "sass"]:
+        kws_checks[k] = {
             **kws_common,
-            **kws_stats.get(k[:4],{}),
+            **kws_stats.get(k[:4], {}),
             **dict(
                 plot={
                     **dict(
                         # specific default kws_get_ax
                         ax=dict(
-                            ax='gca',
+                            ax="gca",
                             cols_max=2,
-                            figsize=[8,6],
+                            figsize=[8, 6],
                         )
                     ),
-                    **(plot if isinstance(plot,dict) else {}),
-                    },
+                    **(plot if isinstance(plot, dict) else {}),
+                },
             ),
         }
-    
-    df1=(
-        df0
-            # stats
-            .pipe(
-                check_corr,
-                x=x,
-                y=y,
-                **kws_checks['corr'],
-            )
-            .pipe(
-                check_diff,
-                x=x,
-                y=col_ybin,
-                cols_id=cols_id,
-                **kws_checks['diffx'],
-            )
-            .pipe(
-                check_diff,
-                x=col_xbin,
-                y=y,
-                cols_id=cols_id,
-                **kws_checks['diffy'],
-            )
-            .pipe(
-                check_sass,
-                x=col_xbin,
-                y=col_ybin,
 
-                order_x=xbins,
-                order_y=ybins,
-                **kws_checks['sass'],
-            )
+    df1 = (
+        df0
+        # stats
+        .pipe(
+            check_corr,
+            x=x,
+            y=y,
+            **kws_checks["corr"],
+        )
+        .pipe(
+            check_diff,
+            x=x,
+            y=col_ybin,
+            cols_id=cols_id,
+            **kws_checks["diffx"],
+        )
+        .pipe(
+            check_diff,
+            x=col_xbin,
+            y=y,
+            cols_id=cols_id,
+            **kws_checks["diffy"],
+        )
+        .pipe(
+            check_sass,
+            x=col_xbin,
+            y=col_ybin,
+            order_x=xbins,
+            order_y=ybins,
+            **kws_checks["sass"],
+        )
     )
 
     if out:
         return df1
     else:
-        #pipe
+        # pipe
         return data
+
 
 ## tables io
 def dict2df(
@@ -3022,7 +2984,7 @@ def dict2df(
     colvalue="value",
     recursive=True,
     depth=None,
-    ):
+):
     """Dictionary to DataFrame.
 
     Parameters:
@@ -3033,13 +2995,13 @@ def dict2df(
     Returns:
         df (DataFrame): output dataframe.
     """
-    if len(d)==0:
+    if len(d) == 0:
         return
-        
+
     if not isinstance(list(d.values())[0], list):
-        df_=pd.DataFrame({colkey: d.keys(), colvalue: d.values()})
+        df_ = pd.DataFrame({colkey: d.keys(), colvalue: d.values()})
     else:
-        df_=(
+        df_ = (
             pd.DataFrame(pd.concat({k: pd.Series(d[k]) for k in d}))
             .droplevel(1)
             .reset_index()
@@ -3049,61 +3011,60 @@ def dict2df(
             )
         )
 
-    if (not isinstance(df_[colvalue].values[0],dict)) or not recursive:
+    if (not isinstance(df_[colvalue].values[0], dict)) or not recursive:
         return df_
-        
-    cols_groupby=[colkey]
-    _depth=1
-    while isinstance(df_[colvalue].values[0],dict):
-        _cols_groupby=df_.columns.tolist()
-        _len=len(df_)
-        df_=(
-            df_                        
-            .groupby(cols_groupby,sort=False)
-                .apply(
-                    # recurse
-                    lambda df: dict2df(                                                             
-                        df[colvalue].values[0],
-                        colkey=f'key{_depth}',
-                        colvalue=colvalue,
-                        recursive=False,
-                    ),
-                )
-                .reset_index(
-                    # drop=True,
-                )
-            .rd.dropby_patterns('level_')
+
+    cols_groupby = [colkey]
+    _depth = 1
+    while isinstance(df_[colvalue].values[0], dict):
+        _cols_groupby = df_.columns.tolist()
+        _len = len(df_)
+        df_ = (
+            df_.groupby(cols_groupby, sort=False)
+            .apply(
+                # recurse
+                lambda df: dict2df(
+                    df[colvalue].values[0],
+                    colkey=f"key{_depth}",
+                    colvalue=colvalue,
+                    recursive=False,
+                ),
+            )
+            .reset_index(
+                # drop=True,
+            )
+            .rd.dropby_patterns("level_")
         )
         logging.info(df_.columns)
-        cols_groupby+=list(set(df_.columns.tolist()) - set(_cols_groupby))
-
+        cols_groupby += list(set(df_.columns.tolist()) - set(_cols_groupby))
 
         logging.info(f"{_len} -> {len(df_)}")
-        if len(df_)>_len:
-            df_=(
-                df_
-                .assign(
-                    **{
-                        f'list{_depth} id': lambda df: df.groupby(cols_groupby,sort=False)[colkey].transform(lambda x: range(len(x)))
-                    }                                                                                            
-                 )
+        if len(df_) > _len:
+            df_ = df_.assign(
+                **{
+                    f"list{_depth} id": lambda df: df.groupby(cols_groupby, sort=False)[
+                        colkey
+                    ].transform(lambda x: range(len(x)))
+                }
             )
-            cols_groupby+=[f'list{_depth} id']
-        if _depth==depth:
+            cols_groupby += [f"list{_depth} id"]
+        if _depth == depth:
             break
-        _depth+=1
+        _depth += 1
 
     return df_
-    
+
+
 ## log
 def _get_log_label(label):
     if label is None:
-        label=''
-    if len(label)>100:
+        label = ""
+    if len(label) > 100:
         # logging.debug('set label=None because len(label)>100 ..')
-        label=label[:100]+'.. (trimmed)'          
+        label = label[:100] + ".. (trimmed)"
     return label
-    
+
+
 def log_shape_change(d1, fun="", label=None):
     """Report the changes in the shapes of a DataFrame.
 
@@ -3111,7 +3072,7 @@ def log_shape_change(d1, fun="", label=None):
         d1 (dic): dictionary containing the shapes.
         fun (str): name of the function.
     """
-    label=_get_log_label(label)
+    label = _get_log_label(label)
     if d1["from"] != d1["to"]:
         prefix = f"{fun} {label}: " if fun != "" else ""
         if d1["from"][0] == d1["to"][0]:
@@ -3163,34 +3124,48 @@ def log_apply(
     else:
         df = fun(df, *args, **kwargs)
     d1["to"] = df.shape
-    log_shape_change(d1, fun=fun,label=label)
+    log_shape_change(d1, fun=fun, label=label)
     if validate_equal_length:
-        assert d1["from"][0] == d1["to"][0], f"validate_equal_length: {(d1['from'][0], d1['to'][0])}"
+        assert d1["from"][0] == d1["to"][0], (
+            f"validate_equal_length: {(d1['from'][0], d1['to'][0])}"
+        )
     if validate_equal_width:
-        assert d1["from"][1] == d1["to"][1], f"validate_equal_width: {(d1['from'][1], d1['to'][1])}"
+        assert d1["from"][1] == d1["to"][1], (
+            f"validate_equal_width: {(d1['from'][1], d1['to'][1])}"
+        )
     if validate_no_decrease_length:
-        assert d1["from"][0] <= d1["to"][0], f"validate_no_decrease_length: {(d1['from'][0], d1['to'][0])}"
+        assert d1["from"][0] <= d1["to"][0], (
+            f"validate_no_decrease_length: {(d1['from'][0], d1['to'][0])}"
+        )
     if validate_no_decrease_width:
-        assert d1["from"][1] <= d1["to"][1], f"validate_no_decrease_width: {(d1['from'][1], d1['to'][1])}"
+        assert d1["from"][1] <= d1["to"][1], (
+            f"validate_no_decrease_width: {(d1['from'][1], d1['to'][1])}"
+        )
     if validate_no_increase_length:
-        assert d1["from"][0] >= d1["to"][0], f"validate_no_increase_length: {(d1['from'][0], d1['to'][0])}"
+        assert d1["from"][0] >= d1["to"][0], (
+            f"validate_no_increase_length: {(d1['from'][0], d1['to'][0])}"
+        )
     if validate_no_increase_width:
-        assert d1["from"][1] >= d1["to"][1], f"validate_no_increase_width: {(d1['from'][1], d1['to'][1])}"
+        assert d1["from"][1] >= d1["to"][1], (
+            f"validate_no_increase_width: {(d1['from'][1], d1['to'][1])}"
+        )
     if validate_equal_shape:
         assert d1["from"] == d1["to"], f"validate_equal_shape: {(d1['from'], d1['to'])}"
     return df
+
 
 def _get_preview_log_str(
     df,
     lin_if_cols_gt=10,
     cols_max=50,
-    ):
-    warn=''
-    if df.shape[1]>cols_max:
-        df=df.iloc[:,:cols_max] 
-        warn=' (trimmed)'  
-    df=df.T if (df.shape[1]>lin_if_cols_gt) else df
-    return df.to_string().lstrip()+warn
+):
+    warn = ""
+    if df.shape[1] > cols_max:
+        df = df.iloc[:, :cols_max]
+        warn = " (trimmed)"
+    df = df.T if (df.shape[1] > lin_if_cols_gt) else df
+    return df.to_string().lstrip() + warn
+
 
 @pd.api.extensions.register_dataframe_accessor("log")
 class log:
@@ -3227,10 +3202,14 @@ class log:
             label = f"{suffix_} {label}"
         elif groupby is not None:
             # value_counts in pipe
-            ds_ = self._obj.groupby(groupby,observed=True).size().sort_values(ascending=False)
+            ds_ = (
+                self._obj.groupby(groupby, observed=True)
+                .size()
+                .sort_values(ascending=False)
+            )
             suffix_ = f"by '{groupby}': {to_str(ds_)}"
             label = f"{suffix_} {label}"
-        label=_get_log_label(label)    
+        label = _get_log_label(label)
         logging.info(f"shape = {self._obj.shape} {label}")
         return self._obj
 
@@ -3301,10 +3280,11 @@ class log:
 
     def query(self, **kws):
         from roux.lib.df import log_apply
-        if kws.get('expr') is None:
-            return self._obj.log(label=kws.get('expr'))
+
+        if kws.get("expr") is None:
+            return self._obj.log(label=kws.get("expr"))
         else:
-            return log_apply(self._obj, fun="query", label=kws.get('expr'), **kws)
+            return log_apply(self._obj, fun="query", label=kws.get("expr"), **kws)
 
     ## rd
     def clean(self, **kws):
@@ -3321,60 +3301,69 @@ class log:
         from roux.lib.df import log_apply
 
         return log_apply(self._obj, fun=melt_paired, **kws)
-    
+
     def head(
         self,
-        n=1, 
-        lin_if_cols_gt=3, ## transpose if >lin_if_cols_gt
+        n=1,
+        lin_if_cols_gt=3,  ## transpose if >lin_if_cols_gt
         # cols_max=100, ## trim if > cols
-        ):  
+    ):
         logging.info(
-            f'head {n}/{len(self._obj)}:'+(
+            f"head {n}/{len(self._obj)}:"
+            + (
                 _get_preview_log_str(
-                    self._obj.head(n=n,),
+                    self._obj.head(
+                        n=n,
+                    ),
                     lin_if_cols_gt=lin_if_cols_gt,
                     # cols_max=cols_max,
                 )
             )
         )
         return self._obj
-    def tail(self,
-             n=1,
-             lin_if_cols_gt=3, ## transpose if >lin_if_cols_gt
-             # cols_max=100, ## trim if > cols
-            ):
+
+    def tail(
+        self,
+        n=1,
+        lin_if_cols_gt=3,  ## transpose if >lin_if_cols_gt
+        # cols_max=100, ## trim if > cols
+    ):
         logging.info(
-            f'tail {n}/{len(self._obj)}:\n'+(
+            f"tail {n}/{len(self._obj)}:\n"
+            + (
                 _get_preview_log_str(
-                    self._obj.tail(n=n,),
+                    self._obj.tail(
+                        n=n,
+                    ),
                     lin_if_cols_gt=lin_if_cols_gt,
                     # cols_max=cols_max,
                 )
             )
         )
         return self._obj
+
     def describe(
         self,
         subset=None,
         **kws,
-        ):
-        if isinstance(subset,str):
-            subset=[subset]
+    ):
+        if isinstance(subset, str):
+            subset = [subset]
         if subset is None:
-            subset=self._obj.columns.tolist()
-            
+            subset = self._obj.columns.tolist()
+
         logging.info(
-            'describe:\n'+(
-                self._obj
-                    .loc[:,subset]
-                    .describe(
-                        **kws,
-                    ).T
-                .to_string()
+            "describe:\n"
+            + (
+                self._obj.loc[:, subset]
+                .describe(
+                    **kws,
+                )
+                .T.to_string()
             )
-            )
-        return self._obj     
-        
+        )
+        return self._obj
+
     ## .rd functions for logging-only, usage within pipes
     def check_na(self, **kws):
         # logging.info(f'na {kws}')

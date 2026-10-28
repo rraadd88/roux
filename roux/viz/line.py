@@ -89,31 +89,32 @@ def plot_bezier(
     off_guide=0.25,
     ax=None,
     ax2=None,
-    clip_on=True, # New argument
+    clip_on=True,  # New argument
     test=False,
     **kws_line,
 ):
     from matplotlib import patches
     from matplotlib.path import Path
-    
+
     if ax is None:
         ax = plt.gca()
 
     if ax2 is not None:
         from roux.viz.figure import to_pos_in_ax2
-        pt2=to_pos_in_ax2(
+
+        pt2 = to_pos_in_ax2(
             ax=ax2,
             ax2=ax,
             pt=pt2,
-            )
+        )
     if direction is None:
-        if pt1[1]==pt2[1]: #y
-            direction='h'
-        elif pt1[0]==pt2[0]: #x
-            direction='v'
+        if pt1[1] == pt2[1]:  # y
+            direction = "h"
+        elif pt1[0] == pt2[0]:  # x
+            direction = "v"
         else:
             raise ValueError(direction)
-            
+
     if direction == "h":
         if pt1[0] > pt2[0]:
             pt1, pt2 = pt2, pt1
@@ -132,7 +133,7 @@ def plot_bezier(
             pt2_guide = [pt2[0], pt2[1] - off]
     else:
         raise ValueError(direction)
-    
+
     vertices = [pt1, pt1_guide, pt2_guide, pt2]
     codes = [Path.MOVETO, Path.CURVE4, Path.CURVE4, Path.CURVE4]
     path = Path(vertices, codes)
@@ -142,7 +143,12 @@ def plot_bezier(
     ax.add_patch(patch)
     if test:
         control_points = np.array([pt1, pt1_guide, pt2_guide, pt2])
-        ax.plot(control_points[:, 0], control_points[:, 1], "--", label=f'direction={direction}; off_guide={off_guide}')
+        ax.plot(
+            control_points[:, 0],
+            control_points[:, 1],
+            "--",
+            label=f"direction={direction}; off_guide={off_guide}",
+        )
     return ax
 
 
@@ -399,7 +405,7 @@ def plot_steps(
         lambda x: ax.text(
             0.005,
             x["y"] + 0.66,
-            s=f"{'' if x['% change']<0 else '+'}{x['% change']:.1f}%"
+            s=f"{'' if x['% change'] < 0 else '+'}{x['% change']:.1f}%"
             if not pd.isnull(x["% change"])
             else "",
             ha="left",

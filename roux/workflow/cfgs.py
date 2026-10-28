@@ -16,7 +16,7 @@ from roux.lib.sys import (
 def get_cfgs(
     cfg,
     alts,
-    resolve=True, ## interpolations
+    resolve=True,  ## interpolations
 ):
     """
     Generates a list of DictConfigs by sweeping over alternative values.
@@ -30,35 +30,36 @@ def get_cfgs(
         list: A list of resolved OmegaConf objects.
     """
     # g: Prepare lists for Cartesian product
-    alts=dict(sorted(alts.items()))
+    alts = dict(sorted(alts.items()))
     param_keys = list(alts.keys())
     param_values = list(alts.values())
-    
+
     configs = {}
 
     # g: Convert base dictionary to OmegaConf object
     base_conf = OmegaConf.create(cfg)
 
     import itertools
+
     # g: Iterate over Cartesian product of all alternative values
     for combination in itertools.product(*param_values):
-        
         # g: Construct the overrides list
         current_overrides = []
         for key, val in zip(param_keys, combination):
             if val is None:
-                val = 'null' 
+                val = "null"
             current_overrides.append(f"{key}={val}")
-            
-        name=';'.join(current_overrides)
-        
+
+        name = ";".join(current_overrides)
+
         # g: Create a config object from the overrides
         overrides_conf = OmegaConf.from_dotlist(current_overrides)
-        
+
         # g: Merge the base config with the overrides
         cfg = OmegaConf.merge(base_conf, overrides_conf)
-        configs[name]=OmegaConf.to_container(cfg, resolve=resolve)
+        configs[name] = OmegaConf.to_container(cfg, resolve=resolve)
     return configs
+
 
 def resolve_cfg(cfg: dict, resolves: dict):
     """
@@ -66,52 +67,52 @@ def resolve_cfg(cfg: dict, resolves: dict):
     Returns a dictionary of configs mapped by unique names if any input is a list (parameter sweep).
     """
     import itertools
-    
+
     # g: check if sweeping is required
     is_sweep = any(isinstance(v, list) for v in resolves.values())
-    
+
     # g: sort the dictionary to ensure consistent naming orders
     resolves_sorted = dict(sorted(resolves.items()))
-    
+
     # g: normalize inputs to lists for Cartesian product
     param_keys = list(resolves_sorted.keys())
     param_values = [v if isinstance(v, list) else [v] for v in resolves_sorted.values()]
-    
+
     configs = {} if is_sweep else []
     base_cfg = OmegaConf.create(cfg)
-    
+
     # g: iterate over Cartesian product of all alternative values
     for combination in itertools.product(*param_values):
         # g: construct the unique name for the combination
         current_overrides = []
         for key, val in zip(param_keys, combination):
-            val_str = 'null' if val is None else str(val)
+            val_str = "null" if val is None else str(val)
             current_overrides.append(f"{key}={val_str}")
-            
-        name = ';'.join(current_overrides)
-        
+
+        name = ";".join(current_overrides)
+
         # g: map current combination back to keys
         current_resolves = dict(zip(param_keys, combination))
         resolves_cfg = OmegaConf.create(current_resolves)
-        
+
         # g: merge to allow interpolation resolution
         merged = OmegaConf.merge(base_cfg, resolves_cfg)
-        
+
         # g: resolve interpolations and convert back to a standard dictionary
         resolved = OmegaConf.to_container(merged, resolve=True)
-        
+
         # g: filter out the injected inputs to retain only the original dictionary's keys
         filtered_resolved = {k: resolved[k] for k in cfg}
-        
+
         if is_sweep:
             configs[name] = filtered_resolved
         else:
             configs.append(filtered_resolved)
-        
+
     # g: return a dictionary if sweeping over alternatives, otherwise the single dict
     return configs if is_sweep else configs[0]
 
-    
+
 ## I/O
 def read_config(
     p: str,
@@ -120,7 +121,7 @@ def read_config(
     append_to_key=None,
     convert_dtype: bool = True,
     verbose: bool = True,
-    infer_bases: bool= False,
+    infer_bases: bool = False,
 ):
     """
     Read configuration.
@@ -130,45 +131,41 @@ def read_config(
         config_base: base config with the inputs for the interpolations
     """
     if infer_bases:
-        cfg={}
-        for p_ in read_ps(p,with_prefix=True):
+        cfg = {}
+        for p_ in read_ps(p, with_prefix=True):
             # cfg={**pms,**read_config(
-            cfg=read_config(
+            cfg = read_config(
                 p_,
-                config_base=cfg,#None,
-                inputs=inputs,#None,  # overwrite with
-                append_to_key=append_to_key,#None,
-                convert_dtype=convert_dtype,#True,
-                # verbose: bool = True,                
-                infer_bases= False,
+                config_base=cfg,  # None,
+                inputs=inputs,  # None,  # overwrite with
+                append_to_key=append_to_key,  # None,
+                convert_dtype=convert_dtype,  # True,
+                # verbose: bool = True,
+                infer_bases=False,
             )
-                # }
+            # }
         return cfg
 
     if isinstance(config_base, str):
         if Path(config_base).exists():
-            config_base = OmegaConf.create(
-                read_dict(
-                        config_base,
-                        fmt='yaml'
-                    )
-                )
+            config_base = OmegaConf.create(read_dict(config_base, fmt="yaml"))
             # logging.info(f"Base config read from: {config_base}")
         else:
             logging.warning(f"Base config path not found: {config_base}")
     ## read config
-    if isinstance(p,(str)):
-        if '\n' not in p and Path(p).is_file():
+    if isinstance(p, (str)):
+        if "\n" not in p and Path(p).is_file():
             d1 = read_dict(
                 p,
-                fmt='yaml',
-                )
+                fmt="yaml",
+            )
         else:
             import yaml
-            d1 =yaml.safe_load(p)
-    elif isinstance(p,(dict)):
-        d1=p
-    
+
+            d1 = yaml.safe_load(p)
+    elif isinstance(p, (dict)):
+        d1 = p
+
     ## merge
     if config_base is not None:
         if append_to_key is not None:
@@ -198,18 +195,20 @@ def read_config(
         d1 = OmegaConf.to_object(d1)
     return d1
 
-read_cfg=read_config
+
+read_cfg = read_config
+
 
 def read_sub_configs(
     d1,
     config_path_key: str = "config_path",
-    config_base_path_key: str = "config_base_path",    
+    config_base_path_key: str = "config_base_path",
     verbose=False,
-    ):
+):
     ## read dicts
-    if not isinstance(d1,dict):
+    if not isinstance(d1, dict):
         return d1
-        
+
     keys = d1.keys()
     for k in keys:
         if isinstance(d1[k], dict):
@@ -232,14 +231,15 @@ def read_sub_configs(
                 if verbose:
                     logging.info(f"Appending config to base from {k}")
                 if Path(d1[k][config_base_path_key]).exists():
-                    d1[k]={
+                    d1[k] = {
                         **read_config(d1[k][config_base_path_key]),
-                        **{k:v for k,v in d1[k].items() if k!=config_base_path_key},
+                        **{k: v for k, v in d1[k].items() if k != config_base_path_key},
                     }
                 else:
                     if verbose:
-                        logging.warning(f"not exists: {d1[k][config_base_path_key]}")           
+                        logging.warning(f"not exists: {d1[k][config_base_path_key]}")
     return d1
+
 
 def read_sub_configs_rly(d, depth, **kws):
     """
@@ -256,22 +256,20 @@ def read_sub_configs_rly(d, depth, **kws):
 
     # Otherwise recurse into each sub-dict
     return {
-        key: read_sub_configs_rly(sub, depth - 1, **kws)
-        for key, sub in d_read.items()
+        key: read_sub_configs_rly(sub, depth - 1, **kws) for key, sub in d_read.items()
     }
-    
+
+
 ## metadata-related
 def read_metadata(
     p: str,
     ind: str = None,
     max_paths: int = 30,
-    config_path_key: str = "config_path", ## side-load (apppend, common use)
-    config_base_path_key: str = "config_base_path", ## base-load (apppended to)
+    config_path_key: str = "config_path",  ## side-load (apppend, common use)
+    config_base_path_key: str = "config_base_path",  ## base-load (apppended to)
     config_paths: list = [],
     config_paths_auto=False,
-
     sub_configs_depth=3,
-    
     verbose: bool = False,
     **kws_read_config,
 ) -> dict:
@@ -291,9 +289,9 @@ def read_metadata(
     d0 = read_config(p, verbose=verbose, **kws_read_config)
 
     ## subs
-    kws_read_sub_configs=dict(
-        config_path_key = config_path_key,
-        config_base_path_key = config_base_path_key,    
+    kws_read_sub_configs = dict(
+        config_path_key=config_path_key,
+        config_base_path_key=config_base_path_key,
         verbose=verbose,
     )
 
@@ -315,14 +313,14 @@ def read_metadata(
     #             d1[k1][k2]=read_sub_configs(
     #                 d_2,
     #                 **kws_read_sub_configs,
-    #             )     
+    #             )
 
-    d1=read_sub_configs_rly(d0, depth=sub_configs_depth, **kws_read_sub_configs)
-            
+    d1 = read_sub_configs_rly(d0, depth=sub_configs_depth, **kws_read_sub_configs)
+
     ## read files from directory containing specific setings and other data to be incorporated into metadata
     if config_paths_auto:
         if ind is None:
-            ind = Path(p).with_suffix('').as_posix() + "/"
+            ind = Path(p).with_suffix("").as_posix() + "/"
             if verbose:
                 logging.info(ind)
             config_paths += glob(f"{ind}/*")
@@ -353,10 +351,11 @@ def read_metadata(
             + str(len(d1) - config_size)
             + " separate config/s."
         )
-    # if verbose and 
-    if 'version' in d1:
-        logging.info(f"version: {d1['version']!s}")        
+    # if verbose and
+    if "version" in d1:
+        logging.info(f"version: {d1['version']!s}")
     return d1
+
 
 from collections import OrderedDict
 
@@ -373,9 +372,7 @@ def get_cfg_run(d, keys=("pms_run", "kws_run")):
                 if (k in keys) and not group_emitted:
                     # collect all siblings at this level
                     sib_group = {
-                        s: obj[s]
-                        for s in keys
-                        if s in obj and isinstance(obj[s], dict)
+                        s: obj[s] for s in keys if s in obj and isinstance(obj[s], dict)
                     }
                     groups[path or "<root>"] = sib_group
                     group_emitted = True
@@ -390,24 +387,26 @@ def get_cfg_run(d, keys=("pms_run", "kws_run")):
     recurse(d)
     return dict(groups)
 
+
 def to_cfg_run(
     d,
     outp=None,
     keys=("pms_run", "kws_run"),
     verbose=True,
     validate=True,
-    ):
-    if isinstance(d,str):
-        d=read_config(d)
-    cfg_run=get_cfg_run(d, keys=keys)
+):
+    if isinstance(d, str):
+        d = read_config(d)
+    cfg_run = get_cfg_run(d, keys=keys)
     if verbose:
         log_dict(cfg_run)
     if validate:
-        assert cfg_run==get_cfg_run(cfg_run), get_cfg_run(cfg_run)
+        assert cfg_run == get_cfg_run(cfg_run), get_cfg_run(cfg_run)
     if outp is not None:
-        return to_dict(cfg_run,outp)
+        return to_dict(cfg_run, outp)
     else:
         return cfg_run
+
 
 def to_cfg_run_arc(
     input_path,
@@ -419,7 +418,7 @@ def to_cfg_run_arc(
     simulate=True,
     validate=True,
     verbose=True,
-    ):
+):
     """
     Arc. in a config
 
@@ -427,7 +426,8 @@ def to_cfg_run_arc(
         input_path='../configs/main.yaml'
     """
     import logging
-    logging.basicConfig(level='INFO',force=True)
+
+    logging.basicConfig(level="INFO", force=True)
     from pathlib import Path
 
     from roux.lib.io import read_dict, to_dict
@@ -435,49 +435,49 @@ def to_cfg_run_arc(
     from roux.workflow.task import run_tasks
 
     if validate:
-        verbose=True
+        verbose = True
 
-    cfg_path=input_path
+    cfg_path = input_path
     del input_path
     if output_path is None:
-        cfg_run_arc_path=f"{Path(cfg_path if mod_path is None else mod_path).with_suffix('').as_posix()}/{arc_name}.yaml"
+        cfg_run_arc_path = f"{Path(cfg_path if mod_path is None else mod_path).with_suffix('').as_posix()}/{arc_name}.yaml"
     else:
-        cfg_run_arc_path=output_path
-        
+        cfg_run_arc_path = output_path
+
     logging.info(cfg_run_arc_path)
-    output_dir_path=Path(cfg_run_arc_path).with_suffix('').as_posix()
-    cfg_run_path=f"{output_dir_path}/run.yaml"
+    output_dir_path = Path(cfg_run_arc_path).with_suffix("").as_posix()
+    cfg_run_path = f"{output_dir_path}/run.yaml"
     # ## Inputs
     # ### Config
 
     from roux.workflow.io import read_metadata
-    kws_read_metadata=dict(
+
+    kws_read_metadata = dict(
         p=cfg_path,
         inputs=read_dict(mod_path) if mod_path is not None else None,
         # infer_bases=True,
-        )
-    cfg=read_metadata(
-        **kws_read_metadata
     )
+    cfg = read_metadata(**kws_read_metadata)
 
     ## TODO: save as tmp and print inline diff
     from roux.lib.log import to_diff
+
     if mod_path is not None and validate:
-        outp=to_diff(
+        outp = to_diff(
             read_metadata(
                 **{
                     **kws_read_metadata,
                     **dict(
                         inputs=None,
-                    )
+                    ),
                 }
             ),
             cfg,
-            f"{output_dir_path}/.cfg_diff.html"
+            f"{output_dir_path}/.cfg_diff.html",
         )
     # ### Arc.
 
-    cfg_arc=cfg[arc_name]        
+    cfg_arc = cfg[arc_name]
     # ## Run cfg
     # ## Arc. run
     to_cfg_run(
@@ -497,44 +497,37 @@ def to_cfg_run_arc(
     # }
     # log_dict(mod_step_ins)
 
-    cfg_attention_mods_paths={}
-    for i,(mod_name,ins) in enumerate(cfg_arc.get('mods',{}).items()):
+    cfg_attention_mods_paths = {}
+    for i, (mod_name, ins) in enumerate(cfg_arc.get("mods", {}).items()):
         logging.info(mod_name)
         ## to input to cfg the inpuuts needs to be rooted
-        ins={arc_name:ins}
-        
-        # assert list(ins.keys())[0]==arc_name    
-        
-        step_name=list(ins[arc_name].keys())[0]
-        
+        ins = {arc_name: ins}
+
+        # assert list(ins.keys())[0]==arc_name
+
+        step_name = list(ins[arc_name].keys())[0]
+
         ## output_path
-        ### frame 
-        ins[arc_name][step_name]={
-            
-                'main':{
-                    'pms_run':{
-                        
-                    }
-                }
-            ,
-            **ins[arc_name][step_name]
-        }
+        ### frame
+        ins[arc_name][step_name] = {"main": {"pms_run": {}}, **ins[arc_name][step_name]}
         # print(ins)
-        ins[arc_name][step_name]['main']['pms_run']['output_path']=f"{Path(cfg_arc[step_name]['main']['pms_run']['output_path']).with_suffix('')}_Mod_{mod_name}.yaml"
-        
+        ins[arc_name][step_name]["main"]["pms_run"]["output_path"] = (
+            f"{Path(cfg_arc[step_name]['main']['pms_run']['output_path']).with_suffix('')}_Mod_{mod_name}.yaml"
+        )
+
         # break
         # kws_rm['inputs']={
         #     **(kws_rm['inputs'] if 'inputs' in kws_rm else {}),
         #     **ins,
         # }
-        kws_rm={
+        kws_rm = {
             **kws_read_metadata,
             **dict(
                 inputs=ins,
             ),
         }
-        
-        cfg_attention_mods_paths[mod_name]=to_cfg_run(
+
+        cfg_attention_mods_paths[mod_name] = to_cfg_run(
             read_metadata(
                 **kws_rm,
             )[arc_name][step_name],
@@ -545,34 +538,32 @@ def to_cfg_run_arc(
         # break
     ## output
     from roux.lib.io import read_dict
-    cfg_run_arc=read_dict(cfg_run_path)
-    for mod_name,p in cfg_attention_mods_paths.items():
-        cfg_run_arc={
+
+    cfg_run_arc = read_dict(cfg_run_path)
+    for mod_name, p in cfg_attention_mods_paths.items():
+        cfg_run_arc = {
             **cfg_run_arc,
-            **{f"{Path(p).stem}-{k}":v for k,v in read_dict(p).items()},
+            **{f"{Path(p).stem}-{k}": v for k, v in read_dict(p).items()},
         }
-        
+
     if verbose:
         log_dict(cfg_run_arc)
-        
+
     # ## Runs
-    to_dict(
-        cfg_run_arc,
-        cfg_run_arc_path
-    )
-    
+    to_dict(cfg_run_arc, cfg_run_arc_path)
+
     if validate:
         from roux.workflow.task import run_tasks
+
         # %run ../../roux/roux/workflow/task.py
-        dfs_=run_tasks(
+        dfs_ = run_tasks(
             cfg_run_arc_path,
-            
-            runner='slurm',
+            runner="slurm",
             simulate=simulate,
             # kernel=kernel,
         )
         logging.info(dfs_)
-        
+
     logging.info(f"roux run-tasks {cfg_run_arc_path} -r 'slurm' --simulate")
-        
+
     return cfg_run_arc_path
