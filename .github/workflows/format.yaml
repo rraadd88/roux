@@ -17,6 +17,10 @@ concurrency:
 permissions:
   contents: read
 
+env:
+  # pinned: ruff>=0.16 enables RUF100 (unused-noqa) by default, which strips `# noqa` comments
+  RUFF: ruff@0.15.10
+
 jobs:
   # pull requests: report only, never push (forks have a read-only token)
   lint:
@@ -29,11 +33,11 @@ jobs:
 
       # syntax errors and undefined names only: the codebase still has many other findings
       - name: ruff (errors)
-        run: uvx ruff check roux --select E9,F63,F7,F82 --output-format github
+        run: uvx $RUFF check roux --select E9,F63,F7,F82 --output-format github
         continue-on-error: true  # TODO: make blocking once existing F821 findings are fixed
 
       - name: ruff (format check)
-        run: uvx ruff format --check roux
+        run: uvx $RUFF format --check roux
         continue-on-error: true  # informational
 
   # pushes to master: apply the fixes and commit them
@@ -49,8 +53,9 @@ jobs:
 
       - name: ruff
         run: |
-          uvx ruff check roux --fix --ignore E402,E722,E741 || true
-          uvx ruff format roux
+          ## rules from [tool.ruff.lint] in pyproject.toml
+          uvx $RUFF check roux --fix || true
+          uvx $RUFF format roux
 
       - name: ruff commit
         uses: stefanzweifel/git-auto-commit-action@v5

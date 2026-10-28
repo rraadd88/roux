@@ -108,6 +108,12 @@ profile = "black"
 [project.scripts]
 roux = "roux.run:parser.dispatch"
 
+[tool.ruff.lint]
+# roux is a library: imports unused within the package (re-exports, global_imports)
+# are marked `# noqa`; ruff only honours that on the name's line, and `ruff format`
+# moves it onto the closing `)` of wrapped imports, so F401 would then delete them.
+ignore = ["E402", "E722", "E741", "F401"]
+
 [build-system]
 requires = ["setuptools>=77"] # for SPDX license string
 build-backend = "setuptools.build_meta"
