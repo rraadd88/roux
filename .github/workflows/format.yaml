@@ -1,14 +1,8 @@
 name: format
 
+# manual trigger only (Actions tab -> format -> Run workflow): reformatting commits straight to the branch
 on:
-  push:
-    branches: [ master ]
-    paths:
-      - "roux/**"
-  pull_request:
-    paths:
-      - "roux/**"
-      - ".github/workflows/format.yaml"
+  workflow_dispatch:
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -17,28 +11,16 @@ concurrency:
 permissions:
   contents: read
 
+env:
+  # pinned: keep in sync with `ruff==` in pyproject.toml ([dependency-groups] dev, [tool.ruff] required-version).
+  # Upgrade risk: newer ruff versions can change default rules and fixes, e.g. >=0.16 enables RUF100
+  # (unused-noqa), which strips `# noqa` comments; check `ruff check --fix` + `ruff format` locally
+  # with the new version for removed lines (e.g. roux/global_imports.py) before bumping all three pins.
+  RUFF: ruff@0.15.10
+
 jobs:
-  # pull requests: report only, never push (forks have a read-only token)
-  lint:
-    if: github.event_name == 'pull_request'
-    runs-on: ubuntu-latest
-    timeout-minutes: 10
-    steps:
-      - uses: actions/checkout@v4
-      - uses: astral-sh/setup-uv@v6.3.1
-
-      # syntax errors and undefined names only: the codebase still has many other findings
-      - name: ruff (errors)
-        run: uvx ruff check roux --select E9,F63,F7,F82 --output-format github
-        continue-on-error: true  # TODO: make blocking once existing F821 findings are fixed
-
-      - name: ruff (format check)
-        run: uvx ruff format --check roux
-        continue-on-error: true  # informational
-
-  # pushes to master: apply the fixes and commit them
+  # apply the fixes and commit them
   autofix:
-    if: github.event_name == 'push'
     runs-on: ubuntu-latest
     timeout-minutes: 10
     permissions:
@@ -49,8 +31,9 @@ jobs:
 
       - name: ruff
         run: |
-          uvx ruff check roux --fix --ignore E402,E722,E741 || true
-          uvx ruff format roux
+          ## rules from [tool.ruff.lint] in pyproject.toml
+          uvx $RUFF check roux --fix || true
+          uvx $RUFF format roux
 
       - name: ruff commit
         uses: stefanzweifel/git-auto-commit-action@v5
