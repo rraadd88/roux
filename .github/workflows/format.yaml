@@ -27,7 +27,7 @@ jobs:
       contents: write
     steps:
       - uses: actions/checkout@v4
-      - uses: astral-sh/setup-uv@v6.3.1
+      - uses: astral-sh/setup-uv@v10.3.2
 
       - name: ruff
         run: |
