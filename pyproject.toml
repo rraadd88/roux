@@ -65,6 +65,7 @@ workflow = [
     "ruff",
     "nbconvert",
     "nbformat",
+    "jupytext",
     "removestar",
     "gitpython",
 ]

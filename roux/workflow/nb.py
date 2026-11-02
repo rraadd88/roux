@@ -3,6 +3,7 @@
 import logging
 
 import nbformat
+from pathlib import Path
 
 
 ## nbs
@@ -33,6 +34,31 @@ def to_nb_cells(
     return outp
 
 
+def read_nb(p, as_version=nbformat.NO_CONVERT):
+    """Read a notebook from .ipynb or from a jupytext text format (.py percent, .md, .qmd).
+
+    Args:
+        p (str): path to the notebook.
+        as_version (int, optional): nbformat version for .ipynb input. Defaults to `nbformat.NO_CONVERT`.
+
+    Returns:
+        nb: notebook object.
+    """
+    import os
+
+    if os.path.islink(p):
+        p = os.readlink(p)
+    suffix = Path(p).suffix
+    if suffix == ".ipynb":
+        return nbformat.read(p, as_version)
+    elif suffix in [".py", ".md", ".qmd"]:
+        import jupytext
+
+        return jupytext.read(p)
+    else:
+        raise ValueError(f"unsupported notebook suffix: {suffix} ({p})")
+
+
 def get_lines(p: str, keep_comments: bool = True) -> list:
     """Get lines of code from notebook.
 
@@ -43,13 +69,9 @@ def get_lines(p: str, keep_comments: bool = True) -> list:
     Returns:
         list: lines.
     """
-    import os
-
     from nbconvert import PythonExporter
 
-    if os.path.islink(p):
-        p = os.readlink(p)
-    nb = nbformat.read(p, nbformat.NO_CONVERT)
+    nb = read_nb(p)
     exporter = PythonExporter()
     source, meta = exporter.from_notebook_node(nb)
     lines = source.split("\n")
@@ -73,7 +95,7 @@ def read_nb_md(
         list: lines of the strings.
     """
     l1 = []
-    nb = nbformat.read(p, nbformat.NO_CONVERT)
+    nb = read_nb(p)
     l1 = []
     for cell in nb.cells:
         if cell.cell_type == "markdown":
@@ -148,8 +170,7 @@ def to_replaced_nb(
     from nbconvert import NotebookExporter
 
     ## read nb
-    with open(nb_path) as fh:
-        nb = nbformat.reads(fh.read(), nbformat.NO_CONVERT)
+    nb = read_nb(nb_path)
 
     new_nb = nb.copy()
     if test:
@@ -197,8 +218,7 @@ def to_filtered_nb(
         validate_diff
     """
     # Load the Jupyter Notebook
-    with open(p, "r", encoding="utf-8") as notebook_file:
-        notebook = nbformat.read(notebook_file, as_version=4)
+    notebook = read_nb(p, as_version=4)
 
     def get_hlevel(h):
         return len(h.split("# ")[0]) + 1

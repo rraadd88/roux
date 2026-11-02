@@ -244,7 +244,6 @@ def read_cli_pm(pm):
 
 
 ## I/O
-import nbformat
 
 
 def read_pms(notebook_path, tag="parameters"):
@@ -259,8 +258,9 @@ def read_pms(notebook_path, tag="parameters"):
         list: List of code strings from tagged cells
     """
     # Read the notebook
-    with open(notebook_path, "r", encoding="utf-8") as f:
-        notebook = nbformat.read(f, as_version=4)
+    from roux.workflow.nb import read_nb
+
+    notebook = read_nb(notebook_path, as_version=4)
 
     # Iterate through cells
     for cell in notebook.cells:
