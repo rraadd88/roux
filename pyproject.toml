@@ -78,7 +78,7 @@ all = [
 dev = [
     "pytest",
     "pytest-cov >= 2,< 7",
-    "coveralls == 3.*",
+    "coveralls >= 3,< 5",
     "tox",
     "tox-uv",
     "tox-gh-actions",
