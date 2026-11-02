@@ -74,6 +74,10 @@ def to_py(
     """
     if pyp is None:
         pyp = notebookp.replace(".ipynb", ".py")
+    # g: for .py (jupytext percent) input the default output path equals the input path
+    assert Path(pyp).resolve() != Path(notebookp).resolve(), (
+        f"output path is the same as the input path ({notebookp}); pass `pyp`."
+    )
     if exists(pyp) and not force:
         return
     makedirs(pyp)
@@ -272,6 +276,14 @@ def to_scr(
     # roux to-src ipynb py
     # ruff check py --ignore E402
 
+    Args:
+        p (str): path to the notebook, either .ipynb or a jupytext percent-format .py (`# %%` cells).
+        outp (str, optional): path to the output script. Required when it would otherwise equal `p`.
+
+    Note:
+        Papermill-based execution (`task.py`) still needs an .ipynb; keep a paired notebook with
+        `jupytext --set-formats ipynb,py:percent`.
+
     TODO:
         Prefer py with --pms
     """
@@ -279,6 +291,10 @@ def to_scr(
     if outp is None:
         outp = to_py_path(p)
         logging.warning(f"outp={outp}")
+    # g: guard against overwriting a .py (jupytext percent) input
+    assert Path(outp).resolve() != Path(p).resolve(), (
+        f"output path is the same as the input path ({p}); pass `outp`."
+    )
 
     ## TODO: use decorator
     with_pms = read_cli_pm(with_pms)
