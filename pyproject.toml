@@ -93,7 +93,7 @@ dev = [
     # pinned: same version as RUFF in .github/workflows/format.yaml and [tool.ruff] required-version.
     # Upgrade risk: newer versions can change default rules/fixes (e.g. >=0.16 enables RUF100, stripping
     # `# noqa`); test `ruff check --fix` + `ruff format` for removed lines before bumping all three pins.
-    "ruff==0.15.10",
+    "ruff==0.17.3",
 ]
 
 [tool.uv]
