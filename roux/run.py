@@ -321,7 +321,7 @@ parser.add_commands(
         to_src,
         ### notebooks repository to a package
         to_pkg,
-        argh.named("to-scr")(to_scrs),  ## notebooks to scripts, in the repository
+        to_scrs,  ## notebooks to scripts, in the repository
         ## ui
         gui,
     ]

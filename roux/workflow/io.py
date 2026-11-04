@@ -943,16 +943,29 @@ def to_scrs(
     source repository. The `scr_*/` are generated: emptied first, so they must be ignored by git.
 
     Usage:
-        On command line, from the root of the repository (CLI name: `to-scr`).
+        On command line, from the root of the repository.
 
         ## params of `to_pkg`, by default `to_pkg.cfg`
-        roux to-scr
-        roux to-scr --dry-run True
+        roux to-scrs
+        roux to-scrs --dry-run True
 
     Parameters:
         input_path (str): params file of `to_pkg` (its `input_path` is the repository); or the path to the repository.
+        kind (str): 'code' to clear the outputs of the notebooks.
+        ignore (str): patterns (fnmatch to `<repository dir name>/<path>`), one per line (# for comments). The matching notebooks are not converted.
+        clean_nbs (bool): clean the notebooks, as in `to_pkg`.
+        clean_comments (bool): drop the excessive (consecutive) comment lines from the scripts.
+        force_with_pms (bool): scripts with the parameters for the `run` notebooks too.
+        author (str): author line for the scripts.
+        drop_code_lines_containing (list): patterns of the lines to drop from the notebooks.
+        drop_headers_containing (list): patterns of the headers to drop from the notebooks.
+        rm_unused_funcs (bool): remove the unused functions from the scripts.
         dry_run (bool): only list the actions.
-        others: as in `to_pkg`; used only if `input_path` is the repository (else, from the params file).
+
+        If `input_path` is a params file, the params are read from it (the `to_pkg`-only ones are ignored), but `dry_run`.
+
+    Returns:
+        paths (list): of the scripts.
     """
     import inspect
     import shutil
@@ -969,6 +982,10 @@ def to_scrs(
             for k, v in kws.items()
             if k in inspect.signature(to_scrs).parameters and k != "dry_run"
         }
+        ## the repository, not a params file again
+        assert "input_path" in kws and not Path(kws["input_path"]).is_file(), (
+            f"input_path of the repository is missing in {input_path}"
+        )
         return to_scrs(**kws, dry_run=dry_run)
 
     ## cli
@@ -990,11 +1007,24 @@ def to_scrs(
     ## generated dirs: of the outputs and the existing ones
     dir_names = {Path(py_rel).parts[0] for _, py_rel in plan["convert"]}
     dir_names |= {p.name for p in src.glob("scr_*") if p.is_dir()}
-    assert all(s.startswith("scr_") for s in dir_names), dir_names
-    not_ignored = {f"{s}/" for s in dir_names} - _git_check_ignore(
-        src, [f"{s}/" for s in dir_names]
+    not_scr = sorted(s for s in dir_names if not s.startswith("scr_"))
+    if not_scr:
+        raise ValueError(f"output dirs not starting with scr_: {not_scr}")
+    ## generated i.e. ignored by git and not tracked (e.g. in a package worktree)
+    paths = [f"{s}/" for s in sorted(dir_names)]
+    not_ignored = sorted(set(paths) - _git_check_ignore(src, paths))
+    tracked = sorted(
+        {
+            rel.split("/")[0] + "/"
+            for v in plan.values()
+            for rel in v
+            if isinstance(rel, str) and rel.split("/")[0] in dir_names
+        }
     )
-    assert not not_ignored, f"not ignored by git i.e. not generated: {sorted(not_ignored)}"
+    if not_ignored or tracked:
+        raise ValueError(
+            f"not generated dirs (not ignored by git: {not_ignored}; tracked: {tracked})"
+        )
     if dry_run:
         for s in sorted(dir_names):
             print("empty", f"{s}/")
@@ -1018,7 +1048,7 @@ def to_scrs(
         drop_code_lines_containing=drop_code_lines_containing,
         drop_headers_containing=drop_headers_containing,
     )
-    return [py_rel for _, py_rel in plan["convert"]]
+    return [str(src / py_rel) for _, py_rel in plan["convert"]]
 
 
 def replacestar_ruff(
