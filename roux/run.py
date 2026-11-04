@@ -24,7 +24,7 @@ from roux.lib.io import (
 from roux.lib.log import to_diff
 from roux.lib.sys import mv_ln_s, read_ps
 from roux.workflow.cfgs import read_config, read_metadata, to_cfg_run_arc
-from roux.workflow.io import replacestar, to_pkg, to_src
+from roux.workflow.io import replacestar, to_pkg, to_scrs, to_src
 from roux.workflow.log import test_params
 from roux.workflow.nb import (
     to_clean_nb,
@@ -321,6 +321,7 @@ parser.add_commands(
         to_src,
         ### notebooks repository to a package
         to_pkg,
+        argh.named("to-scr")(to_scrs),  ## notebooks to scripts, in the repository
         ## ui
         gui,
     ]
