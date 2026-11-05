@@ -249,6 +249,49 @@ def to_scr_path(p):
     return outp
 
 
+def _pms_to_run_args(code):
+    """
+    Parameters cell -> the arguments of `run()` and the lines that restore the non-literal defaults.
+
+    Parameters:
+        code (str): source of the parameters cell.
+
+    Returns:
+        args (list): `name=default` strings. A literal default (accepted by `ast.literal_eval`, e.g. numbers,
+            strings, lists, dicts, `None`) is rendered with `repr()`. A non-literal default (e.g. an f-string,
+            a name, a call or an expression on other parameters) becomes `None`, because it may refer to the
+            notebook's variables, which a function default can't.
+        pre (list): statements for the beginning of `run()`, `if <name> is None: <name> = <expression>`, in
+            the order of the cell. They restore the non-literal defaults at run time, where the expressions
+            can use the module-level variables and the other parameters. Passing `None` also gets them.
+            The expression is the cell's source text, not `ast.unparse`, whose output depends on the
+            Python version (e.g. 3.12.3 reuses the outer quotes inside f-strings, valid only on >=3.12).
+            A multi-line expression keeps its continuation lines as they are (inside brackets or strings,
+            so they need no indentation).
+    """
+    import ast
+
+    tree = ast.parse(code)
+    pms = {}
+    for node in ast.walk(tree):
+        if isinstance(node, ast.Assign):
+            for target in node.targets:
+                if isinstance(target, ast.Name):
+                    pms[target.id] = node.value
+
+    args, pre = [], []
+    for k, v in pms.items():
+        try:
+            args.append(f"{k}={ast.literal_eval(v)!r}")
+        except Exception:
+            args.append(f"{k}=None")
+            expr = ast.get_source_segment(code, v)
+            if expr is None:
+                expr = ast.unparse(v)
+            pre.append(f"if {k} is None: {k} = {expr}")
+    return args, pre
+
+
 def to_scr(
     p,
     outp=None,
@@ -283,6 +326,11 @@ def to_scr(
     Note:
         Papermill-based execution (`task.py`) still needs an .ipynb; keep a paired notebook with
         `jupytext --set-formats ipynb,py:percent`.
+
+        With `with_pms`, the assignments of the parameters cell become the arguments of `run()` (see
+        `_pms_to_run_args`). Literal defaults are kept (`repr()`). Non-literal ones (e.g.
+        `p=f"../out/{cfg['version']}.yaml"`) default to `None` and are assigned at the beginning of `run()`
+        if `None`, i.e. evaluated at run time, as in the notebook.
 
     TODO:
         Prefer py with --pms
@@ -353,22 +401,34 @@ def to_scr(
         post_pms = re.sub(r"\n    # In\[\s*\d*\s*\]:", "\n", post_pms)
         return ([pre_pms, post_pms], pms)
 
+    t_pms_pre = ""
     if with_pms:
         t_splits, params = split_by_pms(t_tab)
-        ## remove comments
-        params_lines = params.split("\n")
-        params = "\n".join([s.split("#")[0] for s in params_lines])
-
-        from roux.workflow.pms import extract_pms
-
-        params_str = " " * 4 + (
-            ",\n    ".join(
-                extract_pms(
-                    params.split("    ")[1:],
-                    fmt="str",
-                )
-            )
+        ## the cell's code without the rest of the '## param..' line and the indentation of `t_tab`
+        params_code = "\n".join(
+            [s[4:] if s.startswith("    ") else s for s in params.split("\n")[1:]]
         )
+        try:
+            params_args, params_pre = _pms_to_run_args(params_code)
+        except SyntaxError as e:
+            logging.warning(f"parameters not parsed ({e}); using extract_pms")
+            ## remove comments
+            params_lines = params.split("\n")
+            params = "\n".join([s.split("#")[0] for s in params_lines])
+
+            from roux.workflow.pms import extract_pms
+
+            params_args = extract_pms(params.split("    ")[1:], fmt="str")
+            params_pre = []
+        params_str = " " * 4 + ",\n    ".join(params_args)
+        if len(params_pre) > 0:
+            ## indent only the first line: the continuation lines are kept as they are
+            t_pms_pre = "\n".join(
+                [
+                    " " * 4 + s
+                    for s in ["## the defaults that are not literals"] + params_pre
+                ]
+            )
         if verbose:
             logging.info(params_str)
     else:
@@ -402,6 +462,7 @@ import argh
 def run(""",
             params_str if with_pms else "",
             """):""",
+            t_pms_pre,
             t_def_pre if with_pms else "",
         ]
     )
@@ -1059,6 +1120,17 @@ def replacestar_ruff(
     indent=None,
     verbose=True,
 ) -> str:
+    """
+    Replace the wildcard (global) import with the import lines of `roux.global_imports`.
+
+    Parameters:
+        replace (str): the statement to replace.
+        indent (str): indentation of the import lines. If None, the statement is replaced at any indentation
+            (e.g. at the module level and inside `run()` of a script by `to_scr`), each with its own.
+    """
+    import re
+    import textwrap
+
     from roux.workflow.function import get_global_imports
 
     lines = get_global_imports(out_fmt="lines")
@@ -1068,16 +1140,20 @@ def replacestar_ruff(
         # lines
     ).replace("\n\n", "\n")
 
+    text = open(p, "r").read()
     ## indent
     if indent is None:
-        import textwrap
-
-        indent = " " * (len(replace) - len(replace.lstrip(" ")))
-    if verbose:
-        logging.info(f"indent='{indent}'")
-    replace_with = textwrap.indent(replace_with, indent)
-
-    replaced = open(p, "r").read().replace(replace, replace_with)
+        if verbose:
+            logging.info("indent: as found")
+        replaced = re.sub(
+            r"(?m)^([ \t]*)" + re.escape(replace.strip()),
+            lambda m: textwrap.indent(replace_with, m.group(1)),
+            text,
+        )
+    else:
+        if verbose:
+            logging.info(f"indent='{indent}'")
+        replaced = text.replace(replace, textwrap.indent(replace_with, indent))
 
     import tempfile
 

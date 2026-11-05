@@ -432,6 +432,71 @@ def to_task(
 from functools import cache
 
 
+def _join_multiline_statements(text: str) -> str:
+    """
+    Join the statements that span multiple lines (e.g. parenthesised imports) into one line each.
+
+    Parameters:
+        text (str): source code.
+
+    Returns:
+        text (str): source code with the multi-line simple statements on one line each (via `ast.unparse`, so the
+            imports lose their parentheses), followed by their comments. Other lines are kept as they are.
+    """
+    import ast
+    import io
+    import textwrap
+    import tokenize
+
+    lines = text.split("\n")
+    try:
+        tokens = list(tokenize.generate_tokens(io.StringIO(text).readline))
+    except (tokenize.TokenError, SyntaxError):
+        logging.warning(
+            "could not tokenize; multi-line statements are kept as they are"
+        )
+        return text
+
+    ## (first row, last row, comments) of the statements (logical lines) spanning multiple rows
+    spans = []
+    start, comments = None, []
+    for tok in tokens:
+        if tok.type == tokenize.COMMENT:
+            if start is not None:
+                comments.append(tok.string)
+        elif tok.type == tokenize.NEWLINE:
+            if start is not None and tok.start[0] > start:
+                spans.append((start, tok.start[0], comments))
+            start, comments = None, []
+        elif tok.type not in (
+            tokenize.NL,
+            tokenize.INDENT,
+            tokenize.DEDENT,
+            tokenize.ENCODING,
+            tokenize.ENDMARKER,
+        ):
+            if start is None:
+                start = tok.start[0]
+
+    for first, last, comments in reversed(spans):
+        segment = lines[first - 1 : last]
+        try:
+            tree = ast.parse(textwrap.dedent("\n".join(segment)))
+        except SyntaxError:
+            ## e.g. the header of a compound statement
+            continue
+        if len(tree.body) != 1:
+            continue
+        code = ast.unparse(tree.body[0])
+        if "\n" in code:
+            continue
+        indent = segment[0][: len(segment[0]) - len(segment[0].lstrip())]
+        lines[first - 1 : last] = [
+            indent + code + ("  " + " ".join(comments) if comments else "")
+        ]
+    return "\n".join(lines)
+
+
 @cache
 def get_global_imports(
     markers=[
@@ -452,6 +517,8 @@ def get_global_imports(
     assert markers[1] in text, markers[1]
 
     lines = text.split(markers[0])[1].split(markers[1])[0]
+    ## one line per statement, so that the multi-line imports are kept whole
+    lines = _join_multiline_statements(lines)
 
     ## start with '## '
     lines = ("## " + lines.split("## ", 1)[1]).split("\n")
