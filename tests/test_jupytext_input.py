@@ -114,3 +114,57 @@ def test_to_scr_star_import(tmp_path, monkeypatch, where):
         for a in n.names
     }
     assert {"read_dict", "dropna"} <= imported, imported
+
+
+def test_to_scr_pms_defaults(tmp_path, monkeypatch):
+    t = _to_scr_from_cells(
+        tmp_path,
+        monkeypatch,
+        pre=["cfg = {'version': 'v1'}"],
+        pms=[
+            "input_path=None",
+            "output_path=None",
+            "x=1",
+            "f=0.5",
+            "b=True",
+            "d={'a': 1}",
+            "l=['a', \"b\"]",
+            "expr=\"`col` != 'all'\"",
+            's="it\'s"',
+            "s1='1'",
+            "c='#fff'  # a colour",
+            "p=f\"../out/{cfg['version']}.yaml\"",
+            "y=x * 2",
+        ],
+        post=["print(x, f, b, d, l, expr, s, s1, c, p, y)"],
+    )
+    run = [
+        n
+        for n in ast.parse(t).body
+        if isinstance(n, ast.FunctionDef) and n.name == "run"
+    ][0]
+    defaults = {
+        a.arg: ast.literal_eval(d)
+        for a, d in zip(run.args.args[-len(run.args.defaults) :], run.args.defaults)
+    }
+    assert defaults == {
+        "input_path": None,
+        "output_path": None,
+        "x": 1,
+        "f": 0.5,
+        "b": True,
+        "d": {"a": 1},
+        "l": ["a", "b"],
+        "expr": "`col` != 'all'",
+        "s": "it's",
+        "s1": "1",
+        "c": "#fff",
+        ## not literals: assigned in `run()` if None
+        "p": None,
+        "y": None,
+    }
+    body = [ast.unparse(n) for n in run.body[:2]]
+    assert body == [
+        "if p is None:\n    p = f\"../out/{cfg['version']}.yaml\"",
+        "if y is None:\n    y = x * 2",
+    ], body
