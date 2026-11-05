@@ -1059,6 +1059,17 @@ def replacestar_ruff(
     indent=None,
     verbose=True,
 ) -> str:
+    """
+    Replace the wildcard (global) import with the import lines of `roux.global_imports`.
+
+    Parameters:
+        replace (str): the statement to replace.
+        indent (str): indentation of the import lines. If None, the statement is replaced at any indentation
+            (e.g. at the module level and inside `run()` of a script by `to_scr`), each with its own.
+    """
+    import re
+    import textwrap
+
     from roux.workflow.function import get_global_imports
 
     lines = get_global_imports(out_fmt="lines")
@@ -1068,16 +1079,20 @@ def replacestar_ruff(
         # lines
     ).replace("\n\n", "\n")
 
+    text = open(p, "r").read()
     ## indent
     if indent is None:
-        import textwrap
-
-        indent = " " * (len(replace) - len(replace.lstrip(" ")))
-    if verbose:
-        logging.info(f"indent='{indent}'")
-    replace_with = textwrap.indent(replace_with, indent)
-
-    replaced = open(p, "r").read().replace(replace, replace_with)
+        if verbose:
+            logging.info("indent: as found")
+        replaced = re.sub(
+            r"(?m)^([ \t]*)" + re.escape(replace.strip()),
+            lambda m: textwrap.indent(replace_with, m.group(1)),
+            text,
+        )
+    else:
+        if verbose:
+            logging.info(f"indent='{indent}'")
+        replaced = text.replace(replace, textwrap.indent(replace_with, indent))
 
     import tempfile
 
