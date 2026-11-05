@@ -261,9 +261,13 @@ def _pms_to_run_args(code):
             strings, lists, dicts, `None`) is rendered with `repr()`. A non-literal default (e.g. an f-string,
             a name, a call or an expression on other parameters) becomes `None`, because it may refer to the
             notebook's variables, which a function default can't.
-        pre (list): lines for the beginning of `run()`, `if <name> is None: <name> = <expression>`, in the
-            order of the cell. They restore the non-literal defaults at run time, where the expressions
+        pre (list): statements for the beginning of `run()`, `if <name> is None: <name> = <expression>`, in
+            the order of the cell. They restore the non-literal defaults at run time, where the expressions
             can use the module-level variables and the other parameters. Passing `None` also gets them.
+            The expression is the cell's source text, not `ast.unparse`, whose output depends on the
+            Python version (e.g. 3.12.3 reuses the outer quotes inside f-strings, valid only on >=3.12).
+            A multi-line expression keeps its continuation lines as they are (inside brackets or strings,
+            so they need no indentation).
     """
     import ast
 
@@ -281,7 +285,10 @@ def _pms_to_run_args(code):
             args.append(f"{k}={ast.literal_eval(v)!r}")
         except Exception:
             args.append(f"{k}=None")
-            pre.append(f"if {k} is None:\n    {k} = {ast.unparse(v)}")
+            expr = ast.get_source_segment(code, v)
+            if expr is None:
+                expr = ast.unparse(v)
+            pre.append(f"if {k} is None: {k} = {expr}")
     return args, pre
 
 
@@ -415,11 +422,12 @@ def to_scr(
             params_pre = []
         params_str = " " * 4 + ",\n    ".join(params_args)
         if len(params_pre) > 0:
-            import textwrap
-
-            t_pms_pre = textwrap.indent(
-                "\n".join(["## the defaults that are not literals"] + params_pre),
-                " " * 4,
+            ## indent only the first line: the continuation lines are kept as they are
+            t_pms_pre = "\n".join(
+                [
+                    " " * 4 + s
+                    for s in ["## the defaults that are not literals"] + params_pre
+                ]
             )
         if verbose:
             logging.info(params_str)

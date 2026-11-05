@@ -135,8 +135,9 @@ def test_to_scr_pms_defaults(tmp_path, monkeypatch):
             "c='#fff'  # a colour",
             "p=f\"../out/{cfg['version']}.yaml\"",
             "y=x * 2",
+            "q=dict(\n    a=x,\n    b='''two\nlines''',\n)",
         ],
-        post=["print(x, f, b, d, l, expr, s, s1, c, p, y)"],
+        post=["print(x, f, b, d, l, expr, s, s1, c, p, y, q)"],
     )
     run = [
         n
@@ -162,9 +163,16 @@ def test_to_scr_pms_defaults(tmp_path, monkeypatch):
         ## not literals: assigned in `run()` if None
         "p": None,
         "y": None,
+        "q": None,
     }
-    body = [ast.unparse(n) for n in run.body[:2]]
-    assert body == [
+    ## compared as ast (`ast.unparse`, e.g. the quotes of f-strings, varies with the Python version)
+    expected = [
         "if p is None:\n    p = f\"../out/{cfg['version']}.yaml\"",
         "if y is None:\n    y = x * 2",
-    ], body
+        "if q is None:\n    q = dict(a=x, b='''two\nlines''')",
+    ]
+    assert [ast.dump(n) for n in run.body[:3]] == [
+        ast.dump(ast.parse(s).body[0]) for s in expected
+    ], [ast.unparse(n) for n in run.body[:3]]
+    ## the source text of the cell, i.e. valid on the Python versions that the notebook supports
+    assert "p = f\"../out/{cfg['version']}.yaml\"" in t
