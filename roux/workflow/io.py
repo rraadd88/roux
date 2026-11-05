@@ -663,6 +663,57 @@ def _clean_scr(inp, outp, target_functions=None):
     return outp
 
 
+def _pkg_plan(src, ignore=""):
+    """
+    Plan of `to_pkg`: the tracked files of a repository to convert (notebooks), copy or ignore.
+
+    Returns:
+        plan (dict), patterns (list): `ignore` as fnmatch patterns to `<repository dir name>/<path>`.
+    """
+    import fnmatch
+
+    patterns = [
+        s.strip()
+        for s in ignore.split("\n")
+        if s.strip() != "" and not s.strip().startswith("#")
+    ]
+    patterns = [f"*/{s}" for s in patterns]
+
+    def is_ignored(name):
+        return any(fnmatch.fnmatch(name, pattern) for pattern in patterns)
+
+    plan = {"convert": [], "copy": [], "ignored": []}
+    for rel in _git(src, "ls-files -z").split("\0"):
+        if rel == "" or not (src / rel).is_file():
+            continue
+        if is_ignored(f"{src.resolve().name}/{rel}"):
+            plan["ignored"].append(rel)
+        elif rel.endswith(".ipynb"):
+            plan["convert"].append((rel, to_scr_path(rel)))
+        else:
+            plan["copy"].append(rel)
+    logging.info({k: len(v) for k, v in plan.items()})
+    return plan, patterns
+
+
+def _to_scrs(src, out, convert, rm_unused_funcs=False, **kws):
+    """Notebooks to scripts (`_to_scr_cleaned`), for the `convert` list of `_pkg_plan`."""
+    import tempfile
+
+    with tempfile.TemporaryDirectory() as temp_dir_path:
+        for nb_rel, py_rel in convert:
+            logging.info(f"{nb_rel} -> {py_rel}")
+            _to_scr_cleaned(
+                src / nb_rel,
+                out / py_rel,
+                nb_cleaned_path=f"{temp_dir_path}/00_cleaning.ipynb",
+                py_cleaned_path=f"{temp_dir_path}/00_cleaning.py",
+                **kws,
+            )
+            if rm_unused_funcs:
+                _clean_scr(out / py_rel, out / py_rel)
+
+
 def to_pkg(
     input_path=None,
     output_path=None,
@@ -726,9 +777,7 @@ def to_pkg(
     Requirements:
         git>=2.42 (`worktree add --orphan`), git user.name and user.email (to commit).
     """
-    import fnmatch
     import shutil
-    import tempfile
 
     from roux.lib.io import to_dict
 
@@ -805,29 +854,8 @@ def to_pkg(
         )
     logging.info(f"{src} [{dev_branch}] -> {out} [{pub_branch}]")
 
-    ## ignore
-    patterns = [
-        s.strip()
-        for s in ignore.split("\n")
-        if s.strip() != "" and not s.strip().startswith("#")
-    ]
-    patterns = [f"*/{s}" for s in patterns]
-
-    def is_ignored(name):
-        return any(fnmatch.fnmatch(name, pattern) for pattern in patterns)
-
     ## plan
-    plan = {"convert": [], "copy": [], "ignored": []}
-    for rel in _git(src, "ls-files -z").split("\0"):
-        if rel == "" or not (src / rel).is_file():
-            continue
-        if is_ignored(f"{src.resolve().name}/{rel}"):
-            plan["ignored"].append(rel)
-        elif rel.endswith(".ipynb"):
-            plan["convert"].append((rel, to_scr_path(rel)))
-        else:
-            plan["copy"].append(rel)
-    logging.info({k: len(v) for k, v in plan.items()})
+    plan, patterns = _pkg_plan(src, ignore)
     if dry_run:
         for k, v in plan.items():
             for x in v:
@@ -865,24 +893,19 @@ def to_pkg(
             shutil.copy2(src / rel, out / rel)
 
     ## Notebooks -> py
-    with tempfile.TemporaryDirectory() as temp_dir_path:
-        for nb_rel, py_rel in plan["convert"]:
-            logging.info(f"{nb_rel} -> {py_rel}")
-            _to_scr_cleaned(
-                src / nb_rel,
-                out / py_rel,
-                nb_cleaned_path=f"{temp_dir_path}/00_cleaning.ipynb",
-                py_cleaned_path=f"{temp_dir_path}/00_cleaning.py",
-                kind=kind,
-                clean_nbs=clean_nbs,
-                clean_comments=clean_comments,
-                force_with_pms=force_with_pms,
-                author=author,
-                drop_code_lines_containing=drop_code_lines_containing,
-                drop_headers_containing=drop_headers_containing,
-            )
-            if rm_unused_funcs:
-                _clean_scr(out / py_rel, out / py_rel)
+    _to_scrs(
+        src,
+        out,
+        plan["convert"],
+        rm_unused_funcs=rm_unused_funcs,
+        kind=kind,
+        clean_nbs=clean_nbs,
+        clean_comments=clean_comments,
+        force_with_pms=force_with_pms,
+        author=author,
+        drop_code_lines_containing=drop_code_lines_containing,
+        drop_headers_containing=drop_headers_containing,
+    )
 
     ## Version: commit (locally)
     if not no_commit:
@@ -898,6 +921,134 @@ def to_pkg(
     ## Outputs
     to_dict({}, output_path)
     return output_path
+
+
+def to_scrs(
+    input_path="to_pkg.cfg",
+    kind=None,
+    ignore="",
+    clean_nbs="True",
+    clean_comments="False",
+    force_with_pms="True",
+    author=None,
+    drop_code_lines_containing=None,
+    drop_headers_containing=None,
+    rm_unused_funcs="False",
+    dry_run="False",
+):
+    """
+    Notebooks of a repository to scripts (`notebooks_X/` -> `scr_X/`), in the repository itself.
+
+    The conversion of `to_pkg` (same params file), without the package e.g. to test the scripts in the
+    source repository. The `scr_*/` are generated: emptied first, so they must be ignored by git.
+
+    Usage:
+        On command line, from the root of the repository.
+
+        ## params of `to_pkg`, by default `to_pkg.cfg`
+        roux to-scrs
+        roux to-scrs --dry-run True
+
+    Parameters:
+        input_path (str): params file of `to_pkg` (its `input_path` is the repository); or the path to the repository.
+        kind (str): 'code' to clear the outputs of the notebooks.
+        ignore (str): patterns (fnmatch to `<repository dir name>/<path>`), one per line (# for comments). The matching notebooks are not converted.
+        clean_nbs (bool): clean the notebooks, as in `to_pkg`.
+        clean_comments (bool): drop the excessive (consecutive) comment lines from the scripts.
+        force_with_pms (bool): scripts with the parameters for the `run` notebooks too.
+        author (str): author line for the scripts.
+        drop_code_lines_containing (list): patterns of the lines to drop from the notebooks.
+        drop_headers_containing (list): patterns of the headers to drop from the notebooks.
+        rm_unused_funcs (bool): remove the unused functions from the scripts.
+        dry_run (bool): only list the actions.
+
+        If `input_path` is a params file, the params are read from it (the `to_pkg`-only ones are ignored), but `dry_run`.
+
+    Returns:
+        paths (list): of the scripts.
+    """
+    import inspect
+    import shutil
+
+    dry_run = read_cli_pm(dry_run)
+
+    ## params file
+    if Path(input_path).is_file():
+        from roux.lib.io import read_dict
+
+        kws = dict(read_dict(input_path))
+        kws = {
+            k: v
+            for k, v in kws.items()
+            if k in inspect.signature(to_scrs).parameters and k != "dry_run"
+        }
+        ## the repository, not a params file again
+        assert "input_path" in kws and not Path(kws["input_path"]).is_file(), (
+            f"input_path of the repository is missing in {input_path}"
+        )
+        return to_scrs(**kws, dry_run=dry_run)
+
+    ## cli
+    clean_nbs, clean_comments, force_with_pms, rm_unused_funcs = [
+        read_cli_pm(x)
+        for x in [clean_nbs, clean_comments, force_with_pms, rm_unused_funcs]
+    ]
+    drop_code_lines_containing = read_cli_pm(drop_code_lines_containing)
+    drop_headers_containing = read_cli_pm(drop_headers_containing)
+    if drop_code_lines_containing is None:
+        drop_code_lines_containing = _PKG_DROP_CODE_LINES
+    if drop_headers_containing is None:
+        drop_headers_containing = _PKG_DROP_HEADERS
+
+    src = Path(input_path)
+    assert (src / ".git").is_dir(), f"not a repository: {src}"
+    plan, _ = _pkg_plan(src, ignore)
+
+    ## generated dirs: of the outputs and the existing ones
+    dir_names = {Path(py_rel).parts[0] for _, py_rel in plan["convert"]}
+    dir_names |= {p.name for p in src.glob("scr_*") if p.is_dir()}
+    not_scr = sorted(s for s in dir_names if not s.startswith("scr_"))
+    if not_scr:
+        raise ValueError(f"output dirs not starting with scr_: {not_scr}")
+    ## generated i.e. ignored by git and not tracked (e.g. in a package worktree)
+    paths = [f"{s}/" for s in sorted(dir_names)]
+    not_ignored = sorted(set(paths) - _git_check_ignore(src, paths))
+    tracked = sorted(
+        {
+            rel.split("/")[0] + "/"
+            for v in plan.values()
+            for rel in v
+            if isinstance(rel, str) and rel.split("/")[0] in dir_names
+        }
+    )
+    if not_ignored or tracked:
+        raise ValueError(
+            f"not generated dirs (not ignored by git: {not_ignored}; tracked: {tracked})"
+        )
+    if dry_run:
+        for s in sorted(dir_names):
+            print("empty", f"{s}/")
+        for nb_rel, py_rel in plan["convert"]:
+            print("convert", nb_rel, "->", py_rel)
+        return
+
+    for s in dir_names:
+        if (src / s).exists():
+            shutil.rmtree(src / s)
+    _to_scrs(
+        src,
+        src,
+        plan["convert"],
+        rm_unused_funcs=rm_unused_funcs,
+        kind=kind,
+        clean_nbs=clean_nbs,
+        clean_comments=clean_comments,
+        force_with_pms=force_with_pms,
+        author=author,
+        drop_code_lines_containing=drop_code_lines_containing,
+        drop_headers_containing=drop_headers_containing,
+    )
+    return [str(src / py_rel) for _, py_rel in plan["convert"]]
 
 
 def replacestar_ruff(
