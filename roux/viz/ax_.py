@@ -1060,6 +1060,9 @@ def get_legend_kws_aes(
     for restoring
     """
     legend = ax.get_legend()
+    if legend is None:
+        ## nothing to restore
+        return {}
     return dict(
         title=legend.get_title().get_text(),
         loc=legend._loc,
@@ -1091,6 +1094,9 @@ def sort_legends(ax: plt.Axes, sort_order: list = None, **kws) -> plt.Axes:
     )
 
     handles, labels = ax.get_legend_handles_labels()
+    if len(handles) == 0:
+        ## no legend entries to sort; e.g. plots without hue
+        return ax.get_legend()
     # sort both labels and handles by labels
     if sort_order is None:
         handles, labels = zip(*sorted(zip(handles, labels), key=lambda t: t[1]))
