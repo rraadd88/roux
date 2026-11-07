@@ -1216,6 +1216,8 @@ def get_legend2param(ax: plt.Axes) -> dict[str, str]:
             # g: Convert RGB/RGBA tuple to hex string for cleaner output
             if isinstance(color, tuple):
                 # g: Use Matplotlib utility to format RGB/RGBA tuple to hex string
+                from matplotlib.colors import to_hex
+
                 color = to_hex(color, keep_alpha=True)
 
         # g: For other handle types, additional checks would be added here.
