@@ -1060,6 +1060,9 @@ def get_legend_kws_aes(
     for restoring
     """
     legend = ax.get_legend()
+    if legend is None:
+        ## nothing to restore
+        return {}
     return dict(
         title=legend.get_title().get_text(),
         loc=legend._loc,
@@ -1091,6 +1094,9 @@ def sort_legends(ax: plt.Axes, sort_order: list = None, **kws) -> plt.Axes:
     )
 
     handles, labels = ax.get_legend_handles_labels()
+    if len(handles) == 0:
+        ## no legend entries to sort; e.g. plots without hue
+        return ax.get_legend()
     # sort both labels and handles by labels
     if sort_order is None:
         handles, labels = zip(*sorted(zip(handles, labels), key=lambda t: t[1]))
@@ -1210,6 +1216,8 @@ def get_legend2param(ax: plt.Axes) -> dict[str, str]:
             # g: Convert RGB/RGBA tuple to hex string for cleaner output
             if isinstance(color, tuple):
                 # g: Use Matplotlib utility to format RGB/RGBA tuple to hex string
+                from matplotlib.colors import to_hex
+
                 color = to_hex(color, keep_alpha=True)
 
         # g: For other handle types, additional checks would be added here.
