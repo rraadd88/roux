@@ -61,33 +61,42 @@ def git_commit(
 import subprocess
 
 
-def get_tag():
+def get_tag(
+    fillna='test'
+):
     """Get the current version tag."""
-    try:
-        # Execute the git describe command to get the current tag
-        result = subprocess.run(
-            # ['git', 'tag', '-l'],
-            ["git", "describe", "--abbrev=0", "--tags"],
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
-            text=True,
-            check=False,
-        )
-
-        # Check if the command was successful
-        if result.returncode == 0:
-            # Get the output and strip any extra whitespace
-            current_tag = result.stdout.strip()
-            # return current_tag#.split('\n')[-1]
-        else:
-            print("Error getting current Git tag:", result.stderr.strip())
+    for com in [
+        "git tag --sort=-v:refname | head -n 1",
+        "git describe --abbrev=0 --tags",
+    ]:
+        try:
+            # Execute the git describe command to get the current tag
+            # result = subprocess.run(
+            #     com.split(' '),
+            #     stdout=subprocess.PIPE,
+            #     stderr=subprocess.PIPE,
+            #     text=True,
+            #     check=False,
+            # )
+            from roux.lib.sys import run_com
+            result=run_com(com)
+            # Check if the command was successful
+            if result.strip()!='':
+                # Get the output and strip any extra whitespace
+                # current_tag = result.stdout.strip()
+                # return current_tag#.split('\n')[-1]
+                current_tag=result.strip()
+            else:
+                print("Error getting current Git tag:", result.stderr.strip())
+                current_tag = None
+        except Exception as e:
+            print("An error occurred:", str(e))
             current_tag = None
-    except Exception as e:
-        print("An error occurred:", str(e))
-        current_tag = None
+        if not current_tag is None:
+            break  
 
     if current_tag is None:
-        current_tag = "test"
+        current_tag = fillna
         logging.warning(f"Current Git tag: {current_tag}")
     else:
         logging.info(f"Current Git tag: {current_tag}")
