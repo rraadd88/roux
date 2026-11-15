@@ -22,7 +22,10 @@ roux --help                               # CLI (needs the `workflow` extra)
 - F401 is ignored and unfixable: roux re-exports names (e.g. `roux/global_imports.py`) marked `# noqa`.
   Keep the "unused" imports. E402/E712 findings are known and accepted.
 - CI: `build.yml` (tox matrix + `uv build`/twine check) on push/PR; `format.yaml` (ruff autofix commit)
-  is manual only.
+  is manual only. `build.yml` runs only what the changed files need (its `changes` job): `roux/`, `tests/`,
+  `examples/`, `pyproject.toml`, `uv.lock`, `tox.ini`, `MANIFEST.in` or `build.yml` -> both jobs;
+  `README.md` alone -> the package check (it is the PyPI long description); anything else (e.g. `.claude/`)
+  -> neither. Manual runs (`workflow_dispatch`) run both.
 
 ## Architecture
 
