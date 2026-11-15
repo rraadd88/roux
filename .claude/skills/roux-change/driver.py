@@ -68,18 +68,6 @@ def info(roux: Path) -> int:
     print(f"HEAD:   {git(roux, 'log', '--oneline', '-1')}")
     print("status:")
     print("\n".join("  " + s for s in git(roux, "status", "--short").splitlines()) or "  clean")
-    todos = roux / ".claude/TODOs.md"
-    print(f"TODOs ({todos.relative_to(roux)}):")
-    if not todos.exists():
-        print("  missing")
-        return 0
-    for line in todos.read_text().splitlines():
-        if line.startswith("## "):
-            print("  " + line[3:])
-        elif line.startswith("### "):
-            print("    " + line[4:])
-        elif re.match(r"\s*- \[[ x]\] ", line):
-            print("      " + line.strip())
     return 0
 
 
