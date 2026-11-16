@@ -50,6 +50,20 @@ jobs:
           echo "code=$code" | tee -a "$GITHUB_OUTPUT"
           echo "package=$package" | tee -a "$GITHUB_OUTPUT"
 
+  ## undefined names (F821), redefinitions (F811), names used before assignment (F823); F401 stays off (re-exports).
+  ## ruff pinned like [tool.ruff] required-version in pyproject.toml; --isolated: only these rules
+  lint:
+    name: Lint (undefined names)
+    needs: changes
+    if: needs.changes.outputs.code == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6.3.1
+      - name: ruff check (F821, F811, F823)
+        run: uvx ruff@0.15.10 check roux --isolated --select F821,F811,F823 --output-format=github
+
   test:
     name: Test (py${{ matrix.python-version }})
     needs: changes

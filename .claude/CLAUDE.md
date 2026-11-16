@@ -21,7 +21,7 @@ roux --help                               # CLI (needs the `workflow` extra)
   Newer versions strip `# noqa` (RUF100) and can delete re-exported imports.
 - F401 is ignored and unfixable: roux re-exports names (e.g. `roux/global_imports.py`) marked `# noqa`.
   Keep the "unused" imports. E402/E712 findings are known and accepted.
-- CI: `build.yml` (tox matrix + `uv build`/twine check) on push/PR; `format.yaml` (ruff autofix commit)
+- CI: `build.yml` (tox matrix + `uv build`/twine check + a `lint` job: `ruff@0.15.10` F821/F811/F823 on `roux/`) on push/PR; `format.yaml` (ruff autofix commit)
   is manual only. `build.yml` runs only what the changed files need (its `changes` job): `roux/`, `tests/`,
   `examples/`, `pyproject.toml`, `uv.lock`, `tox.ini`, `MANIFEST.in` or `build.yml` -> both jobs;
   `README.md` alone -> the package check (it is the PyPI long description); anything else (e.g. `.claude/`)
@@ -60,6 +60,8 @@ turns them into CLI scripts:
   `py`, `bash` or `slurm` (inferred if not given), and `.ipynb` runs go through papermill (`run_tasks_nb`).
   Params and configs are handled by `roux/workflow/pms.py` (`pre_params`) and `cfgs.py` (omegaconf). The SLURM
   part (`SLURMJob`, `submit_job`, `feed_jobs`, `to_sbatch_script`, ...) is in `slurm.py`, re-exported by `task.py`.
+  Environment variables, inherited by the nested calls: `ROUX_CACHE_DIR` (logs and run scripts), `ROUX_SKIP_TASKS`
+  and `ROUX_ONLY_TASKS` (comma-separated fnmatch patterns on the target's path, name or stem; `_skipped_by_env`).
 
 ### CLI (`roux/run.py`)
 The `roux` entry point is `roux.run:parser.dispatch`, an `argh.ArghParser`. To add a command, import the

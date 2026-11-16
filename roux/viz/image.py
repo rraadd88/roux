@@ -40,7 +40,7 @@ def plot_image(
         #         else:
         from roux.viz.io import to_raster
 
-        pngp = to_raster(imp, force=force, **kwarg)
+        pngp = to_raster(imp, force=force, **kws_to_raster)
     ax = plt.subplot() if ax is None else ax
     im = plt.imread(pngp)
     ax.imshow(

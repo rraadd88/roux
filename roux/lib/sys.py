@@ -968,7 +968,7 @@ def resolve_paths(
         # recursive
         d = {}
         paths = glob(replace_many(key_path, {k: "*" for k in keys}))
-        assert len(paths) > 0, key_path.replace(key, "*")
+        assert len(paths) > 0, replace_many(key_path, {k: "*" for k in keys})
 
         for k in keys:
             d[k] = resolve_paths(

@@ -184,7 +184,7 @@ def savefig(
         logging.getLogger("fontTools.subset").setLevel(logging.ERROR)
         # fontTools.logging.disable()
         del fontTools
-    except:
+    except ImportError:
         pass
     # logging.basicConfig(level=logging.INFO)
     # plt.set_loglevel("info")

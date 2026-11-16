@@ -402,6 +402,8 @@ def plot_bar_serial(
                     )
                 )
     #     break
+    from roux.lib.str import num2str
+
     s = num2str(kws1["size"], magnitude=True, decimals=1)
     ax.annotate(
         s=s,
