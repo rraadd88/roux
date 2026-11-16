@@ -276,7 +276,15 @@ def _to_panel(input_path: str, review_dir: str, force: bool = False):
         return None
     plt.close("all")
     ax = read_plot(f"{input_path}/plot.py")
-    stats = getattr(ax, "stats", None) or {}
+    stats = getattr(ax, "stats", None)
+    ## only a dict of stats is kept (e.g. `roux.viz.dist.plot_dists` sets a DataFrame)
+    if stats is None:
+        stats = {}
+    elif not isinstance(stats, dict):
+        logging.warning(
+            f"stats not saved (ax.stats is a {type(stats).__name__}, not a dict): {input_path}"
+        )
+        stats = {}
     plt.close("all")
     out.mkdir(parents=True, exist_ok=True)
     to_table(data, str(out / "data.pqt"))
@@ -403,14 +411,15 @@ def to_review(
     tag_pattern=None,
     ana_to_sis=None,
     cols_desc=None,
-    excel="tables/source_data.xlsx",
+    excel=None,
+    check=True,
     force=False,
 ):
     """
     The review files of `to_pub`, in the analysis repository only (no git checks, no paper repository).
 
-    In `review_path`: `figs.tsv`, `figs/fig<id>.pdf`, `repo/figs/fig<id>/` (data, config, cleaned plot script and
-    stats of each plot), `stats.yaml` (`<fig>:<key>`), `stats_fmt.json` (`{{<fig>:<key>}}`: the formatted numbers)
+    In `review_path`: `figs.tsv`, `figs/fig<id>.pdf` (an error if the plot's pdf is missing) and `figs/fig<id>.png`
+    (if the plot has one; else a warning), `repo/figs/fig<id>/` (data, config, cleaned plot script and stats of each plot), `stats.yaml` (`<fig>:<key>`), `stats_fmt.json` (`{{<fig>:<key>}}`: the formatted numbers)
     and the source data excel.
 
     Usage:
@@ -419,38 +428,59 @@ def to_review(
         ## the params file of `to_pub` (by default `to_pub.cfg`): `review_path` is the directory of its `output_path`
         to_review("to_pub.cfg")
 
+        ## the other outputs (another tag), not all plots expected: the args override the params file
+        to_review("to_pub.cfg", tag="test", review_path="results/test", check=False)
+
     Parameters:
-        input_path (str): path to the repository; or to the params file, if `review_path` is not provided.
-        review_path (str): the directory of the review files e.g. `results/latest`.
+        input_path (str): path to the repository; or to the params file (a file, by default `to_pub.cfg`): its params, overridden by the args that are given.
+        review_path (str): the directory of the review files e.g. `results/latest`; by default, of the params file: the directory of its `output_path`.
         figs (dict): the plots of the figures, see `read_figs`.
         tag (str), tag_pattern (str): the version of the outputs, see `read_figs`.
         ana_to_sis (dict): `{analysis name: [SI figure numbers]}`, in the order of the main figures.
         cols_desc (dict): `{column: description}` for the source data excel.
-        excel (str): the source data excel (a sheet per plot), relative to `review_path`.
+        excel (str): the source data excel (a sheet per plot), relative to `review_path`; by default `tables/source_data.xlsx`.
+        check (bool): raise if a plot is missing; else warn and skip it (`exists` in `figs.tsv`).
         force (bool): remake the outputs that exist.
 
     Returns:
         pd.DataFrame: the plan (see `_pub_plan`) of the plots with data.
     """
-    ## params file
-    if review_path is None:
+    ## params file: its params, overridden by the args that are given
+    if input_path is None or Path(input_path).is_file():
         import inspect
 
-        kws = _read_cfg(input_path or "to_pub.cfg")
-        review_path = Path(kws["output_path"]).with_suffix("").as_posix()
-        keys = set(inspect.signature(to_review).parameters) - {"review_path", "force"}
-        return to_review(
-            review_path=review_path,
-            force=force,
-            **{k: v for k, v in kws.items() if k in keys},
+        cfg_path = input_path or "to_pub.cfg"
+        kws = _read_cfg(cfg_path)
+        kws.setdefault("input_path", Path(cfg_path).parent.as_posix())
+        keys = set(inspect.signature(to_review).parameters) - {"check", "force"}
+        kws = {k: v for k, v in kws.items() if k in keys or k == "output_path"}
+        if review_path is None:
+            review_path = Path(kws.pop("output_path")).with_suffix("").as_posix()
+        kws.pop("output_path", None)
+        args = dict(
+            figs=figs,
+            tag=tag,
+            tag_pattern=tag_pattern,
+            ana_to_sis=ana_to_sis,
+            cols_desc=cols_desc,
+            excel=excel,
         )
-    if input_path is None:
-        input_path = "."
+        kws.update({k: v for k, v in args.items() if v is not None})
+        return to_review(review_path=review_path, check=check, force=force, **kws)
+    assert review_path is not None, "`review_path` is required"
+    if excel is None:
+        excel = "tables/source_data.xlsx"
     for k, v in dict(figs=figs, ana_to_sis=ana_to_sis).items():
         assert v is not None, f"`{k}` is required"
 
     df = _pub_plan(
-        read_figs(figs, tag=tag, tag_pattern=tag_pattern, input_path=input_path),
+        read_figs(
+            figs,
+            tag=tag,
+            tag_pattern=tag_pattern,
+            input_path=input_path,
+            check=check,
+        ),
         ana_to_sis=ana_to_sis,
         review_path=review_path,
     )
@@ -463,16 +493,28 @@ def to_review(
     review = Path(review_path)
     (review / "figs").mkdir(parents=True, exist_ok=True)
     to_table(df, str(review / "figs.tsv"))
+    ## the missing plots (`check=False`): warned by `read_figs`
+    df = df.loc[df["exists"], :]
     stats = {}
     for _, x in df.iterrows():
         logging.info(f">>> {x['plot label']}")
         stats[x["fig"]] = _to_panel(x["input path"], x["review path"], force=force)
-        pdf, pdf_out = (
-            Path(f"{x['input path']}.pdf"),
-            review / f"figs/fig{x['fig']}.pdf",
-        )
-        if pdf.exists() and (force or not pdf_out.exists()):
-            shutil.copy2(pdf, pdf_out)
+        ## the plot files: the pdf (primary: an error if missing), the png (secondary: a warning if missing)
+        for ext in ["pdf", "png"]:
+            src, dst = (
+                Path(f"{x['input path']}.{ext}"),
+                review / f"figs/fig{x['fig']}.{ext}",
+            )
+            if dst.exists() and not force:
+                continue
+            try:
+                shutil.copy2(src, dst)
+            except OSError as e:
+                if ext == "pdf":
+                    raise FileNotFoundError(
+                        f"pdf not copied ({e}): {x['plot label']} {src}"
+                    ) from e
+                logging.warning(f"png not copied ({e}): {x['plot label']} {src}")
 
     ## stats: {fig: ax.stats} -> `<fig>:<key>`, and formatted
     from roux.lib.dict import flatten_dict
@@ -538,7 +580,7 @@ def to_pub(
     """
     Analysis repository to a paper repository, in a worktree of the same repository (orphan branch, made by the user).
 
-    The review files (in the directory of `output_path`): `figs.tsv`, `figs/fig<id>.pdf`, `repo/figs/fig<id>/`
+    The review files (in the directory of `output_path`): `figs.tsv`, `figs/fig<id>.pdf` (and `.png`), `repo/figs/fig<id>/`
     (data, config, cleaned plot script and stats of each plot), `stats.yaml` (`<fig>:<key>`), `stats_fmt.json`
     (`{{<fig>:<key>}}`: the formatted numbers) and the source data excel.
 

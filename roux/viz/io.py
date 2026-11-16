@@ -319,12 +319,35 @@ def get_plot_inputs(
         )
 
 
-def log_code():
-    """Log the code."""
+def get_logp(logp: str = None) -> str:
+    """The path of the log of the code of a kernel.
+
+    Args:
+        logp (str, optional): path to the log file. Defaults to None: one per kernel (process), in the temporary
+            directory, so that the notebooks run from the same directory (e.g. a notebook and the ones it runs with
+            `run_tasks`) don't overwrite each other's log.
+
+    Returns:
+        str: path to the log file.
+    """
+    if logp is not None:
+        return logp
+    import os
+    import tempfile
+
+    return f"{tempfile.gettempdir()}/roux_log_notebook_{os.getpid()}.log"
+
+
+def log_code(logp: str = None):
+    """Log the code.
+
+    Args:
+        logp (str, optional): path to the log file. Defaults to None (`get_logp`).
+    """
     from IPython import get_ipython
 
     if is_interactive_notebook():
-        logp = "log_notebook.log"
+        logp = get_logp(logp)
         # if exists(logp):
         # open(logp, 'w').close()
         # logging.info(f'{logp} emptied')
@@ -336,13 +359,11 @@ def log_code():
 begin_plot = log_code
 
 
-def get_lines(
-    logp: str = "log_notebook.log", sep: str = "begin_plot()", test: bool = False
-) -> list:
+def get_lines(logp: str = None, sep: str = "begin_plot()", test: bool = False) -> list:
     """Get lines from the log.
 
     Args:
-        logp (str, optional): path to the log file. Defaults to 'log_notebook.log'.
+        logp (str, optional): path to the log file. Defaults to None (`get_logp`: one per kernel).
         sep (str, optional): label marking the start of code of the plot. Defaults to 'begin_plot()'.
         test (bool, optional): test mode. Defaults to False.
 
@@ -359,8 +380,9 @@ def get_lines(
         if test:
             print(l1)
     else:
+        logp = get_logp(logp)
         if not exists(logp):
-            log_code()
+            log_code(logp)
             logging.error(f"rerun the cell, {logp} created")
             return
         l1 = read_list(logp)
@@ -371,7 +393,7 @@ def get_lines(
     if len(l1) == 0:
         logging.error("log code not found.")
         if is_interactive_notebook():
-            log_code()
+            log_code(logp)
             logging.error("rerun the cell, because code not found")
         return
     lines = []
@@ -383,7 +405,8 @@ def get_lines(
             continue
         if len(lines) == 0:
             spaces = len(line) - len(line.lstrip(" "))  # *' '
-        line = line[spaces:]
+        ## dedent by the indent of `to_plot(`: only the leading spaces (a less indented line keeps its text)
+        line = line[min(spaces, len(line) - len(line.lstrip(" "))) :]
         lines.append(line)
         if test:
             print(f"'{line}'")
@@ -440,7 +463,7 @@ def to_script(
     lines = [f"    {l}" for l in lines]
     lines = "\n".join(lines)
     lines = (
-        f'def {defn}(\n{s4}plotp=__file__,\n{s4}data=None,\n{s4}df1=None,\n{s4}kws_plot=None,\n{s4}ax=None,\n{s4}fig=None,\n{s4}outd=None,\n{s4}fun_data=None,\n{s4}**kws_set,\n{s4}):\n{s4}\n{s4}## get the inputs\n{s4}from roux.viz.io import get_plot_inputs\n{s4}plotp,data,kws_plot=get_plot_inputs(plotp=plotp,df1=data,kws_plot=kws_plot,outd=f"{{Path(__file__).parent}}");\n{s4}data=fun_data(data) if not fun_data is None else data;\n{s4}\n{s4}## plotting\n'
+        f'def {defn}(\n{s4}plotp=__file__,\n{s4}data=None,\n{s4}df1=None,\n{s4}kws_plot=None,\n{s4}ax=None,\n{s4}fig=None,\n{s4}outd=None,\n{s4}fun_data=None,\n{s4}**kws_set,\n{s4}):\n{s4}\n{s4}## get the inputs\n{s4}from roux.viz.io import get_plot_inputs\n{s4}plotp,data,kws_plot=get_plot_inputs(plotp=plotp,df1=data,kws_plot=kws_plot,outd=f"{{Path(__file__).parent}}")\n{s4}data=fun_data(data) if not fun_data is None else data\n{s4}\n{s4}## plotting\n'
         + lines
         + f"\n{s4}ax.set(**kws_set)\n{s4}return ax\n"
     )
@@ -472,7 +495,7 @@ def to_plot(
     df1: pd.DataFrame = None,
     kws_plot: dict = dict(),
     stats: dict = dict(),
-    logp: str = "log_notebook.log",
+    logp: str = None,
     sep: str = "begin_plot()",
     validate: bool = False,
     show_path: bool = False,
@@ -489,7 +512,7 @@ def to_plot(
         df1 (pd.DataFrame, optional): dataframe with plotting data. Defaults to None.
         data (pd.DataFrame, optional): dataframe with plotting data. Defaults to None.
         kws_plot (dict, optional): parameters for plotting. Defaults to dict().
-        logp (str, optional): path to the log. Defaults to 'log_notebook.log'.
+        logp (str, optional): path to the log. Defaults to None (`get_logp`: one per kernel).
         sep (str, optional): separator marking the start of the plotting code in jupyter notebook. Defaults to 'begin_plot()'.
         validate (bool, optional): validate the "readability" using `read_plot` function. Defaults to False.
         show_path (bool, optional): show path on the plot. Defaults to False.

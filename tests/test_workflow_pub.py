@@ -462,6 +462,7 @@ def test_to_review(tmp_path, monkeypatch):
     )
     (repo / "to_pub.cfg").write_text(yaml.safe_dump(cfg, sort_keys=False))
     _save_plot(repo / "outputs/v1/a1.pdf")
+    (repo / "outputs/v1/a1.png").write_text("")
 
     monkeypatch.chdir(repo)
     df = to_review("to_pub.cfg")
@@ -470,6 +471,7 @@ def test_to_review(tmp_path, monkeypatch):
     assert {
         "figs.tsv",
         "figs/fig1.pdf",
+        "figs/fig1.png",
         "stats.yaml",
         "tables/source_data.xlsx",
         "repo/figs/fig1/data.pqt",
@@ -479,6 +481,59 @@ def test_to_review(tmp_path, monkeypatch):
         not (tmp_path / "proj-pub").exists()
         and not (repo / "results/latest.yaml").exists()
     )
+
+
+def test_to_review_missing(tmp_path, monkeypatch, caplog):
+    """Not all plots expected (`check=False`): warned and skipped; the args override the params file."""
+    import yaml
+
+    from roux.lib.io import read_table
+    from roux.workflow.pub import to_review
+
+    repo = tmp_path / "proj"
+    repo.mkdir()
+    cfg = dict(
+        input_path=".",
+        output_path="results/latest.yaml",
+        tag="v1",
+        tag_pattern=r"(?<=outputs/)v\d+(?=/)",
+        figs={
+            1: {
+                "A": {"script": "a", "plots": ["outputs/v1/a.pdf"]},
+                "B": {"script": "b", "plots": ["outputs/v1/b.pdf"]},
+            }
+        },
+        ana_to_sis={"Analysis A": []},
+    )
+    (repo / "to_pub.cfg").write_text(yaml.safe_dump(cfg, sort_keys=False))
+    _save_plot(repo / "outputs/test/a.pdf")
+
+    monkeypatch.chdir(repo)
+    with pytest.raises(ValueError, match="not found: 1B"):
+        to_review("to_pub.cfg", tag="test", review_path="results/test")
+    df = to_review("to_pub.cfg", tag="test", review_path="results/test", check=False)
+    assert df["plot label"].tolist() == ["FIG1A"]
+    assert "not found: 1B" in caplog.text
+    review = repo / "results/test"
+    assert (review / "repo/figs/fig1A/data.pqt").exists()
+    assert not (review / "repo/figs/fig1B").exists()
+    assert read_table(str(review / "figs.tsv"))["exists"].tolist() == [True, False]
+    assert not (repo / "results/latest").exists()
+    ## the png (secondary): missing -> a warning; the pdf (primary): missing -> an error
+    assert (review / "figs/fig1A.pdf").exists() and not (
+        review / "figs/fig1A.png"
+    ).exists()
+    assert "png not copied" in caplog.text
+    ## a plot given by its png, without a pdf
+    (repo / "outputs/test/a.png").write_text("")
+    (repo / "outputs/test/a.pdf").unlink()
+    with pytest.raises(FileNotFoundError, match="pdf not copied"):
+        to_review(
+            "to_pub.cfg",
+            tag="test",
+            review_path="results/test2",
+            figs={1: {"A": {"script": "a", "plots": ["outputs/v1/a.png"]}}},
+        )
 
 
 def _git_out(repo, *args):
