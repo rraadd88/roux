@@ -60,7 +60,7 @@ jobs:
     timeout-minutes: 5
     steps:
       - uses: actions/checkout@v4
-      - uses: astral-sh/setup-uv@v6.3.1
+      - uses: astral-sh/setup-uv@v10.3.3
       - name: ruff check (F821, F811, F823)
         run: uvx ruff@0.15.10 check roux --isolated --select F821,F811,F823 --output-format=github
 
@@ -81,7 +81,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Set up uv and Python ${{ matrix.python-version }}
-        uses: astral-sh/setup-uv@v6.3.1
+        uses: astral-sh/setup-uv@v10.3.3
         with:
           python-version: ${{ matrix.python-version }}
           enable-cache: true
@@ -106,7 +106,7 @@ jobs:
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
-      - uses: astral-sh/setup-uv@v6.3.1
+      - uses: astral-sh/setup-uv@v10.3.3
       - name: Build sdist and wheel
         run: uv build
       - name: Validate metadata
