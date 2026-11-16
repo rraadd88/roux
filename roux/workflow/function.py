@@ -573,7 +573,7 @@ def get_global_imports(
                 return s.strip()
             else:
                 return [s_.strip() for s_ in s.split(",")]
-        except:
+        except (IndexError, AttributeError, TypeError):
             print(s)
 
     def clean_import_statements(s, attribute, function_name):

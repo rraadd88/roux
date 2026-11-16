@@ -722,7 +722,7 @@ def read_dict(
             import json
 
             return json.load(urlopen(p))
-        except:
+        except Exception:
             print(logging.error(p))
     #         return read_json(p,**kws)
 
@@ -1857,13 +1857,13 @@ def to_excel(
                         max(df_[c].astype(str).map(len).max(), len(c)),
                         # 30,
                     )
-                except:
+                except Exception:
                     logging.error(
                         "to adjust column width use xlsxwriter: pip install xlsxwriter"
                     )
     try:
         writer.close()
-    except:
+    except Exception:
         # old pandas version
         writer.save()
     ## save in tsv format

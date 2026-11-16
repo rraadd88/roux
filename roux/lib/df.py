@@ -2535,7 +2535,7 @@ def _log_df_query(
     cols = get_fills(expr, marks="`")
     try:
         df1 = df1.loc[:, cols]
-    except:
+    except (KeyError, IndexError, TypeError):
         pass
     return df1.query(expr=expr)
 
