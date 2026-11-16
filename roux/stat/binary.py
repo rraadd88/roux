@@ -17,8 +17,8 @@ def compare_bools_jaccard(x, y):
     Returns:
         float: jaccard index.
     """
-    x = np.asarray(x, np.bool)
-    y = np.asarray(y, np.bool)
+    x = np.asarray(x, bool)
+    y = np.asarray(y, bool)
     return np.double(np.bitwise_and(x, y).sum()) / np.double(np.bitwise_or(x, y).sum())
 
 
