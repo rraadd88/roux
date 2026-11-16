@@ -6,7 +6,7 @@ import logging
 import re
 from pathlib import Path
 
-from roux.workflow._worktree import _git, _git_check_ignore, _pkg_plan
+from roux.workflow._worktree import _git, _git_check_ignore, _plan
 from roux.workflow.pms import read_cli_pm
 from roux.workflow.scr import (
     _PKG_DROP_CODE_LINES,
@@ -158,7 +158,7 @@ def to_pkg(
     logging.info(f"{src} [{dev_branch}] -> {out} [{pub_branch}]")
 
     ## plan
-    plan, patterns = _pkg_plan(src, ignore)
+    plan, patterns = _plan(src, ignore)
     if dry_run:
         for k, v in plan.items():
             for x in v:
@@ -305,7 +305,7 @@ def to_scrs(
 
     src = Path(input_path)
     assert (src / ".git").is_dir(), f"not a repository: {src}"
-    plan, _ = _pkg_plan(src, ignore)
+    plan, _ = _plan(src, ignore)
 
     ## generated dirs: of the outputs and the existing ones
     dir_names = {Path(py_rel).parts[0] for _, py_rel in plan["convert"]}

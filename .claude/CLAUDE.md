@@ -45,13 +45,13 @@ that defines a function is what attaches it.
 Code is developed in notebooks, typically with `from roux.global_imports import *`. The tooling then
 turns them into CLI scripts:
 - `roux replacestar`: the star import -> explicit imports.
-- `to_scr` (`roux/workflow/scr.py`; alias `to_src`): notebook (`.ipynb` or jupytext percent `.py`) -> a
+- `to_scr` (`roux/workflow/scr.py`; alias `to_src`, deprecated): notebook (`.ipynb` or jupytext percent `.py`) -> a
   script with a `run(<params>)` function and an argh CLI. The parameters come from the cell tagged
   `parameters`, which must start with a `## param...` comment (`split_by_pms` asserts this).
   It writes scratch files to `.to_src/` in the current directory.
 - `to_pkg` (`roux/workflow/pkg.py`): a notebooks repository (`notebooks_X/`) -> a package in a git worktree on an orphan branch
   (`scr_X/`), configured by a params file (`to_pkg.cfg`). `to_scrs` does the same conversion into the
-  source repository's git-ignored `scr_*/`. They share `_pkg_plan` (`_worktree.py`) and `_to_scrs` (`scr.py`); keep them shared.
+  source repository's git-ignored `scr_*/`. They share `_plan` (`_worktree.py`; old name `_pkg_plan`, deprecated) and `_to_scrs` (`scr.py`); keep them shared.
 - Layers: `pkg` -> `_worktree` -> `scr` -> `nb`, `function`. `io.py` keeps the notebook runtime helpers (`set_outputs`,
   `to_mod`, ...) and re-exports everything that moved out (`from roux.workflow.io import to_pkg` keeps working);
   `tests/test_workflow_backcompat.py` pins the old import paths. Imports between these modules that would form a

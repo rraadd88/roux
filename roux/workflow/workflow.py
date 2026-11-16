@@ -166,6 +166,13 @@ def to_scripts(
     TODOs:
         1. For version control, use https://github.com/jupyterlab/jupyterlab-git.
     """
+    import warnings
+
+    warnings.warn(
+        "roux.workflow.workflow.to_scripts is deprecated; use roux.workflow.pkg.to_pkg",
+        DeprecationWarning,
+        stacklevel=2,
+    )
     packagen = basename(dirname(abspath(".")))
     # packagescriptsp=f"{packagep}/{packagen}"
     packagescriptsp = notebooksdp

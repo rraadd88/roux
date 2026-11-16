@@ -1,3 +1,11 @@
+import warnings
+
+warnings.warn(
+    "roux.workflow.utils is deprecated; use to_pkg/to_scrs (snakemake workflows are no longer generated)",
+    DeprecationWarning,
+    stacklevel=2,
+)
+
 ## snakemake
 
 from pathlib import Path

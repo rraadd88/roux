@@ -161,7 +161,7 @@ NEW_PATHS = {
         "replacestar",
         "_to_scrs",
     ],
-    "roux.workflow._worktree": ["_git", "_git_check_ignore", "_pkg_plan"],
+    "roux.workflow._worktree": ["_git", "_git_check_ignore", "_plan", "_pkg_plan"],
     "roux.workflow.pkg": ["to_pkg", "to_scrs"],
     "roux.workflow.slurm": [
         "SLURMJob",
@@ -189,7 +189,7 @@ def test_moved_names_are_the_same_objects():
     import roux.workflow.slurm as slurm
     import roux.workflow.task as task
 
-    assert io.to_scr is scr.to_scr and io.to_src is scr.to_scr
+    assert io.to_scr is scr.to_scr and io.to_src is scr.to_src
     assert io.to_pkg is pkg.to_pkg and io.to_scrs is pkg.to_scrs
     assert task.submit_job is slurm.submit_job and task.SLURMJob is slurm.SLURMJob
 
@@ -280,3 +280,33 @@ def test_to_pkg_dry_run(notebooks_repo, tmp_path, capsys):
         "ignored modules_nbs/m.py",
         "ignored to_pkg.cfg",
     ]
+
+
+## deprecations (reorganisation, phase 3): the old names still work, with a DeprecationWarning
+def test_to_src_warns_and_keeps_the_cli_name(tmp_path, monkeypatch):
+    from roux.workflow.scr import to_scr, to_src
+
+    # g: argh names the CLI command after __name__, so `roux to-scr` is unchanged
+    assert to_src.__name__ == "to_scr" and to_src.__wrapped__ is to_scr
+    monkeypatch.chdir(tmp_path)
+    with pytest.warns(DeprecationWarning, match="to_src"):
+        try:
+            to_src("missing.ipynb", "missing.py")
+        except Exception:
+            pass
+
+
+def test_pkg_plan_warns_and_equals_plan(notebooks_repo):
+    from roux.workflow._worktree import _pkg_plan, _plan
+
+    with pytest.warns(DeprecationWarning, match="_pkg_plan"):
+        old = _pkg_plan(notebooks_repo, "to_pkg.cfg")
+    assert old == _plan(notebooks_repo, "to_pkg.cfg")
+
+
+@pytest.mark.parametrize("module_name", ["roux.workflow.utils", "roux.workflow.df"])
+def test_legacy_modules_warn_on_import(module_name):
+    code = f"import warnings; warnings.simplefilter('always'); import {module_name}"
+    res = subprocess.run([sys.executable, "-c", code], capture_output=True, text=True)
+    assert res.returncode == 0, res.stderr
+    assert f"{module_name} is deprecated" in res.stderr

@@ -1,5 +1,13 @@
 """For management of tables."""
 
+import warnings
+
+warnings.warn(
+    "roux.workflow.df is deprecated; use roux.lib.df (e.g. filter_rows)",
+    DeprecationWarning,
+    stacklevel=2,
+)
+
 import logging
 
 import pandas as pd

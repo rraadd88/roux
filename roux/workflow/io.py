@@ -188,5 +188,5 @@ from roux.workflow.scr import (  # noqa
     to_scr_path,
     to_src,
 )
-from roux.workflow._worktree import _git, _git_check_ignore, _pkg_plan  # noqa
+from roux.workflow._worktree import _git, _git_check_ignore, _pkg_plan, _plan  # noqa
 from roux.workflow.pkg import to_pkg, to_scrs  # noqa

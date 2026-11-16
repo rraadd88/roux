@@ -2,6 +2,7 @@
 Notebooks to scripts (`to_scr`), and the conversion helpers shared by `to_pkg` and `to_scrs`.
 """
 
+import functools
 import logging
 import re
 from pathlib import Path
@@ -427,7 +428,16 @@ if __name__ == "__main__": # and sys.stdin.isatty():
 
 ## alias
 # source=script
-to_src = to_scr
+
+
+## deprecated alias; `functools.wraps` keeps `__name__` (`to_scr`) and the signature
+@functools.wraps(to_scr)
+def to_src(*args, **kws):
+    import warnings
+
+    warnings.warn("to_src is deprecated; use to_scr", DeprecationWarning, stacklevel=2)
+    return to_scr(*args, **kws)
+
 
 ## notebooks repo -> package
 ## development leftovers to flag in the notebooks
@@ -604,7 +614,7 @@ def _clean_scr(inp, outp, target_functions=None):
 
 
 def _to_scrs(src, out, convert, rm_unused_funcs=False, **kws):
-    """Notebooks to scripts (`_to_scr_cleaned`), for the `convert` list of `_pkg_plan`."""
+    """Notebooks to scripts (`_to_scr_cleaned`), for the `convert` list of `_plan`."""
     import tempfile
 
     with tempfile.TemporaryDirectory() as temp_dir_path:

@@ -34,7 +34,7 @@ def _git_check_ignore(repo, paths):
     return {p for p in res.stdout.split("\0") if p != ""}
 
 
-def _pkg_plan(src, ignore=""):
+def _plan(src, ignore=""):
     """
     Plan of `to_pkg`: the tracked files of a repository to convert (notebooks), copy or ignore.
 
@@ -65,3 +65,15 @@ def _pkg_plan(src, ignore=""):
             plan["copy"].append(rel)
     logging.info({k: len(v) for k, v in plan.items()})
     return plan, patterns
+
+
+def _pkg_plan(src, ignore=""):
+    """Deprecated alias of `_plan`."""
+    import warnings
+
+    warnings.warn(
+        "_pkg_plan is deprecated; use roux.workflow._worktree._plan",
+        DeprecationWarning,
+        stacklevel=2,
+    )
+    return _plan(src, ignore)
