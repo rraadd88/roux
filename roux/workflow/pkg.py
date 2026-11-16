@@ -50,6 +50,7 @@ def to_pkg(
     dry_run="False",
     no_commit="False",
     force="False",
+    orphan="True",
 ):
     """
     Notebooks repository to a package, in a worktree of the same repository.
@@ -91,6 +92,7 @@ def to_pkg(
         dry_run (bool): only list the actions.
         no_commit (bool): do not commit in the worktree.
         force (bool): rerun even if the output exists.
+        orphan (bool): an existing worktree must share no history with the repository (CLI: `--orphan False` to allow it).
 
     Requirements:
         git>=2.42 (`worktree add --orphan`), git user.name and user.email (to commit).
@@ -104,8 +106,8 @@ def to_pkg(
         read_cli_pm(x)
         for x in [clean_nbs, clean_comments, force_with_pms, rm_unused_funcs]
     ]
-    allow_dirty, dry_run, no_commit, force = [
-        read_cli_pm(x) for x in [allow_dirty, dry_run, no_commit, force]
+    allow_dirty, dry_run, no_commit, force, orphan = [
+        read_cli_pm(x) for x in [allow_dirty, dry_run, no_commit, force, orphan]
     ]
     drop_code_lines_containing = read_cli_pm(drop_code_lines_containing)
     drop_headers_containing = read_cli_pm(drop_headers_containing)
@@ -131,6 +133,9 @@ def to_pkg(
             ).items()
             if v
         }
+        ## the non-default i.e. False
+        if not orphan:
+            overrides["orphan"] = orphan
         for kws in pre_params(input_path, force=force):
             call_with_kws(to_pkg, kws, **overrides)
         return
@@ -155,7 +160,7 @@ def to_pkg(
     ## worktree: made if missing (not in a dry run)
     if out.exists() or not dry_run:
         dev_branch, dev_sha, pub_branch = _check_pub_worktree(
-            src, out, create=True, pub_branch=pub_branch, orphan=False
+            src, out, create=True, pub_branch=pub_branch, orphan=orphan
         )
     else:
         dev_branch = _git(src, "rev-parse --abbrev-ref HEAD")

@@ -418,3 +418,31 @@ def test_to_pkg_dry_run_from_a_worktree(notebooks_repo, tmp_path, capsys):
         "convert ('notebooks_x/run.ipynb', 'scr_x/run.py')" in capsys.readouterr().out
     )
     assert not (tmp_path / "proj-dev-pkg").exists()
+
+
+def test_to_pkg_refuses_shared_history(notebooks_repo, tmp_path):
+    """to_pkg refuses an existing worktree that shares history with the repository, unless `orphan=False`."""
+    from roux.workflow.pkg import to_pkg
+
+    out = tmp_path / "proj-pkg"
+    _git(notebooks_repo, "worktree", "add", "-q", "-b", "pkg", str(out))
+    kws = dict(
+        input_path=str(notebooks_repo),
+        output_path=str(out) + ".yaml",
+        ignore="to_pkg.cfg\nmodules_nbs/*",
+        dry_run="True",
+    )
+    with pytest.raises(ValueError, match="shares history"):
+        to_pkg(**kws)
+    ## as from the CLI (strings)
+    assert to_pkg(**kws, orphan="False") is None
+
+
+def test_to_pkg_cli_orphan_flag():
+    res = subprocess.run(
+        [sys.executable, "-m", "roux.run", "to-pkg", "--help"],
+        capture_output=True,
+        text=True,
+    )
+    assert res.returncode == 0, res.stderr
+    assert "--orphan" in res.stdout
