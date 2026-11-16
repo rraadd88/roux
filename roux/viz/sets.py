@@ -123,6 +123,9 @@ def plot_intersection_counts(
     TODOs:
         1. Use `compare_classes` to get the stats.
     """
+    ## copies of the mutable defaults (they were changed in place and carried over to later calls)
+    sort_cols = list(sort_cols) if sort_cols is not None else None
+    kws_show_stats = dict(kws_show_stats) if kws_show_stats is not None else None
     if pre_data:
         if cols is not None:
             for i, c in enumerate(cols):
@@ -695,6 +698,10 @@ def plot_pie(
     References:
         https://matplotlib.org/stable/gallery/pie_and_polar_charts/pie_and_donut_labels.html
     """
+    ## copies of the mutable defaults (they were changed in place and carried over to later calls)
+    remove_wedges_index = (
+        list(remove_wedges_index) if remove_wedges_index is not None else None
+    )
     if ax is None:
         ax = plt.gca()
     t = ax.pie(

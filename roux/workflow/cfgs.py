@@ -283,6 +283,8 @@ def read_metadata(
         dict: output.
 
     """
+    ## copies of the mutable defaults (they were changed in place and carried over to later calls)
+    config_paths = list(config_paths) if config_paths is not None else None
     if not Path(p).exists():
         logging.warning(f"not found: {p}")
 

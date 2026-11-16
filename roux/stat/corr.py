@@ -202,6 +202,9 @@ def get_corr(
             ci: CI
             ci_type: CI type
     """
+    ## copies of the mutable defaults (they were changed in place and carried over to later calls)
+    preprocess_kws = dict(preprocess_kws) if preprocess_kws is not None else None
+    resample_kws = dict(resample_kws) if resample_kws is not None else None
     ## check inputs
     if resample:
         assert n_min > cv, (

@@ -278,7 +278,7 @@ def read_arxv(
                 logging.info(aps_inside)
 
             for ap_inside in aps_inside:
-                ap_inside_ = ap_inside.rstrip(".tar.gz")
+                ap_inside_ = ap_inside.removesuffix(".tar.gz")
                 # print(ap_inside_)
                 if p_inside.startswith(ap_inside_):
                     logging.warning(
@@ -1361,11 +1361,12 @@ def read_tables(
         Parameter to report the creation dates of the newest and the oldest files.
     """
     if filterby_time is not None:
-        if isinstance(ps, str) and ("*" in p):
-            ps = read_ps(ps, verbose=False)
+        if isinstance(ps, str) and ("*" in ps):
+            ## the pattern, before it becomes the list of paths
             if exists(ps.replace("/*", "")):
-                logging.warning(f"exists: {p.replace('/*', '')}")
-        elif isinstance(p, list):
+                logging.warning(f"exists: {ps.replace('/*', '')}")
+            ps = read_ps(ps, verbose=False)
+        elif isinstance(ps, list):
             ps = ps
 
         from roux.lib.sys import ps2time

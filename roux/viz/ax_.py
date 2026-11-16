@@ -1359,6 +1359,8 @@ def set_colorbar(
     Returns:
         figure object.
     """
+    ## copies of the mutable defaults (they were changed in place and carried over to later calls)
+    bounds = list(bounds) if bounds is not None else None
 
     # if orientation == "vertical":
     #     width, height = "5%", "50%"
