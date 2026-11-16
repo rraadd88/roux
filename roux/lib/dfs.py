@@ -366,7 +366,7 @@ def merge_dfs(
                 right=df2,
                 **{
                     **kws,
-                    **dict(suffixes=[k1, k2]),
+                    **dict(suffixes=[k1, k2]),  # noqa: F821 (k1 is set at the end of the first iteration)
                 },
             )
         k1 = k2
@@ -457,7 +457,7 @@ def merge_by_subset(
     if not idx1:
         # g: fallback to an empty merge just to generate the correct column schema
         return df1.iloc[:0].merge(
-            df2.iloc[:0], left_index=True, right_index=True, suffixes=suffixes
+            df2.iloc[:0], left_index=True, right_index=True, **kws_merge
         )
 
     # g: subset the first dataframe and map corresponding rows from the second dataframe directly by index

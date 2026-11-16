@@ -1028,9 +1028,13 @@ def show_stats_by_sides(
     col_left,  ## [left,mid,rt],
     col_right,  ## [left,mid,rt],
     ax=None,
+    x_center=None,
 ):
     """
-    #TODO
+    Show stats on the left, middle and right sides of the y ticklabels.
+
+    Parameters:
+        x_center (float): x position of the middle column; by default, the middle of the x limits.
     """
     if ax is None:
         ax = plt.gca()

@@ -462,7 +462,14 @@ def to_sparse(
             dtypes = {c: v.name for c, v in df1[cols].dtypes.to_dict().items()}
             logging.info(dtypes)
         sdtypes = {
-            c: pd.SparseDtype(v, fill_value=to_fill_value.get(dtype, np.nan))
+            ## the fill value by kind of dtype (e.g. 'int64' -> 'int')
+            c: pd.SparseDtype(
+                v,
+                fill_value=next(
+                    (f for k, f in to_fill_value.items() if str(v).startswith(k)),
+                    np.nan,
+                ),
+            )
             for c, v in dtypes.items()
         }
     else:
@@ -1209,6 +1216,8 @@ def query(
     """
     Can query safely and log clause-wise
     """
+    ## copies of the mutable defaults (they were changed in place and carried over to later calls)
+    kws_log = dict(kws_log) if kws_log is not None else None
     if expr in [None, ""]:
         # return safely (as opposed to base pandas)
         logging.warning(f"skipped because expr={expr}")
@@ -1440,6 +1449,8 @@ def filter_rows(
 
         from roux.lib.str import to_expr
 
+        ## the columns, before the dict becomes a query string
+        cols = list(expr.keys())
         expr = to_expr(
             expr,
             mode=mode,
@@ -1448,9 +1459,9 @@ def filter_rows(
 
         df1 = df.query(expr=expr)
         if test:
-            logging.info(df1.loc[:, list(expr.keys())].drop_duplicates())
+            logging.info(df1.loc[:, [c for c in cols if c in df1]].drop_duplicates())
             logging.warning("may be some column names are wrong..")
-            logging.warning([k for k in d if k not in df])
+            logging.warning([k for k in cols if k not in df])
         if verbose:
             logging.info(df1.shape)
         if drop_constants:
