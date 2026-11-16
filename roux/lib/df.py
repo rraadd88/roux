@@ -478,10 +478,17 @@ def to_sparse(
             assert len(dtypes) == 1, dtypes
             dtypes = dtypes[0].name
             logging.info(dtypes)
-        sdtypes = pd.SparseDtype(dtypes, fill_value=to_fill_value.get(dtypes, np.nan))
+        sdtypes = pd.SparseDtype(
+            dtypes,
+            fill_value=next(
+                (f for k, f in to_fill_value.items() if str(dtypes).startswith(k)),
+                np.nan,
+            ),
+        )
 
     df1 = df1.astype(sdtypes)
-    sparse_density = df1.sparse.density
+    ## density of the sparse columns only (`.sparse` fails on a table with other columns)
+    sparse_density = (df1[cols] if cols else df1).sparse.density
     getattr(logging, "info" if sparse_density < 1 else "warning")(
         f"sparse_density: {sparse_density}"
     )
