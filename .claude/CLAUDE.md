@@ -21,7 +21,7 @@ roux --help                               # CLI (needs the `workflow` extra)
   Newer versions strip `# noqa` (RUF100) and can delete re-exported imports.
 - F401 is ignored and unfixable: roux re-exports names (e.g. `roux/global_imports.py`) marked `# noqa`.
   Keep the "unused" imports. E402/E712 findings are known and accepted.
-- CI: `build.yml` (tox matrix + `uv build`/twine check) on push/PR; `format.yaml` (ruff autofix commit)
+- CI: `build.yml` (tox matrix + `uv build`/twine check + a `lint` job: `ruff@0.15.10` F821/F811/F823 on `roux/`) on push/PR; `format.yaml` (ruff autofix commit)
   is manual only. `build.yml` runs only what the changed files need (its `changes` job): `roux/`, `tests/`,
   `examples/`, `pyproject.toml`, `uv.lock`, `tox.ini`, `MANIFEST.in` or `build.yml` -> both jobs;
   `README.md` alone -> the package check (it is the PyPI long description); anything else (e.g. `.claude/`)
