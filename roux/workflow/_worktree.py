@@ -34,6 +34,63 @@ def _git_check_ignore(repo, paths):
     return {p for p in res.stdout.split("\0") if p != ""}
 
 
+def _check_pub_worktree(src, out, create=False, pub_branch="pub", orphan=True):
+    """
+    Check (or make) the pub worktree of a repository: `out` is a worktree of `src` (also if `src` is a worktree).
+
+    Parameters:
+        src (str): path to the source repository (the dev branch).
+        out (str): path to the pub worktree.
+        create (bool): make a missing worktree, on a new orphan branch `pub_branch` (`to_pkg`); else print the
+            command and raise (the worktree is made by the user, `to_pub`).
+        pub_branch (str): name of the branch for a new worktree.
+        orphan (bool): the worktree shares no history with `src` (no merge-base, if it has commits).
+
+    Returns:
+        dev_branch (str), dev_sha (str; `+` if the tracked files are modified), pub_branch (str).
+
+    Requirements:
+        git>=2.42 (`worktree add --orphan`), if `create`.
+    """
+    import re
+    import shlex
+    from pathlib import Path
+
+    src, out = Path(src), Path(out)
+    ## `.git` is a directory in a repository, a file in a worktree
+    assert (src / ".git").exists(), f"not a repository: {src}"
+    dev_branch = _git(src, "rev-parse --abbrev-ref HEAD")
+    dirty = _git(src, "status --porcelain --untracked-files=no")
+    dev_sha = _git(src, "rev-parse --short HEAD") + ("+" if dirty else "")
+
+    if not out.exists():
+        com = f"worktree add --orphan -b {pub_branch} {shlex.quote(str(out.resolve()))}"
+        if not create:
+            print(
+                f"## to make the pub worktree (an orphan branch), from {src}:\ngit {com}"
+            )
+            raise ValueError(f"not a worktree (to be made by the user): {out}")
+        version = tuple(int(x) for x in re.findall(r"\d+", _git(src, "--version"))[:2])
+        assert version >= (2, 42), f"git>=2.42 is required, found {version}"
+        ## orphan branch i.e. no shared history
+        _git(src, com)
+    assert (out / ".git").is_file(), f"not a worktree: {out}"
+
+    def common_dir(p):
+        return Path(
+            _git(p, "rev-parse --path-format=absolute --git-common-dir")
+        ).resolve()
+
+    assert common_dir(out) == common_dir(src), f"{out} is not a worktree of {src}"
+    ## the branch, also without commits (`rev-parse --abbrev-ref HEAD` fails then)
+    pub_branch = _git(out, "symbolic-ref --short -q HEAD", returncodes=[0, 1]) or "HEAD"
+    if orphan:
+        head = _git(out, "rev-parse --verify -q HEAD", returncodes=[0, 1])
+        if head != "" and _git(src, f"merge-base HEAD {head}", returncodes=[0, 1]):
+            raise ValueError(f"{out} shares history with {dev_branch} (not orphan)")
+    return dev_branch, dev_sha, pub_branch
+
+
 def _plan(src, ignore=""):
     """
     Plan of `to_pkg`: the tracked files of a repository to convert (notebooks), copy or ignore.

@@ -348,3 +348,73 @@ def test_to_scripts_imports():
             mod = importlib.import_module(node.module)
             missing = [a.name for a in node.names if not hasattr(mod, a.name)]
             assert not missing, (node.module, missing)
+
+
+## the pub worktree (to_pub plan, S1): `_check_pub_worktree`, shared by to_pkg and to_pub
+def test_check_pub_worktree(notebooks_repo, tmp_path, capsys):
+    from roux.workflow._worktree import _check_pub_worktree
+
+    src, out = notebooks_repo, tmp_path / "proj-pub"
+    ## missing, not created: the command is printed
+    with pytest.raises(ValueError, match="to be made by the user"):
+        _check_pub_worktree(src, out)
+    assert "worktree add --orphan -b pub" in capsys.readouterr().out
+    assert not out.exists()
+
+    ## created: orphan, no commits yet
+    dev_branch, dev_sha, pub_branch = _check_pub_worktree(src, out, create=True)
+    assert pub_branch == "pub" and not dev_sha.endswith("+")
+    assert (out / ".git").is_file()
+
+    ## the source is itself a worktree (`.git` is a file)
+    _git(src, "worktree", "add", "-q", "-b", "dev2", str(tmp_path / "proj-dev2"))
+    assert _check_pub_worktree(tmp_path / "proj-dev2", out)[::2] == ("dev2", "pub")
+
+    ## not a worktree
+    (tmp_path / "plain").mkdir()
+    with pytest.raises(AssertionError, match="not a worktree"):
+        _check_pub_worktree(src, tmp_path / "plain")
+
+    ## a worktree of another repository
+    other = tmp_path / "other"
+    other.mkdir()
+    _git(other, "init", "-q")
+    _git(other, "commit", "-q", "--allow-empty", "-m", "init")
+    _git(
+        other,
+        "worktree",
+        "add",
+        "-q",
+        "--orphan",
+        "-b",
+        "pub",
+        str(tmp_path / "other-pub"),
+    )
+    with pytest.raises(AssertionError, match="is not a worktree of"):
+        _check_pub_worktree(src, tmp_path / "other-pub")
+
+    ## shared history: not orphan
+    _git(src, "worktree", "add", "-q", "-b", "shared", str(tmp_path / "proj-shared"))
+    with pytest.raises(ValueError, match="shares history"):
+        _check_pub_worktree(src, tmp_path / "proj-shared")
+    assert (
+        _check_pub_worktree(src, tmp_path / "proj-shared", orphan=False)[2] == "shared"
+    )
+
+
+def test_to_pkg_dry_run_from_a_worktree(notebooks_repo, tmp_path, capsys):
+    """The source of to_pkg can be a worktree (before: `.git` had to be a directory)."""
+    from roux.workflow.pkg import to_pkg
+
+    src = tmp_path / "proj-dev"
+    _git(notebooks_repo, "worktree", "add", "-q", "-b", "dev", str(src))
+    to_pkg(
+        input_path=str(src),
+        output_path=str(tmp_path / "proj-dev-pkg.yaml"),
+        ignore="to_pkg.cfg\nmodules_nbs/*",
+        dry_run="True",
+    )
+    assert (
+        "convert ('notebooks_x/run.ipynb', 'scr_x/run.py')" in capsys.readouterr().out
+    )
+    assert not (tmp_path / "proj-dev-pkg").exists()

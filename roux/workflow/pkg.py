@@ -6,7 +6,7 @@ import logging
 import re
 from pathlib import Path
 
-from roux.workflow._worktree import _git, _git_check_ignore, _plan
+from roux.workflow._worktree import _check_pub_worktree, _git, _git_check_ignore, _plan
 from roux.workflow.pms import read_cli_pm
 from roux.workflow.scr import (
     _PKG_DROP_CODE_LINES,
@@ -141,8 +141,8 @@ def to_pkg(
     output_dir_path, _ = set_outputs(output_path=output_path)
     src, out = Path(input_path), Path(output_dir_path)
 
-    ## checks
-    assert (src / ".git").is_dir(), f"not a repository: {src}"
+    ## checks; `.git` is a file if the repository is a worktree
+    assert (src / ".git").exists(), f"not a repository: {src}"
     dirty = _git(src, "status --porcelain --untracked-files=no")
     if dirty and not allow_dirty:
         raise ValueError(f"{src} has uncommitted changes (allow_dirty):\n{dirty}")
@@ -151,27 +151,14 @@ def to_pkg(
             assert _git(src, f"config user.{k}", returncodes=[0, 1]) != "", (
                 f"git config user.{k} is not set"
             )
-    dev_branch = _git(src, "rev-parse --abbrev-ref HEAD")
-    dev_sha = _git(src, "rev-parse --short HEAD") + ("+" if dirty else "")
 
-    ## worktree
-    if out.exists():
-        assert (out / ".git").is_file(), f"not a worktree: {out}"
-        assert (
-            Path(_git(out, "rev-parse --git-common-dir")).resolve()
-            == (src / ".git").resolve()
-        ), f"{out} is not a worktree of {src}"
-        pub_branch = _git(out, "rev-parse --abbrev-ref HEAD")
-    elif not dry_run:
-        version = tuple(int(x) for x in re.findall(r"\d+", _git(src, "--version"))[:2])
-        assert version >= (2, 42), f"git>=2.42 is required, found {version}"
-        import shlex
-
-        ## orphan branch i.e. no shared history
-        _git(
-            src,
-            f"worktree add --orphan -b {pub_branch} {shlex.quote(str(out.resolve()))}",
+    ## worktree: made if missing (not in a dry run)
+    if out.exists() or not dry_run:
+        dev_branch, dev_sha, pub_branch = _check_pub_worktree(
+            src, out, create=True, pub_branch=pub_branch, orphan=False
         )
+    else:
+        dev_branch = _git(src, "rev-parse --abbrev-ref HEAD")
     _check_pub_branch(pub_branch, dev_branch)
     logging.info(f"{src} [{dev_branch}] -> {out} [{pub_branch}]")
 
@@ -322,7 +309,8 @@ def to_scrs(
         drop_headers_containing = _PKG_DROP_HEADERS
 
     src = Path(input_path)
-    assert (src / ".git").is_dir(), f"not a repository: {src}"
+    ## `.git` is a file if the repository is a worktree
+    assert (src / ".git").exists(), f"not a repository: {src}"
     plan, _ = _plan(src, ignore)
 
     ## generated dirs: of the outputs and the existing ones
