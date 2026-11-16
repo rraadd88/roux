@@ -60,6 +60,8 @@ turns them into CLI scripts:
   `py`, `bash` or `slurm` (inferred if not given), and `.ipynb` runs go through papermill (`run_tasks_nb`).
   Params and configs are handled by `roux/workflow/pms.py` (`pre_params`) and `cfgs.py` (omegaconf). The SLURM
   part (`SLURMJob`, `submit_job`, `feed_jobs`, `to_sbatch_script`, ...) is in `slurm.py`, re-exported by `task.py`.
+  Environment variables, inherited by the nested calls: `ROUX_CACHE_DIR` (logs and run scripts), `ROUX_SKIP_TASKS`
+  and `ROUX_ONLY_TASKS` (comma-separated fnmatch patterns on the target's path, name or stem; `_skipped_by_env`).
 
 ### CLI (`roux/run.py`)
 The `roux` entry point is `roux.run:parser.dispatch`, an `argh.ArghParser`. To add a command, import the

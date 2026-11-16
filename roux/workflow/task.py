@@ -701,6 +701,39 @@ def post_tasks(
 
 
 ## wrapper
+def _skipped_by_env(script_path) -> str | None:
+    """
+    Whether a `run_tasks` target is skipped by the environment variables `ROUX_SKIP_TASKS`/`ROUX_ONLY_TASKS`.
+
+    Parameters:
+        script_path: the target path (as resolved by `run_tasks`).
+
+    Returns:
+        the name of the variable that skips it, else None.
+
+    Notes:
+        Both variables are comma-separated fnmatch patterns, each matched against the path, the file name and
+        the file stem. A match in `ROUX_SKIP_TASKS` wins over `ROUX_ONLY_TASKS`.
+    """
+    from fnmatch import fnmatch
+
+    def _patterns(name):
+        return [s.strip() for s in os.environ.get(name, "").split(",") if s.strip()]
+
+    p = Path(str(script_path))
+    keys = [str(script_path), p.name, p.stem]
+
+    def _matches(patterns):
+        return any(fnmatch(k, pat) for pat in patterns for k in keys)
+
+    if _matches(_patterns("ROUX_SKIP_TASKS")):
+        return "ROUX_SKIP_TASKS"
+    only = _patterns("ROUX_ONLY_TASKS")
+    if only and not _matches(only):
+        return "ROUX_ONLY_TASKS"
+    return None
+
+
 def run_tasks(
     script_path: str,  ## prefix
     params=None,
@@ -768,6 +801,14 @@ def run_tasks(
         `run_tasks`), e.g. to keep the cache inside the working directory:
 
             ROUX_CACHE_DIR=.cache/roux python runner.py
+
+        Skipping or selecting the targets (also of the nested calls) with environment variables, each a list of
+        comma-separated fnmatch patterns, matched against the resolved path, the file name or the file stem:
+        `ROUX_SKIP_TASKS` skips the matching targets; `ROUX_ONLY_TASKS`, if set and non-empty, skips the
+        targets that match none of its patterns. A match in `ROUX_SKIP_TASKS` wins. A skipped call logs a
+        warning and returns None (as when there is nothing to run), e.g.
+
+            ROUX_SKIP_TASKS="043_results_data,*/notebooks_scripts/*" python runner.py
 
         Back-compatible: input_notebook_path:script_path
 
@@ -840,6 +881,12 @@ def run_tasks(
 
     if verbose:
         logging.info(f"script_path='{script_path}'")
+
+    ## skip/select by the environment variables (inherited by the nested calls)
+    skipped_by = _skipped_by_env(script_path)
+    if skipped_by is not None:
+        logging.warning(f"skipped by ${skipped_by}: {script_path}")
+        return
 
     cwd_path = Path().cwd().as_posix()
 
