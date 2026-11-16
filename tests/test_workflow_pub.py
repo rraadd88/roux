@@ -1,6 +1,7 @@
 """`to_pub` (roux/workflow/pub.py): the figures, the analyses and the plan (dry run) on a toy repository."""
 
 import subprocess
+from pathlib import Path
 
 import pytest
 
@@ -302,7 +303,7 @@ def test_to_pub_script(tmp_path):
         src_dir_path=str(tmp_path),
         inline=["helpers"],
     )
-    text = open(outp).read()
+    text = Path(outp).read_text()
     compile(text, outp, "exec")
     assert "from helpers" not in text and "sys.path.append" not in text
     assert "    import math\n    ## from the source: helpers.mod\n    def f(x):" in text
@@ -327,14 +328,22 @@ def test_to_pub_script(tmp_path):
         )
 
 
-def test_to_pub_review_files(tmp_path, caplog):
+def test_to_pub(tmp_path, caplog, capsys):
+    """A full run: the review files, then the paper repository; a rerun lists the stale files."""
+    import json
+
     import yaml
 
+    from roux.lib.io import read_dict
     from roux.workflow.pub import to_pub
 
     repo = tmp_path / "proj"
     repo.mkdir()
-    (repo / ".gitignore").write_text("outputs/\nresults/\n")
+    (repo / ".gitignore").write_text("outputs/\nresults/\nscripts\n")
+    (repo / "README.md").write_text("# proj\n")
+    (repo / "pyproject.toml").write_text(
+        '[project]\nname = "proj"\n\n[tool.uv.sources]\nlib = { path = "../lib" }\n\n[tool.ruff]\nline-length = 88\n'
+    )
     figs = {
         1: {"A": {"script": "a", "plots": ["outputs/v1/a1.pdf", "outputs/v1/a2.pdf"]}}
     }
@@ -344,36 +353,126 @@ def test_to_pub_review_files(tmp_path, caplog):
         pub_path="../proj-pub",
         figs=figs,
         ana_to_sis={"Analysis A": []},
+        copy={"README.md": "README.md"},
+        gitignore=["!scripts/"],
+        cols_desc={"x": "the x values", "z": "not a column"},
     )
     (repo / "to_pub.cfg").write_text(yaml.safe_dump(cfg, sort_keys=False))
     _git(repo, "init", "-q")
     _git(repo, "add", "-A")
     _git(repo, "commit", "-q", "-m", "init")
-    _git(
-        repo,
-        "worktree",
-        "add",
-        "-q",
-        "--orphan",
-        "-b",
-        "pub",
-        str(tmp_path / "proj-pub"),
-    )
+    out = tmp_path / "proj-pub"
+    _git(repo, "worktree", "add", "-q", "--orphan", "-b", "pub", str(out))
     for name in ["a1", "a2"]:
         _save_plot(repo / f"outputs/v1/{name}.pdf")
 
-    to_pub(input_path=str(repo / "to_pub.cfg"))
+    assert to_pub(input_path=str(repo / "to_pub.cfg")).endswith("results/latest.yaml")
+
+    ## review files
     review = repo / "results/latest"
-    assert sorted(
-        str(p.relative_to(review)) for p in review.rglob("*") if p.is_file()
-    ) == [
+    files = {str(p.relative_to(review)) for p in review.rglob("*") if p.is_file()}
+    assert {
         "figs.tsv",
         "figs/fig1A1.pdf",
         "figs/fig1A2.pdf",
+        "stats.yaml",
+        "stats_fmt.json",
+        "tables/source_data.xlsx",
         *[
             f"repo/figs/fig1A{i}/{f}"
             for i in [1, 2]
             for f in ["config.yaml", "data.pqt", "plot.py", "stats.yaml"]
         ],
+    } <= files
+    assert read_dict(str(review / "stats.yaml")) == {"1A1:n": 3, "1A2:n": 3}
+    assert json.loads((review / "stats_fmt.json").read_text()) == {
+        "{{1A1:n}}": "3",
+        "{{1A2:n}}": "3",
+    }
+
+    ## the paper repository
+    pub_files = [
+        "README.md",
+        "configs/analyses.yaml",
+        "configs/analyses/analysis_a/a_1.yaml",
+        "configs/analyses/analysis_a/a_2.yaml",
+        "data/analyses/analysis_a/a_1.pqt",
+        "data/analyses/analysis_a/a_2.pqt",
+        "pyproject.toml",
+        "scripts/analysis_a/a_1.py",
+        "scripts/analysis_a/a_2.py",
+        ".gitignore",
     ]
-    assert "not written yet" in caplog.text
+    assert sorted(
+        p.relative_to(out).as_posix()
+        for p in out.rglob("*")
+        if p.is_file() and ".git" != p.name
+    ) == sorted(pub_files)
+    assert read_dict(str(out / "configs/analyses.yaml")) == {
+        "Analysis A": ["a_1", "a_2"]
+    }
+    script = (out / "scripts/analysis_a/a_1.py").read_text()
+    assert "def run(" in script and "get_plot_inputs" not in script
+    pyproject = (out / "pyproject.toml").read_text()
+    assert "[tool.uv.sources]" not in pyproject and "../lib" not in pyproject
+    assert "[project]" in pyproject and "[tool.ruff]" in pyproject
+    assert (out / ".gitignore").read_text().startswith("outputs/\nresults/\nscripts\n")
+    assert (out / ".gitignore").read_text().endswith("\n!scripts/\n")
+    ## the commit: printed, not run
+    printed = capsys.readouterr().out
+    assert "add -A" in printed and "commit -m" in printed
+    assert _git_out(out, "status", "--porcelain") != ""
+    assert (
+        subprocess.run(
+            ["git", "-C", str(out), "rev-parse", "--verify", "-q", "HEAD"]
+        ).returncode
+        == 1
+    )
+    ## no temporary directory left
+    assert [p.name for p in tmp_path.iterdir() if p.name.startswith(".")] == []
+    ## the marker
+    marker = read_dict(str(repo / "results/latest.yaml"))
+    assert sorted(marker["files"]) == sorted(pub_files)
+    assert marker["pub"]["branch"] == "pub"
+
+    ## rerun: the panels are not remade, the hand-made and stale files are kept (listed)
+    (out / "NOTES.md").write_text("by hand\n")
+    (out / "scripts/analysis_a/old.py").write_text("")
+    to_pub(input_path=str(repo / "to_pub.cfg"))
+    assert "stale?): ['scripts/analysis_a/old.py']" in caplog.text
+    assert (out / "NOTES.md").exists() and (out / "scripts/analysis_a/old.py").exists()
+
+
+def _git_out(repo, *args):
+    return subprocess.run(
+        ["git", "-C", str(repo), *args], check=True, capture_output=True, text=True
+    ).stdout
+
+
+def test_format_number():
+    from roux.lib.str import format_number
+
+    _vals = [
+        0.00000002,
+        0.002367729,
+        -0.23677299175778388,
+        562.0,
+        23677299.0,
+        3.9220394750515513e-219,
+        1.352054248160119e-07,
+    ]
+    assert [format_number(x) for x in _vals] == [
+        "2e-8",
+        "0.002",
+        "-0.24",
+        "562",
+        "23.7e6",
+        "3e-219",
+        "1e-7",
+    ]
+    assert [format_number(x) for x in [7, -3, 2000000, 0.5]] == [
+        "7",
+        "-3",
+        "2e6",
+        "0.5",
+    ]

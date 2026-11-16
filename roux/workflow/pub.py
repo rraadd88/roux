@@ -402,6 +402,7 @@ def to_pub(
     gitignore=None,
     cols_desc=None,
     inline=None,
+    excel="tables/source_data.xlsx",
     pyproject_drop="tool.uv.sources",
     allow_dirty="False",
     dry_run="False",
@@ -409,6 +410,10 @@ def to_pub(
 ):
     """
     Analysis repository to a paper repository, in a worktree of the same repository (orphan branch, made by the user).
+
+    The review files (in the directory of `output_path`): `figs.tsv`, `figs/fig<id>.pdf`, `repo/figs/fig<id>/`
+    (data, config, cleaned plot script and stats of each plot), `stats.yaml` (`<fig>:<key>`), `stats_fmt.json`
+    (`{{<fig>:<key>}}`: the formatted numbers) and the source data excel.
 
     Per analysis, the paper repository holds the scripts (`scripts/<analysis>/<script>.py`), their configs
     (`configs/analyses/<analysis>/<script>.yaml`) and the source data (`data/analyses/<analysis>/<script>.pqt`)
@@ -440,6 +445,7 @@ def to_pub(
         gitignore (list): lines added to the `.gitignore` of the repository, for the paper repository.
         cols_desc (dict): `{column: description}` for the source data excel.
         inline (list): the local packages of the repository whose functions are copied into the scripts, see `_to_pub_script`.
+        excel (str): the source data excel (a sheet per plot), relative to the review directory.
         pyproject_drop (str): tables (comma-separated) of `pyproject.toml` not to carry over.
         allow_dirty (bool): allow the modified tracked files in the repository.
         dry_run (bool): only list the actions.
@@ -527,4 +533,127 @@ def to_pub(
         if pdf.exists() and (force or not pdf_out.exists()):
             shutil.copy2(pdf, pdf_out)
 
-    logging.warning("to_pub: the files of the paper repository are not written yet")
+    ## stats: {fig: ax.stats} -> `<fig>:<key>`, and formatted
+    from roux.lib.dict import flatten_dict
+    from roux.lib.io import to_dict
+    from roux.lib.str import format_number
+
+    stats_flat = flatten_dict(
+        {k: flatten_dict(v, sep=":") for k, v in stats.items() if v}, sep=":"
+    )
+    to_dict(stats_flat, str(review / "stats.yaml"))
+    to_dict(
+        {
+            "{{" + k + "}}": v if isinstance(v, str) else format_number(v)
+            for k, v in stats_flat.items()
+        },
+        str(review / "stats_fmt.json"),
+    )
+
+    ## the plots with data (not skipped)
+    from roux.lib.io import read_table, to_excel
+
+    df = df.loc[df["review path"].apply(lambda p: (Path(p) / "data.pqt").exists()), :]
+    skipped = sorted(set(stats) - set(df["fig"]))
+    if skipped:
+        logging.warning(f"no data (skipped): {skipped}")
+    dfs = {
+        x["plot label"]: read_table(f"{x['review path']}/data.pqt", verbose=False)
+        for _, x in df.iterrows()
+    }
+
+    ## source data excel: a sheet per plot; the column descriptions as comments
+    if excel:
+        cols = {c for d in dfs.values() for c in d.columns}
+        comments = {c: s for c, s in (cols_desc or {}).items() if c in cols and s}
+        (review / excel).parent.mkdir(parents=True, exist_ok=True)
+        to_excel(
+            {k: d.copy() for k, d in dfs.items()},
+            str(review / excel),
+            comments=comments or None,
+            save_input=True,
+        )
+
+    ## the paper repository: written to a temporary directory, then moved in (the other files are kept)
+    import tempfile
+
+    from roux.lib.io import read_dict
+
+    files = []
+    with tempfile.TemporaryDirectory(dir=out.parent, prefix=f".{out.name}.") as tmp:
+        tmp = Path(tmp)
+
+        def put(rel):
+            files.append(rel)
+            (tmp / rel).parent.mkdir(parents=True, exist_ok=True)
+            return tmp / rel
+
+        for _, x in df.iterrows():
+            _to_pub_script(
+                f"{x['review path']}/plot.py",
+                str(put(x["script path"])),
+                src_dir_path=input_path,
+                inline=inline,
+            )
+            shutil.copy2(f"{x['review path']}/config.yaml", put(x["config path"]))
+            shutil.copy2(f"{x['review path']}/data.pqt", put(x["data path"]))
+        to_dict(
+            df.groupby("analysis name", sort=False)["script label"].agg(list).to_dict(),
+            str(put("configs/analyses.yaml")),
+        )
+        for s, d in (copy or {}).items():
+            shutil.copy2(s, put(d))
+        ## pyproject.toml, without the tables of `pyproject_drop` (e.g. the local sources)
+        if (src / "pyproject.toml").exists():
+            drop = {f"[{s.strip()}]" for s in pyproject_drop.split(",") if s.strip()}
+            lines, skip = [], False
+            for s in (src / "pyproject.toml").read_text().split("\n"):
+                if s.strip().startswith("["):
+                    skip = s.strip() in drop
+                if not skip:
+                    lines.append(s)
+            put("pyproject.toml").write_text("\n".join(lines).rstrip("\n") + "\n")
+        ## .gitignore: of the repository + `gitignore` (the later lines win e.g. `!scripts/`)
+        put(".gitignore").write_text(
+            (
+                (src / ".gitignore").read_text().rstrip("\n")
+                if (src / ".gitignore").exists()
+                else ""
+            )
+            + "\n\n## the paper repository (`gitignore` of to_pub)\n"
+            + "\n".join(gitignore or [])
+            + "\n"
+        )
+        for rel in files:
+            (out / rel).parent.mkdir(parents=True, exist_ok=True)
+            shutil.move(tmp / rel, out / rel)
+
+    ## stale: the generated kinds of files that are not in this run (not removed)
+    stale = sorted(
+        p.relative_to(out).as_posix()
+        for d in ["scripts", "configs/analyses", "data/analyses"]
+        for p in (out / d).rglob("*")
+        if p.is_file() and p.relative_to(out).as_posix() not in files
+    )
+    if stale:
+        logging.warning(f"in {out} but not generated (stale?): {stale}")
+
+    ## the commit: by the user
+    import shlex
+
+    msg = shlex.quote(f"+ from {dev_branch} @ {dev_sha}")
+    q = shlex.quote(str(out.resolve()))
+    print(
+        f"## to commit the paper repository:\ngit -C {q} add -A\ngit -C {q} commit -m {msg}"
+    )
+
+    ## marker
+    to_dict(
+        dict(
+            source=dict(branch=dev_branch, sha=dev_sha, tag=tag),
+            pub=dict(path=str(out), branch=pub_branch),
+            files=files,
+        ),
+        output_path,
+    )
+    return output_path

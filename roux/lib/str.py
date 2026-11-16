@@ -673,6 +673,41 @@ def num2str(
             )
 
 
+def format_number(x: float) -> str:
+    """Number to a short string, by its magnitude e.g. for the numbers quoted in a text.
+
+    Parameters:
+        x (float): number.
+
+    Returns:
+        s (str): string.
+
+    Examples:
+        >>> [format_number(x) for x in [2e-8, 0.002367, -0.236773, 562.0, 23677299.0, 3.92e-219]]
+        ['2e-8', '0.002', '-0.24', '562', '23.7e6', '3e-219']
+
+    Notes:
+        - integers: as they are; >= 1e6: in millions, with 1 decimal (`23.7e6`).
+        - < 1e-10: the leading digit and the exponent (`3e-219`).
+        - < 1e-4: 1 significant digit (`1e-7`).
+        - < 0.01: up to 3 decimals; else up to 2 decimals (trailing zeros dropped).
+    """
+    _abs_x = abs(x)
+    if _abs_x >= 1e6:
+        return f"{x / 1e6:.1f}e6".replace(".0e6", "e6")
+    if float(x).is_integer():
+        return str(int(x))
+    if _abs_x < 1e-10:
+        _base, _exp = f"{x:e}".split("e")
+        return f"{_base.split('.')[0]}e{int(_exp)}"
+    elif _abs_x < 1e-4:
+        return f"{x:.1g}".replace("e-0", "e-").replace("e+0", "e+")
+    elif _abs_x < 0.01:
+        return f"{x:.3f}".rstrip("0").rstrip(".")
+    else:
+        return f"{x:.2f}".rstrip("0").rstrip(".")
+
+
 def type_str(s):
     """
     Usage:
