@@ -228,12 +228,12 @@ def to_scripts(
         ## workflow inferred
         if "df2" not in globals():
             df2 = pd.read_csv(df_outp, sep="\t")
-        from roux.workflow.io import to_workflow
+        from roux.workflow.utils import to_workflow
 
         to_workflow(df2, workflowp=f"{packagescriptsp}/workflow.py")
     ## make readme
     if todos:
-        from roux.workflow.io import to_info
+        from roux.workflow.nb import to_info
 
         to_info(
             p=f"{packagescriptsp}/*{notebook_prefix}*{notebook_suffix}*.ipynb",

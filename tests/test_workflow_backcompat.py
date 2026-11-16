@@ -310,3 +310,41 @@ def test_legacy_modules_warn_on_import(module_name):
     res = subprocess.run([sys.executable, "-c", code], capture_output=True, text=True)
     assert res.returncode == 0, res.stderr
     assert f"{module_name} is deprecated" in res.stderr
+
+
+## pub branch names (TODO 24): warn only
+@pytest.mark.parametrize(
+    "pub_branch,valid",
+    [
+        ("pub", True),
+        ("pkg", True),
+        ("main-pub", True),
+        ("main-pkg", True),
+        ("release", False),
+    ],
+)
+def test_check_pub_branch(pub_branch, valid, caplog):
+    from roux.workflow.pkg import _check_pub_branch
+
+    with caplog.at_level("WARNING"):
+        assert _check_pub_branch(pub_branch, "main") is valid
+    assert ("not one of" in caplog.text) is (not valid)
+
+
+def test_to_scripts_imports():
+    """TODO 23: the helpers that to_scripts imports exist where it imports them from."""
+    import ast
+    from pathlib import Path
+
+    import roux.workflow.workflow as m
+
+    tree = ast.parse(Path(m.__file__).read_text())
+    for node in ast.walk(tree):
+        if (
+            isinstance(node, ast.ImportFrom)
+            and node.module
+            and node.module.startswith("roux.workflow")
+        ):
+            mod = importlib.import_module(node.module)
+            missing = [a.name for a in node.names if not hasattr(mod, a.name)]
+            assert not missing, (node.module, missing)

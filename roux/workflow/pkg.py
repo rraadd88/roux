@@ -15,6 +15,23 @@ from roux.workflow.scr import (
 )
 
 
+def _check_pub_branch(pub_branch, dev_branch):
+    """
+    Check the name of the pub branch: `pub`, `pkg`, `<dev branch>-pub` or `<dev branch>-pkg`.
+
+    Only warns (back-compat: other names keep working).
+
+    Returns:
+        valid (bool): the name is one of the above.
+    """
+    valid = ["pub", "pkg", f"{dev_branch}-pub", f"{dev_branch}-pkg"]
+    if pub_branch not in valid:
+        logging.warning(
+            f"pub_branch={pub_branch!r} is not one of {valid}; other names work but are not recommended."
+        )
+    return pub_branch in valid
+
+
 def to_pkg(
     input_path=None,
     output_path=None,
@@ -155,6 +172,7 @@ def to_pkg(
             src,
             f"worktree add --orphan -b {pub_branch} {shlex.quote(str(out.resolve()))}",
         )
+    _check_pub_branch(pub_branch, dev_branch)
     logging.info(f"{src} [{dev_branch}] -> {out} [{pub_branch}]")
 
     ## plan
