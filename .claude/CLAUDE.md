@@ -8,7 +8,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 uv sync --all-extras                      # dev setup: all extras + the dev group (.venv/)
 pytest -vv tests/test_jupytext_input.py   # fast unit tests
 pytest -vv tests/test_examples.py::test_roux_lib_df   # one example notebook
-uv run tox                                # what CI runs (py3.10-3.12, extras=all, `pytest -vv --maxfail=3`)
+uv run tox                                # what CI runs (py3.10-3.13, extras=all, `pytest -vv --maxfail=3`)
 ruff check roux && ruff format roux       # lint/format; ruff is pinned (see below)
 roux --help                               # CLI (needs the `workflow` extra)
 ```
