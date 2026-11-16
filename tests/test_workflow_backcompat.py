@@ -126,9 +126,7 @@ OLD_PATHS = {
 }
 
 # g: modules that fail at import today; strict, so the mark has to go once they are fixed
-KNOWN_BROKEN = {
-    "roux.workflow.utils": "TODO 1: NameError (pd, makedirs, Path) at import",
-}
+KNOWN_BROKEN = {}
 
 
 @pytest.mark.parametrize(
