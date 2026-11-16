@@ -42,7 +42,8 @@ def compare_classes(
     if isinstance(x, pd.Series) and isinstance(y, pd.Series):
         assert len(x) == len(y), (len(x), len(y))
         if len(x) == 0 or len(y) == 0:  # and (nunique(x+y)!=1):
-            return np.nan, np.nan
+            ## the same keys as the result of a test
+            return dict(stat=np.nan, P=np.nan, table=None)
         else:
             df1 = pd.crosstab(y, x)
     elif isinstance(x, str) and isinstance(y, str):
@@ -54,7 +55,8 @@ def compare_classes(
         raise ValueError("check arguments ..")
 
     if df1.shape[0] < 2 or df1.shape[1] < 2:
-        return np.nan, np.nan
+        ## a degenerate table (e.g. one class): no test; the same keys as the result of a test
+        return dict(stat=np.nan, P=np.nan, table=df1)
 
     ## qcs
     from pandas.api.types import is_numeric_dtype
@@ -131,9 +133,10 @@ def compare_classes_many(
     ).rename(columns={0: "colx", 1: "coly"}, errors="raise")
     # df0.head(1)
     return df0.join(
+        ## the results: dicts (stat, P, table)
         df0.apply(lambda x: compare_classes(df1[x["colx"]], df1[x["coly"]]), axis=1)
         .apply(pd.Series)
-        .rename(columns={0: "stat", 1: "P"}, errors="raise")
+        .loc[:, ["stat", "P"]]
     )
 
 

@@ -55,3 +55,20 @@ examples/*.tar.gz
 ## claude code (local settings)
 # .claude/.tmp
 .tmp/
+.gitconfig
+.idea
+.mcp.json
+.profile
+.ripgreprc
+.zprofile
+.zshrc
+.bash_profile
+.bashrc
+.claude/hooks
+.claude/launch.json
+.claude/loop.md
+.claude/output-styles
+.claude/routines
+.claude/scheduled_tasks.json
+.claude/settings.local.json
+.claude/workflows
