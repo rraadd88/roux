@@ -166,6 +166,13 @@ def to_scripts(
     TODOs:
         1. For version control, use https://github.com/jupyterlab/jupyterlab-git.
     """
+    import warnings
+
+    warnings.warn(
+        "roux.workflow.workflow.to_scripts is deprecated; use roux.workflow.pkg.to_pkg",
+        DeprecationWarning,
+        stacklevel=2,
+    )
     packagen = basename(dirname(abspath(".")))
     # packagescriptsp=f"{packagep}/{packagen}"
     packagescriptsp = notebooksdp
@@ -221,12 +228,12 @@ def to_scripts(
         ## workflow inferred
         if "df2" not in globals():
             df2 = pd.read_csv(df_outp, sep="\t")
-        from roux.workflow.io import to_workflow
+        from roux.workflow.utils import to_workflow
 
         to_workflow(df2, workflowp=f"{packagescriptsp}/workflow.py")
     ## make readme
     if todos:
-        from roux.workflow.io import to_info
+        from roux.workflow.nb import to_info
 
         to_info(
             p=f"{packagescriptsp}/*{notebook_prefix}*{notebook_suffix}*.ipynb",
@@ -246,8 +253,11 @@ def to_scripts(
 
         git_commit(packagep, suffix_message="" if not validate else " (not validated)")
     if clean:
+        import shlex
+
         output = subprocess.check_output(
-            f'grep -Hrn "%run " {packagescriptsp}/lib/*.py',
+            ## the glob stays outside the quotes, so the shell expands it
+            f'grep -Hrn "%run " {shlex.quote(str(packagescriptsp))}/lib/*.py',
             shell=True,
             universal_newlines=True,
         ).split("\n")

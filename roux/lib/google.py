@@ -496,7 +496,7 @@ def get_metadata_of_paper(
                 continue
             try:
                 title = res["items"][0]["pagemap"]["metatags"][0]["og:title"]
-            except:
+            except (KeyError, IndexError, TypeError):
                 title = [d["htmlTitle"] for d in res["items"]][0]
             metadata["titles"].append(title)
     if test:
@@ -508,7 +508,7 @@ def get_metadata_of_paper(
             d = scholarly.search_pubs(k)
             try:
                 metadata["data"] = next(d)
-            except:
+            except Exception:
                 continue
     return metadata
 

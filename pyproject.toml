@@ -23,7 +23,7 @@ license = "GPL-3.0-or-later"
 requires-python = ">=3.10, <4"
 dependencies = [
     "numpy>=1.17.3",
-    "pandas>=0.25.3,<=2.3.3",
+    "pandas>=0.25.3,<=2.3.3", # <3: pandas 3 compatibility work pending (copy-on-write, string dtype)
     "pyyaml>=5.1",
     "matplotlib>=2.2",
     "seaborn>=0.8",
@@ -98,6 +98,11 @@ dev = [
 
 [tool.uv]
 package = true
+
+[tool.pytest.ini_options]
+markers = [
+    "network: downloads data at run time (deselect offline with `-m 'not network'`)",
+]
 
 [tool.setuptools.packages.find]
 include = ["roux*"]

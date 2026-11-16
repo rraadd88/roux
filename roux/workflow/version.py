@@ -16,6 +16,13 @@ def git_commit(
         repop (str): path to the repository.
         suffix_message (str, optional): add suffix to the version (commit) message. Defaults to ''.
     """
+    import warnings
+
+    warnings.warn(
+        "roux.workflow.version.git_commit is deprecated; commit with git directly (to_pkg commits its worktree)",
+        DeprecationWarning,
+        stacklevel=2,
+    )
     from git import Repo
 
     from roux.lib.sys import input_binary
@@ -61,9 +68,7 @@ def git_commit(
 import subprocess
 
 
-def get_tag(
-    fillna='test'
-):
+def get_tag(fillna="test"):
     """Get the current version tag."""
     for com in [
         "git tag --sort=-v:refname | head -n 1",
@@ -79,13 +84,14 @@ def get_tag(
             #     check=False,
             # )
             from roux.lib.sys import run_com
-            result=run_com(com)
+
+            result = run_com(com)
             # Check if the command was successful
-            if result.strip()!='':
+            if result.strip() != "":
                 # Get the output and strip any extra whitespace
                 # current_tag = result.stdout.strip()
                 # return current_tag#.split('\n')[-1]
-                current_tag=result.strip()
+                current_tag = result.strip()
             else:
                 print("Error getting current Git tag:", result.stderr.strip())
                 current_tag = None
@@ -93,7 +99,7 @@ def get_tag(
             print("An error occurred:", str(e))
             current_tag = None
         if not current_tag is None:
-            break  
+            break
 
     if current_tag is None:
         current_tag = fillna

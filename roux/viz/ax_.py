@@ -841,7 +841,7 @@ def get_axlimsby_data(
     try:
         xmin = np.min(X)
         xmax = np.max(X)
-    except:
+    except Exception:
         print(X)
     xlen = xmax - xmin
     ymin = np.min(Y)
@@ -1359,6 +1359,8 @@ def set_colorbar(
     Returns:
         figure object.
     """
+    ## copies of the mutable defaults (they were changed in place and carried over to later calls)
+    bounds = list(bounds) if bounds is not None else None
 
     # if orientation == "vertical":
     #     width, height = "5%", "50%"

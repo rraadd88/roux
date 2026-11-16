@@ -1,6 +1,8 @@
 import logging
 logging.basicConfig(level='INFO',force=True)
 
+import pytest
+
 from pathlib import Path
 
 ## fix ipython
@@ -25,14 +27,14 @@ logging.info(r.stdout)
 ipy_path=Path(r.stdout.split('\n')[0]).absolute().as_posix()
 assert Path(ipy_path).exists(), ipy_path
 
-r = subprocess.run(
-        f"echo 'c.HistoryManager.enabled = False\nc.HistoryAccessor.enabled = False' >> {ipy_path}/profile_default/ipython_config.py",
-        shell=True,
-        stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE,
-        text=True,
-    )
-logging.info(r)
+## disable the IPython history (sqlite) in the kernels papermill starts; append only once.
+## tox sets IPYTHONDIR to a temporary directory, so the user's own profile is left untouched.
+ipy_cfg_path = Path(ipy_path) / "profile_default" / "ipython_config.py"
+ipy_cfg_lines = "c.HistoryManager.enabled = False\nc.HistoryAccessor.enabled = False\n"
+if ipy_cfg_lines not in (ipy_cfg_path.read_text() if ipy_cfg_path.exists() else ""):
+    with open(ipy_cfg_path, "a") as f:
+        f.write("\n" + ipy_cfg_lines)
+logging.info(ipy_cfg_path)
 
 output_dir_path='examples/outputs/'
 Path(output_dir_path).mkdir(parents=True,exist_ok=True)
@@ -54,6 +56,7 @@ def test_roux_global_imports(
         p,
     )
 
+@pytest.mark.network
 def test_roux_lib_df(
     p="examples/roux_lib_df.ipynb",
     ):
@@ -68,6 +71,7 @@ def test_roux_lib_dfs(
         p,
     )
 
+@pytest.mark.network
 def test_roux_lib_df_plot(
     p="examples/roux_lib_df_plot.ipynb"
     ):
@@ -82,6 +86,7 @@ def test_roux_lib_df_apply(
         p,
     )
 
+@pytest.mark.network
 def test_roux_lib_io(
     p="examples/roux_lib_io.ipynb",
     ):
@@ -138,6 +143,7 @@ def test_roux_stat_sets(
         p,
     )
 
+@pytest.mark.network
 def test_roux_viz_annot(
     p="examples/roux_viz_annot.ipynb",
     ):
@@ -152,6 +158,7 @@ def test_roux_viz_annot(
 #         p,
 #     )
 
+@pytest.mark.network
 def test_roux_viz_dist(
     p="examples/roux_viz_dist.ipynb"
     ):
@@ -173,6 +180,7 @@ def test_roux_viz_line(
         p,
     )
 
+@pytest.mark.network
 def test_roux_viz_scatter(
     p="examples/roux_viz_scatter.ipynb"
     ):
@@ -209,3 +217,27 @@ def test_roux_workflow_io(
     return run_test(
         p,
     )
+
+def test_roux_lib_log(
+    p="examples/roux_lib_log.ipynb",
+    ):
+    return run_test(
+        p,
+    )
+
+@pytest.mark.network  # sns.load_dataset
+def test_roux_stat_fit(
+    p="examples/roux_stat_fit.ipynb",
+    ):
+    return run_test(
+        p,
+    )
+
+def test_roux_stat_norm(
+    p="examples/roux_stat_norm.ipynb",
+    ):
+    return run_test(
+        p,
+    )
+
+

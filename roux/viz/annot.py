@@ -146,8 +146,6 @@ def annot_side_curved(
             kws_text_multicolored = {}
         for s in data1[col_label].unique():
             try:
-                from roux.viz.text import set_text_multicolored
-
                 from roux.viz.figure import get_text
 
                 ts = get_text(
@@ -1030,9 +1028,13 @@ def show_stats_by_sides(
     col_left,  ## [left,mid,rt],
     col_right,  ## [left,mid,rt],
     ax=None,
+    x_center=None,
 ):
     """
-    #TODO
+    Show stats on the left, middle and right sides of the y ticklabels.
+
+    Parameters:
+        x_center (float): x position of the middle column; by default, the middle of the x limits.
     """
     if ax is None:
         ax = plt.gca()
@@ -1134,6 +1136,8 @@ def show_crosstab_stats(
     if ax is None:
         ax = plt.gca()
 
+    ## given stats: no table (the same keys as the result of compare_classes)
+    res = dict(stat=stat, P=pval, table=None)
     if stat is None and pval is None:
         from roux.stat.diff import compare_classes
 
@@ -1151,7 +1155,8 @@ def show_crosstab_stats(
         pval = res.get("P")
         logging.info(f"stat={stat},pval={pval}")
 
-    if res.get("table").shape != (2, 2) or method == "chi2":
+    table = res.get("table")
+    if (table is not None and table.shape != (2, 2)) or method == "chi2":
         stat_label = r"${\chi}^2$"
     else:
         stat_label = "OR"
@@ -1205,7 +1210,7 @@ def show_crosstab_stats(
         ax=ax,
         **kws_set_label,
     )
-    if hasattr(ax, "stats") and ax.stat is not None:
+    if getattr(ax, "stats", None) is not None:
         logging.warning("overwritten ax.stats")
     ax.stats = res
 

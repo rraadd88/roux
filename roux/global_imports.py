@@ -137,7 +137,7 @@ try:
     from roux.lib.log import Logger  # ignore #noqa
 
     logging = Logger()  # ignore
-except:
+except Exception:
     import logging  # ignore #noqa
 
     logging.basicConfig(level="INFO", force=True)  # ignore

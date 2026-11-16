@@ -129,6 +129,8 @@ def plot_scatter(
         1. For a rasterized scatter plot set `scatter_kws={'rasterized': True}`
         2. This function does not apply multiple colors, similar to `sns.regplot`.
     """
+    ## copies of the mutable defaults (they were changed in place and carried over to later calls)
+    line_kws = dict(line_kws) if line_kws is not None else None
     from roux.viz.figure import get_ax
 
     ax = get_ax(ax)
@@ -401,6 +403,8 @@ def _prepare_volcano_data(
     kws_scatterplot: dict = {},
 ):
     """Prepares the DataFrame for plot_volcano."""
+    ## copies of the mutable defaults (they were changed in place and carried over to later calls)
+    kws_scatterplot = dict(kws_scatterplot) if kws_scatterplot is not None else None
     if signi_bin_exprs is None:
         assert xabs_gt is not None and p_lt is not None, (xabs_gt, p_lt)
         signi_bin_exprs = {
@@ -811,7 +815,7 @@ def plot_volcano(
                     arrowprops=dict(arrowstyle="-", color="k"),
                     **labels_kws,
                 )
-            except:
+            except Exception:
                 logging.error("install adjustText to repel the labels.")
     ## formatting
     ax.spines.top.set(visible=False)
@@ -867,6 +871,8 @@ def plot_volcano_split(
     from roux.viz.ax_ import format_ax
     from roux.viz.figure import to_pos_in_ax2
 
+    ## label positions on the first (right) side, which the left side links to
+    annot_ax1 = None
     for rowi, title in enumerate(row_order):
         ax = axd[title]
         loc = "right" if rowi == 0 else "left"
@@ -909,6 +915,11 @@ def plot_volcano_split(
 
         kws_annot_side = kws_annot.copy()
         if loc == "left":
+            if annot_ax1 is None:
+                logging.warning(
+                    "no labels on the right side to link to; the left side is not annotated"
+                )
+                continue
             annot_ax2 = {
                 k: to_pos_in_ax2(
                     pt=pt,

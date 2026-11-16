@@ -67,7 +67,7 @@ def _to_scr_from_cells(tmp_path, monkeypatch, pre, pms, post):
     )
     nb_path = tmp_path / "nb.ipynb"
     nbf.write(nb, nb_path)
-    ## `to_scr` writes .to_src/ in the current directory
+    ## `to_scr` used to write .to_src/ in the current directory (now a temporary directory)
     monkeypatch.chdir(tmp_path)
     outp = _to_scr_cleaned(
         nb_path,
@@ -79,6 +79,8 @@ def _to_scr_from_cells(tmp_path, monkeypatch, pre, pms, post):
         drop_headers_containing=list(_PKG_DROP_HEADERS),
     )
     py_compile.compile(outp, doraise=True)
+    # g: no scratch directory left in the current directory (TODO 21)
+    assert not (tmp_path / ".to_src").exists()
     return Path(outp).read_text()
 
 

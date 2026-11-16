@@ -6,6 +6,7 @@ The names stay importable from their current modules, and `to_pkg` (dry run) lis
 import importlib
 import json
 import subprocess
+import sys
 
 import pytest
 
@@ -149,6 +150,50 @@ def test_old_import_paths(module_name):
     assert not missing, f"no longer importable from {module_name}: {missing}"
 
 
+# g: the modules split out of io.py and task.py (reorganisation, phase 2), importable on their own
+NEW_PATHS = {
+    "roux.workflow.scr": [
+        "to_py",
+        "check_py",
+        "to_scr",
+        "to_src",
+        "to_scr_path",
+        "replacestar",
+        "_to_scrs",
+    ],
+    "roux.workflow._worktree": ["_git", "_git_check_ignore", "_plan", "_pkg_plan"],
+    "roux.workflow.pkg": ["to_pkg", "to_scrs"],
+    "roux.workflow.slurm": [
+        "SLURMJob",
+        "submit_job",
+        "feed_jobs",
+        "to_sbatch_script",
+        "get_sq",
+        "is_q_empty",
+    ],
+}
+
+
+@pytest.mark.parametrize("module_name", sorted(NEW_PATHS))
+def test_new_modules_import_first(module_name):
+    # g: a fresh interpreter, so the module is the first roux.workflow module imported (no import cycle)
+    code = f"import {module_name} as m; missing = [n for n in {NEW_PATHS[module_name]!r} if not hasattr(m, n)]; assert not missing, missing"
+    res = subprocess.run([sys.executable, "-c", code], capture_output=True, text=True)
+    assert res.returncode == 0, res.stderr
+
+
+def test_moved_names_are_the_same_objects():
+    import roux.workflow.io as io
+    import roux.workflow.pkg as pkg
+    import roux.workflow.scr as scr
+    import roux.workflow.slurm as slurm
+    import roux.workflow.task as task
+
+    assert io.to_scr is scr.to_scr and io.to_src is scr.to_src
+    assert io.to_pkg is pkg.to_pkg and io.to_scrs is pkg.to_scrs
+    assert task.submit_job is slurm.submit_job and task.SLURMJob is slurm.SLURMJob
+
+
 ## to_pkg, dry run
 NOTEBOOK = json.dumps(
     {
@@ -235,3 +280,71 @@ def test_to_pkg_dry_run(notebooks_repo, tmp_path, capsys):
         "ignored modules_nbs/m.py",
         "ignored to_pkg.cfg",
     ]
+
+
+## deprecations (reorganisation, phase 3): the old names still work, with a DeprecationWarning
+def test_to_src_warns_and_keeps_the_cli_name(tmp_path, monkeypatch):
+    from roux.workflow.scr import to_scr, to_src
+
+    # g: argh names the CLI command after __name__, so `roux to-scr` is unchanged
+    assert to_src.__name__ == "to_scr" and to_src.__wrapped__ is to_scr
+    monkeypatch.chdir(tmp_path)
+    with pytest.warns(DeprecationWarning, match="to_src"):
+        try:
+            to_src("missing.ipynb", "missing.py")
+        except Exception:
+            pass
+
+
+def test_pkg_plan_warns_and_equals_plan(notebooks_repo):
+    from roux.workflow._worktree import _pkg_plan, _plan
+
+    with pytest.warns(DeprecationWarning, match="_pkg_plan"):
+        old = _pkg_plan(notebooks_repo, "to_pkg.cfg")
+    assert old == _plan(notebooks_repo, "to_pkg.cfg")
+
+
+@pytest.mark.parametrize("module_name", ["roux.workflow.utils", "roux.workflow.df"])
+def test_legacy_modules_warn_on_import(module_name):
+    code = f"import warnings; warnings.simplefilter('always'); import {module_name}"
+    res = subprocess.run([sys.executable, "-c", code], capture_output=True, text=True)
+    assert res.returncode == 0, res.stderr
+    assert f"{module_name} is deprecated" in res.stderr
+
+
+## pub branch names (TODO 24): warn only
+@pytest.mark.parametrize(
+    "pub_branch,valid",
+    [
+        ("pub", True),
+        ("pkg", True),
+        ("main-pub", True),
+        ("main-pkg", True),
+        ("release", False),
+    ],
+)
+def test_check_pub_branch(pub_branch, valid, caplog):
+    from roux.workflow.pkg import _check_pub_branch
+
+    with caplog.at_level("WARNING"):
+        assert _check_pub_branch(pub_branch, "main") is valid
+    assert ("not one of" in caplog.text) is (not valid)
+
+
+def test_to_scripts_imports():
+    """TODO 23: the helpers that to_scripts imports exist where it imports them from."""
+    import ast
+    from pathlib import Path
+
+    import roux.workflow.workflow as m
+
+    tree = ast.parse(Path(m.__file__).read_text())
+    for node in ast.walk(tree):
+        if (
+            isinstance(node, ast.ImportFrom)
+            and node.module
+            and node.module.startswith("roux.workflow")
+        ):
+            mod = importlib.import_module(node.module)
+            missing = [a.name for a in node.names if not hasattr(mod, a.name)]
+            assert not missing, (node.module, missing)
