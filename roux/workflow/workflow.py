@@ -253,8 +253,11 @@ def to_scripts(
 
         git_commit(packagep, suffix_message="" if not validate else " (not validated)")
     if clean:
+        import shlex
+
         output = subprocess.check_output(
-            f'grep -Hrn "%run " {packagescriptsp}/lib/*.py',
+            ## the glob stays outside the quotes, so the shell expands it
+            f'grep -Hrn "%run " {shlex.quote(str(packagescriptsp))}/lib/*.py',
             shell=True,
             universal_newlines=True,
         ).split("\n")

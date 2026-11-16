@@ -48,7 +48,7 @@ turns them into CLI scripts:
 - `to_scr` (`roux/workflow/scr.py`; alias `to_src`, deprecated): notebook (`.ipynb` or jupytext percent `.py`) -> a
   script with a `run(<params>)` function and an argh CLI. The parameters come from the cell tagged
   `parameters`, which must start with a `## param...` comment (`split_by_pms` asserts this).
-  It writes scratch files to `.to_src/` in the current directory.
+  It writes its scratch files to a temporary directory (before: `.to_src/` in the current directory).
 - `to_pkg` (`roux/workflow/pkg.py`): a notebooks repository (`notebooks_X/`) -> a package in a git worktree on an orphan branch
   (`scr_X/`), configured by a params file (`to_pkg.cfg`). `to_scrs` does the same conversion into the
   source repository's git-ignored `scr_*/`. They share `_plan` (`_worktree.py`; old name `_pkg_plan`, deprecated) and `_to_scrs` (`scr.py`); keep them shared.

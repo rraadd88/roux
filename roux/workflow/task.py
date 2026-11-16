@@ -533,7 +533,9 @@ def load_module(
 
     # Load the module and modify the current environment
     # load_module_command = f"source $(realpath ~/.bashrc) && module load {m}"
-    load_module_command = f"module load {m} && env"
+    import shlex
+
+    load_module_command = f"module load {shlex.quote(m)} && env"
     logging.info(load_module_command)
     result = subprocess.run(
         load_module_command,
@@ -554,7 +556,7 @@ def load_module(
 
     if validate:
         # Verify samtools is accessible
-        os.system(f"{m} --version")
+        os.system(f"{shlex.quote(m)} --version")
 
 
 def infer_runner(

@@ -79,7 +79,9 @@ def check_py(
             Path(init_path).touch()
             logging.warning(f"created missing: {init_path}")
 
-    com = f"ruff check {p} --select {RUFF_SELECT} --ignore {ruff_ignore}"
+    import shlex
+
+    com = f"ruff check {shlex.quote(str(p))} --select {RUFF_SELECT} --ignore {ruff_ignore}"
     from roux.lib.sys import run_com
 
     stdout = run_com(
@@ -106,11 +108,13 @@ def post_code(
     replace_text(p, {"get_ipython()": "# get_ipython()"})
 
     ## ruff
+    import shlex
+
     com = ""
     if lint:
-        com += f"ruff check --select {RUFF_SELECT} --fix {p};"  # -unsafe-fixes
+        com += f"ruff check --select {RUFF_SELECT} --fix {shlex.quote(str(p))};"  # -unsafe-fixes
     if format:
-        com += f"ruff format {p};"
+        com += f"ruff format {shlex.quote(str(p))};"
     import subprocess
 
     res = subprocess.run(
@@ -255,34 +259,38 @@ def to_scr(
     with_pms = read_cli_pm(with_pms)
     pre_clean = read_cli_pm(pre_clean)
 
-    if pre_clean:
-        if pre_clean == True:
-            pre_clean = {}
-        assert isinstance(pre_clean, dict), pre_clean
+    import tempfile
 
-        from roux.workflow.nb import to_clean_nb
+    ## scratch files in a temporary directory (before: `.to_src/` in the current directory)
+    with tempfile.TemporaryDirectory(prefix="roux_to_scr_") as scratch_dir_path:
+        if pre_clean:
+            if pre_clean == True:
+                pre_clean = {}
+            assert isinstance(pre_clean, dict), pre_clean
 
-        p = to_clean_nb(
+            from roux.workflow.nb import to_clean_nb
+
+            p = to_clean_nb(
+                p,
+                f"{scratch_dir_path}/{Path(p).name}",
+                **{
+                    **dict(
+                        clear_outputs=False,
+                        drop_code_lines_containing=[],
+                        drop_headers_containing=[],
+                    ),
+                    **pre_clean,
+                },
+            )
+
+        pyp = to_py(
             p,
-            f".to_src/{Path(p).name}",
-            **{
-                **dict(
-                    clear_outputs=False,
-                    drop_code_lines_containing=[],
-                    drop_headers_containing=[],
-                ),
-                **pre_clean,
-            },
+            pyp=f"{scratch_dir_path}/{Path(p).stem}.py",
+            clean=clean,
+            force=True,
         )
 
-    pyp = to_py(
-        p,
-        pyp=f".to_src/{Path(p).stem}.py",
-        clean=clean,
-        force=True,
-    )
-
-    t_raw = open(pyp, "r").read()
+        t_raw = open(pyp, "r").read()
     # print(t_raw[:100])
 
     t_raw = t_raw.split(mark_end)[0]

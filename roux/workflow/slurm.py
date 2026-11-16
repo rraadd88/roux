@@ -79,8 +79,11 @@ def get_sq(
     # Build the squeue command
     # --format="%.18i %.9P %.30j %.8u %.8T %.10M %.9l %.6D %R"
 
+    import shlex
+
     return run_com(
-        'sq --format="%.18i%.100j"' + (f"-u {user}" if user is not None else ""),
+        'sq --format="%.18i%.100j"'
+        + (f" -u {shlex.quote(str(user))}" if user is not None else ""),
         verbose=False,
     )
 
@@ -123,7 +126,9 @@ def submit_job(
         logging.error(f"skipped because already running: {job_name}.")
         return
 
-    com = f"sbatch '{p}'"
+    import shlex
+
+    com = f"sbatch {shlex.quote(str(p))}"
     res = run_com(
         com,
         verbose=verbose,
