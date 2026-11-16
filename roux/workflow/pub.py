@@ -48,7 +48,7 @@ def read_figs(
     Parameters:
         figs (dict): `{fig: {panel: {script, plots}}}`, or `{fig: {script, plots}}` for a figure without panels (its plots are numbered as panels). See `_get_scripts` for `script`.
         tag (str): the version of the outputs: replaces the matches of `tag_pattern` in the plot paths.
-        tag_pattern (str): regular expression of the version in the plot paths e.g. `(?<=outputs/)v\d+(?=/)`; without it, the paths are kept.
+        tag_pattern (str): regular expression of the version in the plot paths e.g. `(?<=outputs/)v\\d+(?=/)`; without it, the paths are kept.
         input_path (str): the root of the repository; the plot paths are relative to it.
         check (bool): raise if a plot or its directory (the saved plot inputs) is missing; else the column `exists` marks them.
 
@@ -225,6 +225,153 @@ def _pub_plan(df_figs, ana_to_sis: dict, review_path: str):
     return df
 
 
+def _clean_plot_script(text: str) -> str:
+    """
+    A plot script, cleaned: without the comments (`#` inside strings kept), the trailing spaces and the consecutive blank lines; a literal `plotp="..."` is replaced by `plotp=__file__`.
+    """
+    import io
+    import tokenize
+
+    tokens = [
+        t
+        for t in tokenize.generate_tokens(io.StringIO(text).readline)
+        if t.type != tokenize.COMMENT
+    ]
+    text = tokenize.untokenize(tokens)
+    text = "\n".join(s.rstrip() for s in text.split("\n"))
+    text = re.sub(r"\n{3,}", "\n\n", text)
+    return re.sub(r"plotp\s*=\s*[\"'].*?[\"']\s*,", "plotp=__file__,", text)
+
+
+def _to_panel(input_path: str, review_dir: str, force: bool = False):
+    """
+    The review files of a plot saved by `roux.viz.io.to_plot`: `data.pqt`, `config.yaml`, `plot.py` (cleaned) and `stats.yaml` (`ax.stats` of the replotted plot).
+
+    Parameters:
+        input_path (str): the plot path without suffix i.e. the directory of the saved plot inputs.
+        review_dir (str): the output directory.
+        force (bool): remake the files if `data.pqt` exists.
+
+    Returns:
+        stats (dict): `ax.stats`, or the saved `stats.yaml` if not remade; None if the data is not tabular (skipped).
+    """
+    import matplotlib.pyplot as plt
+
+    from roux.lib.io import read_dict, to_dict, to_table
+    from roux.viz.io import get_plot_inputs, read_plot
+
+    out = Path(review_dir)
+    if (out / "data.pqt").exists() and not force:
+        return (
+            read_dict(str(out / "stats.yaml")) if (out / "stats.yaml").exists() else {}
+        )
+    _, data, kws_plot = get_plot_inputs(input_path)
+    if "path" in data:
+        logging.warning(f"skipped, a column `path` in the data: {input_path}")
+        return None
+    plt.close("all")
+    ax = read_plot(f"{input_path}/plot.py")
+    stats = getattr(ax, "stats", None) or {}
+    plt.close("all")
+    out.mkdir(parents=True, exist_ok=True)
+    to_table(data, str(out / "data.pqt"))
+    to_dict(kws_plot, str(out / "config.yaml"))
+    try:
+        to_dict(stats, str(out / "stats.yaml"))
+    except Exception as e:
+        logging.warning(f"stats not saved ({e}): {input_path}")
+    (out / "plot.py").write_text(
+        _clean_plot_script(Path(f"{input_path}/plot.py").read_text())
+    )
+    return stats
+
+
+def _to_pub_script(p: str, outp: str, src_dir_path: str, inline: list = None) -> str:
+    """
+    A plot script (`plot.py` of `to_plot`) -> a script of the paper repository.
+
+    Parameters:
+        p (str): input path.
+        outp (str): output path.
+        src_dir_path (str): the root of the source repository, where the packages of `inline` are.
+        inline (list): the local packages (top-level names) whose imports are replaced by the source of the imported functions (and the imports of their module), also inside a `try` block (e.g. with `sys.path.append`).
+
+    Returns:
+        outp (str): output path.
+
+    Notes:
+        The edits for the runner: the lines with `get_plot_inputs` are dropped, `plot_` -> `run`, `kws_plot` -> `config`.
+    """
+    import ast
+    import textwrap
+
+    inline = [inline] if isinstance(inline, str) else (inline or [])
+    text = Path(p).read_text()
+    lines = text.split("\n")
+
+    def is_local(n):
+        return (
+            isinstance(n, ast.ImportFrom) and (n.module or "").split(".")[0] in inline
+        )
+
+    def get_source(n):
+        ## the imported functions and the imports of their module
+        mp = Path(src_dir_path) / (n.module.replace(".", "/") + ".py")
+        mt = mp.read_text()
+        mtree = ast.parse(mt)
+        names = [a.name for a in n.names]
+        defs = {
+            x.name: x
+            for x in mtree.body
+            if isinstance(x, (ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef))
+        }
+        assert all(k in defs for k in names), (mp, names)
+        ## not the other module-level names (they are not copied)
+        used = {
+            x.id for k in names for x in ast.walk(defs[k]) if isinstance(x, ast.Name)
+        }
+        others = used & (set(defs) - set(names))
+        assert not others, (mp, others)
+        imps = [
+            x
+            for x in mtree.body
+            if isinstance(x, (ast.Import, ast.ImportFrom)) and not is_local(x)
+        ]
+        return "\n".join(
+            [ast.get_source_segment(mt, x) for x in imps]
+            + [f"## from the source: {n.module}"]
+            + [ast.get_source_segment(mt, defs[k]) for k in names]
+        )
+
+    ## the blocks to replace: (first line, last line, indent, the nodes with the imports)
+    blocks = []
+    for n in ast.walk(ast.parse(text)):
+        if isinstance(n, ast.Try) and any(
+            is_local(x) for b in n.body for x in ast.walk(b)
+        ):
+            nodes = [x for b in n.body for x in ast.walk(b) if is_local(x)]
+            blocks.append((n.lineno, n.end_lineno, n.col_offset, nodes))
+        elif is_local(n):
+            blocks.append((n.lineno, n.end_lineno, n.col_offset, [n]))
+    ## the outer blocks only (a `try` contains its imports)
+    blocks = [
+        b
+        for b in blocks
+        if not any(o[0] <= b[0] and b[1] <= o[1] and o != b for o in blocks)
+    ]
+    for start, end, col, nodes in sorted(blocks, key=lambda b: b[0], reverse=True):
+        code = textwrap.indent("\n".join(get_source(n) for n in nodes), " " * col)
+        lines[start - 1 : end] = code.split("\n")
+    text = "\n".join(lines)
+
+    ## the edits for the runner
+    text = "\n".join(s for s in text.split("\n") if "get_plot_inputs" not in s)
+    text = re.sub(r"def plot_\(", "def run(", text).replace("kws_plot", "config")
+    Path(outp).parent.mkdir(parents=True, exist_ok=True)
+    Path(outp).write_text(text)
+    return outp
+
+
 def _read_cfg(cfg_path: str) -> dict:
     """
     The params of `to_pub` from a params file: the paths (`*_path` and the sources of `copy`) are relative to its directory (the root of the repository) and are resolved here.
@@ -254,6 +401,7 @@ def to_pub(
     copy=None,
     gitignore=None,
     cols_desc=None,
+    inline=None,
     pyproject_drop="tool.uv.sources",
     allow_dirty="False",
     dry_run="False",
@@ -277,7 +425,7 @@ def to_pub(
         output_path: 'results/latest.yaml' # the review files are in `results/latest/`
         pub_path: '../proj-pub'
         tag: 'v2'
-        tag_pattern: '(?<=outputs/)v\d+(?=/)'
+        tag_pattern: '(?<=outputs/)v\\d+(?=/)'
         figs: {1: {C: {script: counts, plots: [outputs/v1/a/dists_counts.pdf]}}}
         ana_to_sis: {'Analysis A': [1, 2]}
 
@@ -291,6 +439,7 @@ def to_pub(
         copy (dict): `{source: destination}` files to copy; the destinations are relative to `pub_path`.
         gitignore (list): lines added to the `.gitignore` of the repository, for the paper repository.
         cols_desc (dict): `{column: description}` for the source data excel.
+        inline (list): the local packages of the repository whose functions are copied into the scripts, see `_to_pub_script`.
         pyproject_drop (str): tables (comma-separated) of `pyproject.toml` not to carry over.
         allow_dirty (bool): allow the modified tracked files in the repository.
         dry_run (bool): only list the actions.
@@ -359,4 +508,23 @@ def to_pub(
             print("write", s)
         return
 
-    raise NotImplementedError("to_pub: only `dry_run` for now")
+    ## review files (in the source repository): the plots, the panels and their stats
+    import shutil
+
+    from roux.lib.io import to_table
+
+    review = Path(review_path)
+    (review / "figs").mkdir(parents=True, exist_ok=True)
+    to_table(df, str(review / "figs.tsv"))
+    stats = {}
+    for _, x in df.iterrows():
+        logging.info(f">>> {x['plot label']}")
+        stats[x["fig"]] = _to_panel(x["input path"], x["review path"], force=force)
+        pdf, pdf_out = (
+            Path(f"{x['input path']}.pdf"),
+            review / f"figs/fig{x['fig']}.pdf",
+        )
+        if pdf.exists() and (force or not pdf_out.exists()):
+            shutil.copy2(pdf, pdf_out)
+
+    logging.warning("to_pub: the files of the paper repository are not written yet")
