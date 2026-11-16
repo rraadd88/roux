@@ -19,6 +19,9 @@ from pathlib import Path
 
 from roux.lib.io import read_dict, to_dict
 
+## the exceptions that ast.literal_eval raises for a value that is not a literal
+_LITERAL_EVAL_ERRORS = (ValueError, TypeError, SyntaxError, MemoryError, RecursionError)
+
 
 def _code_string_to_dict(code_string):
     """
@@ -96,13 +99,13 @@ def _code_string_to_dict(code_string):
                         # Store in both result dict and namespace for subsequent references
                         result[target.id] = value
                         namespace[target.id] = value
-                    except:
-                        # If evaluation fails, try to get the literal string
+                    except Exception:
+                        # If evaluation fails (e.g. an undefined name), try to get the literal
                         try:
                             value = ast.literal_eval(node.value)
                             result[target.id] = value
                             namespace[target.id] = value
-                        except:
+                        except _LITERAL_EVAL_ERRORS:
                             # Last resort: get the source as string
                             result[target.id] = (
                                 ast.unparse(node.value)
@@ -157,7 +160,7 @@ def _fallback_extract_assignments(code_string):
                 value_str = "\n".join(current_value_lines)
                 try:
                     result[current_var] = ast.literal_eval(value_str)
-                except:
+                except _LITERAL_EVAL_ERRORS:
                     result[current_var] = value_str
 
             # Start new variable
@@ -172,7 +175,7 @@ def _fallback_extract_assignments(code_string):
         value_str = "\n".join(current_value_lines)
         try:
             result[current_var] = ast.literal_eval(value_str)
-        except:
+        except _LITERAL_EVAL_ERRORS:
             result[current_var] = value_str
 
     return result
@@ -188,6 +191,12 @@ def extract_pms(lines, fmt="dict"):
 
     Returns:
         dict or list: Depending on fmt parameter
+
+    Notes:
+        Values that are neither Python literals nor evaluable (e.g. names not defined in
+        the lines) come back as their source text (a str).
+        With fmt other than 'dict', str values are quoted with repr(), so that each
+        "key=value" string is valid Python code.
     """
     # Convert lines to string if it's a list
     if isinstance(lines, list):
@@ -212,9 +221,9 @@ def extract_pms(lines, fmt="dict"):
                     ast.literal_eval(value)
                     # If it succeeds, it's a Python literal, keep as is
                     parameters.append(f"{key}={value}")
-                except:
-                    # If it fails, it's a regular string, add quotes
-                    parameters.append(f"{key}='{value}'")
+                except _LITERAL_EVAL_ERRORS:
+                    # If it fails, it's a regular string: quote (and escape) it
+                    parameters.append(f"{key}={value!r}")
             else:
                 # For non-strings, use repr() to get proper Python representation
                 parameters.append(f"{key}={value!r}")

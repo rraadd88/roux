@@ -811,7 +811,7 @@ def plot_volcano(
                     arrowprops=dict(arrowstyle="-", color="k"),
                     **labels_kws,
                 )
-            except:
+            except Exception:
                 logging.error("install adjustText to repel the labels.")
     ## formatting
     ax.spines.top.set(visible=False)

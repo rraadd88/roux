@@ -76,7 +76,7 @@ def diagram_nb(
                 if test:
                     print(f"regex: {regex}")
                 s1 = re.split(regex, graph)[1].split('"')[0]
-            except:
+            except (IndexError, re.error):
                 logging.warning(f"node and/or label missing for {step}")
                 s1 = None
             if s1 is not None:

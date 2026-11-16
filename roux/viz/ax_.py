@@ -841,7 +841,7 @@ def get_axlimsby_data(
     try:
         xmin = np.min(X)
         xmax = np.max(X)
-    except:
+    except Exception:
         print(X)
     xlen = xmax - xmin
     ymin = np.min(Y)
