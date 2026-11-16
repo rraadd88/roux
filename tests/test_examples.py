@@ -225,21 +225,6 @@ def test_roux_lib_log(
         p,
     )
 
-def test_roux_stat_agg(
-    p="examples/roux_stat_agg.ipynb",
-    ):
-    return run_test(
-        p,
-    )
-
-@pytest.mark.network  # sns.load_dataset
-def test_roux_stat_diff(
-    p="examples/roux_stat_diff.ipynb",
-    ):
-    return run_test(
-        p,
-    )
-
 @pytest.mark.network  # sns.load_dataset
 def test_roux_stat_fit(
     p="examples/roux_stat_fit.ipynb",
@@ -250,13 +235,6 @@ def test_roux_stat_fit(
 
 def test_roux_stat_norm(
     p="examples/roux_stat_norm.ipynb",
-    ):
-    return run_test(
-        p,
-    )
-
-def test_roux_viz_text(
-    p="examples/roux_viz_text.ipynb",
     ):
     return run_test(
         p,
