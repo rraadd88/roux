@@ -39,7 +39,7 @@ def test_read_figs(tmp_path):
         tag_pattern=r"(?<=outputs/)v\d+(?=/)",
         input_path=str(tmp_path),
     )
-    assert df["fig"].tolist() == ["1C1", "1D1", "1D2", "2A1", "S211", "S221"]
+    assert df["fig"].tolist() == ["1C", "1D1", "1D2", "2", "S21", "S22"]
     assert df["script label"].tolist() == ["a", "b_1", "b_2", "q", "s_1", "s_2"]
     assert df["plot label"].tolist() == [
         "FIG1C",
@@ -441,6 +441,44 @@ def test_to_pub(tmp_path, caplog, capsys):
     to_pub(input_path=str(repo / "to_pub.cfg"))
     assert "stale?): ['scripts/analysis_a/old.py']" in caplog.text
     assert (out / "NOTES.md").exists() and (out / "scripts/analysis_a/old.py").exists()
+
+
+def test_to_review(tmp_path, monkeypatch):
+    """The review files only: no git repository, no paper repository."""
+    import yaml
+
+    from roux.lib.io import read_dict
+    from roux.workflow.pub import to_review
+
+    repo = tmp_path / "proj"
+    repo.mkdir()
+    cfg = dict(
+        input_path=".",
+        output_path="results/latest.yaml",
+        pub_path="../proj-pub",
+        figs={1: {"A": {"script": "a", "plots": ["outputs/v1/a1.pdf"]}}},
+        ana_to_sis={"Analysis A": []},
+        copy={"README.md": "README.md"},
+    )
+    (repo / "to_pub.cfg").write_text(yaml.safe_dump(cfg, sort_keys=False))
+    _save_plot(repo / "outputs/v1/a1.pdf")
+
+    monkeypatch.chdir(repo)
+    df = to_review("to_pub.cfg")
+    assert df["plot label"].tolist() == ["FIG1"]
+    review = repo / "results/latest"
+    assert {
+        "figs.tsv",
+        "figs/fig1.pdf",
+        "stats.yaml",
+        "tables/source_data.xlsx",
+        "repo/figs/fig1/data.pqt",
+    } <= {str(p.relative_to(review)) for p in review.rglob("*") if p.is_file()}
+    assert read_dict(str(review / "stats.yaml")) == {"1:n": 3}
+    assert (
+        not (tmp_path / "proj-pub").exists()
+        and not (repo / "results/latest.yaml").exists()
+    )
 
 
 def _git_out(repo, *args):

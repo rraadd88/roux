@@ -54,7 +54,7 @@ def read_figs(
 
     Returns:
         df (DataFrame): one row per plot, with the columns
-            `fig` (`<fig><panel><plot>` e.g. `1C1`),
+            `fig` (`<fig><panel><plot>`, without the blank ids e.g. `1C`, `1D1`),
             `input path` (the plot path without suffix),
             `script label`, `fig i`, `panel i`, `plot i` (blank if single),
             `plot label` (e.g. `FIG1C plot1`),
@@ -123,7 +123,7 @@ def read_figs(
     df = pd.DataFrame(
         [
             {
-                "fig": f"{r['figi']}{r['paneli']}{r['ploti']}",
+                "fig": None,
                 "input path": r["input path"],
                 "script label": r["script"],
                 "fig i": r["figi"],
@@ -171,6 +171,11 @@ def read_figs(
         ),
         axis=1,
     )
+    ## the ids of the review files: as the labels e.g. `1C` (FIG1C), `1D1` (FIG1D plot1)
+    df["fig"] = df["fig i"] + df["panel i"] + df["plot i"]
+    dups = sorted(df.loc[df["fig"].duplicated(), "fig"].unique())
+    if dups:
+        raise ValueError(f"fig ids not unique: {dups}")
     return df
 
 
@@ -390,6 +395,128 @@ def _read_cfg(cfg_path: str) -> dict:
     return kws
 
 
+def to_review(
+    input_path=None,
+    review_path=None,
+    figs=None,
+    tag=None,
+    tag_pattern=None,
+    ana_to_sis=None,
+    cols_desc=None,
+    excel="tables/source_data.xlsx",
+    force=False,
+):
+    """
+    The review files of `to_pub`, in the analysis repository only (no git checks, no paper repository).
+
+    In `review_path`: `figs.tsv`, `figs/fig<id>.pdf`, `repo/figs/fig<id>/` (data, config, cleaned plot script and
+    stats of each plot), `stats.yaml` (`<fig>:<key>`), `stats_fmt.json` (`{{<fig>:<key>}}`: the formatted numbers)
+    and the source data excel.
+
+    Usage:
+        From the root of the repository.
+
+        ## the params file of `to_pub` (by default `to_pub.cfg`): `review_path` is the directory of its `output_path`
+        to_review("to_pub.cfg")
+
+    Parameters:
+        input_path (str): path to the repository; or to the params file, if `review_path` is not provided.
+        review_path (str): the directory of the review files e.g. `results/latest`.
+        figs (dict): the plots of the figures, see `read_figs`.
+        tag (str), tag_pattern (str): the version of the outputs, see `read_figs`.
+        ana_to_sis (dict): `{analysis name: [SI figure numbers]}`, in the order of the main figures.
+        cols_desc (dict): `{column: description}` for the source data excel.
+        excel (str): the source data excel (a sheet per plot), relative to `review_path`.
+        force (bool): remake the outputs that exist.
+
+    Returns:
+        pd.DataFrame: the plan (see `_pub_plan`) of the plots with data.
+    """
+    ## params file
+    if review_path is None:
+        import inspect
+
+        kws = _read_cfg(input_path or "to_pub.cfg")
+        review_path = Path(kws["output_path"]).with_suffix("").as_posix()
+        keys = set(inspect.signature(to_review).parameters) - {"review_path", "force"}
+        return to_review(
+            review_path=review_path,
+            force=force,
+            **{k: v for k, v in kws.items() if k in keys},
+        )
+    if input_path is None:
+        input_path = "."
+    for k, v in dict(figs=figs, ana_to_sis=ana_to_sis).items():
+        assert v is not None, f"`{k}` is required"
+
+    df = _pub_plan(
+        read_figs(figs, tag=tag, tag_pattern=tag_pattern, input_path=input_path),
+        ana_to_sis=ana_to_sis,
+        review_path=review_path,
+    )
+
+    ## the plots, the panels and their stats
+    import shutil
+
+    from roux.lib.io import to_table
+
+    review = Path(review_path)
+    (review / "figs").mkdir(parents=True, exist_ok=True)
+    to_table(df, str(review / "figs.tsv"))
+    stats = {}
+    for _, x in df.iterrows():
+        logging.info(f">>> {x['plot label']}")
+        stats[x["fig"]] = _to_panel(x["input path"], x["review path"], force=force)
+        pdf, pdf_out = (
+            Path(f"{x['input path']}.pdf"),
+            review / f"figs/fig{x['fig']}.pdf",
+        )
+        if pdf.exists() and (force or not pdf_out.exists()):
+            shutil.copy2(pdf, pdf_out)
+
+    ## stats: {fig: ax.stats} -> `<fig>:<key>`, and formatted
+    from roux.lib.dict import flatten_dict
+    from roux.lib.io import to_dict
+    from roux.lib.str import format_number
+
+    stats_flat = flatten_dict(
+        {k: flatten_dict(v, sep=":") for k, v in stats.items() if v}, sep=":"
+    )
+    to_dict(stats_flat, str(review / "stats.yaml"))
+    to_dict(
+        {
+            "{{" + k + "}}": v if isinstance(v, str) else format_number(v)
+            for k, v in stats_flat.items()
+        },
+        str(review / "stats_fmt.json"),
+    )
+
+    ## the plots with data (not skipped)
+    from roux.lib.io import read_table, to_excel
+
+    df = df.loc[df["review path"].apply(lambda p: (Path(p) / "data.pqt").exists()), :]
+    skipped = sorted(set(stats) - set(df["fig"]))
+    if skipped:
+        logging.warning(f"no data (skipped): {skipped}")
+    dfs = {
+        x["plot label"]: read_table(f"{x['review path']}/data.pqt", verbose=False)
+        for _, x in df.iterrows()
+    }
+
+    ## source data excel: a sheet per plot; the column descriptions as comments
+    if excel:
+        cols = {c for d in dfs.values() for c in d.columns}
+        comments = {c: s for c, s in (cols_desc or {}).items() if c in cols and s}
+        (review / excel).parent.mkdir(parents=True, exist_ok=True)
+        to_excel(
+            {k: d.copy() for k, d in dfs.items()},
+            str(review / excel),
+            comments=comments or None,
+            save_input=True,
+        )
+    return df
+
+
 def to_pub(
     input_path=None,
     output_path=None,
@@ -485,19 +612,19 @@ def to_pub(
     dev_branch, dev_sha, pub_branch = _check_pub_worktree(src, out, create=False)
     logging.info(f"{src} [{dev_branch} @ {dev_sha}] -> {out} [{pub_branch}]")
 
-    ## plan
-    df = _pub_plan(
-        read_figs(
-            figs,
-            tag=tag,
-            tag_pattern=tag_pattern,
-            input_path=input_path,
-            check=not dry_run,
-        ),
-        ana_to_sis=ana_to_sis,
-        review_path=review_path,
-    )
     if dry_run:
+        ## plan
+        df = _pub_plan(
+            read_figs(
+                figs,
+                tag=tag,
+                tag_pattern=tag_pattern,
+                input_path=input_path,
+                check=False,
+            ),
+            ana_to_sis=ana_to_sis,
+            review_path=review_path,
+        )
         for _, x in df.iterrows():
             print(
                 "panel" if x["exists"] else "missing",
@@ -514,65 +641,22 @@ def to_pub(
             print("write", s)
         return
 
-    ## review files (in the source repository): the plots, the panels and their stats
+    ## review files (in the source repository)
     import shutil
 
-    from roux.lib.io import to_table
-
-    review = Path(review_path)
-    (review / "figs").mkdir(parents=True, exist_ok=True)
-    to_table(df, str(review / "figs.tsv"))
-    stats = {}
-    for _, x in df.iterrows():
-        logging.info(f">>> {x['plot label']}")
-        stats[x["fig"]] = _to_panel(x["input path"], x["review path"], force=force)
-        pdf, pdf_out = (
-            Path(f"{x['input path']}.pdf"),
-            review / f"figs/fig{x['fig']}.pdf",
-        )
-        if pdf.exists() and (force or not pdf_out.exists()):
-            shutil.copy2(pdf, pdf_out)
-
-    ## stats: {fig: ax.stats} -> `<fig>:<key>`, and formatted
-    from roux.lib.dict import flatten_dict
     from roux.lib.io import to_dict
-    from roux.lib.str import format_number
 
-    stats_flat = flatten_dict(
-        {k: flatten_dict(v, sep=":") for k, v in stats.items() if v}, sep=":"
+    df = to_review(
+        input_path=input_path,
+        review_path=review_path,
+        figs=figs,
+        tag=tag,
+        tag_pattern=tag_pattern,
+        ana_to_sis=ana_to_sis,
+        cols_desc=cols_desc,
+        excel=excel,
+        force=force,
     )
-    to_dict(stats_flat, str(review / "stats.yaml"))
-    to_dict(
-        {
-            "{{" + k + "}}": v if isinstance(v, str) else format_number(v)
-            for k, v in stats_flat.items()
-        },
-        str(review / "stats_fmt.json"),
-    )
-
-    ## the plots with data (not skipped)
-    from roux.lib.io import read_table, to_excel
-
-    df = df.loc[df["review path"].apply(lambda p: (Path(p) / "data.pqt").exists()), :]
-    skipped = sorted(set(stats) - set(df["fig"]))
-    if skipped:
-        logging.warning(f"no data (skipped): {skipped}")
-    dfs = {
-        x["plot label"]: read_table(f"{x['review path']}/data.pqt", verbose=False)
-        for _, x in df.iterrows()
-    }
-
-    ## source data excel: a sheet per plot; the column descriptions as comments
-    if excel:
-        cols = {c for d in dfs.values() for c in d.columns}
-        comments = {c: s for c, s in (cols_desc or {}).items() if c in cols and s}
-        (review / excel).parent.mkdir(parents=True, exist_ok=True)
-        to_excel(
-            {k: d.copy() for k, d in dfs.items()},
-            str(review / excel),
-            comments=comments or None,
-            save_input=True,
-        )
 
     ## the paper repository: written to a temporary directory, then moved in (the other files are kept)
     import tempfile
