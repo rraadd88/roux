@@ -6,6 +6,7 @@ The names stay importable from their current modules, and `to_pkg` (dry run) lis
 import importlib
 import json
 import subprocess
+import sys
 
 import pytest
 
@@ -147,6 +148,50 @@ def test_old_import_paths(module_name):
     module = importlib.import_module(module_name)
     missing = [name for name in OLD_PATHS[module_name] if not hasattr(module, name)]
     assert not missing, f"no longer importable from {module_name}: {missing}"
+
+
+# g: the modules split out of io.py and task.py (reorganisation, phase 2), importable on their own
+NEW_PATHS = {
+    "roux.workflow.scr": [
+        "to_py",
+        "check_py",
+        "to_scr",
+        "to_src",
+        "to_scr_path",
+        "replacestar",
+        "_to_scrs",
+    ],
+    "roux.workflow._worktree": ["_git", "_git_check_ignore", "_pkg_plan"],
+    "roux.workflow.pkg": ["to_pkg", "to_scrs"],
+    "roux.workflow.slurm": [
+        "SLURMJob",
+        "submit_job",
+        "feed_jobs",
+        "to_sbatch_script",
+        "get_sq",
+        "is_q_empty",
+    ],
+}
+
+
+@pytest.mark.parametrize("module_name", sorted(NEW_PATHS))
+def test_new_modules_import_first(module_name):
+    # g: a fresh interpreter, so the module is the first roux.workflow module imported (no import cycle)
+    code = f"import {module_name} as m; missing = [n for n in {NEW_PATHS[module_name]!r} if not hasattr(m, n)]; assert not missing, missing"
+    res = subprocess.run([sys.executable, "-c", code], capture_output=True, text=True)
+    assert res.returncode == 0, res.stderr
+
+
+def test_moved_names_are_the_same_objects():
+    import roux.workflow.io as io
+    import roux.workflow.pkg as pkg
+    import roux.workflow.scr as scr
+    import roux.workflow.slurm as slurm
+    import roux.workflow.task as task
+
+    assert io.to_scr is scr.to_scr and io.to_src is scr.to_scr
+    assert io.to_pkg is pkg.to_pkg and io.to_scrs is pkg.to_scrs
+    assert task.submit_job is slurm.submit_job and task.SLURMJob is slurm.SLURMJob
 
 
 ## to_pkg, dry run

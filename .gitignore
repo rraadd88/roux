@@ -17,6 +17,8 @@ docs
 deps
 var
 _*
+## private modules of the package (e.g. roux/workflow/_worktree.py)
+!roux/**/_*.py
 ## testing
 test/*
 !test/test_*.py
