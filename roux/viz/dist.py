@@ -337,7 +337,6 @@ def plot_dists(
     # if verbose:
     #     logging.info(kws_plot)
     df1 = kws_plot.get("df1", None)
-    x_stat = kws_plot.get("x_stat", None)
     y_stat = kws_plot.get("y_stat", None)
     axis_desc = kws_plot.get("axis_desc", None)
     axis_cont = kws_plot.get("axis_cont", None)

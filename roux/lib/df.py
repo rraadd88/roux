@@ -3037,7 +3037,7 @@ def dict2df(
             df_.groupby(cols_groupby, sort=False)
             .apply(
                 # recurse
-                lambda df: dict2df(
+                lambda df, _depth=_depth: dict2df(
                     df[colvalue].values[0],
                     colkey=f"key{_depth}",
                     colvalue=colvalue,
@@ -3056,9 +3056,11 @@ def dict2df(
         if len(df_) > _len:
             df_ = df_.assign(
                 **{
-                    f"list{_depth} id": lambda df: df.groupby(cols_groupby, sort=False)[
-                        colkey
-                    ].transform(lambda x: range(len(x)))
+                    f"list{_depth} id": lambda df, cols_groupby=cols_groupby: (
+                        df.groupby(cols_groupby, sort=False)[colkey].transform(
+                            lambda x: range(len(x))
+                        )
+                    )
                 }
             )
             cols_groupby += [f"list{_depth} id"]

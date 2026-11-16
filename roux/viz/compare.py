@@ -64,8 +64,8 @@ def plot_comparisons(
 
         ax = plot_dists(
             df1=plot_data[x["sample type"]]["data"],
-            x=x["variable y"],
-            y=x["variable x"],
+            x=coly,  # g: the numeric variable, as before when "variable y" is numeric
+            y=colx,
             colindex=plot_data[x["sample type"]]["columns"]["cols_index"],
             hue=None,
             # order=['high','non-redistribution','low'],
@@ -85,7 +85,7 @@ def plot_comparisons(
             # kws_stats=dict(fun=ttest),
             # **kws,
         )
-        ax.set(ylabel=x["variable x"])
+        ax.set(ylabel=colx)
     elif x["comparison type"].startswith("association "):
         # %run ../../../code/roux/roux/viz/heatmap.py
         from roux.viz.heatmap import plot_crosstab
