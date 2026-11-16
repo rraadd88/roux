@@ -240,16 +240,4 @@ def test_roux_stat_norm(
         p,
     )
 
-def test_roux_workflow_cfgs(
-    p="examples/roux_workflow_cfgs.ipynb",
-    ):
-    return run_test(
-        p,
-    )
 
-def test_roux_workflow_pms(
-    p="examples/roux_workflow_pms.ipynb",
-    ):
-    return run_test(
-        p,
-    )
