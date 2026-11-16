@@ -73,13 +73,14 @@ def compare_classes(
 
     from pandas.api.types import is_string_dtype
 
+    ## x: the columns, y: the rows (as selected below by `.loc[order_y, order_x]`)
     if order_x is None:
-        order_x = sorted(df1.index.tolist())
-        if is_string_dtype(df1.index.dtype):
+        order_x = sorted(df1.columns.tolist())
+        if is_string_dtype(df1.columns.dtype):
             logging.warning(f"order_x inferred: {order_x}")
     if order_y is None:
-        order_y = sorted(df1.columns.tolist())
-        if is_string_dtype(df1.columns.dtype):
+        order_y = sorted(df1.index.tolist())
+        if is_string_dtype(df1.index.dtype):
             logging.warning(f"order_y inferred: {order_y}")
 
     ## to strings
