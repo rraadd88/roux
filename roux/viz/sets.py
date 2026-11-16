@@ -127,7 +127,7 @@ def plot_intersection_counts(
         if cols is not None:
             for i, c in enumerate(cols):
                 df1 = df1.log.dropna(subset=cols).assign(
-                    **{c: lambda df: df[c].astype(str)}
+                    **{c: lambda df, c=c: df[c].astype(str)}
                 )
                 for l in [["True", "False"], ["yes", "no"]]:
                     if df1[c].isin(l).all():

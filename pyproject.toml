@@ -15,6 +15,7 @@ classifiers = [
         "Programming Language :: Python :: 3.10",
         "Programming Language :: Python :: 3.11",
         "Programming Language :: Python :: 3.12",
+        "Programming Language :: Python :: 3.13",
 ]
 license = "GPL-3.0-or-later"
 
@@ -89,7 +90,6 @@ dev = [
     "isort",
     "papermill",
     "lazydocs",
-    "regex", ## docs
     # pinned: same version as RUFF in .github/workflows/format.yaml and [tool.ruff] required-version.
     # Upgrade risk: newer versions can change default rules/fixes (e.g. >=0.16 enables RUF100, stripping
     # `# noqa`); test `ruff check --fix` + `ruff format` for removed lines before bumping all three pins.

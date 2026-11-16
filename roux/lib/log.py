@@ -39,7 +39,7 @@ logos = {
     "🚫": {"name": "skipping", "color": "\033[91m", "level": 31},
     "❌": {"name": "error", "color": "\033[91m", "level": 40},
     "🛑": {"name": "critical", "color": "\033[91m", "level": 50},
-    "🛑": {"name": "fatal", "color": "\033[91m", "level": 100},
+    "☠️": {"name": "fatal", "color": "\033[91m", "level": 100},
 }
 log_types = {d["name"]: [k, d["color"], d["level"]] for k, d in logos.items()}
 ## for fast access

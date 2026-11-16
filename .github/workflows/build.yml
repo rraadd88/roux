@@ -16,14 +16,51 @@ permissions:
   contents: read
 
 jobs:
+  ## which jobs the changed files need; a job skipped by `if:` reports as passed (required checks keep working)
+  changes:
+    name: Changed files
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      code: ${{ steps.filter.outputs.code }}
+      package: ${{ steps.filter.outputs.package }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Filter the changed files
+        id: filter
+        env:
+          EVENT: ${{ github.event_name }}
+          BASE: ${{ github.event.pull_request.base.sha }}
+          BEFORE: ${{ github.event.before }}
+        run: |
+          ## code: tests + package; package: the build check only (README.md is the PyPI long description)
+          code_re='^(roux/|tests/|examples/|pyproject\.toml$|uv\.lock$|tox\.ini$|MANIFEST\.in$|\.github/workflows/build\.yml$)'
+          code=true; package=true
+          if [ "$EVENT" = "pull_request" ]; then base="$BASE"; else base="$BEFORE"; fi
+          ## manual runs, and a base that git can't resolve (e.g. first push), run everything
+          if [ "$EVENT" != "workflow_dispatch" ] && files=$(git diff --name-only "$base" HEAD 2>/dev/null); then
+            echo "$files"
+            code=false; package=false
+            if grep -qE "$code_re" <<< "$files"; then code=true; package=true; fi
+            if grep -qx 'README.md' <<< "$files"; then package=true; fi
+          fi
+          echo "code=$code" | tee -a "$GITHUB_OUTPUT"
+          echo "package=$package" | tee -a "$GITHUB_OUTPUT"
+
   test:
     name: Test (py${{ matrix.python-version }})
+    needs: changes
+    if: needs.changes.outputs.code == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 60
     strategy:
       fail-fast: false
       matrix:
-        python-version: [ "3.10", "3.11", "3.12" ]
+        python-version: [ "3.12", "3.13" ]
+        # python-version: [ "3.10", "3.11", "3.12", "3.13" ]  # 3.10/3.11: still supported (tox -e py310, py311)
 
     steps:
       - name: Checkout
@@ -49,6 +86,8 @@ jobs:
 
   package:
     name: Check package build
+    needs: changes
+    if: needs.changes.outputs.package == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:

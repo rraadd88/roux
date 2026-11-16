@@ -1364,19 +1364,33 @@ def filter_rows(
         # --- End Modification ---
 
         if not fast:
-            # slow
-            # Iterate over each rule in the rules DataFrame
-            for _, rule in expr.iterrows():
-                # Start with a mask of all True for the current rule
-                current_rule_mask = pd.Series(True, index=df.index)
-
-                # Sequentially apply filters for each non-NaN value in the rule
-                for col in cols_id:
-                    if pd.notna(rule[col]):
-                        current_rule_mask &= df[col] == rule[col]
-
-                # Add the rows matching this rule to the combined mask of matches
-                combined_mask_of_matches |= current_rule_mask
+            ## the rules grouped by their non-missing columns (missing = any value): per group, the rows matching
+            ## any of its rules by a join with the unique rules (O(rows), instead of a mask per rule)
+            patterns_ = expr.notna()
+            for cols_, rules_ in expr.groupby(
+                patterns_.apply(tuple, axis=1), sort=False
+            ):
+                cols_ = [c for c, has in zip(cols_id, cols_) if has]
+                if len(cols_) == 0:
+                    ## a rule without values matches all the rows
+                    combined_mask_of_matches[:] = True
+                    break
+                keys_ = rules_.loc[:, cols_].drop_duplicates()
+                for col in cols_:
+                    ## the rules' values with the dtypes of the data (e.g. 1.0 -> 1, str -> category), as `==` compares
+                    if keys_[col].dtype != df[col].dtype:
+                        try:
+                            keys_[col] = keys_[col].astype(df[col].dtype)
+                        except (ValueError, TypeError):
+                            keys_[col] = keys_[col].astype(object)
+                ## a join matches missing with missing, `==` does not
+                keys_ = keys_.dropna()
+                combined_mask_of_matches |= (
+                    df.loc[:, cols_]
+                    .merge(keys_, on=cols_, how="left", indicator=True)["_merge"]
+                    .eq("both")
+                    .to_numpy()
+                )
         else:
             # 1. Build a list of query strings, one for each rule
             rule_queries = []
@@ -3023,7 +3037,7 @@ def dict2df(
             df_.groupby(cols_groupby, sort=False)
             .apply(
                 # recurse
-                lambda df: dict2df(
+                lambda df, _depth=_depth: dict2df(
                     df[colvalue].values[0],
                     colkey=f"key{_depth}",
                     colvalue=colvalue,
@@ -3042,9 +3056,11 @@ def dict2df(
         if len(df_) > _len:
             df_ = df_.assign(
                 **{
-                    f"list{_depth} id": lambda df: df.groupby(cols_groupby, sort=False)[
-                        colkey
-                    ].transform(lambda x: range(len(x)))
+                    f"list{_depth} id": lambda df, cols_groupby=cols_groupby: (
+                        df.groupby(cols_groupby, sort=False)[colkey].transform(
+                            lambda x: range(len(x))
+                        )
+                    )
                 }
             )
             cols_groupby += [f"list{_depth} id"]

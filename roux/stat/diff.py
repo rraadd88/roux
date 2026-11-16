@@ -96,7 +96,7 @@ def compare_classes(
         df1 = df1.loc[order_y, order_x]
     except Exception as e:
         logging.error((df1.index, df1.columns))
-        raise ValueError(str(e))
+        raise ValueError(str(e)) from e
 
     ## stats
     if df1.shape != (2, 2) or method == "chi2":
@@ -517,7 +517,9 @@ def get_significant_changes(
             #     info(f"corrected alpha alphacSidak={alphacSidak},alphacBonf={alphacBonf}")
             # if test!='FE':
             df1[f"significant change, Q{stat_suffix} < {coff_q}"] = df1.apply(
-                lambda x: x["change"] if x["Q" + stat_suffix] < coff_q else "ns",
+                lambda x, stat_suffix=stat_suffix: (
+                    x["change"] if x["Q" + stat_suffix] < coff_q else "ns"
+                ),
                 axis=1,
             )
             # df1.loc[df1[f'change is significant, Q{stat_suffix} < {coff_q}'],f"significant change, Q{stat_suffix} < {coff_q}"]=df1.loc[df1[f"change is significant, Q{stat_suffix} < {coff_q}"],'change']
@@ -836,7 +838,7 @@ def binby_pvalue_coffs(
     for i, coff in enumerate(coffs[::-1]):
         col = f"{preffix}significant change, P ({testn}) < {coff}"
         df1[col] = df1.apply(
-            lambda x: (
+            lambda x, coff=coff: (
                 "increase"
                 if (
                     (x[f"{preffix}P ({testn})"] < coff)
@@ -860,7 +862,8 @@ def binby_pvalue_coffs(
             d2["decrease"] = saturate_color(palette[2], saturate)
             d1[coff] = d2
             df1["c"] = df1.apply(
-                lambda x: d2[x[col]] if x[col] in d2 else x["c"], axis=1
+                lambda x, d2=d2, col=col: d2[x[col]] if x[col] in d2 else x["c"],
+                axis=1,
             )
             assert df1["c"].isnull().sum() == 0
     if color:

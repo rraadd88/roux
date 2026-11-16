@@ -65,8 +65,8 @@ def apply_async(
             name = futures[future]
             try:
                 results[name] = future.result()
-            except:
-                raise ValueError(name)
+            except Exception as err:
+                raise ValueError(name) from err
 
     if by is None:
         # # Since Python 3.7 (and officially in the language spec from 3.8), the built-in dict preserves insertion order.

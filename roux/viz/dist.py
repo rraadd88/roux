@@ -337,7 +337,6 @@ def plot_dists(
     # if verbose:
     #     logging.info(kws_plot)
     df1 = kws_plot.get("df1", None)
-    x_stat = kws_plot.get("x_stat", None)
     y_stat = kws_plot.get("y_stat", None)
     axis_desc = kws_plot.get("axis_desc", None)
     axis_cont = kws_plot.get("axis_cont", None)
@@ -355,8 +354,8 @@ def plot_dists(
                     df2 = df2.loc[(df2["subset1"] == order[0]), :]
                 try:
                     stats = df2.rd.to_dict(["subset2", col_pval])
-                except:
-                    raise ValueError(df2.columns.tolist())
+                except Exception as err:
+                    raise ValueError(df2.columns.tolist()) from err
             else:
                 stats = df2.set_index(y)[col_pval].to_dict()
                 if test:

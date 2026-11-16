@@ -20,10 +20,10 @@ def agg_means(n: ArrayLike, means: ArrayLike) -> float:
     try:
         n = np.array(n, dtype=float)
         means = np.array(means, dtype=float)
-    except ValueError:
+    except ValueError as err:
         raise TypeError(
             "Inputs 'n' and 'means' must be numeric and convertible to NumPy arrays."
-        )
+        ) from err
 
     if n.shape != means.shape:
         raise ValueError("Input arrays 'n' and 'means' must have the same shape.")
@@ -49,8 +49,10 @@ def agg_vars(n: ArrayLike, means: ArrayLike, std_devs: ArrayLike) -> float:
         n = np.array(n, dtype=float)
         means = np.array(means, dtype=float)
         std_devs = np.array(std_devs, dtype=float)
-    except ValueError:
-        raise TypeError("All inputs must be numeric and convertible to NumPy arrays.")
+    except ValueError as err:
+        raise TypeError(
+            "All inputs must be numeric and convertible to NumPy arrays."
+        ) from err
 
     if not (n.shape == means.shape == std_devs.shape):
         raise ValueError(

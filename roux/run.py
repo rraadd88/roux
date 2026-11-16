@@ -39,6 +39,7 @@ from roux.workflow.task import (
     post_tasks,
     # run_task,
     run_tasks,  ## preferred because it infers setup for the outputs
+    run_cells,
 )
 from roux.workflow.version import get_tag
 
@@ -294,38 +295,39 @@ parser.add_commands(
         # to_zip,
         pqt2tsv,
         ## workflow
-            ## version
-            get_tag,
-            # io
-            ## cfgs
-            read_config,
-            read_metadata,
-            to_cfg_run_arc,
-            ## workflow execution
-            ## pms
-            test_params,
-            pre_params,
-            to_params,
-            ## tasks
-            run_tasks,
-            ## slurm
-            check_tasks,
-            post_tasks,
-            ## notebook
-            ### pre-processing
-            to_nb_kernel,
-            ### post-processing
-            replacestar,
-            to_clear_unused_cells,
-            to_clear_outputs,
-            to_clean_nb,  ## wrapper for above
-            ### convert
-            to_html,
-            ### rendering
-            to_src,
-            ### notebooks repository to a package
-            to_pkg,
-            to_scrs,  ## notebooks to scripts, in the repository
+        ## version
+        get_tag,
+        # io
+        ## cfgs
+        read_config,
+        read_metadata,
+        to_cfg_run_arc,
+        ## workflow execution
+        ## pms
+        test_params,
+        pre_params,
+        to_params,
+        ## tasks
+        run_tasks,
+        run_cells,  ## tagged cells of a notebook as a script
+        ## slurm
+        check_tasks,
+        post_tasks,
+        ## notebook
+        ### pre-processing
+        to_nb_kernel,
+        ### post-processing
+        replacestar,
+        to_clear_unused_cells,
+        to_clear_outputs,
+        to_clean_nb,  ## wrapper for above
+        ### convert
+        to_html,
+        ### rendering
+        to_src,
+        ### notebooks repository to a package
+        to_pkg,
+        to_scrs,  ## notebooks to scripts, in the repository
         ## ui
         gui,
     ]

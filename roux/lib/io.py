@@ -1169,7 +1169,7 @@ def apply_on_paths(
             try:
                 df = read_table(p, params=params, verbose=verbose, **kws_read_table)
             except Exception as e:
-                raise ValueError(f"An error occurred for {p}: {e}.")
+                raise ValueError(f"An error occurred for {p}: {e}.") from e
 
             if filter_rows is not None:
                 df = df.rd.filter_rows(filter_rows)

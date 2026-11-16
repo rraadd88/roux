@@ -148,8 +148,6 @@ def annot_side_curved(
             try:
                 from roux.viz.text import set_text_multicolored
 
-                text_func = set_text_multicolored
-
                 from roux.viz.figure import get_text
 
                 ts = get_text(
