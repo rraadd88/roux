@@ -355,8 +355,8 @@ def plot_dists(
                     df2 = df2.loc[(df2["subset1"] == order[0]), :]
                 try:
                     stats = df2.rd.to_dict(["subset2", col_pval])
-                except:
-                    raise ValueError(df2.columns.tolist())
+                except Exception as err:
+                    raise ValueError(df2.columns.tolist()) from err
             else:
                 stats = df2.set_index(y)[col_pval].to_dict()
                 if test:

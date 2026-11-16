@@ -105,7 +105,7 @@ uv sync --all-extras         # all extras + the dev group
   author  = {Dandage, Rohan},
   year    = {2024},
   url     = {https://zenodo.org/doi/10.5281/zenodo.2682670},
-  version = {0.1.2},
+  version = {0.1.4},
   note    = {The URL is a DOI link to the permanent archive of the software.},
 }
 ```

@@ -407,11 +407,11 @@ def get_enrichment(
             raise ValueError("df_covars must be provided for logistic regression test.")
         try:
             import statsmodels.api as sm
-        except ImportError:
+        except ImportError as err:
             raise ImportError(
                 "statsmodels is required for logistic regression. "
                 "Please install it with 'pip install statsmodels'"
-            )
+            ) from err
 
         def _run_logistic(df1_, df2_, df_covars):
             items_in_test = df1_[colid].tolist()

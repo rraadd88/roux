@@ -10,5 +10,5 @@ identifiers:
 - type: doi
   value: 10.5281/zenodo.2682670
 repository-code: https://github.com/rraadd88/roux
-version: 0.1.2
+version: 0.1.4
 date-released: '2024-10-11'
