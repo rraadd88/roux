@@ -715,6 +715,7 @@ def type_str(s):
     Examples:
         Numbers as strings e.g. '1.2' to 1.2
     """
+    import ast
 
     if not isinstance(s, str):
         return s
@@ -736,20 +737,20 @@ def type_str(s):
                 if s.startswith("["):
                     try:
                         # Try converting to a list
-                        result = eval(s)
-                    except ValueError:
+                        result = ast.literal_eval(s)
+                    except (ValueError, SyntaxError):
                         pass
                 elif s.startswith("{"):
                     try:
                         # Try converting to a dict
-                        result = eval(s)
-                    except ValueError:
+                        result = ast.literal_eval(s)
+                    except (ValueError, SyntaxError):
                         pass
                 elif s[0].isalnum():
                     try:
                         # last Try
-                        result = eval(s)
-                    except NameError:
+                        result = ast.literal_eval(s)
+                    except (ValueError, SyntaxError):
                         # logging.warning
                         # logging.warning(f"{str(e)} for {s}")
                         logging.warning(f"not type converted: {s}")
