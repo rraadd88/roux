@@ -403,10 +403,14 @@ def get_lines(logp: str = None, sep: str = "begin_plot()", test: bool = False) -
             ("to_plot(" not in line_) and (not line_.startswith("saveplot("))
         ):
             continue
+        indent = len(line) - len(line.lstrip(" "))
         if len(lines) == 0:
-            spaces = len(line) - len(line.lstrip(" "))  # *' '
+            spaces = indent  # *' '
+        elif indent < spaces and line_.rstrip().endswith(":"):
+            ## a block header around `to_plot(` (e.g. `if ...:`): its body is dedented to the plot's level
+            continue
         ## dedent by the indent of `to_plot(`: only the leading spaces (a less indented line keeps its text)
-        line = line[min(spaces, len(line) - len(line.lstrip(" "))) :]
+        line = line[min(spaces, indent) :]
         lines.append(line)
         if test:
             print(f"'{line}'")
@@ -458,7 +462,9 @@ def to_script(
         return
     # make def
     for linei, line in enumerate(lines):
-        if "plt.subplot(" in line or "plt.subplots(" in line:
+        if (
+            "plt.subplot(" in line or "plt.subplots(" in line
+        ) and not line.lstrip().startswith("if ax is None"):
             lines[linei] = f"if ax is None:{line} #noqa"
     lines = [f"    {l}" for l in lines]
     lines = "\n".join(lines)
@@ -526,10 +532,8 @@ def to_plot(
 
     Notes:
         Requirement:
-            1. Start logging in the jupyter notebook.
-
-            from IPython import get_ipython
-            log_notebookp=f'log_notebook.log';open(log_notebookp, 'w').close();get_ipython().run_line_magic('logstart','{log_notebookp} over')
+            1. Start logging in the jupyter notebook, before the plotting code: `begin_plot()`
+               (one log per kernel, see `get_logp`).
 
     """
     if stats is not None and isinstance(plotp, plt.Axes):
