@@ -17,43 +17,29 @@ def _clean_env(monkeypatch):
     monkeypatch.delenv("ROUX_ONLY_TASKS", raising=False)
 
 
-def test_unset_not_skipped():
-    assert _skipped_by_env(PATH) is None
-
-
+## (ROUX_SKIP_TASKS, ROUX_ONLY_TASKS) -> the variable that skips PATH and OTHER (None: not skipped)
 @pytest.mark.parametrize(
-    "pattern",
+    "skip,only,expected",
     [
-        "043_results_data",  # stem
-        "043_results_data.ipynb",  # name
-        "*/nbs_01_x/043_*",  # path glob
-        " foo , 043_results_data ,",  # whitespace and empty patterns
+        (None, None, (None, None)),
+        ("043_results_data", None, ("ROUX_SKIP_TASKS", None)),  # stem
+        ("043_results_data.ipynb", None, ("ROUX_SKIP_TASKS", None)),  # name
+        ("*/nbs_01_x/043_*", None, ("ROUX_SKIP_TASKS", None)),  # path glob
+        (
+            " foo , 043_results_data ,",
+            None,
+            ("ROUX_SKIP_TASKS", None),
+        ),  # whitespace, empty patterns
+        (None, "044_*, 045_x", ("ROUX_ONLY_TASKS", None)),
+        ("043_*", "04*", ("ROUX_SKIP_TASKS", None)),  # skip wins over only
+        ("", " , ", (None, None)),  # empty: no effect
     ],
 )
-def test_skip(monkeypatch, pattern):
-    monkeypatch.setenv("ROUX_SKIP_TASKS", pattern)
-    assert _skipped_by_env(PATH) == "ROUX_SKIP_TASKS"
-    assert _skipped_by_env(OTHER) is None
-
-
-def test_only(monkeypatch):
-    monkeypatch.setenv("ROUX_ONLY_TASKS", "044_*, 045_x")
-    assert _skipped_by_env(PATH) == "ROUX_ONLY_TASKS"
-    assert _skipped_by_env(OTHER) is None
-
-
-def test_skip_wins_over_only(monkeypatch):
-    monkeypatch.setenv("ROUX_ONLY_TASKS", "04*")
-    monkeypatch.setenv("ROUX_SKIP_TASKS", "043_*")
-    assert _skipped_by_env(PATH) == "ROUX_SKIP_TASKS"
-    assert _skipped_by_env(OTHER) is None
-
-
-def test_empty_no_effect(monkeypatch):
-    monkeypatch.setenv("ROUX_SKIP_TASKS", "")
-    monkeypatch.setenv("ROUX_ONLY_TASKS", " , ")
-    assert _skipped_by_env(PATH) is None
-    assert _skipped_by_env(OTHER) is None
+def test_skipped_by_env(monkeypatch, skip, only, expected):
+    for k, v in [("ROUX_SKIP_TASKS", skip), ("ROUX_ONLY_TASKS", only)]:
+        if v is not None:
+            monkeypatch.setenv(k, v)
+    assert (_skipped_by_env(PATH), _skipped_by_env(OTHER)) == expected
 
 
 def test_run_tasks_returns_early(monkeypatch, tmp_path):
