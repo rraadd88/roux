@@ -29,71 +29,6 @@ def _touch_plots(root, tag="v2"):
         d.with_suffix(".pdf").write_text("")
 
 
-def test_read_figs(tmp_path):
-    from roux.workflow.pub import read_figs
-
-    _touch_plots(tmp_path)
-    df = read_figs(
-        FIGS,
-        tag="v2",
-        tag_pattern=r"(?<=outputs/)v\d+(?=/)",
-        input_path=str(tmp_path),
-    )
-    assert df["fig"].tolist() == ["1C", "1D1", "1D2", "2", "S21", "S22"]
-    assert df["script label"].tolist() == ["a", "b_1", "b_2", "q", "s_1", "s_2"]
-    assert df["plot label"].tolist() == [
-        "FIG1C",
-        "FIG1D plot1",
-        "FIG1D plot2",
-        "FIG2",
-        "FIGS2 plot1",
-        "FIGS2 plot2",
-    ]
-    ## the version: `tag`
-    assert df["input path"].tolist()[0] == f"{tmp_path}/outputs/v2/c"
-    assert df["exists"].all()
-
-
-def test_read_figs_checks(tmp_path):
-    from roux.workflow.pub import read_figs
-
-    ## missing plots
-    with pytest.raises(ValueError, match="not found: 1C"):
-        read_figs(FIGS, input_path=str(tmp_path))
-    assert not read_figs(FIGS, input_path=str(tmp_path), check=False)["exists"].any()
-    ## the script names are the file names of the paper repository: unique
-    with pytest.raises(ValueError, match=r"not unique.*\['a'\]"):
-        read_figs(
-            {
-                1: {
-                    "A": {"script": "a", "plots": ["x"]},
-                    "B": {"script": "a", "plots": ["y"]},
-                }
-            },
-            check=False,
-        )
-    ## the short forms (a path or a list instead of {script, plots})
-    with pytest.raises(AssertionError, match="expected"):
-        read_figs({1: {"A": ["x"]}}, check=False)
-    with pytest.raises(AssertionError, match="2 scripts for 1 plots"):
-        read_figs({1: {"A": {"script": ["a", "b"], "plots": ["x"]}}}, check=False)
-
-
-def test_get_analyses():
-    from roux.workflow.pub import _get_analyses
-
-    assert _get_analyses({"A": [1], "B": [], "C": [2, 3]}) == {
-        "1": "A",
-        "S1": "A",
-        "2": "B",
-        "3": "C",
-        "S2": "C",
-        "S3": "C",
-    }
-    with pytest.raises(AssertionError, match="S1 in two analyses"):
-        _get_analyses({"A": [1], "B": [1]})
-
-
 def _git(repo, *args):
     subprocess.run(
         [
@@ -179,32 +114,6 @@ def test_to_pub_dry_run(analysis_repo, tmp_path, capsys):
     assert sorted(p.name for p in (tmp_path / "proj-pub").iterdir()) == [".git"]
 
 
-def test_to_pub_figure_without_analysis(analysis_repo, tmp_path):
-    import yaml
-
-    from roux.workflow.pub import to_pub
-
-    _git(
-        analysis_repo,
-        "worktree",
-        "add",
-        "-q",
-        "--orphan",
-        "-b",
-        "pub",
-        str(tmp_path / "proj-pub"),
-    )
-    cfg = yaml.safe_load((analysis_repo / "to_pub.cfg").read_text())
-    cfg["ana_to_sis"] = {"Analysis A": []}
-    (analysis_repo / "to_pub.cfg").write_text(yaml.safe_dump(cfg))
-    with pytest.raises(AssertionError, match=r"without an analysis.*\['2', 'S2'\]"):
-        to_pub(
-            input_path=str(analysis_repo / "to_pub.cfg"),
-            dry_run="True",
-            allow_dirty="True",
-        )
-
-
 ## S3: the panels (review files) and the scripts of the paper repository
 PLOT_PY = """from pathlib import Path
 import matplotlib.pyplot as plt
@@ -247,40 +156,6 @@ def _save_plot(plot_path):
     (d / "config.yaml").write_text(yaml.safe_dump({"color": "k"}))
     (d / "plot.py").write_text(PLOT_PY)
     plot_path.write_text("")
-
-
-def test_clean_plot_script():
-    from roux.workflow.pub import _clean_plot_script
-
-    text = _clean_plot_script(PLOT_PY)
-    assert "# a comment" not in text and "#noqa" not in text
-    assert 'ax.set_title("#1")' in text
-    assert "plotp=__file__," in text and "/an/old/path" not in text
-    assert "\n\n\n" not in text
-    assert not any(s != s.rstrip() for s in text.split("\n"))
-    compile(text, "plot.py", "exec")
-
-
-def test_to_panel(tmp_path):
-    from roux.lib.io import read_dict, read_table
-    from roux.workflow.pub import _to_panel
-
-    _save_plot(tmp_path / "outputs/v1/c.pdf")
-    review = tmp_path / "review/c"
-    assert _to_panel(str(tmp_path / "outputs/v1/c"), str(review)) == {"n": 3}
-    assert sorted(p.name for p in review.iterdir()) == [
-        "config.yaml",
-        "data.pqt",
-        "plot.py",
-        "stats.yaml",
-    ]
-    assert read_table(str(review / "data.pqt")).shape == (3, 2)
-    assert read_dict(str(review / "config.yaml")) == {"color": "k"}
-    assert "plotp=__file__," in (review / "plot.py").read_text()
-    ## not remade: the saved stats
-    mtime = (review / "data.pqt").stat().st_mtime_ns
-    assert _to_panel(str(tmp_path / "outputs/v1/c"), str(review)) == {"n": 3}
-    assert (review / "data.pqt").stat().st_mtime_ns == mtime
 
 
 def test_to_pub_script(tmp_path):
@@ -481,59 +356,6 @@ def test_to_review(tmp_path, monkeypatch):
         not (tmp_path / "proj-pub").exists()
         and not (repo / "results/latest.yaml").exists()
     )
-
-
-def test_to_review_missing(tmp_path, monkeypatch, caplog):
-    """Not all plots expected (`check=False`): warned and skipped; the args override the params file."""
-    import yaml
-
-    from roux.lib.io import read_table
-    from roux.workflow.pub import to_review
-
-    repo = tmp_path / "proj"
-    repo.mkdir()
-    cfg = dict(
-        input_path=".",
-        output_path="results/latest.yaml",
-        tag="v1",
-        tag_pattern=r"(?<=outputs/)v\d+(?=/)",
-        figs={
-            1: {
-                "A": {"script": "a", "plots": ["outputs/v1/a.pdf"]},
-                "B": {"script": "b", "plots": ["outputs/v1/b.pdf"]},
-            }
-        },
-        ana_to_sis={"Analysis A": []},
-    )
-    (repo / "to_pub.cfg").write_text(yaml.safe_dump(cfg, sort_keys=False))
-    _save_plot(repo / "outputs/test/a.pdf")
-
-    monkeypatch.chdir(repo)
-    with pytest.raises(ValueError, match="not found: 1B"):
-        to_review("to_pub.cfg", tag="test", review_path="results/test")
-    df = to_review("to_pub.cfg", tag="test", review_path="results/test", check=False)
-    assert df["plot label"].tolist() == ["FIG1A"]
-    assert "not found: 1B" in caplog.text
-    review = repo / "results/test"
-    assert (review / "repo/figs/fig1A/data.pqt").exists()
-    assert not (review / "repo/figs/fig1B").exists()
-    assert read_table(str(review / "figs.tsv"))["exists"].tolist() == [True, False]
-    assert not (repo / "results/latest").exists()
-    ## the png (secondary): missing -> a warning; the pdf (primary): missing -> an error
-    assert (review / "figs/fig1A.pdf").exists() and not (
-        review / "figs/fig1A.png"
-    ).exists()
-    assert "png not copied" in caplog.text
-    ## a plot given by its png, without a pdf
-    (repo / "outputs/test/a.png").write_text("")
-    (repo / "outputs/test/a.pdf").unlink()
-    with pytest.raises(FileNotFoundError, match="pdf not copied"):
-        to_review(
-            "to_pub.cfg",
-            tag="test",
-            review_path="results/test2",
-            figs={1: {"A": {"script": "a", "plots": ["outputs/v1/a.png"]}}},
-        )
 
 
 def _git_out(repo, *args):

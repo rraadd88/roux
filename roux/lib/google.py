@@ -48,7 +48,9 @@ def get_service(service_name="drive", access_limit=True, client_config=None):
     if client_config is None:
         from getpass import getpass
 
-        client_config = eval(getpass())
+        import json
+
+        client_config = json.loads(getpass())
 
     # Define the required scopes
     SCOPES = [service_name2params[service_name]["scope"]]
