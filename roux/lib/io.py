@@ -1861,11 +1861,8 @@ def to_excel(
                     logging.error(
                         "to adjust column width use xlsxwriter: pip install xlsxwriter"
                     )
-    try:
-        writer.close()
-    except Exception:
-        # old pandas version
-        writer.save()
+    ## `save` only in old pandas versions; errors of `close` (e.g. openpyxl) are raised as they are
+    writer.close() if hasattr(writer, "close") else writer.save()
     ## save in tsv format
     if save_input:
         for k in sheetname2df:

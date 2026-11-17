@@ -56,7 +56,9 @@ def git_commit(
             if yes:
                 commit(repo)
             else:
-                repo.git.add(eval(input("list of files in py syntax:")))
+                repo.git.add(
+                    __import__("ast").literal_eval(input("list of files in py syntax:"))
+                )
         if suffix_message == "":
             if not force:
                 suffix_message = input("commit message:")

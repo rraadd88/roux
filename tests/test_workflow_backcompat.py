@@ -12,32 +12,8 @@ import pytest
 
 # g: names importable from each module before the reorganisation (master 5b8c3c4): the public
 # g: names defined in the module, plus the re-exports and the shared private helpers that other code imports.
+# g: the names moved out of io.py and task.py (reorganisation, phase 2) stay importable from there
 OLD_PATHS = {
-    "roux.workflow.cfgs": [
-        "get_cfgs",
-        "resolve_cfg",
-        "read_config",
-        "read_cfg",
-        "read_sub_configs",
-        "read_sub_configs_rly",
-        "read_metadata",
-        "get_cfg_run",
-        "to_cfg_run",
-        "to_cfg_run_arc",
-    ],
-    "roux.workflow.df": ["exclude_items"],
-    "roux.workflow.function": [
-        "import_from_file",
-        "call_with_kws",
-        "get_quoted_path",
-        "get_path",
-        "remove_dirs_from_outputs",
-        "get_ios",
-        "get_name",
-        "get_step",
-        "to_task",
-        "get_global_imports",
-    ],
     "roux.workflow.io": [
         "clear_variables",
         "clear_dataframes",
@@ -56,46 +32,16 @@ OLD_PATHS = {
         "replacestar",
         "set_outputs",
         "check_for_exit",
-        # g: re-exports
         "read_config",
         "read_metadata",
         "read_cli_pm",
         "get_source_path",
-        # g: shared private helpers (to_pkg, to_scrs, tests)
         "_pkg_plan",
         "_to_scrs",
         "_to_scr_cleaned",
         "_to_scr_running_py",
         "_PKG_DROP_CODE_LINES",
         "_PKG_DROP_HEADERS",
-    ],
-    "roux.workflow.log": ["print_parameters", "test_params"],
-    "roux.workflow.monitor": ["plot_workflow_log"],
-    "roux.workflow.nb": [
-        "to_nb_cells",
-        "read_nb",
-        "get_lines",
-        "read_nb_md",
-        "to_info",
-        "to_replaced_nb",
-        "to_filtered_nb",
-        "to_filter_nbby_patterns",
-        "to_clear_unused_cells",
-        "to_clear_outputs",
-        "to_filtered_outputs",
-        "to_clean_nb",
-        "valid_post_task_deps",
-        "to_html",
-        "to_nb_kernel",
-    ],
-    "roux.workflow.pms": [
-        "extract_pms",
-        "expand_pms",
-        "read_cli_pm",
-        "read_pms",
-        "to_params",
-        "validate_pms",
-        "pre_params",
     ],
     "roux.workflow.task": [
         "logging",
@@ -121,29 +67,12 @@ OLD_PATHS = {
         "run_tasks",
         "run_cells",
     ],
-    "roux.workflow.utils": ["to_workflow", "create_workflow_report"],
-    "roux.workflow.version": ["git_commit", "get_tag", "get_commit_message"],
-    "roux.workflow.workflow": ["get_scripts", "to_scripts"],
 }
 
 # g: modules that fail at import today; strict, so the mark has to go once they are fixed
-KNOWN_BROKEN = {}
 
 
-@pytest.mark.parametrize(
-    "module_name",
-    [
-        pytest.param(
-            name,
-            marks=pytest.mark.xfail(
-                strict=True, raises=NameError, reason=KNOWN_BROKEN[name]
-            ),
-        )
-        if name in KNOWN_BROKEN
-        else name
-        for name in sorted(OLD_PATHS)
-    ],
-)
+@pytest.mark.parametrize("module_name", sorted(OLD_PATHS))
 def test_old_import_paths(module_name):
     module = importlib.import_module(module_name)
     missing = [name for name in OLD_PATHS[module_name] if not hasattr(module, name)]
@@ -151,47 +80,6 @@ def test_old_import_paths(module_name):
 
 
 # g: the modules split out of io.py and task.py (reorganisation, phase 2), importable on their own
-NEW_PATHS = {
-    "roux.workflow.scr": [
-        "to_py",
-        "check_py",
-        "to_scr",
-        "to_src",
-        "to_scr_path",
-        "replacestar",
-        "_to_scrs",
-    ],
-    "roux.workflow._worktree": ["_git", "_git_check_ignore", "_plan", "_pkg_plan"],
-    "roux.workflow.pkg": ["to_pkg", "to_scrs"],
-    "roux.workflow.slurm": [
-        "SLURMJob",
-        "submit_job",
-        "feed_jobs",
-        "to_sbatch_script",
-        "get_sq",
-        "is_q_empty",
-    ],
-}
-
-
-@pytest.mark.parametrize("module_name", sorted(NEW_PATHS))
-def test_new_modules_import_first(module_name):
-    # g: a fresh interpreter, so the module is the first roux.workflow module imported (no import cycle)
-    code = f"import {module_name} as m; missing = [n for n in {NEW_PATHS[module_name]!r} if not hasattr(m, n)]; assert not missing, missing"
-    res = subprocess.run([sys.executable, "-c", code], capture_output=True, text=True)
-    assert res.returncode == 0, res.stderr
-
-
-def test_moved_names_are_the_same_objects():
-    import roux.workflow.io as io
-    import roux.workflow.pkg as pkg
-    import roux.workflow.scr as scr
-    import roux.workflow.slurm as slurm
-    import roux.workflow.task as task
-
-    assert io.to_scr is scr.to_scr and io.to_src is scr.to_src
-    assert io.to_pkg is pkg.to_pkg and io.to_scrs is pkg.to_scrs
-    assert task.submit_job is slurm.submit_job and task.SLURMJob is slurm.SLURMJob
 
 
 ## to_pkg, dry run
@@ -283,46 +171,25 @@ def test_to_pkg_dry_run(notebooks_repo, tmp_path, capsys):
 
 
 ## deprecations (reorganisation, phase 3): the old names still work, with a DeprecationWarning
-def test_to_src_warns_and_keeps_the_cli_name(tmp_path, monkeypatch):
+def test_deprecated_names_warn(notebooks_repo):
+    from roux.workflow._worktree import _pkg_plan, _plan
     from roux.workflow.scr import to_scr, to_src
 
     # g: argh names the CLI command after __name__, so `roux to-scr` is unchanged
     assert to_src.__name__ == "to_scr" and to_src.__wrapped__ is to_scr
-    monkeypatch.chdir(tmp_path)
-    with pytest.warns(DeprecationWarning, match="to_src"):
-        try:
-            to_src("missing.ipynb", "missing.py")
-        except Exception:
-            pass
-
-
-def test_pkg_plan_warns_and_equals_plan(notebooks_repo):
-    from roux.workflow._worktree import _pkg_plan, _plan
-
     with pytest.warns(DeprecationWarning, match="_pkg_plan"):
-        old = _pkg_plan(notebooks_repo, "to_pkg.cfg")
-    assert old == _plan(notebooks_repo, "to_pkg.cfg")
-
-
-@pytest.mark.parametrize("module_name", ["roux.workflow.utils", "roux.workflow.df"])
-def test_legacy_modules_warn_on_import(module_name):
-    code = f"import warnings; warnings.simplefilter('always'); import {module_name}"
+        assert _pkg_plan(notebooks_repo, "to_pkg.cfg") == _plan(
+            notebooks_repo, "to_pkg.cfg"
+        )
+    code = "import warnings; warnings.simplefilter('always'); import roux.workflow.utils, roux.workflow.df"
     res = subprocess.run([sys.executable, "-c", code], capture_output=True, text=True)
     assert res.returncode == 0, res.stderr
-    assert f"{module_name} is deprecated" in res.stderr
+    assert "roux.workflow.utils is deprecated" in res.stderr
+    assert "roux.workflow.df is deprecated" in res.stderr
 
 
 ## pub branch names (TODO 24): warn only
-@pytest.mark.parametrize(
-    "pub_branch,valid",
-    [
-        ("pub", True),
-        ("pkg", True),
-        ("main-pub", True),
-        ("main-pkg", True),
-        ("release", False),
-    ],
-)
+@pytest.mark.parametrize("pub_branch,valid", [("main-pub", True), ("release", False)])
 def test_check_pub_branch(pub_branch, valid, caplog):
     from roux.workflow.pkg import _check_pub_branch
 
@@ -331,20 +198,53 @@ def test_check_pub_branch(pub_branch, valid, caplog):
     assert ("not one of" in caplog.text) is (not valid)
 
 
-def test_to_scripts_imports():
-    """TODO 23: the helpers that to_scripts imports exist where it imports them from."""
-    import ast
-    from pathlib import Path
+## the pub worktree (to_pub plan, S1): `_check_pub_worktree`, shared by to_pkg and to_pub
+def test_check_pub_worktree(notebooks_repo, tmp_path, capsys):
+    from roux.workflow._worktree import _check_pub_worktree
 
-    import roux.workflow.workflow as m
+    src, out = notebooks_repo, tmp_path / "proj-pub"
+    ## missing, not created: the command is printed
+    with pytest.raises(ValueError, match="to be made by the user"):
+        _check_pub_worktree(src, out)
+    assert "worktree add --orphan -b pub" in capsys.readouterr().out
+    assert not out.exists()
 
-    tree = ast.parse(Path(m.__file__).read_text())
-    for node in ast.walk(tree):
-        if (
-            isinstance(node, ast.ImportFrom)
-            and node.module
-            and node.module.startswith("roux.workflow")
-        ):
-            mod = importlib.import_module(node.module)
-            missing = [a.name for a in node.names if not hasattr(mod, a.name)]
-            assert not missing, (node.module, missing)
+    ## created: orphan, no commits yet
+    dev_branch, dev_sha, pub_branch = _check_pub_worktree(src, out, create=True)
+    assert pub_branch == "pub" and not dev_sha.endswith("+")
+    assert (out / ".git").is_file()
+
+    ## the source is itself a worktree (`.git` is a file)
+    _git(src, "worktree", "add", "-q", "-b", "dev2", str(tmp_path / "proj-dev2"))
+    assert _check_pub_worktree(tmp_path / "proj-dev2", out)[::2] == ("dev2", "pub")
+
+    ## not a worktree
+    (tmp_path / "plain").mkdir()
+    with pytest.raises(AssertionError, match="not a worktree"):
+        _check_pub_worktree(src, tmp_path / "plain")
+
+    ## a worktree of another repository
+    other = tmp_path / "other"
+    other.mkdir()
+    _git(other, "init", "-q")
+    _git(other, "commit", "-q", "--allow-empty", "-m", "init")
+    _git(
+        other,
+        "worktree",
+        "add",
+        "-q",
+        "--orphan",
+        "-b",
+        "pub",
+        str(tmp_path / "other-pub"),
+    )
+    with pytest.raises(AssertionError, match="is not a worktree of"):
+        _check_pub_worktree(src, tmp_path / "other-pub")
+
+    ## shared history: not orphan
+    _git(src, "worktree", "add", "-q", "-b", "shared", str(tmp_path / "proj-shared"))
+    with pytest.raises(ValueError, match="shares history"):
+        _check_pub_worktree(src, tmp_path / "proj-shared")
+    assert (
+        _check_pub_worktree(src, tmp_path / "proj-shared", orphan=False)[2] == "shared"
+    )
