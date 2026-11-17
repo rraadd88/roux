@@ -50,3 +50,27 @@ def test_query_default_unchanged():
     df1 = pd.DataFrame({"a": [1, 2, 3]})
     query(df1, expr="`a` > 1", subset=["a"])
     assert inspect.signature(query).parameters["kws_log"].default == default == {}
+
+
+@pytest.mark.parametrize(
+    "code",
+    [
+        ## TODO 45: `to_plot(` inside a block
+        "if True:\n    fig,ax=plt.subplots()\n    to_plot(ax)\n",
+        ## TODO 48: the line already has `if ax is None:`
+        "if ax is None: fig,ax=plt.subplots()\nto_plot(ax)\n",
+    ],
+)
+def test_to_script_saves_valid_code(code, tmp_path, monkeypatch):
+    import ast
+
+    import roux.viz.io as vio
+
+    ## read the plot's code from a log, as in a notebook
+    monkeypatch.setattr(vio, "is_interactive_notebook", lambda: True)
+    logp = tmp_path / "log.py"
+    logp.write_text("begin_plot()\n" + code)
+    srcp = vio.to_script(
+        srcp=str(tmp_path / "plot.py"), plotp="plot.png", logp=str(logp)
+    )
+    ast.parse(open(srcp).read())
