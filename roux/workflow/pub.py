@@ -266,7 +266,13 @@ def _to_panel(input_path: str, review_dir: str, force: bool = False):
     from roux.viz.io import get_plot_inputs, read_plot
 
     out = Path(review_dir)
-    if (out / "data.pqt").exists() and not force:
+    ## remade if a source file (the plot or its inputs) is newer than the copy
+    srcs = [p for p in Path(input_path).glob("*") if p.is_file()]
+    srcs += [p for p in [Path(f"{input_path}.pdf")] if p.exists()]
+    stale = (out / "data.pqt").exists() and any(
+        p.stat().st_mtime > (out / "data.pqt").stat().st_mtime for p in srcs
+    )
+    if (out / "data.pqt").exists() and not force and not stale:
         return (
             read_dict(str(out / "stats.yaml")) if (out / "stats.yaml").exists() else {}
         )
@@ -385,16 +391,22 @@ def _to_pub_script(p: str, outp: str, src_dir_path: str, inline: list = None) ->
     return outp
 
 
-def _read_cfg(cfg_path: str) -> dict:
+def _read_cfg(cfg_path: str, inputs: dict = None) -> dict:
     """
     The params of `to_pub` from a params file: the paths (`*_path` and the sources of `copy`) are relative to its directory (the root of the repository) and are resolved here.
+
+    The OmegaConf interpolations (e.g. `processed/${tag}/...`) are resolved, with `inputs` (e.g. `tag`, given as args) overriding the file; a missing required value (`???`) raises.
     """
     import os
 
-    from roux.lib.io import read_dict
+    from omegaconf import OmegaConf
 
     root = Path(cfg_path).parent
-    kws = read_dict(cfg_path)
+    cfg = OmegaConf.merge(
+        OmegaConf.load(cfg_path),
+        {k: v for k, v in (inputs or {}).items() if v is not None},
+    )
+    kws = OmegaConf.to_container(cfg, resolve=True, throw_on_missing=True)
     for k, v in kws.items():
         if k.endswith("_path") and isinstance(v, str):
             kws[k] = os.path.normpath(root / v)
@@ -450,7 +462,7 @@ def to_review(
         import inspect
 
         cfg_path = input_path or "to_pub.cfg"
-        kws = _read_cfg(cfg_path)
+        kws = _read_cfg(cfg_path, inputs=dict(tag=tag, tag_pattern=tag_pattern))
         kws.setdefault("input_path", Path(cfg_path).parent.as_posix())
         keys = set(inspect.signature(to_review).parameters) - {"check", "force"}
         kws = {k: v for k, v in kws.items() if k in keys or k == "output_path"}
@@ -505,7 +517,11 @@ def to_review(
                 Path(f"{x['input path']}.{ext}"),
                 review / f"figs/fig{x['fig']}.{ext}",
             )
-            if dst.exists() and not force:
+            if (
+                dst.exists()
+                and not force
+                and not (src.exists() and src.stat().st_mtime > dst.stat().st_mtime)
+            ):
                 continue
             try:
                 shutil.copy2(src, dst)
@@ -546,7 +562,7 @@ def to_review(
     }
 
     ## source data excel: a sheet per plot; the column descriptions as comments
-    if excel:
+    if excel and dfs:
         cols = {c for d in dfs.values() for c in d.columns}
         comments = {c: s for c, s in (cols_desc or {}).items() if c in cols and s}
         (review / excel).parent.mkdir(parents=True, exist_ok=True)
@@ -640,7 +656,11 @@ def to_pub(
             ).items()
             if v
         }
-        return call_with_kws(to_pub, _read_cfg(input_path), **overrides)
+        return call_with_kws(
+            to_pub,
+            _read_cfg(input_path, inputs=dict(tag=tag, tag_pattern=tag_pattern)),
+            **overrides,
+        )
 
     for k, v in dict(pub_path=pub_path, figs=figs, ana_to_sis=ana_to_sis).items():
         assert v is not None, f"`{k}` is required"
@@ -737,6 +757,16 @@ def to_pub(
                 if s.strip().startswith("["):
                     skip = s.strip() in drop
                 if not skip:
+                    ## roux from its upstream (not a local or editable source)
+                    s = (
+                        s
+                        if re.match(r"\s*name\s*=", s)
+                        else re.sub(
+                            r'"roux(\[[^\]]*\])?(\s*[<>=!~][^"]*)?"',
+                            r'"roux\1 @ git+https://github.com/rraadd88/roux@master"',
+                            s,
+                        )
+                    )
                     lines.append(s)
             put("pyproject.toml").write_text("\n".join(lines).rstrip("\n") + "\n")
         ## .gitignore: of the repository + `gitignore` (the later lines win e.g. `!scripts/`)

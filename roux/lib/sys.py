@@ -221,7 +221,10 @@ def to_path(
     ## pre.
     from roux.lib.str import remove_brackets
 
-    s = remove_brackets(s)
+    s_ = remove_brackets(s)
+    if s_ != s:
+        logging.info(f"brackets removed from the path: {s} -> {s_}")
+    s = s_
 
     s = re.sub(r"(/)\1+", r"\1", s)  # remove multiple /'s
     if max([len(s_) for s_ in s.split("/")]) < coff_len_escape_replacement:

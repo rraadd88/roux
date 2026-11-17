@@ -57,6 +57,15 @@ def to_py(
 RUFF_SELECT = "E4,E7,E9,F"
 
 
+def _ruff():
+    """The `ruff` of the running environment (also if it is not activated), else the one on `PATH`; None if neither."""
+    import shutil
+    import sys
+
+    p = Path(sys.executable).parent / "ruff"
+    return str(p) if p.exists() else shutil.which("ruff")
+
+
 def check_py(
     p,
     errors="raise",
@@ -81,7 +90,11 @@ def check_py(
 
     import shlex
 
-    com = f"ruff check {shlex.quote(str(p))} --select {RUFF_SELECT} --ignore {ruff_ignore}"
+    ruff = _ruff()
+    if ruff is None:
+        logging.warning(f"ruff not found: not checked: {p}")
+        return ""
+    com = f"{shlex.quote(ruff)} check {shlex.quote(str(p))} --select {RUFF_SELECT} --ignore {ruff_ignore}"
     from roux.lib.sys import run_com
 
     stdout = run_com(
@@ -110,11 +123,16 @@ def post_code(
     ## ruff
     import shlex
 
+    ruff = _ruff()
+    if ruff is None:
+        logging.warning(f"ruff not found: not linted/formatted: {p}")
+        return None
+    ruff = shlex.quote(ruff)
     com = ""
     if lint:
-        com += f"ruff check --select {RUFF_SELECT} --fix {shlex.quote(str(p))};"  # -unsafe-fixes
+        com += f"{ruff} check --select {RUFF_SELECT} --fix {shlex.quote(str(p))};"  # -unsafe-fixes
     if format:
-        com += f"ruff format {shlex.quote(str(p))};"
+        com += f"{ruff} format {shlex.quote(str(p))};"
     import subprocess
 
     res = subprocess.run(

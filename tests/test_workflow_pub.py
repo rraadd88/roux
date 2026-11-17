@@ -391,3 +391,16 @@ def test_format_number():
         "2e6",
         "0.5",
     ]
+
+
+def test_read_cfg_interpolation(tmp_path):
+    """TODO 51: OmegaConf interpolations resolved, with the given inputs; a missing value raises."""
+    from roux.workflow.pub import _read_cfg
+
+    p = tmp_path / "to_pub.cfg"
+    p.write_text("tag: ???\nreview_path: processed/${tag}/review\n")
+    assert _read_cfg(str(p), inputs=dict(tag="v2"))["review_path"].endswith(
+        "processed/v2/review"
+    )
+    with pytest.raises(Exception, match="tag"):
+        _read_cfg(str(p))
